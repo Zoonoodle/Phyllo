@@ -273,9 +273,11 @@ struct TimelineHourRow: View {
             Rectangle()
                 .fill(Color.white.opacity(0.1))
                 .frame(height: 1)
+                .frame(maxWidth: .infinity)
             
             Spacer()
         }
+        .clipped()  // Ensure divider doesn't extend beyond bounds
     }
     
     @ViewBuilder
@@ -294,6 +296,7 @@ struct TimelineHourRow: View {
         )
         .offset(y: windowOffset)
         .allowsHitTesting(true)
+        .zIndex(10) // Ensure window banners are above everything else
     }
     
     @ViewBuilder

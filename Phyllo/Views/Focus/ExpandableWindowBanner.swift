@@ -380,8 +380,9 @@ struct ExpandableWindowBanner: View {
     @ViewBuilder
     private var mealsSection: some View {
         VStack(spacing: 8) {
-            Divider()
-                .background(Color.white.opacity(0.1))
+            Rectangle()
+                .fill(Color.white.opacity(0.1))
+                .frame(height: 1)
                 .padding(.horizontal, 16)
             
             ForEach(meals) { meal in
@@ -390,11 +391,16 @@ struct ExpandableWindowBanner: View {
             }
             .padding(.bottom, 12)
         }
+        .background(Color(red: 0.11, green: 0.11, blue: 0.12))  // Ensure opaque background for meals section
     }
     
     private var windowBackground: some View {
         RoundedRectangle(cornerRadius: window.isActive ? 16 : 12)
-            .fill(Color(red: 0.11, green: 0.11, blue: 0.12))  // Solid dark gray background
+            .fill(Color.phylloBackground)  // Fully opaque black background first
+            .overlay(
+                RoundedRectangle(cornerRadius: window.isActive ? 16 : 12)
+                    .fill(Color(red: 0.11, green: 0.11, blue: 0.12))  // Dark gray on top
+            )
             .matchedGeometryEffect(
                 id: "window-\(window.id)",
                 in: animationNamespace,
