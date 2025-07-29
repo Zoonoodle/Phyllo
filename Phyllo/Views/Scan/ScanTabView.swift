@@ -18,6 +18,7 @@ struct ScanTabView: View {
     @State private var captureAnimation = false
     @State private var capturedImage: UIImage?
     @State private var currentAnalyzingMeal: AnalyzingMeal?
+    @State private var lastCompletedMeal: LoggedMeal?
     @StateObject private var mockData = MockDataManager.shared
     
     enum ScanMode: String, CaseIterable {
@@ -150,9 +151,13 @@ struct ScanTabView: View {
                     }
             }
             .sheet(isPresented: $showResults) {
-                FoodAnalysisView()
+                if let meal = lastCompletedMeal {
+                    NavigationStack {
+                        FoodAnalysisView(meal: meal, isFromScan: true)
+                    }
                     .presentationDetents([.large])
                     .presentationDragIndicator(.visible)
+                }
             }
         }
         .preferredColorScheme(.dark)
@@ -195,7 +200,7 @@ struct ScanTabView: View {
         )
         
         // Simulate AI processing time in background
-        DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
             // Convert to logged meal
             let result = analyzingMeal.toLoggedMeal(
                 name: "Grilled Chicken Salad",
@@ -207,9 +212,16 @@ struct ScanTabView: View {
             
             // Complete the analyzing meal
             mockData.completeAnalyzingMeal(analyzingMeal, with: result)
+            lastCompletedMeal = result
             currentAnalyzingMeal = nil
+            
+            // Show food analysis view after completion
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                showResults = true
+            }
         }
     }
+    
 }
 
 // Loading sheet component

@@ -9,14 +9,14 @@ import SwiftUI
 
 struct MealDetailsEditView: View {
     @Environment(\.dismiss) private var dismiss
-    let meal: MockMeal
+    let meal: LoggedMeal
     
     // State for editing
     @State private var mealName: String = ""
     @State private var ingredients: [IngredientItem] = []
     @State private var showAddIngredient = false
     
-    init(meal: MockMeal) {
+    init(meal: LoggedMeal) {
         self.meal = meal
     }
     
@@ -179,12 +179,18 @@ struct MealDetailsEditView: View {
     private func setupInitialData() {
         mealName = meal.name
         
-        // Mock ingredients based on meal
+        // Create ingredients that match the meal's macros
+        // This is simplified - in real app would parse from AI or database
         ingredients = [
-            IngredientItem(name: "Grilled Chicken", amount: 150, unit: "g", calories: 248, protein: 28, carbs: 0, fat: 14),
-            IngredientItem(name: "Mixed Greens", amount: 2, unit: "cups", calories: 20, protein: 2, carbs: 4, fat: 0),
-            IngredientItem(name: "Avocado", amount: 0.5, unit: "whole", calories: 120, protein: 2, carbs: 6, fat: 11),
-            IngredientItem(name: "Balsamic Dressing", amount: 2, unit: "tbsp", calories: 32, protein: 0, carbs: 2, fat: 3)
+            IngredientItem(
+                name: meal.name,
+                amount: 1,
+                unit: "serving",
+                calories: meal.calories,
+                protein: meal.protein,
+                carbs: meal.carbs,
+                fat: meal.fat
+            )
         ]
     }
     
@@ -302,17 +308,12 @@ struct NutritionSummaryItem: View {
 }
 
 #Preview {
-    MealDetailsEditView(meal: MockMeal(
-        id: UUID(),
+    MealDetailsEditView(meal: LoggedMeal(
         name: "Grilled Chicken Salad",
-        subtitle: "with Avocado & Balsamic Dressing",
-        image: "photo",
         calories: 420,
         protein: 35,
         carbs: 12,
         fat: 28,
-        fiber: 8,
-        confidence: 94,
         timestamp: Date()
     ))
 }

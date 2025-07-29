@@ -11,21 +11,10 @@ struct FoodAnalysisView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var showEditView = false
     @State private var confidenceAnimation = false
+    @StateObject private var mockData = MockDataManager.shared
     
-    // Mock data
-    let mockMeal = MockMeal(
-        id: UUID(),
-        name: "Grilled Chicken Salad",
-        subtitle: "with Avocado & Balsamic Dressing",
-        image: "photo",
-        calories: 420,
-        protein: 35,
-        carbs: 12,
-        fat: 28,
-        fiber: 8,
-        confidence: 94,
-        timestamp: Date()
-    )
+    let meal: LoggedMeal
+    var isFromScan: Bool = false
     
     var body: some View {
         NavigationStack {
@@ -42,6 +31,11 @@ struct FoodAnalysisView: View {
                         
                         // Nutrition overview
                         nutritionOverviewSection
+                        
+                        // Daily summary (if from scan)
+                        if isFromScan {
+                            dailySummarySection
+                        }
                         
                         // Detailed nutrition
                         detailedNutritionSection
@@ -72,7 +66,7 @@ struct FoodAnalysisView: View {
         }
         .preferredColorScheme(.dark)
         .sheet(isPresented: $showEditView) {
-            MealDetailsEditView(meal: mockMeal)
+            MealDetailsEditView(meal: meal)
         }
     }
     
@@ -97,7 +91,9 @@ struct FoodAnalysisView: View {
                 VStack {
                     HStack {
                         Spacer()
-                        confidenceBadge
+                        if isFromScan {
+                            confidenceBadge
+                        }
                     }
                     Spacer()
                 }
@@ -111,7 +107,7 @@ struct FoodAnalysisView: View {
                 .font(.system(size: 14))
                 .foregroundColor(.green)
             
-            Text("\(mockMeal.confidence)% Confident")
+            Text("94% Confident")
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundColor(.white)
         }
@@ -135,13 +131,19 @@ struct FoodAnalysisView: View {
     
     private var foodInfoSection: some View {
         VStack(spacing: 8) {
-            Text(mockMeal.name)
+            Text(meal.name)
                 .font(.system(size: 28, weight: .bold))
                 .foregroundColor(.white)
             
-            Text(mockMeal.subtitle)
-                .font(.system(size: 16))
-                .foregroundColor(.white.opacity(0.7))
+            if let window = mealWindow {
+                Text("\(windowName(for: window)) • \(timeString(from: meal.timestamp))")
+                    .font(.system(size: 16))
+                    .foregroundColor(.white.opacity(0.7))
+            } else {
+                Text(timeString(from: meal.timestamp))
+                    .font(.system(size: 16))
+                    .foregroundColor(.white.opacity(0.7))
+            }
         }
     }
     
@@ -149,7 +151,7 @@ struct FoodAnalysisView: View {
         VStack(spacing: 16) {
             // Calories
             HStack {
-                Text("\(mockMeal.calories)")
+                Text("\(meal.calories)")
                     .font(.system(size: 48, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
                 
@@ -161,9 +163,9 @@ struct FoodAnalysisView: View {
             
             // Macros
             HStack(spacing: 24) {
-                MacroView(value: mockMeal.protein, label: "Protein", color: .blue)
-                MacroView(value: mockMeal.carbs, label: "Carbs", color: .orange)
-                MacroView(value: mockMeal.fat, label: "Fat", color: .yellow)
+                MacroView(value: meal.protein, label: "Protein", color: .blue)
+                MacroView(value: meal.carbs, label: "Carbs", color: .orange)
+                MacroView(value: meal.fat, label: "Fat", color: .yellow)
             }
         }
         .padding(.vertical, 20)
@@ -185,7 +187,7 @@ struct FoodAnalysisView: View {
                 .foregroundColor(.white)
             
             VStack(spacing: 12) {
-                NutritionRow(label: "Dietary Fiber", value: "\(mockMeal.fiber)g", color: .green)
+                NutritionRow(label: "Dietary Fiber", value: "8g", color: .green)
                 NutritionRow(label: "Sugars", value: "3g", color: .pink)
                 NutritionRow(label: "Sodium", value: "320mg", color: .cyan)
                 NutritionRow(label: "Cholesterol", value: "85mg", color: .orange)
@@ -221,15 +223,14 @@ struct FoodAnalysisView: View {
                 )
             }
             
-            // Confirm and log button
+            // Confirm button or View in Timeline
             Button(action: {
-                // Log the meal
                 dismiss()
             }) {
                 HStack {
-                    Image(systemName: "checkmark.circle.fill")
+                    Image(systemName: isFromScan ? "checkmark.circle.fill" : "timeline")
                         .font(.system(size: 18, weight: .semibold))
-                    Text("Confirm & Log")
+                    Text(isFromScan ? "Confirm & Log" : "View in Timeline")
                         .font(.system(size: 18, weight: .semibold))
                 }
                 .foregroundColor(.black)
@@ -240,6 +241,171 @@ struct FoodAnalysisView: View {
                         .fill(Color.white)
                 )
             }
+        }
+    }
+    
+    private var dailySummarySection: some View {
+        VStack(spacing: 16) {
+            // Header
+            HStack {
+                Text("Daily Progress")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(.white)
+                Spacer()
+                Text("\(mockData.todaysMeals.count) meals logged")
+                    .font(.system(size: 14))
+                    .foregroundColor(.white.opacity(0.5))
+            }
+            
+            // Progress ring and macros
+            HStack(spacing: 32) {
+                // Circular progress
+                ZStack {
+                    Circle()
+                        .stroke(Color.white.opacity(0.1), lineWidth: 8)
+                        .frame(width: 100, height: 100)
+                    
+                    Circle()
+                        .trim(from: 0, to: dailyProgress)
+                        .stroke(
+                            Color.phylloAccent,
+                            style: StrokeStyle(lineWidth: 8, lineCap: .round)
+                        )
+                        .frame(width: 100, height: 100)
+                        .rotationEffect(.degrees(-90))
+                    
+                    VStack(spacing: 2) {
+                        Text("\(Int(dailyProgress * 100))%")
+                            .font(.system(size: 24, weight: .bold))
+                            .foregroundColor(.white)
+                        Text("Complete")
+                            .font(.system(size: 12))
+                            .foregroundColor(.white.opacity(0.5))
+                    }
+                }
+                
+                // Daily macros
+                VStack(alignment: .leading, spacing: 12) {
+                    DailyMacroRow(
+                        label: "Protein",
+                        consumed: mockData.todaysProteinConsumed,
+                        target: userDailyProtein,
+                        color: .blue
+                    )
+                    DailyMacroRow(
+                        label: "Carbs",
+                        consumed: mockData.todaysCarbsConsumed,
+                        target: userDailyCarbs,
+                        color: .orange
+                    )
+                    DailyMacroRow(
+                        label: "Fat",
+                        consumed: mockData.todaysFatConsumed,
+                        target: userDailyFat,
+                        color: .yellow
+                    )
+                }
+                .frame(maxWidth: .infinity)
+            }
+            
+            // Remaining calories
+            Text("\(mockData.todaysCaloriesConsumed) / \(userDailyCalories) calories")
+                .font(.system(size: 14))
+                .foregroundColor(.white.opacity(0.7))
+                .frame(maxWidth: .infinity)
+        }
+        .padding(20)
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(Color.white.opacity(0.03))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .stroke(Color.white.opacity(0.05), lineWidth: 1)
+                )
+        )
+    }
+    
+    // MARK: - Helper Properties
+    
+    private var mealWindow: MealWindow? {
+        guard let windowId = meal.windowId else { return nil }
+        return mockData.mealWindows.first { $0.id == windowId }
+    }
+    
+    private var dailyProgress: Double {
+        Double(mockData.todaysCaloriesConsumed) / Double(userDailyCalories)
+    }
+    
+    private var userDailyCalories: Int {
+        2500 // TODO: Get from user profile
+    }
+    
+    private var userDailyProtein: Int {
+        150 // TODO: Get from user profile
+    }
+    
+    private var userDailyCarbs: Int {
+        280 // TODO: Get from user profile
+    }
+    
+    private var userDailyFat: Int {
+        83 // TODO: Get from user profile
+    }
+    
+    // MARK: - Helper Methods
+    
+    private func windowName(for window: MealWindow) -> String {
+        let hour = Calendar.current.component(.hour, from: window.startTime)
+        switch hour {
+        case 5...10: return "Breakfast"
+        case 11...14: return "Lunch"
+        case 15...17: return "Snack"
+        case 18...21: return "Dinner"
+        default: return "Late Snack"
+        }
+    }
+    
+    private func timeString(from date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.timeStyle = .short
+        return formatter.string(from: date)
+    }
+}
+
+struct DailyMacroRow: View {
+    let label: String
+    let consumed: Int
+    let target: Int
+    let color: Color
+    
+    var progress: Double {
+        Double(consumed) / Double(target)
+    }
+    
+    var body: some View {
+        HStack(spacing: 8) {
+            Text(label)
+                .font(.system(size: 13))
+                .foregroundColor(.white.opacity(0.5))
+                .frame(width: 50, alignment: .leading)
+            
+            GeometryReader { geometry in
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(Color.white.opacity(0.1))
+                        .frame(height: 4)
+                    
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(color)
+                        .frame(width: geometry.size.width * min(progress, 1), height: 4)
+                }
+            }
+            .frame(height: 4)
+            
+            Text("\(consumed)g")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundColor(.white.opacity(0.7))
+                .frame(width: 35, alignment: .trailing)
         }
     }
 }
@@ -286,21 +452,30 @@ struct NutritionRow: View {
     }
 }
 
-// Mock data structure
-struct MockMeal {
-    let id: UUID
-    let name: String
-    let subtitle: String
-    let image: String
-    let calories: Int
-    let protein: Int
-    let carbs: Int
-    let fat: Int
-    let fiber: Int
-    let confidence: Int
-    let timestamp: Date
+#Preview("From Timeline") {
+    FoodAnalysisView(
+        meal: LoggedMeal(
+            name: "Grilled Chicken Salad",
+            calories: 420,
+            protein: 35,
+            carbs: 12,
+            fat: 28,
+            timestamp: Date()
+        ),
+        isFromScan: false
+    )
 }
 
-#Preview {
-    FoodAnalysisView()
+#Preview("From Scan") {
+    FoodAnalysisView(
+        meal: LoggedMeal(
+            name: "Grilled Chicken Salad",
+            calories: 420,
+            protein: 35,
+            carbs: 12,
+            fat: 28,
+            timestamp: Date()
+        ),
+        isFromScan: true
+    )
 }
