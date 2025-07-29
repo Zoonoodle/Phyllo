@@ -15,7 +15,7 @@ struct NudgeContainer: View {
         ZStack {
             // Background dimming overlay
             if nudgeManager.activeNudge != nil {
-                Color.black.opacity(0.5)
+                Color.black.opacity(0.3)
                     .ignoresSafeArea()
                     .transition(.opacity)
                     .zIndex(999)
