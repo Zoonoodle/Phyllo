@@ -235,8 +235,15 @@ struct ExpandableWindowBanner: View {
                     mealsSection
                 }
             }
-            .clipShape(RoundedRectangle(cornerRadius: window.isActive ? 16 : 12))
             .background(windowBackground)
+            .clipShape(RoundedRectangle(cornerRadius: window.isActive ? 16 : 12))
+            .overlay(
+                RoundedRectangle(cornerRadius: window.isActive ? 16 : 12)
+                    .strokeBorder(
+                        window.isActive ? window.purpose.color.opacity(0.5) : Color.white.opacity(0.1),
+                        lineWidth: window.isActive ? 2 : 1
+                    )
+            )
             .overlay(optimalTimeIndicators)
         }
         .buttonStyle(PlainButtonStyle())
@@ -407,13 +414,6 @@ struct ExpandableWindowBanner: View {
                 in: animationNamespace,
                 properties: .frame,
                 isSource: true
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: window.isActive ? 16 : 12)
-                    .strokeBorder(
-                        window.isActive ? window.purpose.color.opacity(0.5) : Color.white.opacity(0.1),
-                        lineWidth: window.isActive ? 2 : 1
-                    )
             )
     }
     
