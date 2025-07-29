@@ -193,37 +193,8 @@ struct TimelineHourRow: View {
     
     // Calculate dynamic height based on content
     private var hourHeight: CGFloat {
-        // Base height
-        var height = baseHourHeight
-        
-        // Add height for window if present
-        if let window = windowForHour {
-            let windowMeals = mockData.mealsInWindow(window)
-            let analyzingMeal = mockData.analyzingMealInWindow(window)
-            let baseWindowHeight: CGFloat = window.isActive ? 82 : 64
-            let mealHeight: CGFloat = 48 // Increased for better spacing
-            let mealSectionPadding: CGFloat = 20 // Padding for meals section
-            let mealCount = windowMeals.count + (analyzingMeal != nil ? 1 : 0)
-            let totalMealHeight = CGFloat(mealCount) * mealHeight + (mealCount > 0 ? mealSectionPadding : 0)
-            let windowHeight = baseWindowHeight + totalMealHeight
-            
-            // Calculate position offset for the window
-            let startMinute = Calendar.current.component(.minute, from: window.startTime)
-            let windowOffset = CGFloat(startMinute) / 60.0 * baseHourHeight
-            
-            // Ensure height accommodates the window banner plus its offset
-            height = max(height, windowOffset + windowHeight + 20)
-        }
-        
-        // Add height for standalone meals and analyzing meals
-        let standaloneMeals = meals.filter { $0.meal.windowId == nil }
-        let standaloneAnalyzing = analyzingMeals.filter { $0.meal.windowId == nil }
-        let totalStandalone = standaloneMeals.count + standaloneAnalyzing.count
-        if totalStandalone > 0 {
-            height = max(height, baseHourHeight + CGFloat(totalStandalone) * 60)
-        }
-        
-        return height
+        // Always return base height - windows extend into next hours naturally
+        return baseHourHeight
     }
     
     var body: some View {
@@ -421,9 +392,13 @@ struct TimelineHourRow: View {
     
     // Determine if the hour divider should be shown
     private func shouldShowDivider() -> Bool {
-        // Don't show if there's a window in this hour
-        if windowForHour != nil {
-            return false
+        // Check if there's a window in this hour that starts very early
+        if let window = windowForHour {
+            let startMinute = Calendar.current.component(.minute, from: window.startTime)
+            // Only hide divider if window starts in first 15 minutes
+            if startMinute < 15 {
+                return false
+            }
         }
         
         // Check if a window from the previous hour extends into this hour

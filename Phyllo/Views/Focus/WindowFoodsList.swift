@@ -79,9 +79,13 @@ struct WindowFoodsList: View {
 
 struct FoodItemCard: View {
     let meal: LoggedMeal
+    @State private var showFoodAnalysis = false
     
     var body: some View {
-        HStack(spacing: 16) {
+        Button(action: {
+            showFoodAnalysis = true
+        }) {
+            HStack(spacing: 16) {
             // Emoji
             Text(meal.emoji)
                 .font(.system(size: 28))
@@ -119,20 +123,28 @@ struct FoodItemCard: View {
             
             Spacer()
             
-            // Chevron
-            Image(systemName: "chevron.right")
-                .font(.system(size: 14))
-                .foregroundColor(.white.opacity(0.3))
+                // Chevron
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 14))
+                    .foregroundColor(.white.opacity(0.3))
+            }
+            .padding(16)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color.white.opacity(0.03))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .strokeBorder(Color.phylloBorder, lineWidth: 1)
+                    )
+            )
         }
-        .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(Color.white.opacity(0.03))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16)
-                        .strokeBorder(Color.phylloBorder, lineWidth: 1)
-                )
-        )
+        }
+        .buttonStyle(PlainButtonStyle())
+        .sheet(isPresented: $showFoodAnalysis) {
+            NavigationStack {
+                FoodAnalysisView(meal: meal)
+            }
+        }
     }
     
     private func timeString(from date: Date) -> String {
