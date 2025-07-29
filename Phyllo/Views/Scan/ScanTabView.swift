@@ -11,8 +11,12 @@ struct ScanTabView: View {
     @Binding var showDeveloperDashboard: Bool
     @State private var selectedMode: ScanMode = .photo
     @State private var showQuickLog = false
+    @State private var showVoiceInput = false
+    @State private var showLoading = false
+    @State private var showClarification = false
     @State private var showResults = false
     @State private var captureAnimation = false
+    @State private var capturedImage: UIImage?
     
     enum ScanMode: String, CaseIterable {
         case photo = "Photo"
@@ -44,36 +48,51 @@ struct ScanTabView: View {
                 
                 // Main UI layer
                 VStack(spacing: 0) {
-                    // Top navigation bar
-                    HStack {
-                        Button(action: {
-                            // Close action - handled by tab navigation
-                        }) {
-                            Image(systemName: "xmark")
-                                .font(.system(size: 20, weight: .medium))
-                                .foregroundColor(.white)
-                                .frame(width: 44, height: 44)
+                    // Top navigation bar - matching ScheduleView header
+                    VStack(spacing: 0) {
+                        VStack(spacing: 8) {
+                            ZStack {
+                                HStack {
+                                    // Close button on left
+                                    Button(action: {
+                                        // Close action - handled by tab navigation
+                                    }) {
+                                        Image(systemName: "xmark")
+                                            .font(.system(size: 20, weight: .medium))
+                                            .foregroundColor(.white.opacity(0.6))
+                                            .frame(width: 36, height: 36)
+                                            .background(Color.white.opacity(0.1))
+                                            .clipShape(Circle())
+                                    }
+                                    
+                                    Spacer()
+                                    
+                                    // History button on right
+                                    Button(action: {
+                                        // Show scan history
+                                    }) {
+                                        Image(systemName: "photo.on.rectangle")
+                                            .font(.system(size: 20, weight: .medium))
+                                            .foregroundColor(.white.opacity(0.6))
+                                            .frame(width: 36, height: 36)
+                                            .background(Color.white.opacity(0.1))
+                                            .clipShape(Circle())
+                                    }
+                                }
+                                
+                                // Title centered
+                                Text("Scan")
+                                    .font(.system(size: 24, weight: .bold))
+                                    .foregroundColor(.white)
+                            }
+                            .padding(.horizontal, 24)
                         }
+                        .padding(.vertical, 6)
                         
-                        Spacer()
-                        
-                        Text("Scan")
-                            .font(.system(size: 20, weight: .semibold))
-                            .foregroundColor(.white)
-                        
-                        Spacer()
-                        
-                        Button(action: {
-                            // Show scan history
-                        }) {
-                            Image(systemName: "photo.on.rectangle")
-                                .font(.system(size: 20, weight: .medium))
-                                .foregroundColor(.white)
-                                .frame(width: 44, height: 44)
-                        }
+                        // Separator line
+                        Divider()
+                            .background(Color.white.opacity(0.1))
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.top, 60)
                     
                     Spacer()
                     
@@ -101,10 +120,33 @@ struct ScanTabView: View {
                 }
                 .ignoresSafeArea(.keyboard)
             }
+            .fullScreenCover(isPresented: $showVoiceInput) {
+                VoiceInputView()
+                    .onDisappear {
+                        if !showVoiceInput {
+                            // Voice input completed, show loading
+                            showLoading = true
+                            simulateAIProcessing()
+                        }
+                    }
+            }
             .sheet(isPresented: $showQuickLog) {
                 QuickLogView()
                     .presentationDetents([.medium])
                     .presentationDragIndicator(.visible)
+            }
+            .sheet(isPresented: $showLoading) {
+                LoadingSheet()
+                    .presentationDetents([.height(400)])
+                    .interactiveDismissDisabled()
+            }
+            .fullScreenCover(isPresented: $showClarification) {
+                ClarificationQuestionsView()
+                    .onDisappear {
+                        if !showClarification {
+                            showResults = true
+                        }
+                    }
             }
             .sheet(isPresented: $showResults) {
                 FoodAnalysisView()
@@ -120,11 +162,59 @@ struct ScanTabView: View {
             captureAnimation = true
         }
         
-        // Simulate capture delay
+        // Simulate capture and navigate to voice input
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            showResults = true
             captureAnimation = false
+            if selectedMode == .photo {
+                // For photo mode, show voice input overlay
+                showVoiceInput = true
+            } else if selectedMode == .voice {
+                // For voice-only mode, skip to loading
+                showLoading = true
+                simulateAIProcessing()
+            } else {
+                // For barcode, go directly to results
+                showResults = true
+            }
         }
+    }
+    
+    private func simulateAIProcessing() {
+        // Simulate AI processing time
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+            showLoading = false
+            
+            // Randomly decide if clarification is needed
+            if Bool.random() {
+                showClarification = true
+            } else {
+                showResults = true
+            }
+        }
+    }
+}
+
+// Loading sheet component
+struct LoadingSheet: View {
+    var body: some View {
+        ZStack {
+            Color.black.ignoresSafeArea()
+            
+            VStack {
+                // Drag indicator
+                Capsule()
+                    .fill(Color.white.opacity(0.3))
+                    .frame(width: 40, height: 5)
+                    .padding(.top, 12)
+                
+                Spacer()
+                
+                MealAnalysisLoadingView()
+                
+                Spacer()
+            }
+        }
+        .preferredColorScheme(.dark)
     }
 }
 

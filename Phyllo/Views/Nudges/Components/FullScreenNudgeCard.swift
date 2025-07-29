@@ -46,17 +46,11 @@ struct FullScreenNudgeCard: View {
                 // Main content
                 VStack(spacing: 32) {
                     // Icon
-                    ZStack {
-                        Circle()
-                            .fill(iconColor.opacity(0.15))
-                            .frame(width: 120, height: 120)
-                        
-                        Image(systemName: icon)
-                            .font(.system(size: 60))
-                            .foregroundColor(iconColor)
-                    }
-                    .scaleEffect(animateContent ? 1 : 0.5)
-                    .opacity(animateContent ? 1 : 0)
+                    Image(systemName: icon)
+                        .font(.system(size: 80, weight: .light))
+                        .foregroundColor(iconColor)
+                        .scaleEffect(animateContent ? 1 : 0.5)
+                        .opacity(animateContent ? 1 : 0)
                     
                     // Text content
                     VStack(spacing: 16) {

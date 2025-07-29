@@ -35,17 +35,11 @@ struct CompactNudgeCard: View {
                     Spacer()
                 }
                 
-                HStack(spacing: 16) {
+                HStack(spacing: 12) {
                     // Icon
-                    ZStack {
-                        Circle()
-                            .fill(iconColor.opacity(0.15))
-                            .frame(width: 48, height: 48)
-                        
-                        Image(systemName: icon)
-                            .font(.system(size: 24))
-                            .foregroundColor(iconColor)
-                    }
+                    Image(systemName: icon)
+                        .font(.system(size: 20, weight: .medium))
+                        .foregroundColor(iconColor)
                     
                     // Content
                     VStack(alignment: .leading, spacing: 4) {

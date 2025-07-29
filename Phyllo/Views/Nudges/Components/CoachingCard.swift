@@ -49,21 +49,15 @@ struct CoachingCard: View {
             // Header with avatar
             HStack(spacing: 12) {
                 // Animated avatar
-                ZStack {
-                    Circle()
-                        .fill(mood.backgroundColor)
-                        .frame(width: 44, height: 44)
-                    
-                    Image(systemName: avatarIcon)
-                        .font(.system(size: 24))
-                        .foregroundColor(mood.color)
-                        .rotationEffect(.degrees(typingAnimation ? 5 : -5))
-                        .animation(
-                            Animation.easeInOut(duration: 0.5)
-                                .repeatForever(autoreverses: true),
-                            value: typingAnimation
-                        )
-                }
+                Image(systemName: avatarIcon)
+                    .font(.system(size: 24, weight: .medium))
+                    .foregroundColor(mood.color)
+                    .rotationEffect(.degrees(typingAnimation ? 5 : -5))
+                    .animation(
+                        Animation.easeInOut(duration: 0.5)
+                            .repeatForever(autoreverses: true),
+                        value: typingAnimation
+                    )
                 
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Phyllo Coach")

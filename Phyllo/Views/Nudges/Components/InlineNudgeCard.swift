@@ -54,17 +54,11 @@ struct InlineNudgeCard: View {
     }
     
     private var standardView: some View {
-        HStack(spacing: 16) {
+        HStack(spacing: 12) {
             // Icon
-            ZStack {
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(iconColor.opacity(0.15))
-                    .frame(width: 48, height: 48)
-                
-                Image(systemName: icon)
-                    .font(.system(size: 24))
-                    .foregroundColor(iconColor)
-            }
+            Image(systemName: icon)
+                .font(.system(size: 22, weight: .medium))
+                .foregroundColor(iconColor)
             
             // Content
             VStack(alignment: .leading, spacing: 6) {
@@ -146,15 +140,9 @@ struct InlineNudgeCard: View {
     private var prominentView: some View {
         VStack(spacing: 20) {
             // Icon
-            ZStack {
-                Circle()
-                    .fill(iconColor.opacity(0.15))
-                    .frame(width: 80, height: 80)
-                
-                Image(systemName: icon)
-                    .font(.system(size: 40))
-                    .foregroundColor(iconColor)
-            }
+            Image(systemName: icon)
+                .font(.system(size: 56, weight: .light))
+                .foregroundColor(iconColor)
             
             // Content
             VStack(spacing: 12) {

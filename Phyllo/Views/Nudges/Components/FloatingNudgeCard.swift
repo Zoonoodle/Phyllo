@@ -21,7 +21,6 @@ struct FloatingNudgeCard: View {
     @State private var animateIn = false
     @State private var isDragging = false
     @State private var dragOffset: CGSize = .zero
-    @State private var isExpanded = false
     
     enum FloatingPosition {
         case topLeft, topRight, bottomLeft, bottomRight
@@ -46,21 +45,14 @@ struct FloatingNudgeCard: View {
         GeometryReader { geometry in
             ZStack(alignment: position.alignment) {
                 // Card content
-                VStack(spacing: 0) {
-                    if style == .minimal && !isExpanded {
-                        // Minimal circular button
-                        minimalView
-                    } else {
-                        // Full card
-                        fullCardView
-                    }
-                }
+                // Always show full card
+                fullCardView
                 .frame(maxWidth: style == .expanded ? nil : 320)
                 .background(
-                    RoundedRectangle(cornerRadius: isExpanded || style != .minimal ? 20 : 30)
+                    RoundedRectangle(cornerRadius: 20)
                         .fill(Color(red: 0.11, green: 0.11, blue: 0.12))
                         .overlay(
-                            RoundedRectangle(cornerRadius: isExpanded || style != .minimal ? 20 : 30)
+                            RoundedRectangle(cornerRadius: 20)
                                 .strokeBorder(Color.phylloBorder, lineWidth: 1)
                         )
                         .shadow(color: .black.opacity(0.3), radius: 20, x: 0, y: 10)
@@ -69,7 +61,6 @@ struct FloatingNudgeCard: View {
                 .scaleEffect(isDragging ? 0.95 : (animateIn ? 1 : 0.8))
                 .opacity(animateIn ? 1 : 0)
                 .animation(.spring(response: 0.4, dampingFraction: 0.8), value: animateIn)
-                .animation(.spring(response: 0.4, dampingFraction: 0.8), value: isExpanded)
                 .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isDragging)
                 .gesture(
                     DragGesture()
@@ -111,37 +102,14 @@ struct FloatingNudgeCard: View {
         }
     }
     
-    private var minimalView: some View {
-        Button(action: {
-            withAnimation {
-                isExpanded.toggle()
-            }
-        }) {
-            ZStack {
-                Circle()
-                    .fill(iconColor.opacity(0.15))
-                    .frame(width: 60, height: 60)
-                
-                Image(systemName: icon)
-                    .font(.system(size: 28))
-                    .foregroundColor(iconColor)
-            }
-        }
-    }
     
     private var fullCardView: some View {
         VStack(alignment: .leading, spacing: 16) {
             // Header
             HStack(spacing: 12) {
-                ZStack {
-                    Circle()
-                        .fill(iconColor.opacity(0.15))
-                        .frame(width: 44, height: 44)
-                    
-                    Image(systemName: icon)
-                        .font(.system(size: 22))
-                        .foregroundColor(iconColor)
-                }
+                Image(systemName: icon)
+                    .font(.system(size: 20, weight: .medium))
+                    .foregroundColor(iconColor)
                 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(title)
@@ -162,20 +130,14 @@ struct FloatingNudgeCard: View {
                 
                 // Close button
                 Button(action: {
-                    if style == .minimal && isExpanded {
-                        withAnimation {
-                            isExpanded = false
-                        }
-                    } else {
-                        withAnimation(.spring(response: 0.3)) {
-                            animateIn = false
-                        }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                            onDismiss()
-                        }
+                    withAnimation(.spring(response: 0.3)) {
+                        animateIn = false
+                    }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        onDismiss()
                     }
                 }) {
-                    Image(systemName: style == .minimal && isExpanded ? "chevron.down" : "xmark")
+                    Image(systemName: "xmark")
                         .font(.system(size: 14, weight: .medium))
                         .foregroundColor(.white.opacity(0.5))
                         .frame(width: 28, height: 28)

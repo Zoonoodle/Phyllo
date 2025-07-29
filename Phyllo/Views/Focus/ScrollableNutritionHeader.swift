@@ -22,6 +22,7 @@ struct ScrollableNutritionHeader: View {
             }
             .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
             .frame(height: 320)
+            .frame(maxWidth: .infinity)
             
             // Custom page indicator
             HStack(spacing: 8) {

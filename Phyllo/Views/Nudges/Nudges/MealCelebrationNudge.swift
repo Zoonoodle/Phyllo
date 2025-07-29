@@ -30,18 +30,11 @@ struct MealCelebrationNudge: View {
                     
                     VStack(spacing: 20) {
                         // Success icon with animation
-                        ZStack {
-                            Circle()
-                                .fill(Color.phylloAccent.opacity(0.15))
-                                .frame(width: 80, height: 80)
-                                .scaleEffect(animateContent ? 1 : 0)
-                            
-                            Image(systemName: "checkmark.circle.fill")
-                                .font(.system(size: 50))
-                                .foregroundColor(.phylloAccent)
-                                .scaleEffect(animateContent ? 1 : 0)
-                                .rotationEffect(.degrees(animateContent ? 0 : -30))
-                        }
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 64, weight: .regular))
+                            .foregroundColor(.phylloAccent)
+                            .scaleEffect(animateContent ? 1 : 0)
+                            .rotationEffect(.degrees(animateContent ? 0 : -30))
                         
                         VStack(spacing: 12) {
                             Text("Great job!")

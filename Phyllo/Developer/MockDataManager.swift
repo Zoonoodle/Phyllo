@@ -8,6 +8,14 @@
 import Foundation
 import SwiftUI
 
+// MARK: - Nudge State
+struct NudgeState {
+    var hasCompletedOnboarding = false
+    var lastNudgeTimestamps: [String: Date] = [:]
+    var dismissedNudges: Set<String> = []
+    var nudgeFrequency: [String: Int] = [:] // Track how many times each nudge has been shown
+}
+
 class MockDataManager: ObservableObject {
     static let shared = MockDataManager()
     
@@ -22,6 +30,9 @@ class MockDataManager: ObservableObject {
     
     // Today's meals
     @Published var todaysMeals: [LoggedMeal] = []
+    
+    // Nudge state
+    @Published var nudgeState = NudgeState()
     
     // MARK: - Initialization
     init() {

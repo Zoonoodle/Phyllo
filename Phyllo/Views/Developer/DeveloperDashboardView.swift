@@ -36,6 +36,9 @@ struct DeveloperDashboardView: View {
                             DashboardTab(title: "Data Viewer", icon: "doc.text", isSelected: selectedTab == 4) {
                                 selectedTab = 4
                             }
+                            DashboardTab(title: "Nudges", icon: "bell.badge", isSelected: selectedTab == 5) {
+                                selectedTab = 5
+                            }
                         }
                         .padding(.horizontal)
                     }
@@ -55,6 +58,8 @@ struct DeveloperDashboardView: View {
                                 ProfileTabView()
                             case 4:
                                 DataViewerTabView()
+                            case 5:
+                                NudgesDebugTabView()
                             default:
                                 EmptyView()
                             }
@@ -670,6 +675,176 @@ struct DataRow: View {
                 .foregroundColor(.white)
         }
         .padding(.vertical, 4)
+    }
+}
+
+// MARK: - Nudges Debug Tab
+struct NudgesDebugTabView: View {
+    @StateObject private var nudgeManager = NudgeManager.shared
+    @StateObject private var mockData = MockDataManager.shared
+    
+    var body: some View {
+        VStack(spacing: 20) {
+            // Current Nudge State
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Current State")
+                    .font(.headline)
+                    .foregroundColor(.white)
+                
+                VStack(spacing: 8) {
+                    HStack {
+                        Text("Active Nudge")
+                            .font(.system(size: 14))
+                            .foregroundColor(.white.opacity(0.7))
+                        Spacer()
+                        Text(nudgeManager.activeNudge?.id ?? "None")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.white)
+                    }
+                    
+                    HStack {
+                        Text("Queued Nudges")
+                            .font(.system(size: 14))
+                            .foregroundColor(.white.opacity(0.7))
+                        Spacer()
+                        Text("\(nudgeManager.queuedNudges.count)")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.white)
+                    }
+                    
+                    HStack {
+                        Text("Dismissed Nudges")
+                            .font(.system(size: 14))
+                            .foregroundColor(.white.opacity(0.7))
+                        Spacer()
+                        Text("\(nudgeManager.dismissedNudges.count)")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.white)
+                    }
+                }
+            }
+            .padding()
+            .background(Color.phylloElevated)
+            .cornerRadius(16)
+            
+            // Trigger Nudges
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Trigger Nudges")
+                    .font(.headline)
+                    .foregroundColor(.white)
+                VStack(spacing: 12) {
+                    // Tutorial
+                    Button(action: {
+                        nudgeManager.triggerTestNudge(.firstTimeTutorial(page: 1))
+                    }) {
+                        Label("Start Tutorial", systemImage: "sparkles")
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.phylloAccent)
+                            .foregroundColor(.black)
+                            .cornerRadius(12)
+                    }
+                    
+                    // Morning Check-In
+                    Button(action: {
+                        mockData.morningCheckIn = nil
+                        nudgeManager.triggerTestNudge(.morningCheckIn)
+                    }) {
+                        Label("Morning Check-In", systemImage: "sun.max.fill")
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.orange)
+                            .foregroundColor(.black)
+                            .cornerRadius(12)
+                    }
+                    
+                    // Meal Celebration
+                    Button(action: {
+                        let testMeal = LoggedMeal(
+                            name: "Test Meal",
+                            calories: 450,
+                            protein: 30,
+                            carbs: 45,
+                            fat: 15,
+                            timestamp: Date()
+                        )
+                        nudgeManager.triggerTestNudge(.mealLoggedCelebration(meal: testMeal))
+                    }) {
+                        Label("Meal Celebration", systemImage: "checkmark.circle.fill")
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.green)
+                            .foregroundColor(.black)
+                            .cornerRadius(12)
+                    }
+                    
+                    // Active Window
+                    Button(action: {
+                        if let window = mockData.mealWindows.first(where: { $0.isActive }) {
+                            nudgeManager.triggerTestNudge(.activeWindowReminder(window: window, timeRemaining: 45))
+                        }
+                    }) {
+                        Label("Active Window Reminder", systemImage: "clock.fill")
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.blue)
+                            .foregroundColor(.white)
+                            .cornerRadius(12)
+                    }
+                    
+                    // Missed Window
+                    Button(action: {
+                        if let window = mockData.mealWindows.first(where: { $0.isPast }) {
+                            nudgeManager.triggerTestNudge(.missedWindow(window: window))
+                        }
+                    }) {
+                        Label("Missed Window", systemImage: "exclamationmark.triangle.fill")
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.red)
+                            .foregroundColor(.white)
+                            .cornerRadius(12)
+                    }
+                }
+            }
+            .padding()
+            .background(Color.phylloElevated)
+            .cornerRadius(16)
+            
+            // Reset Functions
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Reset Functions")
+                    .font(.headline)
+                    .foregroundColor(.white)
+                VStack(spacing: 12) {
+                    Button(action: {
+                        nudgeManager.resetAllNudges()
+                    }) {
+                        Label("Reset All Nudges", systemImage: "arrow.counterclockwise")
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.phylloSurface)
+                            .foregroundColor(.white)
+                            .cornerRadius(12)
+                    }
+                    
+                    Button(action: {
+                        UserDefaults.standard.set(false, forKey: "hasCompletedOnboarding")
+                        UserDefaults.standard.removeObject(forKey: "lastMorningNudgeDate")
+                    }) {
+                        Label("Reset Onboarding", systemImage: "person.crop.circle.badge.xmark")
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.phylloSurface)
+                            .foregroundColor(.white)
+                            .cornerRadius(12)
+                    }
+                }
+            }
+            .padding()
+            .background(Color.phylloElevated)
+            .cornerRadius(16)
+        }
     }
 }
 

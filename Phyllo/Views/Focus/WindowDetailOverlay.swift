@@ -14,20 +14,21 @@ struct WindowDetailOverlay: View {
     @State private var animateContent = false
     
     var body: some View {
-        ZStack {
-            // Background that expands from banner
-            RoundedRectangle(cornerRadius: animateContent ? 0 : 16)
-                .fill(Color.phylloBackground)
-                .matchedGeometryEffect(
-                    id: "window-\(window.id)",
-                    in: animationNamespace,
-                    properties: .frame,
-                    isSource: false
-                )
-                .ignoresSafeArea(edges: animateContent ? .all : [])
-            
-            // Content
-            VStack(spacing: 0) {
+        GeometryReader { geometry in
+            ZStack {
+                // Background that expands from banner
+                RoundedRectangle(cornerRadius: animateContent ? 0 : 16)
+                    .fill(Color.phylloBackground)
+                    .matchedGeometryEffect(
+                        id: "window-\(window.id)",
+                        in: animationNamespace,
+                        properties: .frame,
+                        isSource: false
+                    )
+                    .ignoresSafeArea(edges: animateContent ? .all : [])
+                
+                // Content
+                VStack(spacing: 0) {
                 // Custom header with back button
                 HStack {
                     Button {
@@ -73,7 +74,7 @@ struct WindowDetailOverlay: View {
                             .frame(width: 44, height: 44)
                     }
                 }
-                .padding(.horizontal)
+                .padding(.horizontal, 30)
                 .padding(.top, 8)
                 .padding(.bottom, 16)
                 .background(Color.phylloBackground)
@@ -84,21 +85,25 @@ struct WindowDetailOverlay: View {
                     VStack(spacing: 24) {
                         // Scrollable nutrition header
                         ScrollableNutritionHeader(window: window)
-                            .padding(.horizontal)
+                            .padding(.horizontal, 30)
                         
                         // Logged foods section
                         WindowFoodsList(window: window)
-                            .padding(.horizontal)
+                            .padding(.horizontal, 30)
                         
                         // Window purpose section
                         WindowPurposeCard(window: window)
-                            .padding(.horizontal)
+                            .padding(.horizontal, 30)
                             .padding(.bottom, 32)
                     }
                     .padding(.top)
+                    .frame(maxWidth: geometry.size.width)
                 }
                 .opacity(animateContent ? 1 : 0)
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .onAppear {
             withAnimation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.1)) {

@@ -37,17 +37,11 @@ struct MorningCheckInNudge: View {
                     
                     VStack(spacing: 16) {
                         // Icon
-                        ZStack {
-                            Circle()
-                                .fill(Color.phylloAccent.opacity(0.15))
-                                .frame(width: 60, height: 60)
-                            
-                            Image(systemName: "sun.max.fill")
-                                .font(.system(size: 28))
-                                .foregroundColor(.phylloAccent)
-                        }
-                        .scaleEffect(animateContent ? 1 : 0.5)
-                        .opacity(animateContent ? 1 : 0)
+                        Image(systemName: "sun.max.fill")
+                            .font(.system(size: 48, weight: .medium))
+                            .foregroundColor(.phylloAccent)
+                            .scaleEffect(animateContent ? 1 : 0.5)
+                            .opacity(animateContent ? 1 : 0)
                         
                         VStack(spacing: 8) {
                             Text("Start Your Day Right")

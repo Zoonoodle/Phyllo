@@ -67,18 +67,97 @@ class NudgeManager: ObservableObject {
     }
     
     private func setupObservers() {
-        // For now, we'll set up basic observers
-        // In a real app, these would observe actual data changes
-        
-        // Check morning check-in status periodically
-        Timer.publish(every: 60, on: .main, in: .common)
-            .autoconnect()
-            .sink { [weak self] _ in
-                if MockDataManager.shared.morningCheckIn == nil {
-                    self?.triggerNudge(.morningCheckIn)
+        // Observe morning check-in status
+        MockDataManager.shared.$morningCheckIn
+            .sink { [weak self] checkIn in
+                guard let self = self else { return }
+                
+                // Only show morning nudge between 6 AM and 11 AM
+                let hour = Calendar.current.component(.hour, from: Date())
+                if checkIn == nil && hour >= 6 && hour < 11 {
+                    // Check if we haven't shown this nudge today
+                    let lastShown = UserDefaults.standard.object(forKey: "lastMorningNudgeDate") as? Date ?? Date.distantPast
+                    if !Calendar.current.isDateInToday(lastShown) {
+                        self.triggerNudge(.morningCheckIn)
+                        UserDefaults.standard.set(Date(), forKey: "lastMorningNudgeDate")
+                    }
                 }
             }
             .store(in: &cancellables)
+        
+        // Observe meal logging for celebrations
+        MockDataManager.shared.$todaysMeals
+            .dropFirst() // Ignore initial value
+            .sink { [weak self] meals in
+                guard let self = self, !meals.isEmpty else { return }
+                
+                // Check if a new meal was added
+                if let lastMeal = meals.last {
+                    self.triggerNudge(.mealLoggedCelebration(meal: lastMeal))
+                }
+            }
+            .store(in: &cancellables)
+        
+        // Observe meal windows for reminders
+        Timer.publish(every: 60, on: .main, in: .common)
+            .autoconnect()
+            .sink { [weak self] _ in
+                self?.checkWindowStatus()
+            }
+            .store(in: &cancellables)
+    }
+    
+    private func checkWindowStatus() {
+        let windows = MockDataManager.shared.mealWindows
+        let meals = MockDataManager.shared.todaysMeals
+        let currentTime = MockDataManager.shared.currentSimulatedTime
+        
+        for window in windows {
+            // Check for active window reminder
+            if window.isActive {
+                let windowMeals = meals.filter { meal in
+                    meal.timestamp >= window.startTime && meal.timestamp <= window.endTime
+                }
+                
+                // If no meals logged and window has been active for 15+ minutes
+                if windowMeals.isEmpty {
+                    let minutesActive = Int(currentTime.timeIntervalSince(window.startTime) / 60)
+                    if minutesActive >= 15 {
+                        let timeRemaining = Int(window.endTime.timeIntervalSince(currentTime) / 60)
+                        if timeRemaining > 0 && !hasShownNudgeRecently(for: "reminder_\(window.id)") {
+                            triggerNudge(.activeWindowReminder(window: window, timeRemaining: timeRemaining))
+                            markNudgeAsShown(for: "reminder_\(window.id)")
+                        }
+                    }
+                }
+            }
+            
+            // Check for missed window
+            if window.isPast && window.endTime.timeIntervalSince(currentTime) > -300 { // Within 5 minutes of closing
+                let windowMeals = meals.filter { meal in
+                    meal.timestamp >= window.startTime && meal.timestamp <= window.endTime
+                }
+                
+                if windowMeals.isEmpty && !hasShownNudgeRecently(for: "missed_\(window.id)") {
+                    triggerNudge(.missedWindow(window: window))
+                    markNudgeAsShown(for: "missed_\(window.id)")
+                }
+            }
+        }
+    }
+    
+    private func hasShownNudgeRecently(for nudgeId: String) -> Bool {
+        let key = "nudgeShown_\(nudgeId)"
+        if let lastShown = UserDefaults.standard.object(forKey: key) as? Date {
+            // Don't show same nudge within 30 minutes
+            return Date().timeIntervalSince(lastShown) < 1800
+        }
+        return false
+    }
+    
+    private func markNudgeAsShown(for nudgeId: String) {
+        let key = "nudgeShown_\(nudgeId)"
+        UserDefaults.standard.set(Date(), forKey: key)
     }
     
     func triggerNudge(_ nudge: NudgeType) {

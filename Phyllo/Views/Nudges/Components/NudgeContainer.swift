@@ -13,6 +13,14 @@ struct NudgeContainer: View {
     
     var body: some View {
         ZStack {
+            // Background dimming overlay
+            if nudgeManager.activeNudge != nil {
+                Color.black.opacity(0.5)
+                    .ignoresSafeArea()
+                    .transition(.opacity)
+                    .zIndex(999)
+            }
+            
             if let activeNudge = nudgeManager.activeNudge {
                 switch activeNudge {
                 case .morningCheckIn:
@@ -36,16 +44,35 @@ struct NudgeContainer: View {
                     .transition(.opacity.combined(with: .scale(scale: 0.9)))
                     
                 case .firstTimeTutorial(let page):
-                    // TODO: Implement FirstTimeTutorialNudge
-                    EmptyView()
+                    FirstTimeTutorialNudge(page: page) { nextPage in
+                        nudgeManager.dismissCurrentNudge()
+                        if let nextPage = nextPage {
+                            nudgeManager.triggerNudge(.firstTimeTutorial(page: nextPage))
+                        }
+                    }
+                    .zIndex(1000)
+                    .transition(.opacity.combined(with: .scale(scale: 0.9)))
                     
                 case .missedWindow(let window):
-                    // TODO: Implement MissedWindowNudge
-                    EmptyView()
+                    MissedWindowNudge(window: window) { ate in
+                        nudgeManager.dismissCurrentNudge()
+                        if ate {
+                            // Switch to scan tab to log meal
+                            NotificationCenter.default.post(name: .switchToScanTab, object: nil)
+                        }
+                    }
+                    .zIndex(1000)
+                    .transition(.opacity.combined(with: .scale(scale: 0.9)))
                     
                 case .activeWindowReminder(let window, let timeRemaining):
-                    // TODO: Implement ActiveWindowNudge
-                    EmptyView()
+                    ActiveWindowNudge(
+                        window: window,
+                        timeRemaining: timeRemaining
+                    ) {
+                        nudgeManager.dismissCurrentNudge()
+                    }
+                    .zIndex(1000)
+                    .transition(.opacity.combined(with: .scale(scale: 0.9)))
                 }
             }
         }

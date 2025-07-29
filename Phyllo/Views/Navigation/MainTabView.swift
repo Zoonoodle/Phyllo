@@ -38,6 +38,17 @@ struct MainTabView: View {
         .sheet(isPresented: $showDeveloperDashboard) {
             DeveloperDashboardView()
         }
+        .onReceive(NotificationCenter.default.publisher(for: .switchToScanTab)) { _ in
+            selectedTab = 2 // Switch to scan tab
+        }
+        .onAppear {
+            // Check if first time user
+            if !UserDefaults.standard.bool(forKey: "hasCompletedOnboarding") {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    NudgeManager.shared.triggerNudge(.firstTimeTutorial(page: 1))
+                }
+            }
+        }
     }
 }
 

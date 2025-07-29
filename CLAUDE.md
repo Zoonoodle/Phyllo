@@ -35,6 +35,70 @@ Whenever you add or change ANY code:
 4. NEVER commit or finish a task without confirming the build succeeds
 5. Fix ALL build errors before marking any task as complete
 
+### **Simplified Git Workflow**
+
+#### **Commit-Only Strategy**
+Since you're working solo and reviewing all changes, we use a simplified workflow:
+- Work directly on main branch
+- Claude Code ALWAYS commits after completing any feature/fix
+- Clear, descriptive commit messages
+- No branches, no PRs, no issues
+
+#### **Commit Message Format**
+```
+feat: Add new feature
+fix: Fix bug  
+refactor: Restructure code
+docs: Update documentation
+style: Format code
+test: Add tests
+chore: Update dependencies
+```
+
+#### **Claude Code Auto-Commit Rules**
+
+1. **After Every Feature/Fix:**
+   - Run xcodebuild to ensure it builds
+   - Commit ALL changes with descriptive message
+   - Push to GitHub automatically
+
+2. **Commit Examples:**
+   ```bash
+   git commit -m "feat: add voice logging to scan tab"
+   git commit -m "fix: correct meal window timing calculation"
+   git commit -m "refactor: simplify navigation structure"
+   ```
+
+3. **What Gets Committed:**
+   - All code changes
+   - Updated documentation
+   - New assets/resources
+   - Configuration changes
+
+#### **Your Workflow**
+
+1. **Start coding session:**
+   ```
+   "Add voice logging to the scan tab"
+   ```
+
+2. **Claude Code will:**
+   - Implement the feature
+   - Test with xcodebuild
+   - Commit with descriptive message
+   - Push to GitHub
+
+3. **You just:**
+   - Describe what you want
+   - Review the implementation
+   - Continue with next feature
+
+#### **Important Notes**
+- Claude Code will NEVER ask about committing - it's automatic
+- Every completed feature = one commit
+- Failed builds = no commit until fixed
+- You can always review commits with `git log`
+
 ---
 
 ## 🎯 **Key Improvements Over PlateUp**
@@ -533,6 +597,83 @@ The Focus tab is the heart of Phyllo, displaying critical nutrition information 
 - Add meals throughout simulated day
 - Test with different goal combinations
 - Reset data between test scenarios
+
+---
+
+## 📝 **Claude Code Usage Guidelines**
+
+### **Session Best Practices**
+
+1. **Start of Session Checklist**
+   - Current git status
+   - Any failing builds
+   - Recent commits context
+
+2. **Task Scoping**
+   - One feature/fix per commit
+   - Complete features before starting new ones
+   - Document any technical debt found
+
+3. **Quality Checks**
+   - Run build after every major change
+   - Test UI changes in simulator
+   - Verify no regression in existing features
+   - Check for proper error handling
+
+4. **Communication**
+   - Be specific about what you want
+   - Provide context about user needs
+   - Share examples of desired behavior
+   - Clarify any ambiguous requirements
+
+### **Common Commands Reference**
+
+```bash
+# Git essentials (Claude Code handles these automatically)
+git status                          # Current state
+git add -A                          # Stage all changes
+git commit -m "type: message"       # Commit changes
+git push                            # Push to GitHub
+git log --oneline -10               # View recent commits
+
+# Build and test
+xcodebuild -scheme Phyllo -sdk iphonesimulator
+xcodebuild test -scheme Phyllo -destination 'platform=iOS Simulator,name=iPhone 16 Pro'
+
+# Project navigation
+open Phyllo.xcodeproj              # Open in Xcode
+find . -name "*.swift" | grep -i "voice"  # Find files
+```
+
+### **Simple Prompt Examples**
+
+**New Feature:**
+```
+"Add voice logging to the scan tab"
+```
+
+**Bug Fix:**
+```
+"Fix the meal window timing calculation bug"
+```
+
+**UI Tweak:**
+```
+"Increase spacing between cards in Focus tab"
+```
+
+**Refactoring:**
+```
+"Refactor the navigation structure to be cleaner"
+```
+
+### **What Happens Automatically**
+
+1. Claude Code implements your request
+2. Runs xcodebuild to verify it works
+3. Commits all changes with descriptive message
+4. Pushes to GitHub
+5. You can review changes anytime with `git log`
 
 ---
 
