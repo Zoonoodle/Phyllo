@@ -242,8 +242,8 @@ struct TimelineHourRow: View {
     @ViewBuilder
     private var timelineContent: some View {
         ZStack(alignment: .topLeading) {
-            // Hour divider
-            if !isLastHour {
+            // Hour divider - only show if there's no window banner and no meal indicators near the top
+            if !isLastHour && windowForHour == nil && !hasMealIndicatorsNearTop() {
                 hourDivider
                     .zIndex(0)
             }
@@ -416,6 +416,27 @@ struct TimelineHourRow: View {
     private func getCurrentMinuteOffset() -> CGFloat {
         let minutes = Calendar.current.component(.minute, from: currentTime)
         return CGFloat(minutes) / 60.0 * hourHeight
+    }
+    
+    // Check if there are meal indicators near the top of the hour
+    private func hasMealIndicatorsNearTop() -> Bool {
+        let mealCategories = categorizeMeals()
+        
+        // Check if any meal indicators are within the first 10 minutes of the hour
+        for indicator in mealCategories.indicators {
+            if indicator.offset < 0.17 { // 0.17 = approximately 10 minutes / 60 minutes
+                return true
+            }
+        }
+        
+        // Also check analyzing meals
+        for analyzingMeal in analyzingMeals {
+            if analyzingMeal.offset < 0.17 {
+                return true
+            }
+        }
+        
+        return false
     }
 }
 
