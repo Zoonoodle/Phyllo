@@ -27,7 +27,7 @@ struct ScheduleView: View {
                     showDeveloperDashboard: $showDeveloperDashboard
                 )
                 .background(Color.phylloBackground)
-                .zIndex(2) // Keep header above everything
+                .zIndex(2) // Keep header above timeline content
                 .opacity(showWindowDetail ? 0 : 1)
                 
                 // Timeline view

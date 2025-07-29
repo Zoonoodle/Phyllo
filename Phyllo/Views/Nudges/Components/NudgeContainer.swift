@@ -18,7 +18,7 @@ struct NudgeContainer: View {
                 Color.black.opacity(0.3)
                     .ignoresSafeArea()
                     .transition(.opacity)
-                    .zIndex(999)
+                    .zIndex(10000)
             }
             
             if let activeNudge = nudgeManager.activeNudge {
@@ -33,14 +33,14 @@ struct NudgeContainer: View {
                             nudgeManager.dismissCurrentNudge()
                         }
                     )
-                    .zIndex(1000)
+                    .zIndex(10001)
                     .transition(.opacity.combined(with: .scale(scale: 0.9)))
                     
                 case .mealLoggedCelebration(let meal):
                     MealCelebrationNudge(meal: meal) {
                         nudgeManager.dismissCurrentNudge()
                     }
-                    .zIndex(1000)
+                    .zIndex(10001)
                     .transition(.opacity.combined(with: .scale(scale: 0.9)))
                     
                 case .firstTimeTutorial(let page):
@@ -50,7 +50,7 @@ struct NudgeContainer: View {
                             nudgeManager.triggerNudge(.firstTimeTutorial(page: nextPage))
                         }
                     }
-                    .zIndex(1000)
+                    .zIndex(10001)
                     .transition(.opacity.combined(with: .scale(scale: 0.9)))
                     
                 case .missedWindow(let window):
@@ -61,7 +61,7 @@ struct NudgeContainer: View {
                             NotificationCenter.default.post(name: .switchToScanTab, object: nil)
                         }
                     }
-                    .zIndex(1000)
+                    .zIndex(10001)
                     .transition(.opacity.combined(with: .scale(scale: 0.9)))
                     
                 case .activeWindowReminder(let window, let timeRemaining):
@@ -71,7 +71,7 @@ struct NudgeContainer: View {
                     ) {
                         nudgeManager.dismissCurrentNudge()
                     }
-                    .zIndex(1000)
+                    .zIndex(10001)
                     .transition(.opacity.combined(with: .scale(scale: 0.9)))
                 }
             }
@@ -85,7 +85,9 @@ struct NudgeContainerModifier: ViewModifier {
     func body(content: Content) -> some View {
         ZStack {
             content
+                .zIndex(0)
             NudgeContainer()
+                .zIndex(10000)
         }
     }
 }
