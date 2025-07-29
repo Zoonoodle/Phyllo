@@ -9,6 +9,7 @@ import SwiftUI
 
 struct ScheduleView: View {
     @Binding var showDeveloperDashboard: Bool
+    @Binding var scrollToAnalyzingMeal: AnalyzingMeal?
     @StateObject private var mockData = MockDataManager.shared
     @State private var selectedDate = Date()
     @State private var selectedWindow: MealWindow?
@@ -33,7 +34,8 @@ struct ScheduleView: View {
                 TimelineView(
                     selectedWindow: $selectedWindow,
                     showWindowDetail: $showWindowDetail,
-                    animationNamespace: animationNamespace
+                    animationNamespace: animationNamespace,
+                    scrollToAnalyzingMeal: $scrollToAnalyzingMeal
                 )
                 .opacity(showWindowDetail ? 0 : 1)
             }
@@ -59,6 +61,10 @@ struct ScheduleView: View {
 
 #Preview {
     @Previewable @State var showDeveloperDashboard = false
-    ScheduleView(showDeveloperDashboard: $showDeveloperDashboard)
-        .preferredColorScheme(.dark)
+    @Previewable @State var scrollToAnalyzingMeal: AnalyzingMeal?
+    ScheduleView(
+        showDeveloperDashboard: $showDeveloperDashboard,
+        scrollToAnalyzingMeal: $scrollToAnalyzingMeal
+    )
+    .preferredColorScheme(.dark)
 }

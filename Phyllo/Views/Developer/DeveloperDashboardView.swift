@@ -216,6 +216,34 @@ struct MockMealsTabView: View {
                         .foregroundColor(.white)
                         .cornerRadius(12)
                 }
+                
+                Button(action: {
+                    // Start analyzing meal and navigate to timeline
+                    let analyzingMeal = mockData.startAnalyzingMeal()
+                    NotificationCenter.default.post(
+                        name: .switchToTimelineWithScroll,
+                        object: analyzingMeal
+                    )
+                    
+                    // Simulate completion after 3 seconds
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                        let result = analyzingMeal.toLoggedMeal(
+                            name: "Test Analyzed Meal",
+                            calories: 400,
+                            protein: 30,
+                            carbs: 40,
+                            fat: 15
+                        )
+                        mockData.completeAnalyzingMeal(analyzingMeal, with: result)
+                    }
+                }) {
+                    Label("Test Analyzing Meal", systemImage: "waveform")
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.blue.opacity(0.8))
+                        .foregroundColor(.white)
+                        .cornerRadius(12)
+                }
             }
             
             // Current Meals

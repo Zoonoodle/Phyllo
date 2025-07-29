@@ -31,6 +31,9 @@ class MockDataManager: ObservableObject {
     // Today's meals
     @Published var todaysMeals: [LoggedMeal] = []
     
+    // Analyzing meals (in progress)
+    @Published var analyzingMeals: [AnalyzingMeal] = []
+    
     // Nudge state
     @Published var nudgeState = NudgeState()
     
@@ -217,6 +220,43 @@ class MockDataManager: ObservableObject {
         )
         todaysMeals.append(meal)
         todaysMeals.sort { $0.timestamp < $1.timestamp }
+    }
+    
+    // MARK: - Analyzing Meals Management
+    func startAnalyzingMeal(imageData: Data? = nil, voiceDescription: String? = nil) -> AnalyzingMeal {
+        let timestamp = TimeProvider.shared.currentTime
+        let targetWindow = windowForTimestamp(timestamp)
+        
+        let analyzingMeal = AnalyzingMeal(
+            timestamp: timestamp,
+            windowId: targetWindow?.id,
+            imageData: imageData,
+            voiceDescription: voiceDescription
+        )
+        
+        analyzingMeals.append(analyzingMeal)
+        return analyzingMeal
+    }
+    
+    func completeAnalyzingMeal(_ analyzingMeal: AnalyzingMeal, with result: LoggedMeal) {
+        // Remove from analyzing meals
+        analyzingMeals.removeAll { $0.id == analyzingMeal.id }
+        
+        // Add to logged meals
+        todaysMeals.append(result)
+        todaysMeals.sort { $0.timestamp < $1.timestamp }
+        
+        // Trigger redistribution after adding meal
+        redistributeWindows()
+    }
+    
+    func cancelAnalyzingMeal(_ analyzingMeal: AnalyzingMeal) {
+        analyzingMeals.removeAll { $0.id == analyzingMeal.id }
+    }
+    
+    // Check if there's an analyzing meal for a specific window
+    func analyzingMealInWindow(_ window: MealWindow) -> AnalyzingMeal? {
+        analyzingMeals.first { $0.windowId == window.id }
     }
     
     // MARK: - Computed Properties

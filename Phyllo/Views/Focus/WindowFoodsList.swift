@@ -19,6 +19,11 @@ struct WindowFoodsList: View {
         }
     }
     
+    // Check if there's an analyzing meal for this window
+    private var analyzingMeal: AnalyzingMeal? {
+        mockData.analyzingMealInWindow(window)
+    }
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             // Section header
@@ -42,14 +47,29 @@ struct WindowFoodsList: View {
                 }
             }
             
-            if windowMeals.isEmpty {
+            if windowMeals.isEmpty && analyzingMeal == nil {
                 // Empty state
                 EmptyFoodsView()
             } else {
                 // Food items
                 VStack(spacing: 12) {
+                    // Show analyzing meal if present
+                    if let analyzing = analyzingMeal {
+                        AnalyzingMealCard(timestamp: analyzing.timestamp)
+                            .transition(.asymmetric(
+                                insertion: .scale.combined(with: .opacity),
+                                removal: .opacity
+                            ))
+                    }
+                    
+                    // Show logged meals
                     ForEach(windowMeals) { meal in
                         FoodItemCard(meal: meal)
+                            .transition(.asymmetric(
+                                insertion: .scale(scale: 0.95).combined(with: .opacity),
+                                removal: .opacity
+                            ))
+                            .animation(.spring(response: 0.4, dampingFraction: 0.8), value: windowMeals.count)
                     }
                 }
             }

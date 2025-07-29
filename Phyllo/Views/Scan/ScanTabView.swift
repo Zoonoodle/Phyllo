@@ -17,6 +17,8 @@ struct ScanTabView: View {
     @State private var showResults = false
     @State private var captureAnimation = false
     @State private var capturedImage: UIImage?
+    @State private var currentAnalyzingMeal: AnalyzingMeal?
+    @StateObject private var mockData = MockDataManager.shared
     
     enum ScanMode: String, CaseIterable {
         case photo = "Photo"
@@ -124,8 +126,7 @@ struct ScanTabView: View {
                 VoiceInputView()
                     .onDisappear {
                         if !showVoiceInput {
-                            // Voice input completed, show loading
-                            showLoading = true
+                            // Voice input completed, start analyzing
                             simulateAIProcessing()
                         }
                     }
@@ -169,27 +170,44 @@ struct ScanTabView: View {
                 // For photo mode, show voice input overlay
                 showVoiceInput = true
             } else if selectedMode == .voice {
-                // For voice-only mode, skip to loading
-                showLoading = true
+                // For voice-only mode, start analyzing immediately
                 simulateAIProcessing()
             } else {
-                // For barcode, go directly to results
-                showResults = true
+                // For barcode, start analyzing
+                simulateAIProcessing()
             }
         }
     }
     
     private func simulateAIProcessing() {
-        // Simulate AI processing time
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-            showLoading = false
+        // Start analyzing meal
+        let analyzingMeal = mockData.startAnalyzingMeal(
+            imageData: capturedImage?.pngData(),
+            voiceDescription: nil
+        )
+        currentAnalyzingMeal = analyzingMeal
+        
+        // Navigate to timeline and scroll to analyzing meal
+        showLoading = false
+        NotificationCenter.default.post(
+            name: .switchToTimelineWithScroll,
+            object: analyzingMeal
+        )
+        
+        // Simulate AI processing time in background
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+            // Convert to logged meal
+            let result = analyzingMeal.toLoggedMeal(
+                name: "Grilled Chicken Salad",
+                calories: 450,
+                protein: 35,
+                carbs: 25,
+                fat: 20
+            )
             
-            // Randomly decide if clarification is needed
-            if Bool.random() {
-                showClarification = true
-            } else {
-                showResults = true
-            }
+            // Complete the analyzing meal
+            mockData.completeAnalyzingMeal(analyzingMeal, with: result)
+            currentAnalyzingMeal = nil
         }
     }
 }

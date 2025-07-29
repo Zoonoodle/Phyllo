@@ -60,6 +60,7 @@ struct ActiveWindowNudge: View {
 // Notification name for tab switching
 extension Notification.Name {
     static let switchToScanTab = Notification.Name("switchToScanTab")
+    static let switchToTimelineWithScroll = Notification.Name("switchToTimelineWithScroll")
 }
 
 // Preview

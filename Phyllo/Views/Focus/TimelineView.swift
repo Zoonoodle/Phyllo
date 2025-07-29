@@ -12,6 +12,7 @@ struct TimelineView: View {
     @Binding var selectedWindow: MealWindow?
     @Binding var showWindowDetail: Bool
     let animationNamespace: Namespace.ID
+    @Binding var scrollToAnalyzingMeal: AnalyzingMeal?
     
     @StateObject private var mockData = MockDataManager.shared
     @StateObject private var timeProvider = TimeProvider.shared
@@ -36,6 +37,7 @@ struct TimelineView: View {
                             currentTime: currentTime,
                             windows: mockData.mealWindows,
                             meals: mealsForTimeRange(hour: hour),
+                            analyzingMeals: analyzingMealsForTimeRange(hour: hour),
                             isLastHour: hour == hours.last,
                             selectedWindow: $selectedWindow,
                             showWindowDetail: $showWindowDetail,
@@ -67,6 +69,22 @@ struct TimelineView: View {
                     currentTime = newTime
                 }
             }
+            .onChange(of: scrollToAnalyzingMeal) { _, analyzingMeal in
+                if let meal = analyzingMeal {
+                    // Calculate which hour the meal is in
+                    let targetHour = Calendar.current.component(.hour, from: meal.timestamp)
+                    
+                    // Scroll to that hour with animation
+                    withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                        proxy.scrollTo(targetHour, anchor: .center)
+                    }
+                    
+                    // Clear the binding after scrolling
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                        scrollToAnalyzingMeal = nil
+                    }
+                }
+            }
         }
     }
     
@@ -80,6 +98,21 @@ struct TimelineView: View {
         let endOfHour = calendar.date(byAdding: .hour, value: 1, to: startOfHour)!
         
         return mockData.todaysMeals.compactMap { meal in
+            if meal.timestamp >= startOfHour && meal.timestamp < endOfHour {
+                let minutes = calendar.component(.minute, from: meal.timestamp)
+                let offset = CGFloat(minutes) / 60.0 // 0.0 to 1.0 representing position in hour
+                return (meal: meal, offset: offset)
+            }
+            return nil
+        }
+    }
+    
+    private func analyzingMealsForTimeRange(hour: Int) -> [(meal: AnalyzingMeal, offset: CGFloat)] {
+        let calendar = Calendar.current
+        let startOfHour = calendar.date(bySettingHour: hour, minute: 0, second: 0, of: timeProvider.currentTime)!
+        let endOfHour = calendar.date(byAdding: .hour, value: 1, to: startOfHour)!
+        
+        return mockData.analyzingMeals.compactMap { meal in
             if meal.timestamp >= startOfHour && meal.timestamp < endOfHour {
                 let minutes = calendar.component(.minute, from: meal.timestamp)
                 let offset = CGFloat(minutes) / 60.0 // 0.0 to 1.0 representing position in hour
@@ -131,6 +164,7 @@ struct TimelineHourRow: View {
     let currentTime: Date
     let windows: [MealWindow]
     let meals: [(meal: LoggedMeal, offset: CGFloat)]
+    let analyzingMeals: [(meal: AnalyzingMeal, offset: CGFloat)]
     let isLastHour: Bool
     @Binding var selectedWindow: MealWindow?
     @Binding var showWindowDetail: Bool
@@ -165,10 +199,12 @@ struct TimelineHourRow: View {
         // Add height for window if present
         if let window = windowForHour {
             let windowMeals = mockData.mealsInWindow(window)
+            let analyzingMeal = mockData.analyzingMealInWindow(window)
             let baseWindowHeight: CGFloat = window.isActive ? 82 : 64
             let mealHeight: CGFloat = 48 // Increased for better spacing
             let mealSectionPadding: CGFloat = 20 // Padding for meals section
-            let totalMealHeight = CGFloat(windowMeals.count) * mealHeight + (windowMeals.isEmpty ? 0 : mealSectionPadding)
+            let mealCount = windowMeals.count + (analyzingMeal != nil ? 1 : 0)
+            let totalMealHeight = CGFloat(mealCount) * mealHeight + (mealCount > 0 ? mealSectionPadding : 0)
             let windowHeight = baseWindowHeight + totalMealHeight
             
             // Calculate position offset for the window
@@ -179,10 +215,12 @@ struct TimelineHourRow: View {
             height = max(height, windowOffset + windowHeight + 20)
         }
         
-        // Add height for standalone meals
+        // Add height for standalone meals and analyzing meals
         let standaloneMeals = meals.filter { $0.meal.windowId == nil }
-        if !standaloneMeals.isEmpty {
-            height = max(height, baseHourHeight + CGFloat(standaloneMeals.count) * 60)
+        let standaloneAnalyzing = analyzingMeals.filter { $0.meal.windowId == nil }
+        let totalStandalone = standaloneMeals.count + standaloneAnalyzing.count
+        if totalStandalone > 0 {
+            height = max(height, baseHourHeight + CGFloat(totalStandalone) * 60)
         }
         
         return height
@@ -223,7 +261,7 @@ struct TimelineHourRow: View {
             if isCurrentHour && windowForHour == nil {
                 CurrentTimeMarker()
                     .offset(y: getCurrentMinuteOffset())
-                    .zIndex(3)
+                    .zIndex(4) // Higher z-index to appear above everything
             }
         }
         .frame(height: hourHeight)
@@ -278,6 +316,16 @@ struct TimelineHourRow: View {
             .offset(y: item.offset * hourHeight)
         }
         
+        // Show analyzing meals
+        ForEach(analyzingMeals, id: \.meal.id) { item in
+            AnalyzingMealRow(timestamp: item.meal.timestamp)
+                .offset(y: item.offset * hourHeight)
+                .transition(.asymmetric(
+                    insertion: .scale.combined(with: .opacity),
+                    removal: .opacity
+                ))
+        }
+        
         // Group and show standalone meals
         let groups = groupMeals(mealCategories.standalone)
         ForEach(Array(groups.enumerated()), id: \.offset) { _, group in
@@ -289,6 +337,10 @@ struct TimelineHourRow: View {
                 // Show single meal
                 MealRow(meal: meal)
                     .offset(y: group.offset * hourHeight)
+                    .transition(.asymmetric(
+                        insertion: .scale(scale: 0.95).combined(with: .opacity),
+                        removal: .opacity
+                    ))
             }
         }
     }
@@ -442,7 +494,11 @@ struct MealRow: View {
         .padding(.vertical, 8)
         .background(
             RoundedRectangle(cornerRadius: 8)
-                .fill(Color.white.opacity(0.03))
+                .fill(Color.phylloBackground)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.white.opacity(0.03))
+                )
         )
     }
     
@@ -485,11 +541,17 @@ struct CurrentTimeMarker: View {
             Rectangle()
                 .fill(Color.phylloAccent.opacity(0.8))
                 .frame(height: 1)
+                .frame(maxWidth: .infinity)
             
             Text("NOW")
                 .font(.system(size: 9, weight: .bold))
                 .foregroundColor(.phylloAccent)
-                .padding(.leading, 4)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(
+                    Capsule()
+                        .fill(Color.phylloBackground)
+                )
         }
     }
 }
@@ -538,7 +600,11 @@ struct MealTimeIndicator: View {
             .padding(.vertical, 4)
             .background(
                 Capsule()
-                    .fill(Color.white.opacity(0.05))
+                    .fill(Color.phylloBackground)
+                    .overlay(
+                        Capsule()
+                            .fill(Color.white.opacity(0.05))
+                    )
                     .overlay(
                         Capsule()
                             .strokeBorder(
@@ -626,7 +692,11 @@ struct GroupedMealsRow: View {
             .padding(.vertical, 10)
             .background(
                 RoundedRectangle(cornerRadius: 8)
-                    .fill(Color.white.opacity(0.05))
+                    .fill(Color.phylloBackground)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color.white.opacity(0.05))
+                    )
                     .overlay(
                         RoundedRectangle(cornerRadius: 8)
                             .strokeBorder(Color.white.opacity(0.1), lineWidth: 1)
@@ -823,6 +893,7 @@ struct MealRowWithWindowIndicator: View {
 #Preview {
     @Previewable @State var selectedWindow: MealWindow?
     @Previewable @State var showWindowDetail = false
+    @Previewable @State var scrollToAnalyzingMeal: AnalyzingMeal?
     @Previewable @Namespace var animationNamespace
     
     ZStack {
@@ -831,7 +902,8 @@ struct MealRowWithWindowIndicator: View {
         TimelineView(
             selectedWindow: $selectedWindow,
             showWindowDetail: $showWindowDetail,
-            animationNamespace: animationNamespace
+            animationNamespace: animationNamespace,
+            scrollToAnalyzingMeal: $scrollToAnalyzingMeal
         )
     }
     .onAppear {

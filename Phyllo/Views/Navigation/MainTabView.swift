@@ -10,6 +10,7 @@ import SwiftUI
 struct MainTabView: View {
     @State private var selectedTab = 0
     @State private var showDeveloperDashboard = false
+    @State private var scrollToAnalyzingMeal: AnalyzingMeal?
     
     var body: some View {
         ZStack {
@@ -18,13 +19,19 @@ struct MainTabView: View {
             // Content based on selected tab
             switch selectedTab {
             case 0:
-                ScheduleView(showDeveloperDashboard: $showDeveloperDashboard)
+                ScheduleView(
+                    showDeveloperDashboard: $showDeveloperDashboard,
+                    scrollToAnalyzingMeal: $scrollToAnalyzingMeal
+                )
             case 1:
                 MomentumTabView(showDeveloperDashboard: $showDeveloperDashboard)
             case 2:
                 ScanView(showDeveloperDashboard: $showDeveloperDashboard)
             default:
-                ScheduleView(showDeveloperDashboard: $showDeveloperDashboard)
+                ScheduleView(
+                    showDeveloperDashboard: $showDeveloperDashboard,
+                    scrollToAnalyzingMeal: $scrollToAnalyzingMeal
+                )
             }
             
             // Custom tab bar at bottom
@@ -40,6 +47,12 @@ struct MainTabView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: .switchToScanTab)) { _ in
             selectedTab = 2 // Switch to scan tab
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .switchToTimelineWithScroll)) { notification in
+            if let analyzingMeal = notification.object as? AnalyzingMeal {
+                selectedTab = 0 // Switch to timeline tab
+                scrollToAnalyzingMeal = analyzingMeal
+            }
         }
         .onAppear {
             // Check if first time user
