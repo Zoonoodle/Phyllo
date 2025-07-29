@@ -138,7 +138,6 @@ struct FoodItemCard: View {
                     )
             )
         }
-        }
         .buttonStyle(PlainButtonStyle())
         .sheet(isPresented: $showFoodAnalysis) {
             NavigationStack {

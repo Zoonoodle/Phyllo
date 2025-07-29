@@ -12,6 +12,7 @@ struct ClarificationQuestionsView: View {
     @State private var currentQuestionIndex = 0
     @State private var selectedOptions: [Int: String] = [:]
     @State private var showResults = false
+    @StateObject private var mockData = MockDataManager.shared
     
     // Mock questions
     let questions = [
@@ -149,7 +150,9 @@ struct ClarificationQuestionsView: View {
         }
         .preferredColorScheme(.dark)
         .sheet(isPresented: $showResults) {
-            FoodAnalysisView()
+            NavigationStack {
+                FoodAnalysisView(meal: createMockMeal(), isFromScan: true)
+            }
         }
     }
     
@@ -277,6 +280,19 @@ struct ClarificationQuestionsView: View {
         } else {
             showResults = true
         }
+    }
+    
+    private func createMockMeal() -> LoggedMeal {
+        // Create a mock meal based on the selected options
+        return LoggedMeal(
+            name: "Custom Prepared Meal",
+            calories: 450,
+            protein: 25,
+            carbs: 45,
+            fat: 18,
+            timestamp: Date(),
+            windowId: mockData.activeWindow?.id
+        )
     }
 }
 
