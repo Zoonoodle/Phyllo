@@ -235,6 +235,7 @@ struct ExpandableWindowBanner: View {
                     mealsSection
                 }
             }
+            .clipShape(RoundedRectangle(cornerRadius: window.isActive ? 16 : 12))
             .background(windowBackground)
             .overlay(optimalTimeIndicators)
         }
@@ -389,8 +390,8 @@ struct ExpandableWindowBanner: View {
                 MealRowCompact(meal: meal)
                     .padding(.horizontal, 16)
             }
-            .padding(.bottom, 12)
         }
+        .padding(.bottom, 12)
         .background(Color(red: 0.11, green: 0.11, blue: 0.12))  // Ensure opaque background for meals section
     }
     
