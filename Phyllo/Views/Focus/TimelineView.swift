@@ -242,8 +242,8 @@ struct TimelineHourRow: View {
     @ViewBuilder
     private var timelineContent: some View {
         ZStack(alignment: .topLeading) {
-            // Hour divider - only show if there's no window banner and no meal indicators near the top
-            if !isLastHour && windowForHour == nil && !hasMealIndicatorsNearTop() {
+            // Hour divider - only show if there's no window banner overlapping
+            if !isLastHour && shouldShowDivider() {
                 hourDivider
                     .zIndex(0)
             }
@@ -284,7 +284,8 @@ struct TimelineHourRow: View {
     private func windowContent(for window: MealWindow) -> some View {
         let calendar = Calendar.current
         let startMinute = calendar.component(.minute, from: window.startTime)
-        let windowOffset = CGFloat(startMinute) / 60.0 * hourHeight
+        // Use baseHourHeight for consistent positioning
+        let windowOffset = CGFloat(startMinute) / 60.0 * baseHourHeight
         let windowMeals = mockData.mealsInWindow(window)
         
         ExpandableWindowBanner(
@@ -418,25 +419,49 @@ struct TimelineHourRow: View {
         return CGFloat(minutes) / 60.0 * hourHeight
     }
     
-    // Check if there are meal indicators near the top of the hour
-    private func hasMealIndicatorsNearTop() -> Bool {
-        let mealCategories = categorizeMeals()
+    // Determine if the hour divider should be shown
+    private func shouldShowDivider() -> Bool {
+        // Don't show if there's a window in this hour
+        if windowForHour != nil {
+            return false
+        }
         
-        // Check if any meal indicators are within the first 10 minutes of the hour
-        for indicator in mealCategories.indicators {
-            if indicator.offset < 0.17 { // 0.17 = approximately 10 minutes / 60 minutes
-                return true
+        // Check if a window from the previous hour extends into this hour
+        if hour > 0 {
+            let previousHour = hour - 1
+            if let prevWindow = windows.first(where: { window in
+                Calendar.current.component(.hour, from: window.startTime) == previousHour
+            }) {
+                // If the previous hour's window ends after this hour starts, hide divider
+                let thisHourStart = Calendar.current.date(bySettingHour: hour, minute: 0, second: 0, of: Date())!
+                if prevWindow.endTime > thisHourStart {
+                    return false
+                }
+                
+                // If window starts very late in previous hour (last 5 minutes), hide this divider
+                let prevWindowMinute = Calendar.current.component(.minute, from: prevWindow.startTime)
+                if prevWindowMinute >= 55 {
+                    return false
+                }
             }
         }
         
-        // Also check analyzing meals
+        // Check if there are meal indicators near the top
+        let mealCategories = categorizeMeals()
+        for indicator in mealCategories.indicators {
+            if indicator.offset < 0.17 { // Within first 10 minutes
+                return false
+            }
+        }
+        
+        // Check analyzing meals
         for analyzingMeal in analyzingMeals {
             if analyzingMeal.offset < 0.17 {
-                return true
+                return false
             }
         }
         
-        return false
+        return true
     }
 }
 
