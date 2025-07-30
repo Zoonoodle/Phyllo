@@ -167,6 +167,9 @@ struct ScanTabView: View {
                                 name: .navigateToMealDetails,
                                 object: meal
                             )
+                            // Reset state
+                            lastCompletedMeal = nil
+                            currentAnalyzingMeal = nil
                         }
                     }
                 }
@@ -216,13 +219,15 @@ struct ScanTabView: View {
             // Make sure we still have the analyzing meal reference
             guard let currentMeal = currentAnalyzingMeal else { return }
             
-            // Convert to logged meal
-            let result = currentMeal.toLoggedMeal(
+            // Convert to logged meal with the same timestamp to ensure proper window assignment
+            let result = LoggedMeal(
                 name: "Grilled Chicken Salad",
                 calories: 450,
                 protein: 35,
                 carbs: 25,
-                fat: 20
+                fat: 20,
+                timestamp: currentMeal.timestamp,
+                windowId: currentMeal.windowId
             )
             
             // Store the result for later use
