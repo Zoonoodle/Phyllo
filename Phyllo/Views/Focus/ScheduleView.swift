@@ -18,28 +18,43 @@ struct ScheduleView: View {
     
     var body: some View {
         ZStack {
-            Color.phylloBackground.ignoresSafeArea()
-            
-            VStack(spacing: 2) {
-                // Day navigation header with integrated logo and settings
-                DayNavigationHeader(
-                    selectedDate: $selectedDate,
-                    showDeveloperDashboard: $showDeveloperDashboard
-                )
-                .background(Color.phylloBackground)
-                .zIndex(2) // Keep header above timeline content
-                .opacity(showWindowDetail ? 0 : 1)
+            // Background color that extends to edges
+            VStack(spacing: 0) {
+                // Top area with same color as tab bar
+                Color(red: 0.11, green: 0.11, blue: 0.12)
+                    .frame(maxHeight: 150)
                 
-                // Timeline view
-                TimelineView(
-                    selectedWindow: $selectedWindow,
-                    showWindowDetail: $showWindowDetail,
-                    animationNamespace: animationNamespace,
-                    scrollToAnalyzingMeal: $scrollToAnalyzingMeal
-                )
-                .opacity(showWindowDetail ? 0 : 1)
+                // Rest of the view
+                Color.phylloBackground
             }
-            .frame(maxWidth: .infinity)
+            .ignoresSafeArea()
+            
+            VStack(spacing: 0) {
+                // Add safe area padding at top
+                Color.clear
+                    .frame(height: 50)
+                
+                VStack(spacing: 2) {
+                    // Day navigation header with integrated logo and settings
+                    DayNavigationHeader(
+                        selectedDate: $selectedDate,
+                        showDeveloperDashboard: $showDeveloperDashboard
+                    )
+                    .background(Color(red: 0.11, green: 0.11, blue: 0.12))
+                    .zIndex(2) // Keep header above timeline content
+                    .opacity(showWindowDetail ? 0 : 1)
+                    
+                    // Timeline view
+                    TimelineView(
+                        selectedWindow: $selectedWindow,
+                        showWindowDetail: $showWindowDetail,
+                        animationNamespace: animationNamespace,
+                        scrollToAnalyzingMeal: $scrollToAnalyzingMeal
+                    )
+                    .opacity(showWindowDetail ? 0 : 1)
+                }
+                .frame(maxWidth: .infinity)
+            }
         }
         
         .overlay(alignment: .center) {
