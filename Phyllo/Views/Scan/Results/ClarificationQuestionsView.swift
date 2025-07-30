@@ -12,6 +12,7 @@ struct ClarificationQuestionsView: View {
     @State private var currentQuestionIndex = 0
     @State private var selectedOptions: [Int: String] = [:]
     @State private var showResults = false
+    @State private var isCompleted = false
     @StateObject private var mockData = MockDataManager.shared
     
     var analyzingMeal: AnalyzingMeal?
@@ -153,6 +154,12 @@ struct ClarificationQuestionsView: View {
             }
         }
         .preferredColorScheme(.dark)
+        .onDisappear {
+            // If the view is dismissed without completion, cancel the analyzing meal
+            if !isCompleted, let analyzingMeal = analyzingMeal {
+                mockData.cancelAnalyzingMeal(analyzingMeal)
+            }
+        }
     }
     
     // MARK: - Components
@@ -284,6 +291,9 @@ struct ClarificationQuestionsView: View {
     private func completeClarification() {
         // Use the passed meal result or create a new one
         let finalMeal = mealResult ?? createMockMeal()
+        
+        // Mark as completed to prevent cleanup on dismiss
+        isCompleted = true
         
         // Call the completion handler
         onComplete?(finalMeal)

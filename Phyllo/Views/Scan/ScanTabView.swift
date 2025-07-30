@@ -214,10 +214,16 @@ struct ScanTabView: View {
             object: analyzingMeal
         )
         
+        // Store the analyzing meal ID to ensure we can complete it even if view state changes
+        let analyzingMealId = analyzingMeal.id
+        
         // Simulate AI processing time in background
         DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-            // Make sure we still have the analyzing meal reference
-            guard let currentMeal = currentAnalyzingMeal else { return }
+            // Find the analyzing meal by ID in case our state was reset
+            guard let currentMeal = self.mockData.analyzingMeals.first(where: { $0.id == analyzingMealId }) else {
+                print("Warning: Analyzing meal with ID \(analyzingMealId) no longer found")
+                return
+            }
             
             // Convert to logged meal with the same timestamp to ensure proper window assignment
             let result = LoggedMeal(
@@ -231,17 +237,19 @@ struct ScanTabView: View {
             )
             
             // Store the result for later use
-            lastCompletedMeal = result
+            self.lastCompletedMeal = result
             
             // Determine if clarification is needed
-            let needsClarification = selectedMode == .voice || Bool.random()
+            let needsClarification = self.selectedMode == .voice || Bool.random()
             
             if needsClarification {
+                // Re-set currentAnalyzingMeal in case it was cleared
+                self.currentAnalyzingMeal = currentMeal
                 // Show clarification questions
-                showClarification = true
+                self.showClarification = true
             } else {
                 // Complete the meal without clarification
-                completeMealLogging(analyzingMeal: currentMeal, result: result)
+                self.completeMealLogging(analyzingMeal: currentMeal, result: result)
             }
         }
     }

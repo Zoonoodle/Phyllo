@@ -235,6 +235,17 @@ class MockDataManager: ObservableObject {
         )
         
         analyzingMeals.append(analyzingMeal)
+        
+        // Auto-cleanup stuck analyzing meals after 30 seconds
+        let mealId = analyzingMeal.id
+        DispatchQueue.main.asyncAfter(deadline: .now() + 30) { [weak self] in
+            if let self = self,
+               self.analyzingMeals.contains(where: { $0.id == mealId }) {
+                print("Warning: Auto-cleaning up stuck analyzing meal \(mealId)")
+                self.cancelAnalyzingMeal(analyzingMeal)
+            }
+        }
+        
         return analyzingMeal
     }
     
