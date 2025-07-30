@@ -134,9 +134,23 @@ struct TimelineView: View {
         
         return mockData.analyzingMeals.compactMap { meal in
             if meal.timestamp >= startOfHour && meal.timestamp < endOfHour {
-                let minutes = calendar.component(.minute, from: meal.timestamp)
-                let offset = CGFloat(minutes) / 60.0 // 0.0 to 1.0 representing position in hour
-                return (meal: meal, offset: offset)
+                // Check if this meal should be shown as standalone
+                let shouldShowAsStandalone: Bool
+                
+                if let windowId = meal.windowId,
+                   let window = mockData.mealWindows.first(where: { $0.id == windowId }) {
+                    // Has a window - only show as standalone if outside window time
+                    shouldShowAsStandalone = meal.timestamp < window.startTime || meal.timestamp > window.endTime
+                } else {
+                    // No window assigned - always show as standalone
+                    shouldShowAsStandalone = true
+                }
+                
+                if shouldShowAsStandalone {
+                    let minutes = calendar.component(.minute, from: meal.timestamp)
+                    let offset = CGFloat(minutes) / 60.0 // 0.0 to 1.0 representing position in hour
+                    return (meal: meal, offset: offset)
+                }
             }
             return nil
         }

@@ -69,10 +69,13 @@ struct ExpandableWindowBanner: View {
     @Binding var showWindowDetail: Bool
     let animationNamespace: Namespace.ID
     
-    // Add analyzing meals for this window
+    // Add analyzing meals for this window - only if scanned within window time
     private var analyzingMealsInWindow: [AnalyzingMeal] {
         mockData.analyzingMeals.filter { meal in
-            meal.windowId == window.id
+            // Must be assigned to this window AND scanned within window time
+            meal.windowId == window.id &&
+            meal.timestamp >= window.startTime &&
+            meal.timestamp <= window.endTime
         }
     }
     

@@ -117,7 +117,7 @@ struct ClarificationQuestionsView: View {
                 VStack(spacing: 0) {
                     // Header at top
                     headerSection
-                        .padding(.top, 60)
+                        .padding(.top, 30)
                         .padding(.bottom, 20)
                     
                     // Progress dots
@@ -145,7 +145,7 @@ struct ClarificationQuestionsView: View {
                             }
                             .padding(.horizontal, 20)
                         }
-                        .padding(.top, 30)
+                        .padding(.top, 40)
                         .padding(.bottom, 120)
                     }
                     
@@ -166,6 +166,7 @@ struct ClarificationQuestionsView: View {
     // MARK: - Components
     
     private var headerSection: some View {
+        
         HStack(spacing: 12) {
             Image(systemName: "lightbulb.fill")
                 .font(.system(size: 20))

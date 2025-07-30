@@ -36,15 +36,11 @@ ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeD
 
 ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld -version_details
 
-Build description signature: 7b3379677b936df6550945501a730bbd
-Build description path: /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/XCBuildData/7b3379677b936df6550945501a730bbd.xcbuilddata
+Build description signature: cea9f126e2dc14d341f61b2a88883412
+Build description path: /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/XCBuildData/cea9f126e2dc14d341f61b2a88883412.xcbuilddata
 ClangStatCache /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk /Users/brennenprice/Library/Developer/Xcode/DerivedData/SDKStatCaches.noindex/iphonesimulator18.5-22F76-d5fc8ad4295d2ef488fb7d0f804ce0c4.sdkstatcache
     cd /Users/brennenprice/Documents/Phyllo/Phyllo.xcodeproj
     /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk -o /Users/brennenprice/Library/Developer/Xcode/DerivedData/SDKStatCaches.noindex/iphonesimulator18.5-22F76-d5fc8ad4295d2ef488fb7d0f804ce0c4.sdkstatcache
-
-WriteAuxiliaryFile /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/Objects-normal/arm64/Phyllo.SwiftFileList (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    write-file /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/Objects-normal/arm64/Phyllo.SwiftFileList
 
 WriteAuxiliaryFile /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/Objects-normal/arm64/Phyllo.LinkFileList (in target 'Phyllo' from project 'Phyllo')
     cd /Users/brennenprice/Documents/Phyllo
@@ -65,6 +61,10 @@ WriteAuxiliaryFile /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyll
     cd /Users/brennenprice/Documents/Phyllo
     write-file /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/Objects-normal/arm64/Phyllo.SwiftConstValuesFileList
 
+WriteAuxiliaryFile /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/Objects-normal/arm64/Phyllo.SwiftFileList (in target 'Phyllo' from project 'Phyllo')
+    cd /Users/brennenprice/Documents/Phyllo
+    write-file /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/Objects-normal/arm64/Phyllo.SwiftFileList
+
 ProcessProductPackagingDER /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/Phyllo.app-Simulated.xcent /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/Phyllo.app-Simulated.xcent.der (in target 'Phyllo' from project 'Phyllo')
     cd /Users/brennenprice/Documents/Phyllo
     /usr/bin/derq query -f xml -i /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/Phyllo.app-Simulated.xcent -o /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/Phyllo.app-Simulated.xcent.der --raw
@@ -74,339 +74,13 @@ LinkAssetCatalog /Users/brennenprice/Documents/Phyllo/Phyllo/Assets.xcassets (in
     builtin-linkAssetCatalog --thinned /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/assetcatalog_output/thinned --thinned-dependencies /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/assetcatalog_dependencies_thinned --thinned-info-plist-content /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/assetcatalog_generated_info.plist_thinned --unthinned /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/assetcatalog_output/unthinned --unthinned-dependencies /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/assetcatalog_dependencies_unthinned --unthinned-info-plist-content /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/assetcatalog_generated_info.plist_unthinned --output /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Products/Debug-iphonesimulator/Phyllo.app --plist-output /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/assetcatalog_generated_info.plist
 note: Emplaced /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Products/Debug-iphonesimulator/Phyllo.app/Assets.car (in target 'Phyllo' from project 'Phyllo')
 
-ProcessInfoPlistFile /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Products/Debug-iphonesimulator/Phyllo.app/Info.plist /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/empty-Phyllo.plist (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    builtin-infoPlistUtility /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/empty-Phyllo.plist -producttype com.apple.product-type.application -genpkginfo /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Products/Debug-iphonesimulator/Phyllo.app/PkgInfo -expandbuildsettings -format binary -platform iphonesimulator -additionalcontentfile /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/assetcatalog_generated_info.plist -o /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Products/Debug-iphonesimulator/Phyllo.app/Info.plist
-
 SwiftDriver Phyllo normal arm64 com.apple.xcode.tools.swift.compiler (in target 'Phyllo' from project 'Phyllo')
     cd /Users/brennenprice/Documents/Phyllo
     builtin-SwiftDriver -- /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name Phyllo -Onone -enforce-exclusivity\=checked @/Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/Objects-normal/arm64/Phyllo.SwiftFileList -DDEBUG -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk -target arm64-apple-ios18.5-simulator -g -module-cache-path /Users/brennenprice/Library/Developer/Xcode/DerivedData/ModuleCache.noindex -Xfrontend -serialize-debugging-options -profile-coverage-mapping -profile-generate -enable-testing -index-store-path /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Index.noindex/DataStore -swift-version 5 -I /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Products/Debug-iphonesimulator -F /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Products/Debug-iphonesimulator -emit-localized-strings -emit-localized-strings-path /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/Objects-normal/arm64 -c -j10 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /Users/brennenprice/Library/Developer/Xcode/DerivedData/SDKStatCaches.noindex/iphonesimulator18.5-22F76-d5fc8ad4295d2ef488fb7d0f804ce0c4.sdkstatcache -output-file-map /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/Objects-normal/arm64/Phyllo-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/Objects-normal/arm64/Phyllo.swiftmodule -validate-clang-modules-once -clang-build-session-file /Users/brennenprice/Library/Developer/Xcode/DerivedData/ModuleCache.noindex/Session.modulevalidation -Xcc -I/Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/Objects-normal/arm64/Phyllo_const_extract_protocols.json -Xcc -iquote -Xcc /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/Phyllo-generated-files.hmap -Xcc -I/Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/Phyllo-own-target-headers.hmap -Xcc -I/Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/Phyllo-all-target-headers.hmap -Xcc -iquote -Xcc /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/Phyllo-project-headers.hmap -Xcc -I/Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Products/Debug-iphonesimulator/include -Xcc -I/Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/DerivedSources-normal/arm64 -Xcc -I/Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/DerivedSources/arm64 -Xcc -I/Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/Objects-normal/arm64/Phyllo-Swift.h -working-directory /Users/brennenprice/Documents/Phyllo -experimental-emit-module-separately -disable-cmo
 
-SwiftCompile normal arm64 Compiling\ ScanView.swift /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Scan/ScanView.swift (in target 'Phyllo' from project 'Phyllo')
-
-SwiftCompile normal arm64 /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Scan/ScanView.swift (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    
-
-SwiftEmitModule normal arm64 Emitting\ module\ for\ Phyllo (in target 'Phyllo' from project 'Phyllo')
-EmitSwiftModule normal arm64 (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    
-
-SwiftCompile normal arm64 Compiling\ CameraPreviewView.swift /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Scan/Camera/CameraPreviewView.swift (in target 'Phyllo' from project 'Phyllo')
-
-SwiftCompile normal arm64 /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Scan/Camera/CameraPreviewView.swift (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    
-
-SwiftCompile normal arm64 Compiling\ CoffeeSteamAnimation.swift /Users/brennenprice/Documents/Phyllo/Phyllo/Views/CheckIn/Components/CoffeeSteamAnimation.swift (in target 'Phyllo' from project 'Phyllo')
-
-SwiftCompile normal arm64 /Users/brennenprice/Documents/Phyllo/Phyllo/Views/CheckIn/Components/CoffeeSteamAnimation.swift (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    
-/Users/brennenprice/Documents/Phyllo/Phyllo/Views/CheckIn/Components/CoffeeSteamAnimation.swift:109:13: warning: immutable value 'cupWidth' was never used; consider replacing with '_' or removing it
-        let cupWidth: CGFloat = 70  // Half width of cup opening
-            ^~~~~~~~
-            _
-
-SwiftCompile normal arm64 Compiling\ HexagonFlowerView.swift /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Focus/HexagonFlowerView.swift (in target 'Phyllo' from project 'Phyllo')
-
-SwiftCompile normal arm64 /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Focus/HexagonFlowerView.swift (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    
-
-SwiftCompile normal arm64 Compiling\ SocialLeaderboardCard.swift /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Momentum/Components/SocialLeaderboardCard.swift (in target 'Phyllo' from project 'Phyllo')
-
-SwiftCompile normal arm64 /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Momentum/Components/SocialLeaderboardCard.swift (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    
-
-SwiftDriverJobDiscovery normal arm64 Compiling ScanView.swift (in target 'Phyllo' from project 'Phyllo')
-
-SwiftDriverJobDiscovery normal arm64 Compiling CameraPreviewView.swift (in target 'Phyllo' from project 'Phyllo')
-
-SwiftCompile normal arm64 Compiling\ CheckInDemoView.swift,\ SleepHoursSlider.swift,\ MomentumWaveView.swift,\ ScrollableNutritionHeader.swift,\ CaptureButton.swift /Users/brennenprice/Documents/Phyllo/Phyllo/Views/CheckIn/CheckInDemoView.swift /Users/brennenprice/Documents/Phyllo/Phyllo/Views/CheckIn/Components/SleepHoursSlider.swift /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Momentum/Components/MomentumWaveView.swift /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Focus/ScrollableNutritionHeader.swift /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Scan/Components/CaptureButton.swift (in target 'Phyllo' from project 'Phyllo')
-SwiftCompile normal arm64 /Users/brennenprice/Documents/Phyllo/Phyllo/Views/CheckIn/CheckInDemoView.swift (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    
-
-SwiftCompile normal arm64 /Users/brennenprice/Documents/Phyllo/Phyllo/Views/CheckIn/Components/SleepHoursSlider.swift (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    
-
-SwiftCompile normal arm64 /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Momentum/Components/MomentumWaveView.swift (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    
-
-SwiftCompile normal arm64 /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Focus/ScrollableNutritionHeader.swift (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    
-/Users/brennenprice/Documents/Phyllo/Phyllo/Views/Focus/ScrollableNutritionHeader.swift:51:10: warning: 'onChange(of:perform:)' was deprecated in iOS 17.0: Use `onChange` with a two or zero parameter action closure instead.
-        .onChange(of: currentPage) { _ in
-         ^
-
-SwiftCompile normal arm64 /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Scan/Components/CaptureButton.swift (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    
-
-SwiftCompile normal arm64 Compiling\ FoodAnalysisView.swift,\ ScannerOverlayView.swift,\ CustomTabBar.swift,\ FullnessScaleView.swift,\ FloatingTabBar.swift,\ FloatingActionBar.swift /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Scan/Results/FoodAnalysisView.swift /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Scan/Camera/ScannerOverlayView.swift /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Components/CustomTabBar.swift /Users/brennenprice/Documents/Phyllo/Phyllo/Views/CheckIn/PostMeal/FullnessScaleView.swift /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Navigation/FloatingTabBar.swift /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Momentum/Components/FloatingActionBar.swift (in target 'Phyllo' from project 'Phyllo')
-SwiftCompile normal arm64 /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Scan/Results/FoodAnalysisView.swift (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    
-
-SwiftCompile normal arm64 /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Scan/Camera/ScannerOverlayView.swift (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    
-
-SwiftCompile normal arm64 /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Components/CustomTabBar.swift (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    
-
-SwiftCompile normal arm64 /Users/brennenprice/Documents/Phyllo/Phyllo/Views/CheckIn/PostMeal/FullnessScaleView.swift (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    
-
-SwiftCompile normal arm64 /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Navigation/FloatingTabBar.swift (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    
-
-SwiftCompile normal arm64 /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Momentum/Components/FloatingActionBar.swift (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    
-
-SwiftCompile normal arm64 Compiling\ DayNavigationHeader.swift,\ MomentumTabView.swift,\ ClarificationQuestionsView.swift,\ ExpandableWindowBanner.swift,\ EnergyLevelView.swift /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Focus/DayNavigationHeader.swift /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Momentum/MomentumTabView.swift /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Scan/Results/ClarificationQuestionsView.swift /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Focus/ExpandableWindowBanner.swift /Users/brennenprice/Documents/Phyllo/Phyllo/Views/CheckIn/PostMeal/EnergyLevelView.swift (in target 'Phyllo' from project 'Phyllo')
-SwiftCompile normal arm64 /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Focus/DayNavigationHeader.swift (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    
-
-SwiftCompile normal arm64 /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Momentum/MomentumTabView.swift (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    
-
-SwiftCompile normal arm64 /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Scan/Results/ClarificationQuestionsView.swift (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    
-
-SwiftCompile normal arm64 /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Focus/ExpandableWindowBanner.swift (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    
-
-SwiftCompile normal arm64 /Users/brennenprice/Documents/Phyllo/Phyllo/Views/CheckIn/PostMeal/EnergyLevelView.swift (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    
-
-SwiftCompile normal arm64 Compiling\ PostMealCheckInView.swift,\ MomentumWaveDetailView.swift,\ ScanTabView.swift,\ ScheduleView.swift,\ AnalyzingMealCard.swift /Users/brennenprice/Documents/Phyllo/Phyllo/Views/CheckIn/PostMeal/PostMealCheckInView.swift /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Momentum/Components/MomentumWaveDetailView.swift /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Scan/ScanTabView.swift /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Focus/ScheduleView.swift /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Scan/Components/AnalyzingMealCard.swift (in target 'Phyllo' from project 'Phyllo')
-
-SwiftCompile normal arm64 /Users/brennenprice/Documents/Phyllo/Phyllo/Views/CheckIn/PostMeal/PostMealCheckInView.swift (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    
-
-SwiftCompile normal arm64 /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Momentum/Components/MomentumWaveDetailView.swift (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    
-
-SwiftCompile normal arm64 /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Scan/ScanTabView.swift (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    
-
-SwiftCompile normal arm64 /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Focus/ScheduleView.swift (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    
-
-SwiftCompile normal arm64 /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Scan/Components/AnalyzingMealCard.swift (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    
-
-SwiftCompile normal arm64 Compiling\ DeveloperDashboardView.swift,\ MoonPhasePreview.swift,\ SleepVisualizations.swift,\ PhylloScoreCard.swift,\ TimelineView.swift /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Developer/DeveloperDashboardView.swift /Users/brennenprice/Documents/Phyllo/Phyllo/Views/CheckIn/MoonPhasePreview.swift /Users/brennenprice/Documents/Phyllo/Phyllo/Views/CheckIn/Components/SleepVisualizations.swift /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Momentum/Components/PhylloScoreCard.swift /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Focus/TimelineView.swift (in target 'Phyllo' from project 'Phyllo')
-
-SwiftCompile normal arm64 /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Developer/DeveloperDashboardView.swift (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    
-
-SwiftCompile normal arm64 /Users/brennenprice/Documents/Phyllo/Phyllo/Views/CheckIn/MoonPhasePreview.swift (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    
-
-SwiftCompile normal arm64 /Users/brennenprice/Documents/Phyllo/Phyllo/Views/CheckIn/Components/SleepVisualizations.swift (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    
-/Users/brennenprice/Documents/Phyllo/Phyllo/Views/CheckIn/Components/SleepVisualizations.swift:33:13: warning: initialization of immutable value 'midpoint' was never used; consider replacing with assignment to '_' or removing it
-        let midpoint = (optimal.lowerBound + optimal.upperBound) / 2
-        ~~~~^~~~~~~~
-        _
-
-SwiftCompile normal arm64 /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Momentum/Components/PhylloScoreCard.swift (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    
-
-SwiftCompile normal arm64 /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Focus/TimelineView.swift (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    
-
-SwiftCompile normal arm64 Compiling\ MealAnalysisLoadingView.swift,\ PhylloScoreDetailView.swift,\ ContentView.swift,\ WindowDetailOverlay.swift,\ QuickLogView.swift /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Scan/Components/MealAnalysisLoadingView.swift /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Momentum/Components/PhylloScoreDetailView.swift /Users/brennenprice/Documents/Phyllo/Phyllo/Views/ContentView.swift /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Focus/WindowDetailOverlay.swift /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Scan/Components/QuickLogView.swift (in target 'Phyllo' from project 'Phyllo')
-
-SwiftCompile normal arm64 /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Scan/Components/MealAnalysisLoadingView.swift (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    
-
-SwiftCompile normal arm64 /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Momentum/Components/PhylloScoreDetailView.swift (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    
-
-SwiftCompile normal arm64 /Users/brennenprice/Documents/Phyllo/Phyllo/Views/ContentView.swift (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    
-
-SwiftCompile normal arm64 /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Focus/WindowDetailOverlay.swift (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    
-
-SwiftCompile normal arm64 /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Scan/Components/QuickLogView.swift (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    
-
-SwiftCompile normal arm64 Compiling\ MainTabView.swift,\ MetricsDetailView.swift,\ ScanFlowDemoView.swift,\ MicroNutritionPage.swift,\ PhylloNavigationBar.swift /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Navigation/MainTabView.swift /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Momentum/Components/MetricsDetailView.swift /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Scan/ScanFlowDemoView.swift /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Focus/MicroNutritionPage.swift /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Components/PhylloNavigationBar.swift (in target 'Phyllo' from project 'Phyllo')
-
-SwiftCompile normal arm64 /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Navigation/MainTabView.swift (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    
-
-SwiftCompile normal arm64 /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Momentum/Components/MetricsDetailView.swift (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    
-
-SwiftCompile normal arm64 /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Scan/ScanFlowDemoView.swift (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    
-
-SwiftCompile normal arm64 /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Focus/MicroNutritionPage.swift (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    
-
-SwiftCompile normal arm64 /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Components/PhylloNavigationBar.swift (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    
-
-SwiftDriverJobDiscovery normal arm64 Compiling CoffeeSteamAnimation.swift (in target 'Phyllo' from project 'Phyllo')
-
-SwiftCompile normal arm64 Compiling\ MorningCheckInView.swift,\ WindowFoodsList.swift,\ SleepQualityView.swift,\ SocialLeaderboardDetailView.swift,\ WindowPurposeCard.swift /Users/brennenprice/Documents/Phyllo/Phyllo/Views/CheckIn/Morning/MorningCheckInView.swift /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Focus/WindowFoodsList.swift /Users/brennenprice/Documents/Phyllo/Phyllo/Views/CheckIn/Morning/SleepQualityView.swift /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Momentum/Components/SocialLeaderboardDetailView.swift /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Focus/WindowPurposeCard.swift (in target 'Phyllo' from project 'Phyllo')
-
-SwiftCompile normal arm64 /Users/brennenprice/Documents/Phyllo/Phyllo/Views/CheckIn/Morning/MorningCheckInView.swift (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    
-
-SwiftCompile normal arm64 /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Focus/WindowFoodsList.swift (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    
-
-SwiftCompile normal arm64 /Users/brennenprice/Documents/Phyllo/Phyllo/Views/CheckIn/Morning/SleepQualityView.swift (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    
-
-SwiftCompile normal arm64 /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Momentum/Components/SocialLeaderboardDetailView.swift (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    
-
-SwiftCompile normal arm64 /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Focus/WindowPurposeCard.swift (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    
-
-SwiftDriverJobDiscovery normal arm64 Compiling HexagonFlowerView.swift (in target 'Phyllo' from project 'Phyllo')
-
-SwiftCompile normal arm64 Compiling\ MoonPhaseTestView.swift,\ DayFocusSelectionView.swift,\ QuickStatsGrid.swift,\ WindowDetailView.swift,\ ScanModeSelector.swift /Users/brennenprice/Documents/Phyllo/Phyllo/Views/CheckIn/MoonPhaseTestView.swift /Users/brennenprice/Documents/Phyllo/Phyllo/Views/CheckIn/Morning/DayFocusSelectionView.swift /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Momentum/Components/QuickStatsGrid.swift /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Focus/WindowDetailView.swift /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Scan/Components/ScanModeSelector.swift (in target 'Phyllo' from project 'Phyllo')
-
-SwiftCompile normal arm64 /Users/brennenprice/Documents/Phyllo/Phyllo/Views/CheckIn/MoonPhaseTestView.swift (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    
-
-SwiftCompile normal arm64 /Users/brennenprice/Documents/Phyllo/Phyllo/Views/CheckIn/Morning/DayFocusSelectionView.swift (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    
-
-SwiftCompile normal arm64 /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Momentum/Components/QuickStatsGrid.swift (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    
-
-SwiftCompile normal arm64 /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Focus/WindowDetailView.swift (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    
-
-SwiftCompile normal arm64 /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Scan/Components/ScanModeSelector.swift (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    
-
-SwiftDriverJobDiscovery normal arm64 Compiling SocialLeaderboardCard.swift (in target 'Phyllo' from project 'Phyllo')
-
-SwiftCompile normal arm64 Compiling\ MealDetailsEditView.swift,\ MacroNutritionPage.swift,\ VoiceInputView.swift,\ PhylloCard.swift,\ MoodFocusView.swift /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Scan/Results/MealDetailsEditView.swift /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Focus/MacroNutritionPage.swift /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Scan/Camera/VoiceInputView.swift /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Components/PhylloCard.swift /Users/brennenprice/Documents/Phyllo/Phyllo/Views/CheckIn/PostMeal/MoodFocusView.swift (in target 'Phyllo' from project 'Phyllo')
-
-SwiftCompile normal arm64 /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Scan/Results/MealDetailsEditView.swift (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    
-
-SwiftCompile normal arm64 /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Focus/MacroNutritionPage.swift (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    
-
-SwiftCompile normal arm64 /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Scan/Camera/VoiceInputView.swift (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    
-
-SwiftCompile normal arm64 /Users/brennenprice/Documents/Phyllo/Phyllo/Views/Components/PhylloCard.swift (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    
-
-SwiftCompile normal arm64 /Users/brennenprice/Documents/Phyllo/Phyllo/Views/CheckIn/PostMeal/MoodFocusView.swift (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    
-/Users/brennenprice/Documents/Phyllo/Phyllo/Views/CheckIn/PostMeal/MoodFocusView.swift:180:10: warning: 'onChange(of:perform:)' was deprecated in iOS 17.0: Use `onChange` with a two or zero parameter action closure instead.
-        .onChange(of: isSelected) { newValue in
-         ^
-
-SwiftDriverJobDiscovery normal arm64 Emitting module for Phyllo (in target 'Phyllo' from project 'Phyllo')
-
 SwiftDriver\ Compilation\ Requirements Phyllo normal arm64 com.apple.xcode.tools.swift.compiler (in target 'Phyllo' from project 'Phyllo')
     cd /Users/brennenprice/Documents/Phyllo
     builtin-Swift-Compilation-Requirements -- /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name Phyllo -Onone -enforce-exclusivity\=checked @/Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/Objects-normal/arm64/Phyllo.SwiftFileList -DDEBUG -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk -target arm64-apple-ios18.5-simulator -g -module-cache-path /Users/brennenprice/Library/Developer/Xcode/DerivedData/ModuleCache.noindex -Xfrontend -serialize-debugging-options -profile-coverage-mapping -profile-generate -enable-testing -index-store-path /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Index.noindex/DataStore -swift-version 5 -I /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Products/Debug-iphonesimulator -F /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Products/Debug-iphonesimulator -emit-localized-strings -emit-localized-strings-path /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/Objects-normal/arm64 -c -j10 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /Users/brennenprice/Library/Developer/Xcode/DerivedData/SDKStatCaches.noindex/iphonesimulator18.5-22F76-d5fc8ad4295d2ef488fb7d0f804ce0c4.sdkstatcache -output-file-map /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/Objects-normal/arm64/Phyllo-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/Objects-normal/arm64/Phyllo.swiftmodule -validate-clang-modules-once -clang-build-session-file /Users/brennenprice/Library/Developer/Xcode/DerivedData/ModuleCache.noindex/Session.modulevalidation -Xcc -I/Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/Objects-normal/arm64/Phyllo_const_extract_protocols.json -Xcc -iquote -Xcc /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/Phyllo-generated-files.hmap -Xcc -I/Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/Phyllo-own-target-headers.hmap -Xcc -I/Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/Phyllo-all-target-headers.hmap -Xcc -iquote -Xcc /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/Phyllo-project-headers.hmap -Xcc -I/Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Products/Debug-iphonesimulator/include -Xcc -I/Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/DerivedSources-normal/arm64 -Xcc -I/Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/DerivedSources/arm64 -Xcc -I/Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/Objects-normal/arm64/Phyllo-Swift.h -working-directory /Users/brennenprice/Documents/Phyllo -experimental-emit-module-separately -disable-cmo
-
-SwiftDriverJobDiscovery normal arm64 Compiling CheckInDemoView.swift, SleepHoursSlider.swift, MomentumWaveView.swift, ScrollableNutritionHeader.swift, CaptureButton.swift (in target 'Phyllo' from project 'Phyllo')
-
-SwiftMergeGeneratedHeaders /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/DerivedSources/Phyllo-Swift.h /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/Objects-normal/arm64/Phyllo-Swift.h (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    builtin-swiftHeaderTool -arch arm64 /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/Objects-normal/arm64/Phyllo-Swift.h -o /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/DerivedSources/Phyllo-Swift.h
-
-Copy /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Products/Debug-iphonesimulator/Phyllo.swiftmodule/arm64-apple-ios-simulator.swiftmodule /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/Objects-normal/arm64/Phyllo.swiftmodule (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/Objects-normal/arm64/Phyllo.swiftmodule /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Products/Debug-iphonesimulator/Phyllo.swiftmodule/arm64-apple-ios-simulator.swiftmodule
-
-Copy /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Products/Debug-iphonesimulator/Phyllo.swiftmodule/arm64-apple-ios-simulator.swiftdoc /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/Objects-normal/arm64/Phyllo.swiftdoc (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/Objects-normal/arm64/Phyllo.swiftdoc /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Products/Debug-iphonesimulator/Phyllo.swiftmodule/arm64-apple-ios-simulator.swiftdoc
-
-Copy /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Products/Debug-iphonesimulator/Phyllo.swiftmodule/arm64-apple-ios-simulator.abi.json /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/Objects-normal/arm64/Phyllo.abi.json (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/Objects-normal/arm64/Phyllo.abi.json /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Products/Debug-iphonesimulator/Phyllo.swiftmodule/arm64-apple-ios-simulator.abi.json
-
-Copy /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Products/Debug-iphonesimulator/Phyllo.swiftmodule/Project/arm64-apple-ios-simulator.swiftsourceinfo /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/Objects-normal/arm64/Phyllo.swiftsourceinfo (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/Objects-normal/arm64/Phyllo.swiftsourceinfo /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Products/Debug-iphonesimulator/Phyllo.swiftmodule/Project/arm64-apple-ios-simulator.swiftsourceinfo
-
-SwiftDriverJobDiscovery normal arm64 Compiling MorningCheckInView.swift, WindowFoodsList.swift, SleepQualityView.swift, SocialLeaderboardDetailView.swift, WindowPurposeCard.swift (in target 'Phyllo' from project 'Phyllo')
-
-SwiftDriverJobDiscovery normal arm64 Compiling MainTabView.swift, MetricsDetailView.swift, ScanFlowDemoView.swift, MicroNutritionPage.swift, PhylloNavigationBar.swift (in target 'Phyllo' from project 'Phyllo')
-
-SwiftDriverJobDiscovery normal arm64 Compiling MealDetailsEditView.swift, MacroNutritionPage.swift, VoiceInputView.swift, PhylloCard.swift, MoodFocusView.swift (in target 'Phyllo' from project 'Phyllo')
-
-SwiftDriverJobDiscovery normal arm64 Compiling FoodAnalysisView.swift, ScannerOverlayView.swift, CustomTabBar.swift, FullnessScaleView.swift, FloatingTabBar.swift, FloatingActionBar.swift (in target 'Phyllo' from project 'Phyllo')
-
-SwiftDriverJobDiscovery normal arm64 Compiling PostMealCheckInView.swift, MomentumWaveDetailView.swift, ScanTabView.swift, ScheduleView.swift, AnalyzingMealCard.swift (in target 'Phyllo' from project 'Phyllo')
-
-SwiftDriverJobDiscovery normal arm64 Compiling MoonPhaseTestView.swift, DayFocusSelectionView.swift, QuickStatsGrid.swift, WindowDetailView.swift, ScanModeSelector.swift (in target 'Phyllo' from project 'Phyllo')
-
-SwiftDriverJobDiscovery normal arm64 Compiling MealAnalysisLoadingView.swift, PhylloScoreDetailView.swift, ContentView.swift, WindowDetailOverlay.swift, QuickLogView.swift (in target 'Phyllo' from project 'Phyllo')
-
-SwiftDriverJobDiscovery normal arm64 Compiling DeveloperDashboardView.swift, MoonPhasePreview.swift, SleepVisualizations.swift, PhylloScoreCard.swift, TimelineView.swift (in target 'Phyllo' from project 'Phyllo')
-
-SwiftDriverJobDiscovery normal arm64 Compiling DayNavigationHeader.swift, MomentumTabView.swift, ClarificationQuestionsView.swift, ExpandableWindowBanner.swift, EnergyLevelView.swift (in target 'Phyllo' from project 'Phyllo')
 
 SwiftDriver\ Compilation Phyllo normal arm64 com.apple.xcode.tools.swift.compiler (in target 'Phyllo' from project 'Phyllo')
     cd /Users/brennenprice/Documents/Phyllo
@@ -425,21 +99,19 @@ Ld /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnr
     cd /Users/brennenprice/Documents/Phyllo
     /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-ios18.5-simulator -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk -O0 -L/Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Products/Debug-iphonesimulator -F/Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Products/Debug-iphonesimulator -Xlinker -rpath -Xlinker @executable_path -Xlinker -rpath -Xlinker @executable_path/Frameworks -rdynamic -Xlinker -no_deduplicate -Xlinker -objc_abi_version -Xlinker 2 -Xlinker -debug_variant -e ___debug_blank_executor_main -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __debug_dylib -Xlinker /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/Phyllo-DebugDylibPath-normal-arm64.txt -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __debug_instlnm -Xlinker /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/Phyllo-DebugDylibInstallName-normal-arm64.txt -Xlinker -filelist -Xlinker /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/Phyllo-ExecutorLinkFileList-normal-arm64.txt -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __entitlements -Xlinker /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/Phyllo.app-Simulated.xcent -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __ents_der -Xlinker /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/Phyllo.app-Simulated.xcent.der /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Products/Debug-iphonesimulator/Phyllo.app/Phyllo.debug.dylib -Xlinker -no_adhoc_codesign -o /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Products/Debug-iphonesimulator/Phyllo.app/Phyllo
 
+ExtractAppIntentsMetadata (in target 'Phyllo' from project 'Phyllo')
+    cd /Users/brennenprice/Documents/Phyllo
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsmetadataprocessor --toolchain-dir /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --module-name Phyllo --sdk-root /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk --xcode-version 16F6 --platform-family iOS --deployment-target 18.5 --bundle-identifier BiteAI.Phyllo --output /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Products/Debug-iphonesimulator/Phyllo.app --target-triple arm64-apple-ios18.5-simulator --binary-file /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Products/Debug-iphonesimulator/Phyllo.app/Phyllo --dependency-file /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/Objects-normal/arm64/Phyllo_dependency_info.dat --stringsdata-file /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/Objects-normal/arm64/ExtractedAppShortcutsMetadata.stringsdata --source-file-list /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/Objects-normal/arm64/Phyllo.SwiftFileList --metadata-file-list /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/Phyllo.DependencyMetadataFileList --static-metadata-file-list /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/Phyllo.DependencyStaticMetadataFileList --swift-const-vals-list /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/Objects-normal/arm64/Phyllo.SwiftConstValuesFileList --compile-time-extraction --deployment-aware-processing --validate-assistant-intents --no-app-shortcuts-localization
+2025-07-30 16:34:46.116 appintentsmetadataprocessor[74256:5073329] Starting appintentsmetadataprocessor export
+2025-07-30 16:34:46.117 appintentsmetadataprocessor[74256:5073329] warning: Metadata extraction skipped. No AppIntents.framework dependency found.
+
 CopySwiftLibs /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Products/Debug-iphonesimulator/Phyllo.app (in target 'Phyllo' from project 'Phyllo')
     cd /Users/brennenprice/Documents/Phyllo
     builtin-swiftStdLibTool --copy --verbose --sign - --scan-executable /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Products/Debug-iphonesimulator/Phyllo.app/Phyllo.debug.dylib --scan-folder /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Products/Debug-iphonesimulator/Phyllo.app/Frameworks --scan-folder /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Products/Debug-iphonesimulator/Phyllo.app/PlugIns --scan-folder /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Products/Debug-iphonesimulator/Phyllo.app/SystemExtensions --scan-folder /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Products/Debug-iphonesimulator/Phyllo.app/Extensions --platform iphonesimulator --toolchain /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --destination /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Products/Debug-iphonesimulator/Phyllo.app/Frameworks --strip-bitcode --strip-bitcode-tool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/bitcode_strip --emit-dependency-info /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/SwiftStdLibToolInputDependencies.dep --filter-for-swift-os
 
-ExtractAppIntentsMetadata (in target 'Phyllo' from project 'Phyllo')
+ProcessInfoPlistFile /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Products/Debug-iphonesimulator/Phyllo.app/Info.plist /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/empty-Phyllo.plist (in target 'Phyllo' from project 'Phyllo')
     cd /Users/brennenprice/Documents/Phyllo
-    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsmetadataprocessor --toolchain-dir /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --module-name Phyllo --sdk-root /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk --xcode-version 16F6 --platform-family iOS --deployment-target 18.5 --bundle-identifier BiteAI.Phyllo --output /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Products/Debug-iphonesimulator/Phyllo.app --target-triple arm64-apple-ios18.5-simulator --binary-file /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Products/Debug-iphonesimulator/Phyllo.app/Phyllo --dependency-file /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/Objects-normal/arm64/Phyllo_dependency_info.dat --stringsdata-file /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/Objects-normal/arm64/ExtractedAppShortcutsMetadata.stringsdata --source-file-list /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/Objects-normal/arm64/Phyllo.SwiftFileList --metadata-file-list /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/Phyllo.DependencyMetadataFileList --static-metadata-file-list /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/Phyllo.DependencyStaticMetadataFileList --swift-const-vals-list /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/Objects-normal/arm64/Phyllo.SwiftConstValuesFileList --compile-time-extraction --deployment-aware-processing --validate-assistant-intents --no-app-shortcuts-localization
-2025-07-30 16:27:53.785 appintentsmetadataprocessor[73054:5059195] Starting appintentsmetadataprocessor export
-2025-07-30 16:27:53.786 appintentsmetadataprocessor[73054:5059195] warning: Metadata extraction skipped. No AppIntents.framework dependency found.
-
-AppIntentsSSUTraining (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsnltrainingprocessor --infoplist-path /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Products/Debug-iphonesimulator/Phyllo.app/Info.plist --temp-dir-path /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/ssu --bundle-id BiteAI.Phyllo --product-path /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Products/Debug-iphonesimulator/Phyllo.app --extracted-metadata-path /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Products/Debug-iphonesimulator/Phyllo.app/Metadata.appintents --metadata-file-list /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/Phyllo.DependencyMetadataFileList --archive-ssu-assets
-2025-07-30 16:27:53.799 appintentsnltrainingprocessor[73055:5059197] Parsing options for appintentsnltrainingprocessor
-2025-07-30 16:27:53.799 appintentsnltrainingprocessor[73055:5059197] No AppShortcuts found - Skipping.
+    builtin-infoPlistUtility /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/empty-Phyllo.plist -producttype com.apple.product-type.application -genpkginfo /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Products/Debug-iphonesimulator/Phyllo.app/PkgInfo -expandbuildsettings -format binary -platform iphonesimulator -additionalcontentfile /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Intermediates.noindex/Phyllo.build/Debug-iphonesimulator/Phyllo.build/assetcatalog_generated_info.plist -o /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Products/Debug-iphonesimulator/Phyllo.app/Info.plist
 
 CodeSign /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Products/Debug-iphonesimulator/Phyllo.app/Phyllo.debug.dylib (in target 'Phyllo' from project 'Phyllo')
     cd /Users/brennenprice/Documents/Phyllo
@@ -447,14 +119,6 @@ CodeSign /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuw
     Signing Identity:     "Sign to Run Locally"
     
     /usr/bin/codesign --force --sign - --timestamp\=none --generate-entitlement-der /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Products/Debug-iphonesimulator/Phyllo.app/Phyllo.debug.dylib
-
-CodeSign /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Products/Debug-iphonesimulator/Phyllo.app/__preview.dylib (in target 'Phyllo' from project 'Phyllo')
-    cd /Users/brennenprice/Documents/Phyllo
-    
-    Signing Identity:     "Sign to Run Locally"
-    
-    /usr/bin/codesign --force --sign - --timestamp\=none --generate-entitlement-der /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Products/Debug-iphonesimulator/Phyllo.app/__preview.dylib
-/Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Products/Debug-iphonesimulator/Phyllo.app/__preview.dylib: replacing existing signature
 
 CodeSign /Users/brennenprice/Library/Developer/Xcode/DerivedData/Phyllo-bpjnfuuwqjzbnraajmwoikyqvidt/Build/Products/Debug-iphonesimulator/Phyllo.app (in target 'Phyllo' from project 'Phyllo')
     cd /Users/brennenprice/Documents/Phyllo
