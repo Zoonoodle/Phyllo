@@ -24,23 +24,27 @@ struct MainTabView: View {
                     scrollToAnalyzingMeal: $scrollToAnalyzingMeal
                 )
                 .tag(0)
+                .ignoresSafeArea(edges: [.top, .bottom])
                 
                 MomentumTabView(showDeveloperDashboard: $showDeveloperDashboard)
                     .tag(1)
+                .ignoresSafeArea(edges: [.top, .bottom])
                 
                 ScanTabView(showDeveloperDashboard: $showDeveloperDashboard)
                     .tag(2)
+                .ignoresSafeArea(edges: [.top, .bottom])
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
+            .ignoresSafeArea()
             
             // Floating tab bar overlay
             VStack {
                 Spacer()
                 FloatingTabBar(selectedTab: $selectedTab)
-                    .padding(.bottom, 24)
+                    .padding(.bottom, 20)
             }
-            .ignoresSafeArea(.keyboard)
         }
+        .ignoresSafeArea()
     }
 }
 

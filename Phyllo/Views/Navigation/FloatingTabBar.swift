@@ -22,7 +22,7 @@ struct FloatingTabBar: View {
         .frame(width: 200, height: 56) // Fixed width to prevent resizing
         .background(
             RoundedRectangle(cornerRadius: 28) // 35 * 0.8
-                .fill(.ultraThinMaterial)
+                .fill(Color(red: 0.11, green: 0.11, blue: 0.12))
                 .overlay(
                     RoundedRectangle(cornerRadius: 28)
                         .stroke(Color.white.opacity(0.1), lineWidth: 0.5)
@@ -54,34 +54,14 @@ struct FloatingTab: Identifiable {
     let id: Int
 }
 
-struct FloatingTabBarContainer<Content: View>: View {
-    @Binding var selectedTab: Int
-    let content: Content
-    
-    init(selectedTab: Binding<Int>, @ViewBuilder content: () -> Content) {
-        self._selectedTab = selectedTab
-        self.content = content()
-    }
-    
-    var body: some View {
-        ZStack(alignment: .bottom) {
-            content
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            
-            FloatingTabBar(selectedTab: $selectedTab)
-                .padding(.bottom, 24)
-        }
-        .ignoresSafeArea(.keyboard)
-    }
-}
-
 #Preview {
     ZStack {
         Color.black.ignoresSafeArea()
         
-        FloatingTabBarContainer(selectedTab: .constant(0)) {
-            Text("Content Area")
-                .foregroundColor(.white)
+        VStack {
+            Spacer()
+            FloatingTabBar(selectedTab: .constant(0))
+                .padding(.bottom, 20)
         }
     }
 }
