@@ -9,6 +9,8 @@ import SwiftUI
 
 struct ScanTabView: View {
     @Binding var showDeveloperDashboard: Bool
+    @Binding var selectedTab: Int
+    @Binding var scrollToAnalyzingMeal: AnalyzingMeal?
     @State private var selectedMode: ScanMode = .photo
     @State private var showQuickLog = false
     @State private var showVoiceInput = false
@@ -209,10 +211,10 @@ struct ScanTabView: View {
         
         // Navigate to timeline and scroll to analyzing meal
         showLoading = false
-        NotificationCenter.default.post(
-            name: .switchToTimelineWithScroll,
-            object: analyzingMeal
-        )
+        scrollToAnalyzingMeal = analyzingMeal
+        withAnimation(.easeInOut(duration: 0.3)) {
+            selectedTab = 0
+        }
         
         // Store the analyzing meal ID to ensure we can complete it even if view state changes
         let analyzingMealId = analyzingMeal.id
@@ -332,5 +334,9 @@ struct QuickActionsBar: View {
 
 
 #Preview {
-    ScanTabView(showDeveloperDashboard: .constant(false))
+    ScanTabView(
+        showDeveloperDashboard: .constant(false),
+        selectedTab: .constant(2),
+        scrollToAnalyzingMeal: .constant(nil)
+    )
 }

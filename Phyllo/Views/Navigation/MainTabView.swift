@@ -11,6 +11,7 @@ struct MainTabView: View {
     @State private var selectedTab = 0
     @State private var showDeveloperDashboard = false
     @State private var scrollToAnalyzingMeal: AnalyzingMeal?
+    @State private var pendingTabSwitch: Int?
     
     var body: some View {
         ZStack {
@@ -30,7 +31,11 @@ struct MainTabView: View {
                     .tag(1)
                 .ignoresSafeArea(edges: [.top, .bottom])
                 
-                ScanTabView(showDeveloperDashboard: $showDeveloperDashboard)
+                ScanTabView(
+                    showDeveloperDashboard: $showDeveloperDashboard,
+                    selectedTab: $selectedTab,
+                    scrollToAnalyzingMeal: $scrollToAnalyzingMeal
+                )
                     .tag(2)
                 .ignoresSafeArea(edges: [.top, .bottom])
             }
@@ -45,6 +50,21 @@ struct MainTabView: View {
             }
         }
         .ignoresSafeArea()
+        .onReceive(NotificationCenter.default.publisher(for: .switchToTimelineWithScroll)) { notification in
+            if let analyzingMeal = notification.object as? AnalyzingMeal {
+                // Store the analyzing meal to scroll to
+                scrollToAnalyzingMeal = analyzingMeal
+                // Switch to timeline tab with animation
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    selectedTab = 0
+                }
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .switchToScanTab)) { _ in
+            withAnimation(.easeInOut(duration: 0.3)) {
+                selectedTab = 2
+            }
+        }
     }
 }
 

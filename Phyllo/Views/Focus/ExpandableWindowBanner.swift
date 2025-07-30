@@ -69,6 +69,13 @@ struct ExpandableWindowBanner: View {
     @Binding var showWindowDetail: Bool
     let animationNamespace: Namespace.ID
     
+    // Add analyzing meals for this window
+    private var analyzingMealsInWindow: [AnalyzingMeal] {
+        mockData.analyzingMeals.filter { meal in
+            meal.windowId == window.id
+        }
+    }
+    
     @StateObject private var timeProvider = TimeProvider.shared
     @StateObject private var mockData = MockDataManager.shared
     @State private var isExpanded = false
@@ -230,8 +237,8 @@ struct ExpandableWindowBanner: View {
             VStack(spacing: 0) {
                 windowBannerContent
                 
-                // Meals section (if any)
-                if !meals.isEmpty {
+                // Meals section (if any meals or analyzing)
+                if !meals.isEmpty || !analyzingMealsInWindow.isEmpty {
                     mealsSection
                 }
             }
@@ -393,6 +400,17 @@ struct ExpandableWindowBanner: View {
                 .frame(height: 1)
                 .padding(.horizontal, 16)
             
+            // Show analyzing meals first
+            ForEach(analyzingMealsInWindow) { analyzingMeal in
+                AnalyzingMealRowCompact(meal: analyzingMeal)
+                    .padding(.horizontal, 16)
+                    .transition(.asymmetric(
+                        insertion: .scale(scale: 0.95).combined(with: .opacity),
+                        removal: .opacity
+                    ))
+            }
+            
+            // Then show logged meals
             ForEach(meals) { meal in
                 MealRowCompact(meal: meal)
                     .padding(.horizontal, 16)
@@ -600,6 +618,92 @@ struct MealRowCompact: View {
         let formatter = DateFormatter()
         formatter.dateFormat = "h:mm"
         return formatter
+    }
+}
+
+// Compact analyzing meal row for inside window banner
+struct AnalyzingMealRowCompact: View {
+    let meal: AnalyzingMeal
+    @State private var dotsAnimation = false
+    @State private var currentMessageIndex = 0
+    @State private var messageTimer: Timer?
+    
+    let messages = [
+        "Analyzing meal...",
+        "Processing...",
+        "Calculating...",
+        "Almost done..."
+    ]
+    
+    var body: some View {
+        HStack(spacing: 8) {
+            // Time
+            Text(timeFormatter.string(from: meal.timestamp))
+                .font(.system(size: 11))
+                .foregroundColor(.white.opacity(0.5))
+                .frame(width: 35)
+            
+            // Loading dots instead of emoji
+            HStack(spacing: 3) {
+                ForEach(0..<3) { index in
+                    Circle()
+                        .fill(Color.phylloAccent)
+                        .frame(width: 5, height: 5)
+                        .scaleEffect(dotsAnimation ? 1.0 : 0.5)
+                        .opacity(dotsAnimation ? 1.0 : 0.3)
+                        .animation(
+                            Animation.easeInOut(duration: 0.8)
+                                .repeatForever()
+                                .delay(Double(index) * 0.2),
+                            value: dotsAnimation
+                        )
+                }
+            }
+            .frame(width: 16)
+            
+            // Meal info
+            VStack(alignment: .leading, spacing: 1) {
+                Text(messages[currentMessageIndex])
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(.white)
+                    .lineLimit(1)
+                    .animation(.easeInOut(duration: 0.3), value: currentMessageIndex)
+                
+                // Shimmer for macros
+                RoundedRectangle(cornerRadius: 3)
+                    .fill(Color.white.opacity(0.1))
+                    .frame(width: 100, height: 11)
+                    .shimmer()
+            }
+            
+            Spacer()
+            
+            // Loading spinner
+            ProgressView()
+                .progressViewStyle(CircularProgressViewStyle(tint: .phylloAccent.opacity(0.6)))
+                .scaleEffect(0.6)
+        }
+        .onAppear {
+            dotsAnimation = true
+            startMessageRotation()
+        }
+        .onDisappear {
+            messageTimer?.invalidate()
+        }
+    }
+    
+    private var timeFormatter: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "h:mm"
+        return formatter
+    }
+    
+    private func startMessageRotation() {
+        messageTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { _ in
+            withAnimation(.easeInOut(duration: 0.3)) {
+                currentMessageIndex = (currentMessageIndex + 1) % messages.count
+            }
+        }
     }
 }
 
