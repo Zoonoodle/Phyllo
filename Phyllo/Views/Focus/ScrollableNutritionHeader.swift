@@ -23,6 +23,7 @@ struct ScrollableNutritionHeader: View {
             .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
             .frame(height: 320)
             .frame(maxWidth: .infinity)
+            .clipped() // Prevent content from extending beyond bounds
             
             // Custom page indicator
             HStack(spacing: 8) {
@@ -42,6 +43,7 @@ struct ScrollableNutritionHeader: View {
                         .strokeBorder(Color.phylloBorder, lineWidth: 1)
                 )
         )
+        .clipped() // Also clip the entire component
         .onAppear {
             // Add haptic feedback when swiping
             UIImpactFeedbackGenerator(style: .light).prepare()

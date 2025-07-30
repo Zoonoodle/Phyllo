@@ -35,51 +35,55 @@ struct WindowDetailOverlay: View {
                     .ignoresSafeArea()
                 
                 // Custom header with back button
-                HStack {
-                    Button {
-                        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                            animateContent = false
-                            showWindowDetail = false
-                        }
-                    } label: {
-                        HStack(spacing: 8) {
-                            Image(systemName: "chevron.left")
-                                .font(.system(size: 16, weight: .medium))
-                            Text("Back")
-                                .font(.system(size: 16))
-                        }
-                        .foregroundColor(.white)
-                    }
-                    
-                    Spacer()
-                    
-                    Text(windowTitle)
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundColor(.white)
-                    
-                    Spacer()
-                    
-                    // Menu button
-                    Menu {
+                VStack(spacing: 16) {
+                    // Back button and menu on same line
+                    HStack {
                         Button {
-                            // Edit window action
+                            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                                animateContent = false
+                                showWindowDetail = false
+                            }
                         } label: {
-                            Label("Edit Window", systemImage: "pencil")
+                            HStack(spacing: 8) {
+                                Image(systemName: "chevron.left")
+                                    .font(.system(size: 16, weight: .medium))
+                                Text("Back")
+                                    .font(.system(size: 16))
+                            }
+                            .foregroundColor(.white)
                         }
                         
-                        Button {
-                            // Skip window action
+                        Spacer()
+                        
+                        // Menu button
+                        Menu {
+                            Button {
+                                // Edit window action
+                            } label: {
+                                Label("Edit Window", systemImage: "pencil")
+                            }
+                            
+                            Button {
+                                // Skip window action
+                            } label: {
+                                Label("Skip Window", systemImage: "forward.fill")
+                            }
                         } label: {
-                            Label("Skip Window", systemImage: "forward.fill")
+                            Image(systemName: "ellipsis")
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundColor(.white)
+                                .frame(width: 44, height: 44)
                         }
-                    } label: {
-                        Image(systemName: "ellipsis")
-                            .font(.system(size: 16, weight: .medium))
-                            .foregroundColor(.white)
-                            .frame(width: 44, height: 44)
                     }
+                    .padding(.horizontal, 16)
+                    
+                    // Title on its own line
+                    Text(windowTitle)
+                        .font(.system(size: 24, weight: .bold))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 16)
                 }
-                .padding(.horizontal, 16)
                 .padding(.top, 8)
                 .padding(.bottom, 16)
                 .background(Color.phylloBackground)
