@@ -54,6 +54,12 @@ struct MainTabView: View {
                 scrollToAnalyzingMeal = analyzingMeal
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: .navigateToMealDetails)) { notification in
+            if let meal = notification.object as? LoggedMeal {
+                // Switch to schedule tab
+                selectedTab = 0
+            }
+        }
         .onAppear {
             // Check if first time user
             if !UserDefaults.standard.bool(forKey: "hasCompletedOnboarding") {

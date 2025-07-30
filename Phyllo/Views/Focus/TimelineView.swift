@@ -91,6 +91,20 @@ struct TimelineView: View {
                     }
                 }
             }
+            .onReceive(NotificationCenter.default.publisher(for: .animateMealToWindow)) { notification in
+                if let meal = notification.object as? LoggedMeal {
+                    handleMealSlideAnimation(meal: meal, proxy: proxy)
+                }
+            }
+        }
+        .overlay(alignment: .topLeading) {
+            // Animated meal overlay
+            if showMealAnimation, let meal = animatingMeal {
+                MealRow(meal: meal)
+                    .padding(.horizontal, 24)
+                    .position(showMealAnimation ? animationEndPosition : animationStartPosition)
+                    .animation(.spring(response: 0.8, dampingFraction: 0.8, blendDuration: 0), value: showMealAnimation)
+            }
         }
     }
     
@@ -125,6 +139,59 @@ struct TimelineView: View {
                 return (meal: meal, offset: offset)
             }
             return nil
+        }
+    }
+    
+    private func handleMealSlideAnimation(meal: LoggedMeal, proxy: ScrollViewProxy) {
+        guard let window = mockData.mealWindows.first(where: { window in
+            meal.timestamp >= window.startTime && meal.timestamp <= window.endTime
+        }) else {
+            // Meal not in any window, trigger celebration without animation
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                NudgeManager.shared.triggerNudge(.mealLoggedCelebration(meal: meal))
+            }
+            return
+        }
+        
+        // Calculate positions
+        let mealHour = Calendar.current.component(.hour, from: meal.timestamp)
+        let mealMinute = Calendar.current.component(.minute, from: meal.timestamp)
+        let windowHour = Calendar.current.component(.hour, from: window.startTime)
+        
+        // Scroll to window if needed
+        if abs(mealHour - windowHour) > 2 {
+            withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                proxy.scrollTo(windowHour, anchor: .center)
+            }
+        }
+        
+        // Calculate animation positions
+        let hourHeight: CGFloat = 120
+        let startYOffset = CGFloat(mealMinute) / 60.0 * hourHeight
+        let startY = CGFloat(mealHour - 7) * hourHeight + startYOffset + 60
+        
+        let windowMinute = Calendar.current.component(.minute, from: window.startTime)
+        let endYOffset = CGFloat(windowMinute) / 60.0 * hourHeight
+        let endY = CGFloat(windowHour - 7) * hourHeight + endYOffset + 60
+        
+        animatingMeal = meal
+        animationStartPosition = CGPoint(x: UIScreen.main.bounds.width / 2, y: startY)
+        animationEndPosition = CGPoint(x: UIScreen.main.bounds.width / 2, y: endY)
+        
+        // Start animation
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            showMealAnimation = true
+            
+            // Hide animation and trigger celebration after completion
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                showMealAnimation = false
+                animatingMeal = nil
+                
+                // Trigger meal celebration nudge
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    NudgeManager.shared.triggerNudge(.mealLoggedCelebration(meal: meal))
+                }
+            }
         }
     }
     

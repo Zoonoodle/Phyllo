@@ -157,6 +157,15 @@ struct ScanTabView: View {
                     }
                     .presentationDetents([.large])
                     .presentationDragIndicator(.visible)
+                    .onDisappear {
+                        // Navigate to meal details after closing
+                        if !showResults {
+                            NotificationCenter.default.post(
+                                name: .navigateToMealDetails,
+                                object: meal
+                            )
+                        }
+                    }
                 }
             }
         }

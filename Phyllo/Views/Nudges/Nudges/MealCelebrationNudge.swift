@@ -10,6 +10,7 @@ import SwiftUI
 struct MealCelebrationNudge: View {
     let meal: LoggedMeal
     let onDismiss: () -> Void
+    var onViewDetails: (() -> Void)? = nil
     
     @State private var animateContent = false
     @State private var animateConfetti = false
@@ -63,6 +64,26 @@ struct MealCelebrationNudge: View {
                             .multilineTextAlignment(.center)
                             .padding(.horizontal)
                             .opacity(animateContent ? 1 : 0)
+                        
+                        // View Details button
+                        if onViewDetails != nil {
+                            Button(action: {
+                                dismissNudge()
+                                onViewDetails?()
+                            }) {
+                                Text("View Details")
+                                    .font(.system(size: 16, weight: .medium))
+                                    .foregroundColor(.phylloBackground)
+                                    .padding(.horizontal, 24)
+                                    .padding(.vertical, 12)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .fill(Color.phylloAccent)
+                                    )
+                            }
+                            .opacity(animateContent ? 1 : 0)
+                            .scaleEffect(animateContent ? 1 : 0.8)
+                        }
                     }
                     .padding(32)
                     .frame(maxWidth: 340)

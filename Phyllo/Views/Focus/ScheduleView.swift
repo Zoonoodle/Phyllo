@@ -56,6 +56,21 @@ struct ScheduleView: View {
                 ))
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: .navigateToMealDetails)) { notification in
+            if let meal = notification.object as? LoggedMeal {
+                // Find the window containing this meal
+                if let window = mockData.mealWindows.first(where: { window in
+                    meal.timestamp >= window.startTime && meal.timestamp <= window.endTime
+                }) {
+                    // Navigate to window detail
+                    selectedWindow = window
+                    withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+                        showWindowDetail = true
+                    }
+                }
+                // If meal is not in any window, just stay on timeline
+            }
+        }
     }
 }
 

@@ -37,9 +37,19 @@ struct NudgeContainer: View {
                     .transition(.opacity.combined(with: .scale(scale: 0.9)))
                     
                 case .mealLoggedCelebration(let meal):
-                    MealCelebrationNudge(meal: meal) {
-                        nudgeManager.dismissCurrentNudge()
-                    }
+                    MealCelebrationNudge(
+                        meal: meal,
+                        onDismiss: {
+                            nudgeManager.dismissCurrentNudge()
+                        },
+                        onViewDetails: {
+                            // Post notification to navigate to meal details
+                            NotificationCenter.default.post(
+                                name: .navigateToMealDetails,
+                                object: meal
+                            )
+                        }
+                    )
                     .zIndex(10001)
                     .transition(.opacity.combined(with: .scale(scale: 0.9)))
                     

@@ -62,6 +62,7 @@ extension Notification.Name {
     static let switchToScanTab = Notification.Name("switchToScanTab")
     static let switchToTimelineWithScroll = Notification.Name("switchToTimelineWithScroll")
     static let animateMealToWindow = Notification.Name("animateMealToWindow")
+    static let navigateToMealDetails = Notification.Name("navigateToMealDetails")
 }
 
 // Preview
