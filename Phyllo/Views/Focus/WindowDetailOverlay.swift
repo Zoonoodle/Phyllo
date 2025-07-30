@@ -29,6 +29,11 @@ struct WindowDetailOverlay: View {
                 
                 // Content
                 VStack(spacing: 0) {
+                // Safe area padding at top
+                Color.phylloBackground
+                    .frame(height: 60)
+                    .ignoresSafeArea()
+                
                 // Custom header with back button
                 HStack {
                     Button {
@@ -74,7 +79,7 @@ struct WindowDetailOverlay: View {
                             .frame(width: 44, height: 44)
                     }
                 }
-                .padding(.horizontal, 30)
+                .padding(.horizontal, 16)
                 .padding(.top, 8)
                 .padding(.bottom, 16)
                 .background(Color.phylloBackground)
@@ -85,15 +90,15 @@ struct WindowDetailOverlay: View {
                     VStack(spacing: 24) {
                         // Scrollable nutrition header
                         ScrollableNutritionHeader(window: window)
-                            .padding(.horizontal, 30)
+                            .padding(.horizontal, 16)
                         
                         // Logged foods section
                         WindowFoodsList(window: window)
-                            .padding(.horizontal, 30)
+                            .padding(.horizontal, 16)
                         
                         // Window purpose section
                         WindowPurposeCard(window: window)
-                            .padding(.horizontal, 30)
+                            .padding(.horizontal, 16)
                             .padding(.bottom, 32)
                     }
                     .padding(.top)
