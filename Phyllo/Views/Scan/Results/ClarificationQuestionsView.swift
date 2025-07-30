@@ -14,6 +14,10 @@ struct ClarificationQuestionsView: View {
     @State private var showResults = false
     @StateObject private var mockData = MockDataManager.shared
     
+    var analyzingMeal: AnalyzingMeal?
+    var mealResult: LoggedMeal?
+    var onComplete: ((LoggedMeal) -> Void)?
+    
     // Mock questions
     let questions = [
         ClarificationQuestion(
@@ -149,11 +153,6 @@ struct ClarificationQuestionsView: View {
             }
         }
         .preferredColorScheme(.dark)
-        .sheet(isPresented: $showResults) {
-            NavigationStack {
-                FoodAnalysisView(meal: createMockMeal(), isFromScan: true)
-            }
-        }
     }
     
     // MARK: - Components
@@ -268,7 +267,7 @@ struct ClarificationQuestionsView: View {
                 currentQuestionIndex += 1
             }
         } else {
-            showResults = true
+            completeClarification()
         }
     }
     
@@ -278,8 +277,19 @@ struct ClarificationQuestionsView: View {
                 currentQuestionIndex += 1
             }
         } else {
-            showResults = true
+            completeClarification()
         }
+    }
+    
+    private func completeClarification() {
+        // Use the passed meal result or create a new one
+        let finalMeal = mealResult ?? createMockMeal()
+        
+        // Call the completion handler
+        onComplete?(finalMeal)
+        
+        // Dismiss the view
+        dismiss()
     }
     
     private func createMockMeal() -> LoggedMeal {

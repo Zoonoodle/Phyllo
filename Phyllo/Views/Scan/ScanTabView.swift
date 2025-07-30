@@ -143,12 +143,15 @@ struct ScanTabView: View {
                     .interactiveDismissDisabled()
             }
             .fullScreenCover(isPresented: $showClarification) {
-                ClarificationQuestionsView()
-                    .onDisappear {
-                        if !showClarification, let analyzingMeal = currentAnalyzingMeal, let result = lastCompletedMeal {
-                            completeMealLogging(analyzingMeal: analyzingMeal, result: result)
+                ClarificationQuestionsView(
+                    analyzingMeal: currentAnalyzingMeal,
+                    mealResult: lastCompletedMeal,
+                    onComplete: { finalMeal in
+                        if let analyzingMeal = currentAnalyzingMeal {
+                            completeMealLogging(analyzingMeal: analyzingMeal, result: finalMeal)
                         }
                     }
+                )
             }
             .sheet(isPresented: $showResults) {
                 if let meal = lastCompletedMeal {
@@ -210,8 +213,11 @@ struct ScanTabView: View {
         
         // Simulate AI processing time in background
         DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+            // Make sure we still have the analyzing meal reference
+            guard let currentMeal = currentAnalyzingMeal else { return }
+            
             // Convert to logged meal
-            let result = analyzingMeal.toLoggedMeal(
+            let result = currentMeal.toLoggedMeal(
                 name: "Grilled Chicken Salad",
                 calories: 450,
                 protein: 35,
@@ -230,7 +236,7 @@ struct ScanTabView: View {
                 showClarification = true
             } else {
                 // Complete the meal without clarification
-                completeMealLogging(analyzingMeal: analyzingMeal, result: result)
+                completeMealLogging(analyzingMeal: currentMeal, result: result)
             }
         }
     }

@@ -24,9 +24,9 @@ struct MainTabView: View {
                     scrollToAnalyzingMeal: $scrollToAnalyzingMeal
                 )
             case 1:
-                MomentumTabView(showDeveloperDashboard: $showDeveloperDashboard)
-            case 2:
                 ScanView(showDeveloperDashboard: $showDeveloperDashboard)
+            case 2:
+                MomentumTabView(showDeveloperDashboard: $showDeveloperDashboard)
             default:
                 ScheduleView(
                     showDeveloperDashboard: $showDeveloperDashboard,
@@ -34,10 +34,10 @@ struct MainTabView: View {
                 )
             }
             
-            // Custom tab bar at bottom
+            // Floating tab bar at bottom
             VStack {
                 Spacer()
-                CustomTabBar(selectedTab: $selectedTab)
+                FloatingTabBar(selectedTab: $selectedTab)
             }
             .ignoresSafeArea(.keyboard)
         }
@@ -46,7 +46,7 @@ struct MainTabView: View {
             DeveloperDashboardView()
         }
         .onReceive(NotificationCenter.default.publisher(for: .switchToScanTab)) { _ in
-            selectedTab = 2 // Switch to scan tab
+            selectedTab = 1 // Switch to scan tab (now in middle)
         }
         .onReceive(NotificationCenter.default.publisher(for: .switchToTimelineWithScroll)) { notification in
             if let analyzingMeal = notification.object as? AnalyzingMeal {
