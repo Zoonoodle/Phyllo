@@ -112,15 +112,12 @@ struct ClarificationQuestionsView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color.black.ignoresSafeArea()
+                Color(hex: "0a0a0a").ignoresSafeArea()
                 
                 VStack(spacing: 0) {
-                    // Header
-                    headerView
-                    
                     // Progress dots
                     progressIndicator
-                        .padding(.top, 20)
+                        .padding(.top, 60)
                     
                     // Question section
                     ScrollView {
@@ -165,21 +162,7 @@ struct ClarificationQuestionsView: View {
     // MARK: - Components
     
     private var headerView: some View {
-        HStack {
-            Text("Fine-Tune Your Nutrition")
-                .font(.system(size: 22, weight: .bold))
-                .foregroundColor(.white)
-            
-            Spacer()
-            
-            Button("Done") {
-                showResults = true
-            }
-            .font(.system(size: 17, weight: .medium))
-            .foregroundColor(.green)
-        }
-        .padding(.horizontal, 20)
-        .padding(.top, 60)
+        EmptyView()
     }
     
     private var progressIndicator: some View {
@@ -197,7 +180,7 @@ struct ClarificationQuestionsView: View {
             // Icon
             ZStack {
                 Circle()
-                    .fill(Color.white.opacity(0.1))
+                    .fill(Color.white.opacity(0.03))
                     .frame(width: 48, height: 48)
                 
                 Image(systemName: "lightbulb.fill")
@@ -219,7 +202,7 @@ struct ClarificationQuestionsView: View {
             HStack(spacing: 12) {
                 ZStack {
                     Circle()
-                        .fill(Color.white.opacity(0.1))
+                        .fill(Color.white.opacity(0.03))
                         .frame(width: 32, height: 32)
                     
                     Image(systemName: "questionmark")
@@ -245,12 +228,16 @@ struct ClarificationQuestionsView: View {
             Button(action: submitAnswer) {
                 Text("Submit Answer")
                     .font(.system(size: 18, weight: .semibold))
-                    .foregroundColor(.black)
+                    .foregroundColor(selectedOptions[currentQuestion.id] != nil ? .white : .white.opacity(0.7))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
                     .background(
                         RoundedRectangle(cornerRadius: 16)
-                            .fill(selectedOptions[currentQuestion.id] != nil ? Color.white : Color.white.opacity(0.3))
+                            .fill(selectedOptions[currentQuestion.id] != nil ? Color.green.opacity(0.8) : Color.white.opacity(0.05))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                            )
                     )
             }
             .disabled(selectedOptions[currentQuestion.id] == nil)
@@ -345,7 +332,7 @@ struct OptionRow: View {
                 // Icon
                 Image(systemName: option.icon)
                     .font(.system(size: 20))
-                    .foregroundColor(isSelected ? .black : .white.opacity(0.6))
+                    .foregroundColor(isSelected ? .green : .white.opacity(0.6))
                     .frame(width: 24)
                 
                 // Content
@@ -353,17 +340,17 @@ struct OptionRow: View {
                     HStack {
                         Text(option.text)
                             .font(.system(size: 16, weight: .medium))
-                            .foregroundColor(isSelected ? .black : .white)
+                            .foregroundColor(isSelected ? .white : .white.opacity(0.9))
                         
                         if let note = option.note {
                             Text(note)
                                 .font(.system(size: 13))
-                                .foregroundColor(isSelected ? .black.opacity(0.6) : .white.opacity(0.4))
+                                .foregroundColor(isSelected ? .white.opacity(0.6) : .white.opacity(0.4))
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 2)
                                 .background(
                                     Capsule()
-                                        .fill(isSelected ? Color.black.opacity(0.1) : Color.white.opacity(0.1))
+                                        .fill(isSelected ? Color.green.opacity(0.1) : Color.white.opacity(0.05))
                                 )
                         }
                     }
@@ -378,7 +365,7 @@ struct OptionRow: View {
                                 Text("\(abs(option.calorieImpact)) cal")
                                     .font(.system(size: 13, weight: .medium))
                             }
-                            .foregroundColor(option.calorieImpact > 50 ? .red : (isSelected ? .black.opacity(0.7) : .white.opacity(0.5)))
+                            .foregroundColor(option.calorieImpact > 50 ? .red.opacity(0.8) : (isSelected ? .white.opacity(0.7) : .white.opacity(0.5)))
                         } else {
                             HStack(spacing: 4) {
                                 Image(systemName: "checkmark")
@@ -386,26 +373,26 @@ struct OptionRow: View {
                                 Text("+0 calories")
                                     .font(.system(size: 13, weight: .medium))
                             }
-                            .foregroundColor(.green)
+                            .foregroundColor(.green.opacity(0.8))
                         }
                         
                         // Macros
                         if option.proteinImpact > 0 {
                             Text("+ \(option.proteinImpact) g P")
                                 .font(.system(size: 13))
-                                .foregroundColor(isSelected ? .black.opacity(0.7) : .white.opacity(0.5))
+                                .foregroundColor(isSelected ? .white.opacity(0.7) : .white.opacity(0.5))
                         }
                         
                         if option.carbImpact > 0 {
                             Text("+ \(option.carbImpact) g C")
                                 .font(.system(size: 13))
-                                .foregroundColor(option.carbImpact > 20 ? .orange : (isSelected ? .black.opacity(0.7) : .white.opacity(0.5)))
+                                .foregroundColor(option.carbImpact > 20 ? .orange.opacity(0.8) : (isSelected ? .white.opacity(0.7) : .white.opacity(0.5)))
                         }
                         
                         if option.fatImpact > 0 {
                             Text("+ \(option.fatImpact) g F")
                                 .font(.system(size: 13))
-                                .foregroundColor(isSelected ? .black.opacity(0.7) : .white.opacity(0.5))
+                                .foregroundColor(isSelected ? .white.opacity(0.7) : .white.opacity(0.5))
                         }
                     }
                 }
@@ -415,11 +402,11 @@ struct OptionRow: View {
             .padding(16)
             .background(
                 RoundedRectangle(cornerRadius: 16)
-                    .fill(isSelected ? Color.white : Color.white.opacity(0.05))
+                    .fill(isSelected ? Color.green.opacity(0.15) : Color.white.opacity(0.03))
                     .overlay(
                         RoundedRectangle(cornerRadius: 16)
                             .stroke(
-                                isSelected ? Color.clear : Color.white.opacity(0.1),
+                                isSelected ? Color.green.opacity(0.4) : Color.white.opacity(0.05),
                                 lineWidth: 1
                             )
                     )
