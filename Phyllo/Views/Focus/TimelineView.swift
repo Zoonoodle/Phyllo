@@ -19,6 +19,12 @@ struct TimelineView: View {
     @State private var currentTime = Date()
     @Environment(\.isPreview) private var isPreview
     
+    // Animation states
+    @State private var animatingMeal: LoggedMeal?
+    @State private var animationStartPosition: CGPoint = .zero
+    @State private var animationEndPosition: CGPoint = .zero
+    @State private var showMealAnimation = false
+    
     // Timer to update current time marker (disabled in preview mode)
     var timer: Publishers.Autoconnect<Timer.TimerPublisher> {
         Timer.publish(every: 60, on: .main, in: isPreview ? .default : .common).autoconnect()

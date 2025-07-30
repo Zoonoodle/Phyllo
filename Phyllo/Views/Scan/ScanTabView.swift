@@ -145,8 +145,8 @@ struct ScanTabView: View {
             .fullScreenCover(isPresented: $showClarification) {
                 ClarificationQuestionsView()
                     .onDisappear {
-                        if !showClarification {
-                            showResults = true
+                        if !showClarification, let analyzingMeal = currentAnalyzingMeal, let result = lastCompletedMeal {
+                            completeMealLogging(analyzingMeal: analyzingMeal, result: result)
                         }
                     }
             }
@@ -210,15 +210,36 @@ struct ScanTabView: View {
                 fat: 20
             )
             
-            // Complete the analyzing meal
-            mockData.completeAnalyzingMeal(analyzingMeal, with: result)
+            // Store the result for later use
             lastCompletedMeal = result
-            currentAnalyzingMeal = nil
             
-            // Show food analysis view after completion
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                showResults = true
+            // Determine if clarification is needed
+            let needsClarification = selectedMode == .voice || Bool.random()
+            
+            if needsClarification {
+                // Show clarification questions
+                showClarification = true
+            } else {
+                // Complete the meal without clarification
+                completeMealLogging(analyzingMeal: analyzingMeal, result: result)
             }
+        }
+    }
+    
+    private func completeMealLogging(analyzingMeal: AnalyzingMeal, result: LoggedMeal) {
+        // Complete the analyzing meal
+        mockData.completeAnalyzingMeal(analyzingMeal, with: result)
+        currentAnalyzingMeal = nil
+        
+        // Trigger meal sliding animation
+        NotificationCenter.default.post(
+            name: .animateMealToWindow,
+            object: result
+        )
+        
+        // After animation completes and celebration nudge shows, show meal details
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+            showResults = true
         }
     }
     

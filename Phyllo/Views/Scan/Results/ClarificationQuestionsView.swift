@@ -251,7 +251,7 @@ struct ClarificationQuestionsView: View {
             
             // Skip button
             Button(action: skipQuestion) {
-                Text("Skip Question")
+                Text("I don't know")
                     .font(.system(size: 17, weight: .medium))
                     .foregroundColor(.white.opacity(0.5))
             }

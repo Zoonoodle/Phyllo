@@ -8,8 +8,6 @@
 import SwiftUI
 
 struct ScannerOverlayView: View {
-    @State private var cornerAnimation = false
-    
     var body: some View {
         GeometryReader { geometry in
             ZStack {
@@ -29,13 +27,7 @@ struct ScannerOverlayView: View {
                         )
                         .frame(width: 60, height: 60)
                         .position(cornerPosition(for: CornerPosition(rawValue: index)!, in: geometry.size))
-                        .opacity(cornerAnimation ? 1.0 : 0.6)
-                        .scaleEffect(cornerAnimation ? 1.0 : 0.95)
-                        .animation(
-                            Animation.easeInOut(duration: 1.5)
-                                .repeatForever(autoreverses: true),
-                            value: cornerAnimation
-                        )
+                        .opacity(0.8)
                 }
                 
                 // Center crosshair (subtle)
@@ -63,9 +55,6 @@ struct ScannerOverlayView: View {
                 }
                 .position(x: geometry.size.width / 2, y: geometry.size.height / 2)
             }
-        }
-        .onAppear {
-            cornerAnimation = true
         }
     }
     
