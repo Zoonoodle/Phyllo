@@ -31,11 +31,13 @@ struct MainTabView: View {
                 ScanTabView(showDeveloperDashboard: $showDeveloperDashboard)
                     .tag(2)
             }
+            .tabViewStyle(.page(indexDisplayMode: .never))
             
-            // Custom tab bar overlay
+            // Floating tab bar overlay
             VStack {
                 Spacer()
-                CustomTabBar(selectedTab: $selectedTab)
+                FloatingTabBar(selectedTab: $selectedTab)
+                    .padding(.bottom, 24)
             }
             .ignoresSafeArea(.keyboard)
         }

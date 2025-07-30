@@ -4,9 +4,9 @@ struct FloatingTabBar: View {
     @Binding var selectedTab: Int
     
     let tabs = [
-        FloatingTab(icon: "house.fill", id: 0),
-        FloatingTab(icon: "chart.bar.fill", id: 1),
-        FloatingTab(icon: "plus", id: 2)
+        FloatingTab(icon: "calendar", id: 0),
+        FloatingTab(icon: "chart.line.uptrend.xyaxis", id: 1),
+        FloatingTab(icon: "camera", id: 2)
     ]
     
     var body: some View {
