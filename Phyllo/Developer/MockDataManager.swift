@@ -86,7 +86,13 @@ class MockDataManager: ObservableObject {
         // Find the appropriate window for this meal time
         let targetWindow = window ?? windowForTimestamp(mealTime)
         
-        let newMeal = LoggedMeal(
+        // Generate micronutrient data based on window purpose
+        var micronutrients: [String: Double] = [:]
+        if let windowPurpose = targetWindow?.purpose {
+            micronutrients = generateMicronutrients(for: windowPurpose, mealName: randomMeal.0)
+        }
+        
+        var newMeal = LoggedMeal(
             name: randomMeal.0,
             calories: randomMeal.1,
             protein: randomMeal.2,
@@ -95,6 +101,7 @@ class MockDataManager: ObservableObject {
             timestamp: mealTime,
             windowId: targetWindow?.id
         )
+        newMeal.micronutrients = micronutrients
         
         todaysMeals.append(newMeal)
         todaysMeals.sort { $0.timestamp < $1.timestamp }
@@ -209,7 +216,13 @@ class MockDataManager: ObservableObject {
         // Find the appropriate window for this meal time
         let targetWindow = windowForTimestamp(timestamp)
         
-        let meal = LoggedMeal(
+        // Generate micronutrient data based on window purpose
+        var micronutrients: [String: Double] = [:]
+        if let windowPurpose = targetWindow?.purpose {
+            micronutrients = generateMicronutrients(for: windowPurpose, mealName: name)
+        }
+        
+        var meal = LoggedMeal(
             name: name,
             calories: calories,
             protein: protein,
@@ -218,6 +231,7 @@ class MockDataManager: ObservableObject {
             timestamp: timestamp,
             windowId: targetWindow?.id
         )
+        meal.micronutrients = micronutrients
         todaysMeals.append(meal)
         todaysMeals.sort { $0.timestamp < $1.timestamp }
     }
@@ -347,6 +361,60 @@ class MockDataManager: ObservableObject {
                 MicronutrientConsumption(info: .b6, consumed: 1.4)
             ]
         }
+    }
+    
+    // Generate micronutrient data for a meal based on window purpose
+    private func generateMicronutrients(for purpose: WindowPurpose, mealName: String) -> [String: Double] {
+        var micronutrients: [String: Double] = [:]
+        
+        // Generate reasonable values based on window purpose
+        // These are mock values - in a real app these would come from a nutrition database
+        switch purpose {
+        case .sustainedEnergy:
+            micronutrients["B12"] = Double.random(in: 0.3...0.8)
+            micronutrients["Iron"] = Double.random(in: 2.0...5.0)
+            micronutrients["Magnesium"] = Double.random(in: 50...120)
+            
+        case .focusBoost:
+            micronutrients["Omega-3"] = Double.random(in: 0.2...0.5)
+            micronutrients["B6"] = Double.random(in: 0.2...0.4)
+            micronutrients["Vitamin D"] = Double.random(in: 80...200)
+            
+        case .recovery:
+            micronutrients["Vitamin C"] = Double.random(in: 15...35)
+            micronutrients["Zinc"] = Double.random(in: 1.5...3.5)
+            micronutrients["Potassium"] = Double.random(in: 400...800)
+            
+        case .preworkout:
+            micronutrients["B-Complex"] = Double.random(in: 8...15)
+            micronutrients["Caffeine"] = Double.random(in: 40...100)
+            micronutrients["L-Arginine"] = Double.random(in: 0.8...1.5)
+            
+        case .postworkout:
+            micronutrients["Protein"] = Double.random(in: 8...15) // Additional protein tracking
+            micronutrients["Leucine"] = Double.random(in: 0.4...0.8)
+            micronutrients["Magnesium"] = Double.random(in: 50...120)
+            
+        case .metabolicBoost:
+            micronutrients["Green Tea"] = Double.random(in: 30...60)
+            micronutrients["Chromium"] = Double.random(in: 5...10)
+            micronutrients["L-Carnitine"] = Double.random(in: 0.3...0.6)
+            
+        case .sleepOptimization:
+            micronutrients["Magnesium"] = Double.random(in: 60...100)
+            micronutrients["Tryptophan"] = Double.random(in: 40...80)
+            micronutrients["B6"] = Double.random(in: 0.2...0.4)
+        }
+        
+        // Add some variation based on meal name
+        if mealName.lowercased().contains("salad") {
+            micronutrients["Vitamin C"] = (micronutrients["Vitamin C"] ?? 0) + Double.random(in: 10...20)
+        }
+        if mealName.lowercased().contains("chicken") || mealName.lowercased().contains("salmon") {
+            micronutrients["Protein"] = (micronutrients["Protein"] ?? 0) + Double.random(in: 5...10)
+        }
+        
+        return micronutrients
     }
     
     // Additional properties for Momentum tab

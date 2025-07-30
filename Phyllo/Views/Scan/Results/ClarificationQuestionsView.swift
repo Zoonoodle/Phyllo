@@ -287,15 +287,55 @@ struct ClarificationQuestionsView: View {
     
     private func createMockMeal() -> LoggedMeal {
         // Create a mock meal based on the selected options
-        return LoggedMeal(
+        let activeWindow = mockData.activeWindow
+        
+        // Generate micronutrients based on window purpose
+        var micronutrients: [String: Double] = [:]
+        if let windowPurpose = activeWindow?.purpose {
+            // Mock micronutrient values based on window purpose
+            switch windowPurpose {
+            case .sustainedEnergy:
+                micronutrients["B12"] = 0.6
+                micronutrients["Iron"] = 3.5
+                micronutrients["Magnesium"] = 85.0
+            case .focusBoost:
+                micronutrients["Omega-3"] = 0.35
+                micronutrients["B6"] = 0.3
+                micronutrients["Vitamin D"] = 140.0
+            case .recovery:
+                micronutrients["Vitamin C"] = 25.0
+                micronutrients["Zinc"] = 2.5
+                micronutrients["Potassium"] = 600.0
+            case .preworkout:
+                micronutrients["B-Complex"] = 11.5
+                micronutrients["Caffeine"] = 70.0
+                micronutrients["L-Arginine"] = 1.2
+            case .postworkout:
+                micronutrients["Protein"] = 11.5
+                micronutrients["Leucine"] = 0.6
+                micronutrients["Magnesium"] = 85.0
+            case .metabolicBoost:
+                micronutrients["Green Tea"] = 45.0
+                micronutrients["Chromium"] = 7.5
+                micronutrients["L-Carnitine"] = 0.45
+            case .sleepOptimization:
+                micronutrients["Magnesium"] = 80.0
+                micronutrients["Tryptophan"] = 60.0
+                micronutrients["B6"] = 0.3
+            }
+        }
+        
+        var meal = LoggedMeal(
             name: "Custom Prepared Meal",
             calories: 450,
             protein: 25,
             carbs: 45,
             fat: 18,
             timestamp: Date(),
-            windowId: mockData.activeWindow?.id
+            windowId: activeWindow?.id
         )
+        meal.micronutrients = micronutrients
+        return meal
     }
 }
 

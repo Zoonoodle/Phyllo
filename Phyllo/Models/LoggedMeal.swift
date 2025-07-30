@@ -18,6 +18,9 @@ struct LoggedMeal: Identifiable {
     let timestamp: Date
     var windowId: UUID? // Which window this meal belongs to
     
+    // Micronutrient data - Dictionary of nutrient name to amount consumed
+    var micronutrients: [String: Double] = [:]
+    
     // Computed properties
     var emoji: String {
         // Simple emoji selection based on meal name

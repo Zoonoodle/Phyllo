@@ -19,7 +19,7 @@ struct FoodAnalysisView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color.black.ignoresSafeArea()
+                Color.phylloBackground.ignoresSafeArea()
                 
                 ScrollView {
                     VStack(spacing: 24) {
@@ -35,6 +35,11 @@ struct FoodAnalysisView: View {
                         // Daily summary (if from scan)
                         if isFromScan {
                             dailySummarySection
+                        }
+                        
+                        // Window-specific micronutrients (if meal has a window)
+                        if let window = mealWindow {
+                            windowMicronutrientSection(for: window)
                         }
                         
                         // Detailed nutrition
@@ -74,7 +79,7 @@ struct FoodAnalysisView: View {
     
     private var foodImageSection: some View {
         RoundedRectangle(cornerRadius: 20)
-            .fill(Color.white.opacity(0.05))
+            .fill(Color.phylloElevated)
             .frame(height: 250)
             .overlay(
                 VStack {
@@ -105,7 +110,7 @@ struct FoodAnalysisView: View {
         HStack(spacing: 4) {
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 14))
-                .foregroundColor(.green)
+                .foregroundColor(.phylloAccent)
             
             Text("94% Confident")
                 .font(.system(size: 13, weight: .semibold))
@@ -115,10 +120,10 @@ struct FoodAnalysisView: View {
         .padding(.vertical, 6)
         .background(
             Capsule()
-                .fill(Color.white.opacity(0.1))
+                .fill(Color.phylloElevated)
                 .overlay(
                     Capsule()
-                        .stroke(Color.green.opacity(0.3), lineWidth: 1)
+                        .stroke(Color.phylloAccent.opacity(0.3), lineWidth: 1)
                 )
         )
         .scaleEffect(confidenceAnimation ? 1.05 : 1.0)
@@ -172,10 +177,10 @@ struct FoodAnalysisView: View {
         .frame(maxWidth: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 20)
-                .fill(Color.white.opacity(0.03))
+                .fill(Color.phylloElevated)
                 .overlay(
                     RoundedRectangle(cornerRadius: 20)
-                        .stroke(Color.white.opacity(0.05), lineWidth: 1)
+                        .stroke(Color.phylloBorder, lineWidth: 1)
                 )
         )
     }
@@ -195,7 +200,7 @@ struct FoodAnalysisView: View {
             .padding(16)
             .background(
                 RoundedRectangle(cornerRadius: 16)
-                    .fill(Color.white.opacity(0.03))
+                    .fill(Color.phylloElevated)
             )
         }
     }
@@ -215,10 +220,10 @@ struct FoodAnalysisView: View {
                 .padding(.vertical, 16)
                 .background(
                     RoundedRectangle(cornerRadius: 16)
-                        .fill(Color.white.opacity(0.1))
+                        .fill(Color.phylloElevated)
                         .overlay(
                             RoundedRectangle(cornerRadius: 16)
-                                .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                                .stroke(Color.phylloBorder, lineWidth: 1)
                         )
                 )
             }
@@ -317,12 +322,53 @@ struct FoodAnalysisView: View {
         .padding(20)
         .background(
             RoundedRectangle(cornerRadius: 20)
-                .fill(Color.white.opacity(0.03))
+                .fill(Color.phylloElevated)
                 .overlay(
                     RoundedRectangle(cornerRadius: 20)
-                        .stroke(Color.white.opacity(0.05), lineWidth: 1)
+                        .stroke(Color.phylloBorder, lineWidth: 1)
                 )
         )
+    }
+    
+    // Window-specific micronutrient section
+    private func windowMicronutrientSection(for window: MealWindow) -> some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Text("Window Micronutrients")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(.white)
+                
+                Spacer()
+                
+                // Window purpose badge
+                Text(windowPurposeDisplayName(window.purpose))
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(Color.phylloAccent)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .background(
+                        Capsule()
+                            .fill(Color.phylloAccent.opacity(0.15))
+                    )
+            }
+            
+            // Get micronutrients for this window purpose
+            let windowMicronutrients = getWindowMicronutrients(for: window.purpose)
+            
+            VStack(spacing: 16) {
+                ForEach(windowMicronutrients, id: \.info.name) { nutrient in
+                    WindowMicronutrientRow(
+                        micronutrient: nutrient,
+                        mealContribution: getMealContribution(for: nutrient.info.name)
+                    )
+                }
+            }
+            .padding(16)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color.phylloElevated)
+            )
+        }
     }
     
     // MARK: - Helper Properties
@@ -369,6 +415,28 @@ struct FoodAnalysisView: View {
         let formatter = DateFormatter()
         formatter.timeStyle = .short
         return formatter.string(from: date)
+    }
+    
+    private func getWindowMicronutrients(for purpose: WindowPurpose) -> [MicronutrientConsumption] {
+        // Get micronutrients from MockDataManager for this window purpose
+        return mockData.getMicronutrientConsumption(for: purpose)
+    }
+    
+    private func getMealContribution(for nutrientName: String) -> Double {
+        // Get the meal's contribution to this micronutrient
+        return meal.micronutrients[nutrientName] ?? 0.0
+    }
+    
+    private func windowPurposeDisplayName(_ purpose: WindowPurpose) -> String {
+        switch purpose {
+        case .sustainedEnergy: return "Sustained Energy"
+        case .focusBoost: return "Focus Boost"
+        case .recovery: return "Recovery"
+        case .preworkout: return "Pre-Workout"
+        case .postworkout: return "Post-Workout"
+        case .metabolicBoost: return "Metabolic Boost"
+        case .sleepOptimization: return "Sleep Optimization"
+        }
     }
 }
 
@@ -448,6 +516,82 @@ struct NutritionRow: View {
             Text(value)
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundColor(.white)
+        }
+    }
+}
+
+struct WindowMicronutrientRow: View {
+    let micronutrient: MicronutrientConsumption
+    let mealContribution: Double
+    
+    private var mealPercentage: Double {
+        mealContribution / micronutrient.info.dailyTarget
+    }
+    
+    private var progressColor: Color {
+        switch micronutrient.percentage {
+        case 0..<0.5: return .red
+        case 0.5..<0.7: return .orange
+        case 0.7..<0.9: return .yellow
+        default: return Color.phylloAccent
+        }
+    }
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            // Name and icon
+            HStack {
+                Text("\(micronutrient.info.icon) \(micronutrient.info.name)")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(.white)
+                
+                Spacer()
+                
+                // Meal contribution
+                Text("+\(String(format: "%.1f", mealContribution))\(micronutrient.info.unit.rawValue)")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(Color.phylloAccent)
+            }
+            
+            // Progress bar
+            GeometryReader { geometry in
+                ZStack(alignment: .leading) {
+                    // Background
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(Color.white.opacity(0.1))
+                        .frame(height: 6)
+                    
+                    // Total progress
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(progressColor.opacity(0.5))
+                        .frame(width: geometry.size.width * CGFloat(min(micronutrient.percentage, 1)), height: 6)
+                    
+                    // Meal contribution overlay
+                    if mealContribution > 0 {
+                        RoundedRectangle(cornerRadius: 3)
+                            .fill(Color.phylloAccent)
+                            .frame(
+                                width: geometry.size.width * CGFloat(min(mealPercentage, 1)),
+                                height: 6
+                            )
+                            .offset(x: geometry.size.width * CGFloat(min(micronutrient.percentage - mealPercentage, 1)))
+                    }
+                }
+            }
+            .frame(height: 6)
+            
+            // Values and percentage
+            HStack {
+                Text(micronutrient.displayString)
+                    .font(.system(size: 13))
+                    .foregroundColor(.white.opacity(0.5))
+                
+                Spacer()
+                
+                Text("\(Int(micronutrient.percentage * 100))% of daily target")
+                    .font(.system(size: 13))
+                    .foregroundColor(.white.opacity(0.5))
+            }
         }
     }
 }
