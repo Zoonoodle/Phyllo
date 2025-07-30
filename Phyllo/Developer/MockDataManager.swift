@@ -423,6 +423,18 @@ class MockDataManager: ObservableObject {
             return distance1 < distance2
         }
         
+        // Only assign to nearest window if it's within 2 hours
+        if let nearestWindow = nearestWindow {
+            let distance = min(
+                abs(timestamp.timeIntervalSince(nearestWindow.startTime)),
+                abs(timestamp.timeIntervalSince(nearestWindow.endTime))
+            )
+            // If more than 2 hours away from any window, don't assign to a window
+            if distance > 2 * 3600 {
+                return nil
+            }
+        }
+        
         return nearestWindow
     }
     

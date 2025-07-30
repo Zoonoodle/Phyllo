@@ -14,8 +14,8 @@ struct WindowFoodsList: View {
     // Filter meals for this window
     private var windowMeals: [LoggedMeal] {
         mockData.todaysMeals.filter { meal in
-            // Check if meal was logged during this window
-            meal.timestamp >= window.startTime && meal.timestamp <= window.endTime
+            // Check if meal is assigned to this window
+            meal.windowId == window.id
         }
     }
     
