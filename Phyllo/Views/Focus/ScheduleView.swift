@@ -19,15 +19,8 @@ struct ScheduleView: View {
     var body: some View {
         ZStack {
             // Background color that extends to edges
-            VStack(spacing: 0) {
-                // Top area with same color as tab bar
-                Color(red: 0.11, green: 0.11, blue: 0.12)
-                    .frame(maxHeight: 150)
-                
-                // Rest of the view
-                Color.phylloBackground
-            }
-            .ignoresSafeArea()
+            Color.phylloBackground
+                .ignoresSafeArea()
             
             VStack(spacing: 0) {
                 // Add safe area padding at top
@@ -40,7 +33,7 @@ struct ScheduleView: View {
                         selectedDate: $selectedDate,
                         showDeveloperDashboard: $showDeveloperDashboard
                     )
-                    .background(Color(red: 0.11, green: 0.11, blue: 0.12))
+                    .background(Color.phylloBackground)
                     .zIndex(2) // Keep header above timeline content
                     .opacity(showWindowDetail ? 0 : 1)
                     
