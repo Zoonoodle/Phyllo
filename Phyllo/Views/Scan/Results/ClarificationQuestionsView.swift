@@ -115,15 +115,19 @@ struct ClarificationQuestionsView: View {
                 Color(hex: "0a0a0a").ignoresSafeArea()
                 
                 VStack(spacing: 0) {
+                    // Header at top
+                    headerSection
+                        .padding(.top, 60)
+                        .padding(.bottom, 20)
+                    
                     // Progress dots
                     progressIndicator
-                        .padding(.top, 60)
                     
                     // Question section
                     ScrollView {
                         VStack(spacing: 24) {
-                            // Question header
-                            questionHeader
+                            // Question
+                            questionSection
                             
                             // Options
                             VStack(spacing: 12) {
@@ -141,7 +145,7 @@ struct ClarificationQuestionsView: View {
                             }
                             .padding(.horizontal, 20)
                         }
-                        .padding(.top, 40)
+                        .padding(.top, 30)
                         .padding(.bottom, 120)
                     }
                     
@@ -161,8 +165,25 @@ struct ClarificationQuestionsView: View {
     
     // MARK: - Components
     
-    private var headerView: some View {
-        EmptyView()
+    private var headerSection: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "lightbulb.fill")
+                .font(.system(size: 20))
+                .foregroundColor(.white.opacity(0.7))
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Quick clarification")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(.white)
+                
+                Text("A few details for accuracy")
+                    .font(.system(size: 14))
+                    .foregroundColor(.white.opacity(0.5))
+            }
+            
+            Spacer()
+        }
+        .padding(.horizontal, 20)
     }
     
     private var progressIndicator: some View {
@@ -175,51 +196,26 @@ struct ClarificationQuestionsView: View {
         }
     }
     
-    private var questionHeader: some View {
-        VStack(spacing: 16) {
-            // Icon
+    private var questionSection: some View {
+        HStack(spacing: 12) {
             ZStack {
                 Circle()
                     .fill(Color.white.opacity(0.03))
-                    .frame(width: 48, height: 48)
+                    .frame(width: 32, height: 32)
                 
-                Image(systemName: "lightbulb.fill")
-                    .font(.system(size: 24))
+                Image(systemName: "questionmark")
+                    .font(.system(size: 16, weight: .medium))
                     .foregroundColor(.white.opacity(0.7))
             }
             
-            // Title
-            Text("Quick clarification")
-                .font(.system(size: 18, weight: .semibold))
+            Text(currentQuestion.question)
+                .font(.system(size: 17, weight: .medium))
                 .foregroundColor(.white)
+                .multilineTextAlignment(.leading)
             
-            // Subtitle
-            Text("A few details for accuracy")
-                .font(.system(size: 15))
-                .foregroundColor(.white.opacity(0.5))
-            
-            // Question
-            HStack(spacing: 12) {
-                ZStack {
-                    Circle()
-                        .fill(Color.white.opacity(0.03))
-                        .frame(width: 32, height: 32)
-                    
-                    Image(systemName: "questionmark")
-                        .font(.system(size: 16, weight: .medium))
-                        .foregroundColor(.white.opacity(0.7))
-                }
-                
-                Text(currentQuestion.question)
-                    .font(.system(size: 17, weight: .medium))
-                    .foregroundColor(.white)
-                    .multilineTextAlignment(.leading)
-                
-                Spacer()
-            }
-            .padding(.horizontal, 20)
-            .padding(.top, 20)
+            Spacer()
         }
+        .padding(.horizontal, 20)
     }
     
     private var bottomButtons: some View {
@@ -228,12 +224,12 @@ struct ClarificationQuestionsView: View {
             Button(action: submitAnswer) {
                 Text("Submit Answer")
                     .font(.system(size: 18, weight: .semibold))
-                    .foregroundColor(selectedOptions[currentQuestion.id] != nil ? .white : .white.opacity(0.7))
+                    .foregroundColor(selectedOptions[currentQuestion.id] != nil ? .black : .white.opacity(0.7))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
                     .background(
                         RoundedRectangle(cornerRadius: 16)
-                            .fill(selectedOptions[currentQuestion.id] != nil ? Color.green.opacity(0.8) : Color.white.opacity(0.05))
+                            .fill(selectedOptions[currentQuestion.id] != nil ? Color.white.opacity(0.9) : Color.white.opacity(0.05))
                             .overlay(
                                 RoundedRectangle(cornerRadius: 16)
                                     .stroke(Color.white.opacity(0.1), lineWidth: 1)
@@ -332,7 +328,7 @@ struct OptionRow: View {
                 // Icon
                 Image(systemName: option.icon)
                     .font(.system(size: 20))
-                    .foregroundColor(isSelected ? .green : .white.opacity(0.6))
+                    .foregroundColor(.white.opacity(0.6))
                     .frame(width: 24)
                 
                 // Content
@@ -350,7 +346,7 @@ struct OptionRow: View {
                                 .padding(.vertical, 2)
                                 .background(
                                     Capsule()
-                                        .fill(isSelected ? Color.green.opacity(0.1) : Color.white.opacity(0.05))
+                                        .fill(isSelected ? Color.white.opacity(0.08) : Color.white.opacity(0.05))
                                 )
                         }
                     }
@@ -373,7 +369,7 @@ struct OptionRow: View {
                                 Text("+0 calories")
                                     .font(.system(size: 13, weight: .medium))
                             }
-                            .foregroundColor(.green.opacity(0.8))
+                            .foregroundColor(.green)
                         }
                         
                         // Macros
@@ -402,11 +398,11 @@ struct OptionRow: View {
             .padding(16)
             .background(
                 RoundedRectangle(cornerRadius: 16)
-                    .fill(isSelected ? Color.green.opacity(0.15) : Color.white.opacity(0.03))
+                    .fill(isSelected ? Color.white.opacity(0.08) : Color.white.opacity(0.03))
                     .overlay(
                         RoundedRectangle(cornerRadius: 16)
                             .stroke(
-                                isSelected ? Color.green.opacity(0.4) : Color.white.opacity(0.05),
+                                isSelected ? Color.white.opacity(0.15) : Color.white.opacity(0.05),
                                 lineWidth: 1
                             )
                     )
