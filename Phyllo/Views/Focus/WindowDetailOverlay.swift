@@ -34,56 +34,55 @@ struct WindowDetailOverlay: View {
                     .frame(height: 60)
                     .ignoresSafeArea()
                 
-                // Custom header with back button
-                VStack(spacing: 16) {
-                    // Back button and menu on same line
-                    HStack {
-                        Button {
-                            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                                animateContent = false
-                                showWindowDetail = false
-                            }
-                        } label: {
-                            HStack(spacing: 8) {
-                                Image(systemName: "chevron.left")
-                                    .font(.system(size: 16, weight: .medium))
-                                Text("Back")
-                                    .font(.system(size: 16))
-                            }
-                            .foregroundColor(.white)
+                // Custom header with back button, title, and menu
+                HStack {
+                    // Back button
+                    Button {
+                        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                            animateContent = false
+                            showWindowDetail = false
                         }
-                        
-                        Spacer()
-                        
-                        // Menu button
-                        Menu {
-                            Button {
-                                // Edit window action
-                            } label: {
-                                Label("Edit Window", systemImage: "pencil")
-                            }
-                            
-                            Button {
-                                // Skip window action
-                            } label: {
-                                Label("Skip Window", systemImage: "forward.fill")
-                            }
-                        } label: {
-                            Image(systemName: "ellipsis")
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: "chevron.left")
                                 .font(.system(size: 16, weight: .medium))
-                                .foregroundColor(.white)
-                                .frame(width: 44, height: 44)
+                            Text("Back")
+                                .font(.system(size: 16))
                         }
-                    }
-                    .padding(.horizontal, 16)
-                    
-                    // Title on its own line
-                    Text(windowTitle)
-                        .font(.system(size: 24, weight: .bold))
                         .foregroundColor(.white)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, 16)
+                    }
+                    
+                    Spacer()
+                    
+                    // Centered title
+                    Text(windowTitle)
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                    
+                    Spacer()
+                    
+                    // Menu button
+                    Menu {
+                        Button {
+                            // Edit window action
+                        } label: {
+                            Label("Edit Window", systemImage: "pencil")
+                        }
+                        
+                        Button {
+                            // Skip window action
+                        } label: {
+                            Label("Skip Window", systemImage: "forward.fill")
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis")
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundColor(.white)
+                            .frame(width: 44, height: 44)
+                    }
                 }
+                .padding(.horizontal, 24)
                 .padding(.top, 8)
                 .padding(.bottom, 16)
                 .background(Color.phylloBackground)
@@ -94,15 +93,15 @@ struct WindowDetailOverlay: View {
                     VStack(spacing: 24) {
                         // Scrollable nutrition header
                         ScrollableNutritionHeader(window: window)
-                            .padding(.horizontal, 16)
+                            .padding(.horizontal, 24)
                         
                         // Logged foods section
                         WindowFoodsList(window: window)
-                            .padding(.horizontal, 16)
+                            .padding(.horizontal, 24)
                         
                         // Window purpose section
                         WindowPurposeCard(window: window)
-                            .padding(.horizontal, 16)
+                            .padding(.horizontal, 24)
                             .padding(.bottom, 32)
                     }
                     .padding(.top)
