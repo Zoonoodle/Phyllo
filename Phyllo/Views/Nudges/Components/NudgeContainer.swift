@@ -43,11 +43,16 @@ struct NudgeContainer: View {
                             nudgeManager.dismissCurrentNudge()
                         },
                         onViewDetails: {
-                            // Post notification to navigate to meal details
-                            NotificationCenter.default.post(
-                                name: .navigateToMealDetails,
-                                object: meal
-                            )
+                            // First switch to scan tab
+                            NotificationCenter.default.post(name: .switchToScanTab, object: nil)
+                            
+                            // Then navigate to meal details after a small delay to allow tab switch
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                                NotificationCenter.default.post(
+                                    name: .navigateToMealDetails,
+                                    object: meal
+                                )
+                            }
                         }
                     )
                     .zIndex(10001)
