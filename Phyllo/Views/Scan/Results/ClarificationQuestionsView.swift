@@ -326,6 +326,15 @@ struct ClarificationQuestionsView: View {
             }
         }
         
+        // Generate generic ingredients for the custom meal
+        let ingredients = [
+            MealIngredient(name: "Lean Protein", quantity: 4, unit: "oz", foodGroup: .protein, calories: 140, protein: 25.0, carbs: 0.0, fat: 3.0),
+            MealIngredient(name: "Mixed Vegetables", quantity: 1.5, unit: "cups", foodGroup: .vegetable, calories: 40, protein: 2.0, carbs: 8.0, fat: 0.5),
+            MealIngredient(name: "Brown Rice", quantity: 0.5, unit: "cup", foodGroup: .grain, calories: 110, protein: 2.5, carbs: 23.0, fat: 1.0),
+            MealIngredient(name: "Olive Oil", quantity: 1, unit: "tbsp", foodGroup: .fat, calories: 120, protein: 0.0, carbs: 0.0, fat: 14.0),
+            MealIngredient(name: "Seasoning Blend", quantity: 1, unit: "tsp", foodGroup: .other, calories: 5, protein: 0.2, carbs: 1.0, fat: 0.1)
+        ]
+        
         var meal = LoggedMeal(
             name: "Custom Prepared Meal",
             calories: 450,
@@ -336,6 +345,7 @@ struct ClarificationQuestionsView: View {
             windowId: activeWindow?.id
         )
         meal.micronutrients = micronutrients
+        meal.ingredients = ingredients
         return meal
     }
 }

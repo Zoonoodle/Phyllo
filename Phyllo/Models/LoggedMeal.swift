@@ -8,6 +8,52 @@
 import Foundation
 import SwiftUI
 
+// Food group enum for color coding
+enum FoodGroup: String, CaseIterable {
+    case protein = "Protein"
+    case vegetable = "Vegetable"
+    case fruit = "Fruit"
+    case grain = "Grain"
+    case dairy = "Dairy"
+    case fat = "Fat"
+    case sauce = "Sauce"
+    case other = "Other"
+    
+    var color: Color {
+        switch self {
+        case .protein: return Color(hex: "E94B3C") // Soft red
+        case .vegetable: return Color(hex: "6AB187") // Soft green
+        case .fruit: return Color(hex: "F4A460") // Soft orange
+        case .grain: return Color(hex: "DDA15E") // Soft brown
+        case .dairy: return Color(hex: "87CEEB") // Soft blue
+        case .fat: return Color(hex: "F9D71C") // Soft yellow
+        case .sauce: return Color(hex: "B19CD9") // Soft purple
+        case .other: return Color(hex: "A8A8A8") // Soft gray
+        }
+    }
+}
+
+struct MealIngredient: Identifiable {
+    let id = UUID()
+    let name: String
+    let quantity: Double
+    let unit: String // "oz", "g", "cup", "tbsp", etc.
+    let foodGroup: FoodGroup
+    
+    // Optional nutrition data per ingredient
+    var calories: Int?
+    var protein: Double?
+    var carbs: Double?
+    var fat: Double?
+    
+    // Display string for the ingredient
+    var displayString: String {
+        let quantityStr = quantity.truncatingRemainder(dividingBy: 1) == 0 ? 
+            String(format: "%.0f", quantity) : String(format: "%.1f", quantity)
+        return "\(name) \(quantityStr)\(unit)"
+    }
+}
+
 struct LoggedMeal: Identifiable {
     let id = UUID()
     let name: String
@@ -20,6 +66,9 @@ struct LoggedMeal: Identifiable {
     
     // Micronutrient data - Dictionary of nutrient name to amount consumed
     var micronutrients: [String: Double] = [:]
+    
+    // Ingredients that make up this meal
+    var ingredients: [MealIngredient] = []
     
     // Computed properties
     var emoji: String {

@@ -8,21 +8,29 @@
 import SwiftUI
 
 extension Color {
-    // Spotify-inspired dark theme colors
-    static let phylloBackground = Color(hex: "121212") // Spotify's main background
-    static let phylloElevated = Color(hex: "1E1E1E") // Spotify's elevated surface (cards)
-    static let phylloSurface = Color(hex: "282828") // Higher elevation surface
-    static let phylloAccent = Color(hex: "1DB954") // Spotify green
-    static let phylloGreen = Color(hex: "1DB954") // Alias for accent color
+    // Softer dark theme colors
+    static let phylloBackground = Color(hex: "1A1A1A") // Softer dark background
+    static let phylloElevated = Color(hex: "252525") // Softer elevated surface
+    static let phylloSurface = Color(hex: "303030") // Softer higher elevation
+    static let phylloAccent = Color(hex: "4ADE80") // Softer green
+    static let phylloGreen = Color(hex: "4ADE80") // Alias for accent color
+    
+    // Secondary colors
+    static let phylloSecondaryBackground = Color(hex: "1F1F1F") // Between background and elevated
+    static let phylloTertiary = Color(hex: "2A2A2A") // Another elevation level
     
     // Text colors
-    static let phylloTextPrimary = Color.white
-    static let phylloTextSecondary = Color.white.opacity(0.7)
-    static let phylloTextTertiary = Color.white.opacity(0.5)
+    static let phylloTextPrimary = Color(hex: "FAFAFA") // Slightly off-white
+    static let phylloTextSecondary = Color(hex: "FAFAFA").opacity(0.7)
+    static let phylloTextTertiary = Color(hex: "FAFAFA").opacity(0.5)
     
     // Border and divider
-    static let phylloBorder = Color.white.opacity(0.1)
-    static let phylloDivider = Color.white.opacity(0.08)
+    static let phylloBorder = Color(hex: "FAFAFA").opacity(0.08)
+    static let phylloDivider = Color(hex: "FAFAFA").opacity(0.06)
+    
+    // Tab colors
+    static let phylloTabInactive = Color(hex: "FAFAFA").opacity(0.3)
+    static let phylloTabActive = Color.phylloAccent
 }
 
 // Hex color initializer

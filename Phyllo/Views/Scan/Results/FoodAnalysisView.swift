@@ -7,10 +7,17 @@
 
 import SwiftUI
 
+enum FoodAnalysisTab: String, CaseIterable {
+    case nutrition = "Nutrition"
+    case ingredients = "Ingredients"
+    case insights = "Insights"
+}
+
 struct FoodAnalysisView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var showEditView = false
     @State private var confidenceAnimation = false
+    @State private var selectedTab: FoodAnalysisTab = .nutrition
     @StateObject private var mockData = MockDataManager.shared
     
     let meal: LoggedMeal
@@ -21,35 +28,38 @@ struct FoodAnalysisView: View {
             ZStack {
                 Color.phylloBackground.ignoresSafeArea()
                 
-                ScrollView {
-                    VStack(spacing: 24) {
-                        // Food image
+                VStack(spacing: 0) {
+                    // Food header section (always visible)
+                    VStack(spacing: 16) {
                         foodImageSection
-                        
-                        // Food name and confidence
                         foodInfoSection
-                        
-                        // Nutrition overview
-                        nutritionOverviewSection
-                        
-                        // Daily summary (if from scan)
-                        if isFromScan {
-                            dailySummarySection
-                        }
-                        
-                        // Window-specific micronutrients (if meal has a window)
-                        if let window = mealWindow {
-                            windowMicronutrientSection(for: window)
-                        }
-                        
-                        // Detailed nutrition
-                        detailedNutritionSection
-                        
-                        // Action buttons
-                        actionButtonsSection
                     }
                     .padding(.horizontal, 20)
-                    .padding(.bottom, 40)
+                    .padding(.top, 16)
+                    
+                    // Tab selector
+                    tabSelector
+                        .padding(.horizontal, 20)
+                        .padding(.top, 20)
+                    
+                    // Tab content
+                    ScrollView {
+                        VStack(spacing: 24) {
+                            switch selectedTab {
+                            case .nutrition:
+                                nutritionTabContent
+                            case .ingredients:
+                                ingredientsTabContent
+                            case .insights:
+                                insightsTabContent
+                            }
+                            
+                            // Action buttons (always at bottom)
+                            actionButtonsSection
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 24)
+                    }
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
@@ -75,12 +85,74 @@ struct FoodAnalysisView: View {
         }
     }
     
+    // MARK: - Tab Selector
+    
+    private var tabSelector: some View {
+        HStack(spacing: 0) {
+            ForEach(FoodAnalysisTab.allCases, id: \.self) { tab in
+                Button(action: {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        selectedTab = tab
+                    }
+                }) {
+                    VStack(spacing: 8) {
+                        Text(tab.rawValue)
+                            .font(.system(size: 15, weight: selectedTab == tab ? .semibold : .medium))
+                            .foregroundColor(selectedTab == tab ? Color.phylloTabActive : Color.phylloTabInactive)
+                        
+                        // Underline indicator
+                        Rectangle()
+                            .fill(selectedTab == tab ? Color.phylloTabActive : Color.clear)
+                            .frame(height: 2)
+                            .animation(.easeInOut(duration: 0.2), value: selectedTab)
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+            }
+        }
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.phylloSecondaryBackground)
+        )
+    }
+    
+    // MARK: - Tab Content
+    
+    private var nutritionTabContent: some View {
+        VStack(spacing: 24) {
+            nutritionOverviewSection
+            
+            if isFromScan {
+                dailySummarySection
+            }
+            
+            detailedNutritionSection
+        }
+    }
+    
+    private var ingredientsTabContent: some View {
+        VStack(spacing: 24) {
+            ingredientsListSection
+            ingredientNutritionBreakdown
+        }
+    }
+    
+    private var insightsTabContent: some View {
+        VStack(spacing: 24) {
+            if let window = mealWindow {
+                windowMicronutrientSection(for: window)
+            }
+            
+            mealInsightsSection
+        }
+    }
+    
     // MARK: - Sections
     
     private var foodImageSection: some View {
         RoundedRectangle(cornerRadius: 20)
             .fill(Color.phylloElevated)
-            .frame(height: 250)
+            .frame(height: 200)
             .overlay(
                 VStack {
                     Image(systemName: "photo.fill")
@@ -593,6 +665,201 @@ struct WindowMicronutrientRow: View {
                     .foregroundColor(.white.opacity(0.5))
             }
         }
+    }
+}
+
+// MARK: - New Sections for Tabs
+
+extension FoodAnalysisView {
+    private var ingredientsListSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Ingredients")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundColor(.white)
+            
+            VStack(spacing: 12) {
+                ForEach(meal.ingredients) { ingredient in
+                    FoodIngredientRow(ingredient: ingredient)
+                }
+            }
+        }
+    }
+    
+    private var ingredientNutritionBreakdown: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Nutrition by Ingredient")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundColor(.white)
+            
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 12) {
+                    ForEach(meal.ingredients.filter { $0.calories != nil }) { ingredient in
+                        IngredientNutritionCard(ingredient: ingredient)
+                    }
+                }
+            }
+        }
+    }
+    
+    private var mealInsightsSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Meal Insights")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundColor(.white)
+            
+            VStack(spacing: 12) {
+                InsightRow(icon: "lightbulb.fill", text: "This meal provides \(Int(Double(meal.protein) / Double(userDailyProtein) * 100))% of your daily protein needs", color: .blue)
+                
+                if meal.calories < 400 {
+                    InsightRow(icon: "leaf.fill", text: "Light meal - perfect for maintaining energy without feeling heavy", color: .green)
+                }
+                
+                if let window = mealWindow {
+                    InsightRow(icon: "clock.fill", text: "Optimally timed for \(windowPurposeInsight(window.purpose))", color: .orange)
+                }
+                
+                if meal.ingredients.filter({ $0.foodGroup == .vegetable }).count >= 3 {
+                    InsightRow(icon: "star.fill", text: "Excellent vegetable variety for micronutrient diversity", color: .yellow)
+                }
+            }
+        }
+    }
+    
+    private func windowPurposeInsight(_ purpose: WindowPurpose) -> String {
+        switch purpose {
+        case .sustainedEnergy: return "sustained energy throughout your day"
+        case .focusBoost: return "enhanced mental clarity and focus"
+        case .recovery: return "optimal muscle recovery and repair"
+        case .preworkout: return "fueling your upcoming workout"
+        case .postworkout: return "maximizing post-workout recovery"
+        case .metabolicBoost: return "supporting your metabolic rate"
+        case .sleepOptimization: return "promoting restful sleep"
+        }
+    }
+}
+
+// MARK: - Supporting Views
+
+struct FoodIngredientRow: View {
+    let ingredient: MealIngredient
+    
+    var body: some View {
+        HStack(spacing: 12) {
+            // Color-coded circle
+            Circle()
+                .fill(ingredient.foodGroup.color.opacity(0.3))
+                .frame(width: 8, height: 8)
+            
+            // Ingredient chip
+            HStack(spacing: 6) {
+                Text(ingredient.name)
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundColor(.white)
+                
+                Text(ingredient.displayString.replacingOccurrences(of: ingredient.name + " ", with: ""))
+                    .font(.system(size: 13))
+                    .foregroundColor(.white.opacity(0.6))
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+            .background(
+                Capsule()
+                    .fill(ingredient.foodGroup.color.opacity(0.15))
+                    .overlay(
+                        Capsule()
+                            .stroke(ingredient.foodGroup.color.opacity(0.3), lineWidth: 1)
+                    )
+            )
+            
+            Spacer()
+        }
+    }
+}
+
+struct IngredientNutritionCard: View {
+    let ingredient: MealIngredient
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(ingredient.name)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(.white)
+                .lineLimit(1)
+            
+            if let calories = ingredient.calories {
+                Text("\(calories) cal")
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundColor(ingredient.foodGroup.color)
+            }
+            
+            VStack(alignment: .leading, spacing: 4) {
+                if let protein = ingredient.protein {
+                    MacroMiniRow(label: "P", value: protein, color: .blue)
+                }
+                if let carbs = ingredient.carbs {
+                    MacroMiniRow(label: "C", value: carbs, color: .orange)
+                }
+                if let fat = ingredient.fat {
+                    MacroMiniRow(label: "F", value: fat, color: .yellow)
+                }
+            }
+        }
+        .padding(12)
+        .frame(width: 120)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.phylloElevated)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.phylloBorder, lineWidth: 1)
+                )
+        )
+    }
+}
+
+struct MacroMiniRow: View {
+    let label: String
+    let value: Double
+    let color: Color
+    
+    var body: some View {
+        HStack(spacing: 4) {
+            Text(label)
+                .font(.system(size: 11))
+                .foregroundColor(color.opacity(0.8))
+                .frame(width: 12)
+            
+            Text(String(format: "%.1fg", value))
+                .font(.system(size: 11, weight: .medium))
+                .foregroundColor(.white.opacity(0.7))
+        }
+    }
+}
+
+struct InsightRow: View {
+    let icon: String
+    let text: String
+    let color: Color
+    
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 16))
+                .foregroundColor(color)
+                .frame(width: 24)
+            
+            Text(text)
+                .font(.system(size: 14))
+                .foregroundColor(.white.opacity(0.8))
+                .fixedSize(horizontal: false, vertical: true)
+            
+            Spacer()
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.phylloElevated)
+        )
     }
 }
 

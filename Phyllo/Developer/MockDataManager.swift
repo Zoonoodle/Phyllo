@@ -92,6 +92,9 @@ class MockDataManager: ObservableObject {
             micronutrients = generateMicronutrients(for: windowPurpose, mealName: randomMeal.0)
         }
         
+        // Generate ingredients based on meal name
+        let ingredients = generateIngredients(for: randomMeal.0)
+        
         var newMeal = LoggedMeal(
             name: randomMeal.0,
             calories: randomMeal.1,
@@ -102,6 +105,7 @@ class MockDataManager: ObservableObject {
             windowId: targetWindow?.id
         )
         newMeal.micronutrients = micronutrients
+        newMeal.ingredients = ingredients
         
         todaysMeals.append(newMeal)
         todaysMeals.sort { $0.timestamp < $1.timestamp }
@@ -222,6 +226,9 @@ class MockDataManager: ObservableObject {
             micronutrients = generateMicronutrients(for: windowPurpose, mealName: name)
         }
         
+        // Generate ingredients
+        let ingredients = generateIngredients(for: name)
+        
         var meal = LoggedMeal(
             name: name,
             calories: calories,
@@ -232,6 +239,7 @@ class MockDataManager: ObservableObject {
             windowId: targetWindow?.id
         )
         meal.micronutrients = micronutrients
+        meal.ingredients = ingredients
         todaysMeals.append(meal)
         todaysMeals.sort { $0.timestamp < $1.timestamp }
     }
@@ -415,6 +423,84 @@ class MockDataManager: ObservableObject {
         }
         
         return micronutrients
+    }
+    
+    // Generate ingredients for a meal based on its name
+    private func generateIngredients(for mealName: String) -> [MealIngredient] {
+        var ingredients: [MealIngredient] = []
+        
+        switch mealName {
+        case "Grilled Chicken Salad":
+            ingredients = [
+                MealIngredient(name: "Grilled Chicken", quantity: 4, unit: "oz", foodGroup: .protein, calories: 180, protein: 35.0, carbs: 0.0, fat: 4.0),
+                MealIngredient(name: "Mixed Greens", quantity: 2, unit: "cups", foodGroup: .vegetable, calories: 20, protein: 2.0, carbs: 4.0, fat: 0.0),
+                MealIngredient(name: "Cherry Tomatoes", quantity: 0.5, unit: "cup", foodGroup: .vegetable, calories: 15, protein: 1.0, carbs: 3.0, fat: 0.0),
+                MealIngredient(name: "Cucumber", quantity: 0.5, unit: "cup", foodGroup: .vegetable, calories: 8, protein: 0.5, carbs: 2.0, fat: 0.0),
+                MealIngredient(name: "Ranch Dressing", quantity: 2, unit: "tbsp", foodGroup: .sauce, calories: 140, protein: 0.0, carbs: 2.0, fat: 15.0),
+                MealIngredient(name: "Black Olives", quantity: 0.25, unit: "cup", foodGroup: .fat, calories: 40, protein: 0.0, carbs: 2.0, fat: 4.0),
+                MealIngredient(name: "Croutons", quantity: 0.25, unit: "cup", foodGroup: .grain, calories: 47, protein: 1.5, carbs: 9.0, fat: 1.0)
+            ]
+            
+        case "Protein Smoothie":
+            ingredients = [
+                MealIngredient(name: "Whey Protein", quantity: 1, unit: "scoop", foodGroup: .protein, calories: 120, protein: 25.0, carbs: 3.0, fat: 1.0),
+                MealIngredient(name: "Banana", quantity: 1, unit: "medium", foodGroup: .fruit, calories: 105, protein: 1.3, carbs: 27.0, fat: 0.4),
+                MealIngredient(name: "Almond Milk", quantity: 1, unit: "cup", foodGroup: .dairy, calories: 40, protein: 1.0, carbs: 3.0, fat: 3.0),
+                MealIngredient(name: "Peanut Butter", quantity: 1, unit: "tbsp", foodGroup: .fat, calories: 95, protein: 4.0, carbs: 3.0, fat: 8.0),
+                MealIngredient(name: "Spinach", quantity: 1, unit: "cup", foodGroup: .vegetable, calories: 7, protein: 0.9, carbs: 1.1, fat: 0.1),
+                MealIngredient(name: "Ice", quantity: 0.5, unit: "cup", foodGroup: .other, calories: 0, protein: 0.0, carbs: 0.0, fat: 0.0)
+            ]
+            
+        case "Salmon & Quinoa":
+            ingredients = [
+                MealIngredient(name: "Atlantic Salmon", quantity: 5, unit: "oz", foodGroup: .protein, calories: 290, protein: 37.0, carbs: 0.0, fat: 15.0),
+                MealIngredient(name: "Quinoa", quantity: 0.75, unit: "cup", foodGroup: .grain, calories: 165, protein: 6.0, carbs: 30.0, fat: 2.5),
+                MealIngredient(name: "Asparagus", quantity: 1, unit: "cup", foodGroup: .vegetable, calories: 27, protein: 3.0, carbs: 5.0, fat: 0.2),
+                MealIngredient(name: "Lemon", quantity: 0.25, unit: "medium", foodGroup: .fruit, calories: 5, protein: 0.2, carbs: 1.5, fat: 0.1),
+                MealIngredient(name: "Olive Oil", quantity: 1, unit: "tbsp", foodGroup: .fat, calories: 120, protein: 0.0, carbs: 0.0, fat: 14.0),
+                MealIngredient(name: "Garlic", quantity: 2, unit: "cloves", foodGroup: .vegetable, calories: 9, protein: 0.4, carbs: 2.0, fat: 0.0)
+            ]
+            
+        case "Greek Yogurt Parfait":
+            ingredients = [
+                MealIngredient(name: "Greek Yogurt", quantity: 1, unit: "cup", foodGroup: .dairy, calories: 150, protein: 20.0, carbs: 9.0, fat: 4.0),
+                MealIngredient(name: "Granola", quantity: 0.25, unit: "cup", foodGroup: .grain, calories: 110, protein: 3.0, carbs: 16.0, fat: 4.5),
+                MealIngredient(name: "Mixed Berries", quantity: 0.5, unit: "cup", foodGroup: .fruit, calories: 40, protein: 0.5, carbs: 10.0, fat: 0.3),
+                MealIngredient(name: "Honey", quantity: 1, unit: "tbsp", foodGroup: .other, calories: 64, protein: 0.1, carbs: 17.0, fat: 0.0),
+                MealIngredient(name: "Chia Seeds", quantity: 1, unit: "tsp", foodGroup: .other, calories: 20, protein: 0.8, carbs: 1.7, fat: 1.3)
+            ]
+            
+        case "Turkey Wrap":
+            ingredients = [
+                MealIngredient(name: "Sliced Turkey", quantity: 4, unit: "oz", foodGroup: .protein, calories: 120, protein: 24.0, carbs: 2.0, fat: 2.0),
+                MealIngredient(name: "Whole Wheat Tortilla", quantity: 1, unit: "large", foodGroup: .grain, calories: 140, protein: 5.0, carbs: 23.0, fat: 3.5),
+                MealIngredient(name: "Lettuce", quantity: 0.5, unit: "cup", foodGroup: .vegetable, calories: 5, protein: 0.5, carbs: 1.0, fat: 0.1),
+                MealIngredient(name: "Tomato", quantity: 2, unit: "slices", foodGroup: .vegetable, calories: 10, protein: 0.5, carbs: 2.0, fat: 0.1),
+                MealIngredient(name: "Avocado", quantity: 0.25, unit: "medium", foodGroup: .fat, calories: 60, protein: 0.7, carbs: 3.0, fat: 5.5),
+                MealIngredient(name: "Mustard", quantity: 1, unit: "tsp", foodGroup: .sauce, calories: 5, protein: 0.3, carbs: 0.5, fat: 0.3),
+                MealIngredient(name: "Swiss Cheese", quantity: 1, unit: "slice", foodGroup: .dairy, calories: 106, protein: 8.0, carbs: 1.5, fat: 7.8)
+            ]
+            
+        case "Overnight Oats":
+            ingredients = [
+                MealIngredient(name: "Rolled Oats", quantity: 0.5, unit: "cup", foodGroup: .grain, calories: 150, protein: 5.0, carbs: 27.0, fat: 3.0),
+                MealIngredient(name: "Almond Milk", quantity: 0.75, unit: "cup", foodGroup: .dairy, calories: 30, protein: 0.8, carbs: 2.3, fat: 2.3),
+                MealIngredient(name: "Strawberries", quantity: 0.5, unit: "cup", foodGroup: .fruit, calories: 27, protein: 0.6, carbs: 6.5, fat: 0.3),
+                MealIngredient(name: "Maple Syrup", quantity: 1, unit: "tbsp", foodGroup: .other, calories: 52, protein: 0.0, carbs: 13.4, fat: 0.0),
+                MealIngredient(name: "Almond Butter", quantity: 1, unit: "tbsp", foodGroup: .fat, calories: 98, protein: 3.4, carbs: 3.0, fat: 8.9),
+                MealIngredient(name: "Cinnamon", quantity: 0.5, unit: "tsp", foodGroup: .other, calories: 3, protein: 0.1, carbs: 0.8, fat: 0.0)
+            ]
+            
+        default:
+            // Generic ingredients for other meals
+            ingredients = [
+                MealIngredient(name: "Main Protein", quantity: 4, unit: "oz", foodGroup: .protein),
+                MealIngredient(name: "Vegetables", quantity: 1, unit: "cup", foodGroup: .vegetable),
+                MealIngredient(name: "Grains", quantity: 0.5, unit: "cup", foodGroup: .grain)
+            ]
+        }
+        
+        return ingredients
     }
     
     // Additional properties for Momentum tab
