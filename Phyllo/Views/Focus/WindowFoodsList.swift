@@ -9,6 +9,7 @@ import SwiftUI
 
 struct WindowFoodsList: View {
     let window: MealWindow
+    @Binding var selectedMealId: String?
     @StateObject private var mockData = MockDataManager.shared
     
     // Filter meals for this window
@@ -64,12 +65,21 @@ struct WindowFoodsList: View {
                     
                     // Show logged meals
                     ForEach(windowMeals) { meal in
-                        FoodItemCard(meal: meal)
+                        FoodItemCard(meal: meal, isSelected: selectedMealId == meal.id.uuidString)
                             .transition(.asymmetric(
                                 insertion: .scale(scale: 0.95).combined(with: .opacity),
                                 removal: .opacity
                             ))
                             .animation(.spring(response: 0.4, dampingFraction: 0.8), value: windowMeals.count)
+                            .onAppear {
+                                // Auto-open meal analysis if this is the selected meal
+                                if selectedMealId == meal.id.uuidString {
+                                    // Clear the selection after a delay to allow animation
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                        selectedMealId = nil
+                                    }
+                                }
+                            }
                     }
                 }
             }
@@ -79,6 +89,7 @@ struct WindowFoodsList: View {
 
 struct FoodItemCard: View {
     let meal: LoggedMeal
+    let isSelected: Bool
     @State private var showFoodAnalysis = false
     @State private var isExpanded = false
     
@@ -195,6 +206,14 @@ struct FoodItemCard: View {
                 FoodAnalysisView(meal: meal)
             }
         }
+        .onAppear {
+            if isSelected {
+                // Auto-open the food analysis view
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                    showFoodAnalysis = true
+                }
+            }
+        }
     }
     
     private func timeString(from date: Date) -> String {
@@ -262,7 +281,7 @@ struct IngredientChip: View {
     ZStack {
         Color.phylloBackground.ignoresSafeArea()
         
-        WindowFoodsList(window: MockDataManager.shared.mealWindows[0])
+        WindowFoodsList(window: MockDataManager.shared.mealWindows[0], selectedMealId: .constant(nil))
             .padding()
     }
     .onAppear {

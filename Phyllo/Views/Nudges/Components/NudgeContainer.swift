@@ -43,8 +43,8 @@ struct NudgeContainer: View {
                             nudgeManager.dismissCurrentNudge()
                         },
                         onViewDetails: {
-                            // First switch to scan tab
-                            NotificationCenter.default.post(name: .switchToScanTab, object: nil)
+                            // First switch to schedule tab (timeline)
+                            NotificationCenter.default.post(name: .switchToScheduleTab, object: nil)
                             
                             // Then navigate to meal details after a small delay to allow tab switch
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {

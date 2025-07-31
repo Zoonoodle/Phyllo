@@ -68,6 +68,11 @@ struct MainTabView: View {
                 selectedTab = 2
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: .switchToScheduleTab)) { _ in
+            withAnimation(.easeInOut(duration: 0.3)) {
+                selectedTab = 0
+            }
+        }
         .onReceive(NotificationCenter.default.publisher(for: .showMealResults)) { notification in
             if let meal = notification.object as? LoggedMeal {
                 resultMeal = meal

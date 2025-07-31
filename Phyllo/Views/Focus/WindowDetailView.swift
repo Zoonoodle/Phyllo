@@ -37,7 +37,7 @@ struct WindowDetailView: View {
                         .padding(.top, -8) // Reduce spacing between card and indicator
                         
                         // Logged foods section
-                        WindowFoodsList(window: window)
+                        WindowFoodsList(window: window, selectedMealId: .constant(nil))
                             .padding(.horizontal)
                         
                         // Window purpose section

@@ -14,6 +14,7 @@ struct ScheduleView: View {
     @State private var selectedDate = Date()
     @State private var selectedWindow: MealWindow?
     @State private var showWindowDetail = false
+    @State private var selectedMealId: String?
     @Namespace private var animationNamespace
     
     var body: some View {
@@ -56,6 +57,7 @@ struct ScheduleView: View {
                 WindowDetailOverlay(
                     window: window,
                     showWindowDetail: $showWindowDetail,
+                    selectedMealId: $selectedMealId,
                     animationNamespace: animationNamespace
                 )
                 .transition(.asymmetric(
@@ -70,8 +72,9 @@ struct ScheduleView: View {
                 if let window = mockData.mealWindows.first(where: { window in
                     meal.timestamp >= window.startTime && meal.timestamp <= window.endTime
                 }) {
-                    // Navigate to window detail
+                    // Navigate to window detail with specific meal selected
                     selectedWindow = window
+                    selectedMealId = meal.id.uuidString
                     withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
                         showWindowDetail = true
                     }

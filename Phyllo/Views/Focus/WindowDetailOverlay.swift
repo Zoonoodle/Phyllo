@@ -10,6 +10,7 @@ import SwiftUI
 struct WindowDetailOverlay: View {
     let window: MealWindow
     @Binding var showWindowDetail: Bool
+    @Binding var selectedMealId: String?
     let animationNamespace: Namespace.ID
     @State private var animateContent = false
     @State private var currentPage = 0
@@ -108,7 +109,7 @@ struct WindowDetailOverlay: View {
                         .padding(.top, -8) // Reduce spacing between card and indicator
                         
                         // Logged foods section
-                        WindowFoodsList(window: window)
+                        WindowFoodsList(window: window, selectedMealId: $selectedMealId)
                             .padding(.horizontal, 24)
                         
                         // Window purpose section
@@ -154,6 +155,7 @@ struct WindowDetailOverlay: View {
     WindowDetailOverlay(
         window: MockDataManager.shared.mealWindows[0],
         showWindowDetail: .constant(true),
+        selectedMealId: .constant(nil),
         animationNamespace: Namespace().wrappedValue
     )
     .onAppear {
