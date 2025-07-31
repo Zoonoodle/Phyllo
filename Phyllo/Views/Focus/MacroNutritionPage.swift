@@ -48,7 +48,7 @@ struct MacroNutritionPage: View {
                 // Background ring with open bottom
                 Circle()
                     .trim(from: 0.12, to: 0.88)
-                    .stroke(Color.white.opacity(0.1), lineWidth: 12)
+                    .stroke(Color.white.opacity(0.1), lineWidth: 6)
                     .frame(width: 180, height: 180)
                     .rotationEffect(.degrees(90))
                 
@@ -57,7 +57,7 @@ struct MacroNutritionPage: View {
                     .trim(from: 0, to: min(calorieProgress * 0.76, 0.76))
                     .stroke(
                         window.purpose.color,
-                        style: StrokeStyle(lineWidth: 12, lineCap: .round)
+                        style: StrokeStyle(lineWidth: 6, lineCap: .round)
                     )
                     .frame(width: 180, height: 180)
                     .rotationEffect(.degrees(126))
