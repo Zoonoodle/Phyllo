@@ -818,15 +818,12 @@ struct CurrentTimeMarker: View {
             .frame(maxWidth: .infinity)
             .shadow(color: markerColor.opacity(0.4), radius: 2, x: 0, y: 1)
             
-            // Floating time badge with backdrop blur
+            // Time text inline with the line
             TimeFloat(
                 time: timeFormatter.string(from: currentTime),
                 color: markerColor,
                 isInsideWindow: isInsideWindow
             )
-            .offset(y: -2 + (scrollOffset * 0.05)) // Parallax effect on vertical position
-            .scaleEffect(1.0 + (scrollOffset * 0.0001)) // Subtle scale based on scroll
-            .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
         }
         .rotation3DEffect(
             .degrees(Double(scrollOffset * 0.02)), // Subtle 3D rotation
@@ -855,26 +852,10 @@ struct TimeFloat: View {
             }
             
             Text(time)
-                .font(.system(size: 10, weight: .bold, design: .rounded))
-                .foregroundColor(.white)
+                .font(.system(size: 11, weight: .semibold, design: .rounded))
+                .foregroundColor(color)
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 4)
-        .background(
-            ZStack {
-                // Backdrop blur effect
-                Capsule()
-                    .fill(.ultraThinMaterial)
-                
-                // Color overlay
-                Capsule()
-                    .fill(color.opacity(0.2))
-                
-                // Border
-                Capsule()
-                    .strokeBorder(color.opacity(0.5), lineWidth: 1)
-            }
-        )
+        .padding(.leading, 8)
     }
 }
 
