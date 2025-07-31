@@ -853,7 +853,7 @@ struct TimeFloat: View {
             
             Text(time)
                 .font(.system(size: 11, weight: .semibold, design: .rounded))
-                .foregroundColor(color)
+                .foregroundColor(.white)
         }
         .padding(.leading, 8)
     }
