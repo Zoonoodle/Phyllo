@@ -11,6 +11,7 @@ struct WindowDetailView: View {
     let window: MealWindow
     @Environment(\.dismiss) private var dismiss
     @StateObject private var mockData = MockDataManager.shared
+    @State private var currentPage = 0
     
     var body: some View {
         NavigationStack {
@@ -21,8 +22,19 @@ struct WindowDetailView: View {
                 ScrollView {
                     VStack(spacing: 24) {
                         // Scrollable nutrition header
-                        ScrollableNutritionHeader(window: window)
+                        ScrollableNutritionHeader(window: window, currentPage: $currentPage)
                             .padding(.horizontal)
+                        
+                        // Custom page indicator
+                        HStack(spacing: 8) {
+                            ForEach(0..<2) { index in
+                                Circle()
+                                    .fill(currentPage == index ? Color.white : Color.white.opacity(0.3))
+                                    .frame(width: 6, height: 6)
+                                    .animation(.easeInOut(duration: 0.2), value: currentPage)
+                            }
+                        }
+                        .padding(.top, -8) // Reduce spacing between card and indicator
                         
                         // Logged foods section
                         WindowFoodsList(window: window)

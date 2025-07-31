@@ -12,6 +12,7 @@ struct WindowDetailOverlay: View {
     @Binding var showWindowDetail: Bool
     let animationNamespace: Namespace.ID
     @State private var animateContent = false
+    @State private var currentPage = 0
     
     var body: some View {
         GeometryReader { geometry in
@@ -92,8 +93,19 @@ struct WindowDetailOverlay: View {
                 ScrollView {
                     VStack(spacing: 24) {
                         // Scrollable nutrition header
-                        ScrollableNutritionHeader(window: window)
+                        ScrollableNutritionHeader(window: window, currentPage: $currentPage)
                             .padding(.horizontal, 24)
+                        
+                        // Custom page indicator
+                        HStack(spacing: 8) {
+                            ForEach(0..<2) { index in
+                                Circle()
+                                    .fill(currentPage == index ? Color.white : Color.white.opacity(0.3))
+                                    .frame(width: 6, height: 6)
+                                    .animation(.easeInOut(duration: 0.2), value: currentPage)
+                            }
+                        }
+                        .padding(.top, -8) // Reduce spacing between card and indicator
                         
                         // Logged foods section
                         WindowFoodsList(window: window)

@@ -9,32 +9,20 @@ import SwiftUI
 
 struct ScrollableNutritionHeader: View {
     let window: MealWindow
-    @State private var currentPage = 0
+    @Binding var currentPage: Int
     
     var body: some View {
-        VStack(spacing: 16) {
-            TabView(selection: $currentPage) {
-                MacroNutritionPage(window: window)
-                    .tag(0)
-                
-                MicroNutritionPage(window: window)
-                    .tag(1)
-            }
-            .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
-            .frame(height: 320)
-            .frame(maxWidth: .infinity)
-            .clipped() // Prevent content from extending beyond bounds
+        TabView(selection: $currentPage) {
+            MacroNutritionPage(window: window)
+                .tag(0)
             
-            // Custom page indicator
-            HStack(spacing: 8) {
-                ForEach(0..<2) { index in
-                    Circle()
-                        .fill(currentPage == index ? Color.white : Color.white.opacity(0.3))
-                        .frame(width: 6, height: 6)
-                        .animation(.easeInOut(duration: 0.2), value: currentPage)
-                }
-            }
+            MicroNutritionPage(window: window)
+                .tag(1)
         }
+        .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+        .frame(height: 320)
+        .frame(maxWidth: .infinity)
+        .clipped() // Prevent content from extending beyond bounds
         .background(
             RoundedRectangle(cornerRadius: 20)
                 .fill(Color.white.opacity(0.03))
@@ -55,10 +43,12 @@ struct ScrollableNutritionHeader: View {
 }
 
 #Preview {
+    @Previewable @State var currentPage = 0
+    
     ZStack {
         Color.phylloBackground.ignoresSafeArea()
         
-        ScrollableNutritionHeader(window: MockDataManager.shared.mealWindows[0])
+        ScrollableNutritionHeader(window: MockDataManager.shared.mealWindows[0], currentPage: $currentPage)
             .padding()
     }
     .onAppear {

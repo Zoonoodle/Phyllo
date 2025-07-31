@@ -152,18 +152,18 @@ struct ScanTabView: View {
                     .presentationDetents([.large])
                     .presentationDragIndicator(.visible)
                     .onDisappear {
-                        // Navigate to meal details after closing
-                        if !showResults {
-                            NotificationCenter.default.post(
-                                name: .navigateToMealDetails,
-                                object: meal
-                            )
-                            // Reset state
-                            lastCompletedMeal = nil
-                            currentAnalyzingMeal = nil
-                        }
+                        // Reset state when sheet is dismissed
+                        lastCompletedMeal = nil
+                        currentAnalyzingMeal = nil
                     }
                 }
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .navigateToMealDetails)) { notification in
+            if let meal = notification.object as? LoggedMeal {
+                // Store the meal and show results
+                lastCompletedMeal = meal
+                showResults = true
             }
         }
         .preferredColorScheme(.dark)
@@ -256,10 +256,9 @@ struct ScanTabView: View {
             object: result
         )
         
-        // After animation completes and celebration nudge shows, show meal details
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
-            showResults = true
-        }
+        // Note: The meal celebration nudge will be triggered automatically
+        // by NudgeManager observing todaysMeals changes
+        // No need to show results here - user can tap "View Details" on the nudge
     }
     
 }

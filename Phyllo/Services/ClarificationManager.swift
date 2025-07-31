@@ -40,13 +40,8 @@ class ClarificationManager: ObservableObject {
                 object: finalMeal
             )
             
-            // After animation completes, trigger results display
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
-                NotificationCenter.default.post(
-                    name: .showMealResults,
-                    object: finalMeal
-                )
-            }
+            // Note: Meal results are shown via the meal celebration nudge
+            // No need to trigger showMealResults here
         }
         
         dismissClarification()
