@@ -74,10 +74,8 @@ struct WindowFoodsList: View {
                             .onAppear {
                                 // Auto-open meal analysis if this is the selected meal
                                 if selectedMealId == meal.id.uuidString {
-                                    // Clear the selection after a delay to allow animation
-                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                                        selectedMealId = nil
-                                    }
+                                    // Clear the selection after showing analysis
+                                    selectedMealId = nil
                                 }
                             }
                     }

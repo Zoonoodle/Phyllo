@@ -159,13 +159,6 @@ struct ScanTabView: View {
                 }
             }
         }
-        .onReceive(NotificationCenter.default.publisher(for: .navigateToMealDetails)) { notification in
-            if let meal = notification.object as? LoggedMeal {
-                // Store the meal and show results
-                lastCompletedMeal = meal
-                showResults = true
-            }
-        }
         .preferredColorScheme(.dark)
     }
     
@@ -238,6 +231,11 @@ struct ScanTabView: View {
                 self.currentAnalyzingMeal = currentMeal
                 // Use global clarification manager
                 self.clarificationManager.presentClarification(for: currentMeal, with: result)
+                
+                // Clear scan tab state since clarification will handle completion
+                self.currentAnalyzingMeal = nil
+                self.lastCompletedMeal = nil
+                self.showResults = false
             } else {
                 // Complete the meal without clarification
                 self.completeMealLogging(analyzingMeal: currentMeal, result: result)
@@ -248,7 +246,11 @@ struct ScanTabView: View {
     private func completeMealLogging(analyzingMeal: AnalyzingMeal, result: LoggedMeal) {
         // Complete the analyzing meal
         mockData.completeAnalyzingMeal(analyzingMeal, with: result)
+        
+        // Clear all scan-related state
         currentAnalyzingMeal = nil
+        lastCompletedMeal = nil
+        showResults = false
         
         // Trigger meal sliding animation
         NotificationCenter.default.post(
@@ -258,7 +260,7 @@ struct ScanTabView: View {
         
         // Note: The meal celebration nudge will be triggered automatically
         // by NudgeManager observing todaysMeals changes
-        // No need to show results here - user can tap "View Details" on the nudge
+        // User can tap "View Details" on the nudge to see meal in window detail
     }
     
 }
