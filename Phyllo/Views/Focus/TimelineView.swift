@@ -8,6 +8,12 @@
 import SwiftUI
 import Combine
 
+// Helper struct for scroll offset tracking
+struct ScrollViewOffsetData: Equatable {
+    let offset: CGFloat
+    let isScrolling: Bool
+}
+
 struct TimelineView: View {
     @Binding var selectedWindow: MealWindow?
     @Binding var showWindowDetail: Bool
@@ -25,9 +31,15 @@ struct TimelineView: View {
     @State private var animationEndPosition: CGPoint = .zero
     @State private var showMealAnimation = false
     
-    // Timer to update current time marker (disabled in preview mode)
+    // Auto-scroll state
+    @State private var lastScrolledHour: Int?
+    @State private var userIsScrolling = false
+    @State private var scrollDebounceTimer: Timer?
+    @State private var scrollOffset: CGFloat = 0
+    
+    // Timer to update current time marker with smooth movement (every 10 seconds for performance)
     var timer: Publishers.Autoconnect<Timer.TimerPublisher> {
-        Timer.publish(every: 60, on: .main, in: isPreview ? .default : .common).autoconnect()
+        Timer.publish(every: 10, on: .main, in: isPreview ? .default : .common).autoconnect()
     }
     
     // Define timeline hours (7 AM to 10 PM)
@@ -47,7 +59,8 @@ struct TimelineView: View {
                             isLastHour: hour == hours.last,
                             selectedWindow: $selectedWindow,
                             showWindowDetail: $showWindowDetail,
-                            animationNamespace: animationNamespace
+                            animationNamespace: animationNamespace,
+                            scrollOffset: scrollOffset
                         )
                         .padding(.horizontal, 24)
                     }
@@ -68,11 +81,28 @@ struct TimelineView: View {
             .onReceive(timer) { _ in
                 if !isPreview {
                     currentTime = timeProvider.currentTime
+                    handleAutoScroll(proxy: proxy)
                 }
             }
             .onChange(of: timeProvider.currentTime) { _, newTime in
                 if !isPreview {
                     currentTime = newTime
+                    handleAutoScroll(proxy: proxy)
+                }
+            }
+            .onScrollGeometryChange(for: ScrollViewOffsetData.self) { geometry in
+                ScrollViewOffsetData(
+                    offset: geometry.contentOffset.y,
+                    isScrolling: geometry.contentOffset.y != geometry.contentInsets.top
+                )
+            } action: { _, data in
+                scrollOffset = data.offset
+                if data.isScrolling {
+                    userIsScrolling = true
+                    scrollDebounceTimer?.invalidate()
+                    scrollDebounceTimer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: false) { _ in
+                        userIsScrolling = false
+                    }
                 }
             }
             .onChange(of: scrollToAnalyzingMeal) { _, analyzingMeal in
@@ -110,6 +140,70 @@ struct TimelineView: View {
     
     private var currentHour: Int {
         Calendar.current.component(.hour, from: currentTime)
+    }
+    
+    // Handle auto-scrolling to keep NOW indicator visible with magnetic snapping
+    private func handleAutoScroll(proxy: ScrollViewProxy) {
+        let hour = currentHour
+        
+        // Check for magnetic snap points (meal window boundaries)
+        let snapPoint = getMagneticSnapPoint()
+        
+        // Only scroll if:
+        // 1. Hour has changed or we're near a snap point
+        // 2. User is not actively scrolling
+        // 3. Current hour is within timeline bounds
+        if (hour != lastScrolledHour || snapPoint != nil) && !userIsScrolling && hours.contains(hour) {
+            lastScrolledHour = hour
+            
+            // Determine scroll target
+            let scrollTarget: Int
+            let anchor: UnitPoint
+            
+            if let snap = snapPoint {
+                // Snap to important time
+                scrollTarget = snap.hour
+                anchor = snap.anchor
+            } else {
+                // Normal hour centering
+                scrollTarget = hour
+                anchor = .center
+            }
+            
+            // Smooth scroll with spring animation for magnetic feel
+            withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                proxy.scrollTo(scrollTarget, anchor: anchor)
+            }
+        }
+    }
+    
+    // Calculate magnetic snap points near meal windows
+    private func getMagneticSnapPoint() -> (hour: Int, anchor: UnitPoint)? {
+        let snapThreshold: TimeInterval = 5 * 60 // 5 minutes
+        let calendar = Calendar.current
+        
+        // Check all meal windows for nearby start/end times
+        for window in mockData.mealWindows {
+            // Check window start
+            let startDiff = abs(window.startTime.timeIntervalSince(currentTime))
+            if startDiff <= snapThreshold {
+                let hour = calendar.component(.hour, from: window.startTime)
+                let minute = calendar.component(.minute, from: window.startTime)
+                let anchor = UnitPoint(x: 0.5, y: Double(minute) / 60.0)
+                return (hour, anchor)
+            }
+            
+            // Check window end
+            let endDiff = abs(window.endTime.timeIntervalSince(currentTime))
+            if endDiff <= snapThreshold {
+                let hour = calendar.component(.hour, from: window.endTime)
+                let minute = calendar.component(.minute, from: window.endTime)
+                let anchor = UnitPoint(x: 0.5, y: Double(minute) / 60.0)
+                return (hour, anchor)
+            }
+        }
+        
+        return nil
     }
     
     private func mealsForTimeRange(hour: Int) -> [(meal: LoggedMeal, offset: CGFloat)] {
@@ -256,6 +350,7 @@ struct TimelineHourRow: View {
     @Binding var selectedWindow: MealWindow?
     @Binding var showWindowDetail: Bool
     let animationNamespace: Namespace.ID
+    let scrollOffset: CGFloat
     @StateObject private var mockData = MockDataManager.shared
     
     let baseHourHeight: CGFloat = 80
@@ -315,11 +410,18 @@ struct TimelineHourRow: View {
                     .zIndex(1)
             }
             
-            // Current time indicator (only show if window is not active in this hour)
-            if isCurrentHour && windowForHour == nil {
-                CurrentTimeMarker()
-                    .offset(y: getCurrentMinuteOffset())
-                    .zIndex(4) // Higher z-index to appear above everything
+            // Current time indicator with context awareness
+            if isCurrentHour {
+                let currentWindowInfo = getCurrentWindowInfo()
+                CurrentTimeMarker(
+                    currentTime: currentTime,
+                    isInsideWindow: currentWindowInfo.isInside,
+                    windowPurpose: currentWindowInfo.purpose,
+                    scrollOffset: scrollOffset
+                )
+                .offset(y: getCurrentMinuteOffset())
+                .animation(.linear(duration: 10), value: getCurrentMinuteOffset()) // Smooth movement between updates
+                .zIndex(4) // Higher z-index to appear above everything
             }
         }
         .frame(height: hourHeight)
@@ -475,6 +577,17 @@ struct TimelineHourRow: View {
     private func getCurrentMinuteOffset() -> CGFloat {
         let minutes = Calendar.current.component(.minute, from: currentTime)
         return CGFloat(minutes) / 60.0 * hourHeight
+    }
+    
+    // Get current window context for the NOW indicator
+    private func getCurrentWindowInfo() -> (isInside: Bool, purpose: WindowPurpose?) {
+        // Check all windows to see if current time is inside any
+        for window in windows {
+            if currentTime >= window.startTime && currentTime <= window.endTime {
+                return (true, window.purpose)
+            }
+        }
+        return (false, nil)
     }
     
     // Determine if the hour divider should be shown
@@ -641,29 +754,127 @@ struct AddMealPill: View {
     }
 }
 
-// Current time marker
+// Enhanced current time marker with premium features
 struct CurrentTimeMarker: View {
+    let currentTime: Date
+    let isInsideWindow: Bool
+    let windowPurpose: WindowPurpose?
+    let scrollOffset: CGFloat
+    
+    @State private var pulseAnimation = false
+    
+    // Initialize with default values for backward compatibility
+    init(currentTime: Date = Date(), isInsideWindow: Bool = false, windowPurpose: WindowPurpose? = nil, scrollOffset: CGFloat = 0) {
+        self.currentTime = currentTime
+        self.isInsideWindow = isInsideWindow
+        self.windowPurpose = windowPurpose
+        self.scrollOffset = scrollOffset
+    }
+    
+    private var timeFormatter: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "h:mm a"
+        return formatter
+    }
+    
+    private var markerColor: Color {
+        if isInsideWindow, let purpose = windowPurpose {
+            return purpose.color
+        }
+        return .phylloAccent
+    }
+    
     var body: some View {
         HStack(spacing: 0) {
-            Circle()
-                .fill(Color.phylloAccent)
-                .frame(width: 6, height: 6)
+            // Pulsing dot with depth
+            ZStack {
+                // Glow effect
+                Circle()
+                    .fill(markerColor.opacity(0.3))
+                    .frame(width: 16, height: 16)
+                    .blur(radius: 4)
+                    .scaleEffect(pulseAnimation ? 1.2 : 0.8)
+                    .animation(.easeInOut(duration: 2).repeatForever(autoreverses: true), value: pulseAnimation)
+                
+                // Main dot with shadow
+                Circle()
+                    .fill(markerColor)
+                    .frame(width: 8, height: 8)
+                    .shadow(color: markerColor.opacity(0.6), radius: 3, x: 0, y: 2)
+            }
             
-            Rectangle()
-                .fill(Color.phylloAccent.opacity(0.8))
-                .frame(height: 1)
-                .frame(maxWidth: .infinity)
+            // Timeline with gradient fade
+            LinearGradient(
+                colors: [
+                    markerColor,
+                    markerColor.opacity(0.6),
+                    markerColor.opacity(0.3),
+                    markerColor.opacity(0.1)
+                ],
+                startPoint: .leading,
+                endPoint: .trailing
+            )
+            .frame(height: 2)
+            .frame(maxWidth: .infinity)
+            .shadow(color: markerColor.opacity(0.4), radius: 2, x: 0, y: 1)
             
-            Text("NOW")
-                .font(.system(size: 9, weight: .bold))
-                .foregroundColor(.phylloAccent)
-                .padding(.horizontal, 6)
-                .padding(.vertical, 2)
-                .background(
-                    Capsule()
-                        .fill(Color.phylloBackground)
-                )
+            // Floating time badge with backdrop blur
+            TimeFloat(
+                time: timeFormatter.string(from: currentTime),
+                color: markerColor,
+                isInsideWindow: isInsideWindow
+            )
+            .offset(y: -2 + (scrollOffset * 0.05)) // Parallax effect on vertical position
+            .scaleEffect(1.0 + (scrollOffset * 0.0001)) // Subtle scale based on scroll
+            .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
         }
+        .rotation3DEffect(
+            .degrees(Double(scrollOffset * 0.02)), // Subtle 3D rotation
+            axis: (x: 1, y: 0, z: 0),
+            anchor: .center,
+            perspective: 1.0
+        )
+        .onAppear {
+            pulseAnimation = true
+        }
+    }
+}
+
+// Floating time badge component
+struct TimeFloat: View {
+    let time: String
+    let color: Color
+    let isInsideWindow: Bool
+    
+    var body: some View {
+        HStack(spacing: 4) {
+            if isInsideWindow {
+                Image(systemName: "fork.knife")
+                    .font(.system(size: 8, weight: .bold))
+                    .foregroundColor(color)
+            }
+            
+            Text(time)
+                .font(.system(size: 10, weight: .bold, design: .rounded))
+                .foregroundColor(.white)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 4)
+        .background(
+            ZStack {
+                // Backdrop blur effect
+                Capsule()
+                    .fill(.ultraThinMaterial)
+                
+                // Color overlay
+                Capsule()
+                    .fill(color.opacity(0.2))
+                
+                // Border
+                Capsule()
+                    .strokeBorder(color.opacity(0.5), lineWidth: 1)
+            }
+        )
     }
 }
 

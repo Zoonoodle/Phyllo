@@ -362,7 +362,7 @@ struct ExpandableWindowBanner: View {
         ZStack {
             Circle()
                 .trim(from: 0.12, to: 0.88)
-                .stroke(Color.white.opacity(0.1), lineWidth: 4)
+                .stroke(Color.white.opacity(0.1), lineWidth: 2)
                 .frame(width: 50, height: 50)
                 .rotationEffect(.degrees(90))
             
@@ -370,7 +370,7 @@ struct ExpandableWindowBanner: View {
                 .trim(from: 0, to: progressValue * 0.76)
                 .stroke(
                     window.purpose.color,
-                    style: StrokeStyle(lineWidth: 4, lineCap: .round)
+                    style: StrokeStyle(lineWidth: 2, lineCap: .round)
                 )
                 .frame(width: 50, height: 50)
                 .rotationEffect(.degrees(126))
