@@ -112,7 +112,7 @@ struct ClarificationQuestionsView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color.black.ignoresSafeArea()
+                Color.phylloBackground.ignoresSafeArea()
                 
                 VStack(spacing: 0) {
                     // Header at top
@@ -225,15 +225,15 @@ struct ClarificationQuestionsView: View {
             Button(action: submitAnswer) {
                 Text("Submit Answer")
                     .font(.system(size: 18, weight: .semibold))
-                    .foregroundColor(selectedOptions[currentQuestion.id] != nil ? .black : .white.opacity(0.5))
+                    .foregroundColor(selectedOptions[currentQuestion.id] != nil ? Color(hex: "15E065") : .white.opacity(0.5))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
                     .background(
                         RoundedRectangle(cornerRadius: 16)
-                            .fill(selectedOptions[currentQuestion.id] != nil ? Color(hex: "15E065") : Color.white.opacity(0.03))
+                            .fill(selectedOptions[currentQuestion.id] != nil ? Color(hex: "15E065").opacity(0.15) : Color.white.opacity(0.03))
                             .overlay(
                                 RoundedRectangle(cornerRadius: 16)
-                                    .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                                    .stroke(selectedOptions[currentQuestion.id] != nil ? Color(hex: "15E065").opacity(0.3) : Color.white.opacity(0.1), lineWidth: 1)
                             )
                     )
             }
@@ -449,11 +449,11 @@ struct OptionRow: View {
             .padding(16)
             .background(
                 RoundedRectangle(cornerRadius: 16)
-                    .fill(isSelected ? Color(hex: "15E065").opacity(0.15) : Color.white.opacity(0.03))
+                    .fill(isSelected ? Color.white.opacity(0.08) : Color.white.opacity(0.03))
                     .overlay(
                         RoundedRectangle(cornerRadius: 16)
                             .stroke(
-                                isSelected ? Color(hex: "15E065").opacity(0.3) : Color.white.opacity(0.05),
+                                isSelected ? Color.white.opacity(0.15) : Color.white.opacity(0.05),
                                 lineWidth: 1
                             )
                     )
