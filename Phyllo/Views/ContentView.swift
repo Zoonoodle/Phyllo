@@ -16,10 +16,19 @@ struct ContentView: View {
     }
 }
 
-#Preview {
-    ContentView()
-        .modelContainer(for: Item.self, inMemory: true)
-        .environment(\.isPreview, true)
+struct ContentView_Previews: PreviewProvider {
+    static var previews: some View {
+        ContentView()
+            .preferredColorScheme(.dark)
+            .environment(\.isPreview, true)
+            .onAppear {
+                // Initialize singletons for preview
+                _ = MockDataManager.shared
+                _ = NudgeManager.shared
+                _ = TimeProvider.shared
+                _ = ClarificationManager.shared
+            }
+    }
 }
 
 
