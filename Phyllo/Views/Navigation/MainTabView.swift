@@ -108,6 +108,10 @@ struct MainTabView: View {
                 }
             }
         }
+        // Developer Dashboard sheet
+        .sheet(isPresented: $showDeveloperDashboard) {
+            DeveloperDashboardView()
+        }
     }
 }
 
