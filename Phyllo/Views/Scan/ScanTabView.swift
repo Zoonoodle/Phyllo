@@ -15,13 +15,13 @@ struct ScanTabView: View {
     @State private var showQuickLog = false
     @State private var showVoiceInput = false
     @State private var showLoading = false
-    @State private var showClarification = false
     @State private var showResults = false
     @State private var captureAnimation = false
     @State private var capturedImage: UIImage?
     @State private var currentAnalyzingMeal: AnalyzingMeal?
     @State private var lastCompletedMeal: LoggedMeal?
     @StateObject private var mockData = MockDataManager.shared
+    @StateObject private var clarificationManager = ClarificationManager.shared
     
     enum ScanMode: String, CaseIterable {
         case photo = "Photo"
@@ -144,17 +144,6 @@ struct ScanTabView: View {
                     .presentationDetents([.height(400)])
                     .interactiveDismissDisabled()
             }
-            .fullScreenCover(isPresented: $showClarification) {
-                ClarificationQuestionsView(
-                    analyzingMeal: currentAnalyzingMeal,
-                    mealResult: lastCompletedMeal,
-                    onComplete: { finalMeal in
-                        if let analyzingMeal = currentAnalyzingMeal {
-                            completeMealLogging(analyzingMeal: analyzingMeal, result: finalMeal)
-                        }
-                    }
-                )
-            }
             .sheet(isPresented: $showResults) {
                 if let meal = lastCompletedMeal {
                     NavigationStack {
@@ -247,8 +236,8 @@ struct ScanTabView: View {
             if needsClarification {
                 // Re-set currentAnalyzingMeal in case it was cleared
                 self.currentAnalyzingMeal = currentMeal
-                // Show clarification questions
-                self.showClarification = true
+                // Use global clarification manager
+                self.clarificationManager.presentClarification(for: currentMeal, with: result)
             } else {
                 // Complete the meal without clarification
                 self.completeMealLogging(analyzingMeal: currentMeal, result: result)
