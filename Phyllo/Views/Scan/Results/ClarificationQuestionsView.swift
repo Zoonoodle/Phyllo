@@ -225,15 +225,15 @@ struct ClarificationQuestionsView: View {
             Button(action: submitAnswer) {
                 Text("Submit Answer")
                     .font(.system(size: 18, weight: .semibold))
-                    .foregroundColor(selectedOptions[currentQuestion.id] != nil ? Color(hex: "15E065") : .white.opacity(0.5))
+                    .foregroundColor(selectedOptions[currentQuestion.id] != nil ? .white : .white.opacity(0.5))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
                     .background(
                         RoundedRectangle(cornerRadius: 16)
-                            .fill(selectedOptions[currentQuestion.id] != nil ? Color(hex: "15E065").opacity(0.15) : Color.white.opacity(0.03))
+                            .fill(selectedOptions[currentQuestion.id] != nil ? Color(hex: "15E065").opacity(0.08) : Color.white.opacity(0.03))
                             .overlay(
                                 RoundedRectangle(cornerRadius: 16)
-                                    .stroke(selectedOptions[currentQuestion.id] != nil ? Color(hex: "15E065").opacity(0.3) : Color.white.opacity(0.1), lineWidth: 1)
+                                    .stroke(selectedOptions[currentQuestion.id] != nil ? Color(hex: "15E065").opacity(0.2) : Color.white.opacity(0.1), lineWidth: 1)
                             )
                     )
             }
