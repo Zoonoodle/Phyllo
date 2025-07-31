@@ -536,6 +536,7 @@ struct InteractiveChart: View {
     }
     
     private func calculateAverage() -> String {
+        guard !chartData.isEmpty else { return "0" }
         let avg = chartData.reduce(0) { $0 + $1.value } / Double(chartData.count)
         return formatValue(avg, for: metric)
     }
@@ -545,10 +546,20 @@ struct InteractiveChart: View {
         let firstHalf = Array(chartData.prefix(chartData.count / 2))
         let secondHalf = Array(chartData.suffix(chartData.count / 2))
         
+        guard !firstHalf.isEmpty && !secondHalf.isEmpty else { return "→" }
+        
         let firstAvg = firstHalf.reduce(0) { $0 + $1.value } / Double(firstHalf.count)
         let secondAvg = secondHalf.reduce(0) { $0 + $1.value } / Double(secondHalf.count)
         
+        // Protect against division by zero
+        guard firstAvg > 0 else { 
+            return secondAvg > 0 ? "↑100%" : "→"
+        }
+        
         let difference = ((secondAvg - firstAvg) / firstAvg) * 100
+        
+        // Protect against NaN or infinite values
+        guard difference.isFinite else { return "→" }
         
         if abs(difference) < 5 {
             return "→"
