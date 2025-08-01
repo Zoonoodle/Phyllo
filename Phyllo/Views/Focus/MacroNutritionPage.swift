@@ -101,7 +101,7 @@ struct MacroNutritionPage: View {
             .padding(.horizontal, 16)
         }
         .padding(.top, 40)
-        .padding(.bottom, 24)
+        .padding(.bottom, 32)
     }
 }
 
