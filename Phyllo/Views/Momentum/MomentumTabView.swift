@@ -1352,6 +1352,7 @@ struct CTACard: View {
             }
         }
         .padding(24)
+        .padding(.bottom, 16)
         .background(
             LinearGradient(
                 colors: [Color.phylloAccent.opacity(0.2), Color.phylloAccent.opacity(0.05)],
