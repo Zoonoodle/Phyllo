@@ -49,7 +49,7 @@ struct MicroNutritionPage: View {
             .padding(.horizontal, 16)
         }
         .padding(.top, 40) // Match macro page top padding
-        .padding(.bottom, 24) // Match macro page bottom padding
+        .padding(.bottom, 34) // Match macro page bottom padding
     }
 }
 

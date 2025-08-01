@@ -159,8 +159,18 @@ struct ChapterNavigator: View {
             }
         }
         .padding(4)
-        .background(Color.phylloElevated)
+        .background(
+            LinearGradient(
+                colors: [Color.white.opacity(0.08), Color.white.opacity(0.03)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
         .cornerRadius(16)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+        )
     }
 }
 
@@ -289,8 +299,18 @@ struct StartingStatCard: View {
         }
         .frame(maxWidth: .infinity)
         .padding(20)
-        .background(Color.phylloElevated)
+        .background(
+            LinearGradient(
+                colors: [Color.white.opacity(0.06), Color.white.opacity(0.02)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
         .cornerRadius(16)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+        )
     }
 }
 
@@ -412,8 +432,18 @@ struct MilestoneTimeline: View {
             .padding(.leading, 8)
         }
         .padding(20)
-        .background(Color.phylloElevated)
+        .background(
+            LinearGradient(
+                colors: [Color.white.opacity(0.06), Color.white.opacity(0.02)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
         .cornerRadius(20)
+        .overlay(
+            RoundedRectangle(cornerRadius: 20)
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+        )
     }
 }
 
@@ -566,8 +596,18 @@ struct JourneyInsightCard: View {
             }
         }
         .padding(20)
-        .background(Color.phylloElevated)
+        .background(
+            LinearGradient(
+                colors: [Color.white.opacity(0.06), Color.white.opacity(0.02)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
         .cornerRadius(20)
+        .overlay(
+            RoundedRectangle(cornerRadius: 20)
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+        )
         .onTapGesture(perform: onTap)
     }
 }
@@ -1000,8 +1040,18 @@ struct RecommendationsCard: View {
             }
         }
         .padding(20)
-        .background(Color.phylloElevated)
+        .background(
+            LinearGradient(
+                colors: [Color.white.opacity(0.06), Color.white.opacity(0.02)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
         .cornerRadius(20)
+        .overlay(
+            RoundedRectangle(cornerRadius: 20)
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+        )
     }
 }
 
@@ -1228,8 +1278,18 @@ struct ProjectionChart: View {
             .foregroundColor(.phylloTextTertiary)
         }
         .padding(20)
-        .background(Color.phylloElevated)
+        .background(
+            LinearGradient(
+                colors: [Color.white.opacity(0.06), Color.white.opacity(0.02)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
         .cornerRadius(20)
+        .overlay(
+            RoundedRectangle(cornerRadius: 20)
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+        )
         .onAppear {
             animateChart = true
         }
@@ -1314,10 +1374,16 @@ struct FutureGoalCard: View {
         .padding(20)
         .background(
             RoundedRectangle(cornerRadius: 20)
-                .fill(Color.phylloElevated)
+                .fill(
+                    LinearGradient(
+                        colors: [Color.white.opacity(0.06), Color.white.opacity(0.02)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
                 .overlay(
                     RoundedRectangle(cornerRadius: 20)
-                        .stroke(isSelected ? goal.color.opacity(0.5) : Color.clear, lineWidth: 2)
+                        .stroke(isSelected ? goal.color.opacity(0.5) : Color.white.opacity(0.08), lineWidth: isSelected ? 2 : 1)
                 )
         )
         .onTapGesture(perform: onTap)
