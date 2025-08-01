@@ -58,14 +58,29 @@ struct MomentumTabView: View {
                 .animation(.easeInOut(duration: 0.8), value: currentChapter)
                 
                 VStack(spacing: 0) {
-                    // Navigation bar
-                    PhylloNavigationBar(
-                        title: "Your Story",
-                        showSettingsButton: true,
-                        onSettingsTap: {
+                    // Custom navigation bar with transparent background
+                    HStack(spacing: 16) {
+                        // Title positioned like Scan view
+                        Text("Your Story")
+                            .font(.system(size: 24, weight: .bold))
+                            .foregroundColor(.white)
+                        
+                        Spacer()
+                        
+                        // Settings button
+                        Button(action: {
                             showDeveloperDashboard = true
+                        }) {
+                            Image(systemName: "gearshape.fill")
+                                .font(.system(size: 20))
+                                .foregroundColor(.white.opacity(0.6))
+                                .frame(width: 36, height: 36)
+                                .background(Color.white.opacity(0.1))
+                                .clipShape(Circle())
                         }
-                    )
+                    }
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 16)
                     
                     ScrollView {
                         VStack(spacing: 24) {

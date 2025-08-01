@@ -23,7 +23,6 @@ struct WindowDetailView: View {
                     VStack(spacing: 24) {
                         // Scrollable nutrition header
                         ScrollableNutritionHeader(window: window, currentPage: $currentPage)
-                            .padding(.horizontal)
                         
                         // Custom page indicator
                         HStack(spacing: 8) {
@@ -38,14 +37,13 @@ struct WindowDetailView: View {
                         
                         // Logged foods section
                         WindowFoodsList(window: window, selectedMealId: .constant(nil))
-                            .padding(.horizontal)
                         
                         // Window purpose section
                         WindowPurposeCard(window: window)
-                            .padding(.horizontal)
                             .padding(.bottom, 32)
                     }
                     .padding(.top)
+                    .padding(.horizontal, 20) // Add consistent horizontal padding to entire content
                 }
             }
             .navigationTitle(windowTitle)
