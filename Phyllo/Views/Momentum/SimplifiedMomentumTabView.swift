@@ -75,83 +75,84 @@ struct SimplifiedMomentumTabView: View {
     
     private var phylloScoreSection: some View {
         VStack(spacing: 16) {
-            // Main Score Card
-            VStack(spacing: 0) {
-                // Score display section
+            // Header
+            HStack {
+                Text("PhylloScore")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundColor(.white)
+                Spacer()
+            }
+            
+            // Main Score Card with Ring Visualization
+            VStack(spacing: 24) {
+                // Circular score visualization
                 ZStack {
-                    // Subtle gradient background
-                    LinearGradient(
-                        colors: [
-                            Color.white.opacity(0.05),
-                            Color.white.opacity(0.02)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
+                    // Background circle
+                    Circle()
+                        .stroke(Color.white.opacity(0.05), lineWidth: 24)
+                        .frame(width: 200, height: 200)
+                    
+                    // Component segments
+                    ForEach(scoreSegments, id: \.id) { segment in
+                        Circle()
+                            .trim(from: segment.startAngle, to: segment.endAngle)
+                            .stroke(
+                                segment.color,
+                                style: StrokeStyle(
+                                    lineWidth: 24,
+                                    lineCap: .round
+                                )
+                            )
+                            .frame(width: 200, height: 200)
+                            .rotationEffect(.degrees(-90))
+                    }
+                    
+                    // Center content
+                    VStack(spacing: 4) {
+                        Text("\(phylloScore?.totalScore ?? 0)")
+                            .font(.system(size: 56, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
+                        
+                        Text("Score")
+                            .font(.system(size: 14))
+                            .foregroundColor(.phylloTextSecondary)
+                        
+                        HStack(spacing: 4) {
+                            Image(systemName: trendIcon(phylloScore?.trend))
+                                .font(.system(size: 12))
+                            Text(trendText(phylloScore?.trend) ?? "stable")
+                                .font(.system(size: 12, weight: .medium))
+                        }
+                        .foregroundColor(scoreColor)
+                    }
+                }
+                .padding(.vertical, 8)
+                
+                // Component breakdown cards
+                HStack(spacing: 12) {
+                    scoreComponentCard(
+                        label: "Timing",
+                        value: phylloScore?.mealTimingScore ?? 0,
+                        icon: "clock.fill",
+                        color: timingColor
                     )
                     
-                    VStack(spacing: 24) {
-                        // Score header
-                        HStack(alignment: .center) {
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text("PhylloScore")
-                                    .font(.system(size: 20, weight: .semibold))
-                                    .foregroundColor(.white)
-                                
-                                Text("Your nutrition quality today")
-                                    .font(.system(size: 13))
-                                    .foregroundColor(.phylloTextSecondary)
-                            }
-                            
-                            Spacer()
-                            
-                            // Score with subtle animation
-                            HStack(alignment: .bottom, spacing: 8) {
-                                Text("\(phylloScore?.totalScore ?? 0)")
-                                    .font(.system(size: 56, weight: .bold, design: .rounded))
-                                    .foregroundColor(.white)
-                                
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text("/100")
-                                        .font(.system(size: 16, weight: .medium))
-                                        .foregroundColor(.phylloTextTertiary)
-                                    
-                                    HStack(spacing: 4) {
-                                        Image(systemName: trendIcon(phylloScore?.trend))
-                                            .font(.system(size: 11))
-                                        Text(trendText(phylloScore?.trend) ?? "stable")
-                                            .font(.system(size: 11, weight: .medium))
-                                    }
-                                    .foregroundColor(scoreColor)
-                                }
-                                .padding(.bottom, 8)
-                            }
-                        }
-                        
-                        // Component breakdown
-                        VStack(spacing: 10) {
-                            scoreComponentBar(
-                                label: "Meal Timing",
-                                value: phylloScore?.mealTimingScore ?? 0,
-                                icon: "clock.fill"
-                            )
-                            
-                            scoreComponentBar(
-                                label: "Macro Balance", 
-                                value: phylloScore?.macroBalanceScore ?? 0,
-                                icon: "scalemass.fill"
-                            )
-                            
-                            scoreComponentBar(
-                                label: "Nutrient Density",
-                                value: phylloScore?.micronutrientScore ?? 0,
-                                icon: "leaf.fill"
-                            )
-                        }
-                    }
-                    .padding(20)
+                    scoreComponentCard(
+                        label: "Macros",
+                        value: phylloScore?.macroBalanceScore ?? 0,
+                        icon: "scalemass.fill",
+                        color: macroColor
+                    )
+                    
+                    scoreComponentCard(
+                        label: "Nutrients",
+                        value: phylloScore?.micronutrientScore ?? 0,
+                        icon: "leaf.fill",
+                        color: nutrientColor
+                    )
                 }
-                .cornerRadius(16)
             }
+            .padding(20)
             .background(Color.white.opacity(0.03))
             .cornerRadius(20)
             .overlay(
@@ -161,47 +162,76 @@ struct SimplifiedMomentumTabView: View {
         }
     }
     
-    private func scoreComponentBar(label: String, value: Int, icon: String) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: icon)
-                .font(.system(size: 14))
-                .foregroundColor(.phylloTextSecondary)
-                .frame(width: 20)
-            
-            VStack(alignment: .leading, spacing: 4) {
-                HStack {
-                    Text(label)
-                        .font(.system(size: 13))
-                        .foregroundColor(.phylloTextSecondary)
-                    
-                    Spacer()
-                    
-                    Text("\(value)/25")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundColor(.white.opacity(0.8))
-                }
+    private func scoreComponentCard(label: String, value: Int, icon: String, color: Color) -> some View {
+        VStack(spacing: 8) {
+            ZStack {
+                Circle()
+                    .fill(color.opacity(0.1))
+                    .frame(width: 40, height: 40)
                 
-                // Progress bar
-                GeometryReader { geometry in
-                    ZStack(alignment: .leading) {
-                        RoundedRectangle(cornerRadius: 2)
-                            .fill(Color.white.opacity(0.08))
-                            .frame(height: 3)
-                        
-                        RoundedRectangle(cornerRadius: 2)
-                            .fill(componentBarColor(for: value))
-                            .frame(width: geometry.size.width * CGFloat(value) / 25, height: 3)
-                    }
-                }
-                .frame(height: 3)
+                Image(systemName: icon)
+                    .font(.system(size: 18))
+                    .foregroundColor(color)
+            }
+            
+            VStack(spacing: 2) {
+                Text("\(value)")
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundColor(.white)
+                
+                Text(label)
+                    .font(.system(size: 11))
+                    .foregroundColor(.phylloTextSecondary)
             }
         }
+        .frame(maxWidth: .infinity)
     }
     
-    private func componentBarColor(for value: Int) -> Color {
-        if value >= 20 { return .green.opacity(0.8) }
-        else if value >= 15 { return .phylloAccent.opacity(0.8) }
-        else { return .orange.opacity(0.8) }
+    private var scoreSegments: [(id: String, startAngle: Double, endAngle: Double, color: Color)] {
+        guard let score = phylloScore else { return [] }
+        
+        let total = Double(score.mealTimingScore + score.macroBalanceScore + score.micronutrientScore)
+        let maxTotal = 75.0 // Max possible score (25 * 3)
+        let ringPercentage = total / maxTotal
+        
+        // Calculate angles for each segment
+        let spacing = 0.02 // Small gap between segments
+        let availableAngle = ringPercentage * 0.8 // Use 80% of circle max
+        
+        let timingPercentage = Double(score.mealTimingScore) / total
+        let macroPercentage = Double(score.macroBalanceScore) / total
+        let nutrientPercentage = Double(score.micronutrientScore) / total
+        
+        let timingAngle = availableAngle * timingPercentage
+        let macroAngle = availableAngle * macroPercentage
+        let nutrientAngle = availableAngle * nutrientPercentage
+        
+        return [
+            (id: "timing", startAngle: 0, endAngle: timingAngle - spacing, color: timingColor),
+            (id: "macro", startAngle: timingAngle + spacing, endAngle: timingAngle + macroAngle - spacing, color: macroColor),
+            (id: "nutrient", startAngle: timingAngle + macroAngle + spacing, endAngle: timingAngle + macroAngle + nutrientAngle, color: nutrientColor)
+        ]
+    }
+    
+    private var timingColor: Color {
+        guard let score = phylloScore?.mealTimingScore else { return .orange }
+        if score >= 20 { return Color(hex: "10B981") } // Emerald green
+        else if score >= 15 { return Color(hex: "F59E0B") } // Amber
+        else { return Color(hex: "EF4444") } // Red
+    }
+    
+    private var macroColor: Color {
+        guard let score = phylloScore?.macroBalanceScore else { return .orange }
+        if score >= 20 { return Color(hex: "3B82F6") } // Blue
+        else if score >= 15 { return Color(hex: "8B5CF6") } // Purple
+        else { return Color(hex: "F59E0B") } // Amber
+    }
+    
+    private var nutrientColor: Color {
+        guard let score = phylloScore?.micronutrientScore else { return .orange }
+        if score >= 20 { return Color(hex: "10B981") } // Emerald green
+        else if score >= 15 { return Color(hex: "F59E0B") } // Amber
+        else { return Color(hex: "EF4444") } // Red
     }
     
     @ViewBuilder
