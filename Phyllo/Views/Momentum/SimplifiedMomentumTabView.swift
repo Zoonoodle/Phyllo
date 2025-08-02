@@ -559,18 +559,18 @@ struct SimplifiedMomentumTabView: View {
     }
     
     private func getTimeSuggestion() -> String {
-        let hour = Calendar.current.component(.hour, from: TimeProvider.shared.currentDate)
+        let hour = Calendar.current.component(.hour, from: TimeProvider.shared.currentTime)
         let hasActiveWindow = mockData.mealWindows.contains { window in
-            window.startTime <= TimeProvider.shared.currentDate && 
-            window.endTime > TimeProvider.shared.currentDate
+            window.startTime <= TimeProvider.shared.currentTime && 
+            window.endTime > TimeProvider.shared.currentTime
         }
         
         if hasActiveWindow {
             if let window = mockData.mealWindows.first(where: { 
-                $0.startTime <= TimeProvider.shared.currentDate && 
-                $0.endTime > TimeProvider.shared.currentDate 
+                $0.startTime <= TimeProvider.shared.currentTime && 
+                $0.endTime > TimeProvider.shared.currentTime 
             }) {
-                let timeRemaining = window.endTime.timeIntervalSince(TimeProvider.shared.currentDate)
+                let timeRemaining = window.endTime.timeIntervalSince(TimeProvider.shared.currentTime)
                 let minutes = Int(timeRemaining / 60)
                 if minutes > 30 {
                     return "Window open"
@@ -627,11 +627,11 @@ struct SimplifiedMomentumTabView: View {
     }
     
     private func getNextMealWindow() -> String? {
-        let currentDate = TimeProvider.shared.currentDate
+        let currentTime = TimeProvider.shared.currentTime
         
         // Find next upcoming window
-        if let nextWindow = mockData.mealWindows.first(where: { $0.startTime > currentDate }) {
-            let timeUntil = nextWindow.startTime.timeIntervalSince(currentDate)
+        if let nextWindow = mockData.mealWindows.first(where: { $0.startTime > currentTime }) {
+            let timeUntil = nextWindow.startTime.timeIntervalSince(currentTime)
             let hours = Int(timeUntil / 3600)
             let minutes = Int((timeUntil.truncatingRemainder(dividingBy: 3600)) / 60)
             
