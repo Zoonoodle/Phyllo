@@ -129,13 +129,23 @@ struct MomentumTabView: View {
                                 if mockData.storyChapterProgress.isChapterUnlocked(currentChapter.chapterId) {
                                     switch currentChapter {
                                     case .yourPlan:
-                                        YourPlanChapter(animateContent: $animateContent)
+                                        YourPlanChapter(
+                                            animateContent: $animateContent,
+                                            scoreBreakdown: phylloScore,
+                                            micronutrientStatus: micronutrientStatus
+                                        )
                                     case .firstWeek:
-                                        FirstWeekChapter(animateContent: $animateContent)
+                                        FirstWeekChapter(
+                                            animateContent: $animateContent,
+                                            scoreBreakdown: phylloScore,
+                                            micronutrientStatus: micronutrientStatus
+                                        )
                                     case .patterns:
                                         PatternsChapter(
                                             animateContent: $animateContent,
-                                            expandedInsight: $expandedInsight
+                                            expandedInsight: $expandedInsight,
+                                            scoreBreakdown: phylloScore,
+                                            micronutrientStatus: micronutrientStatus
                                         )
                                     case .peakState:
                                         PeakStateChapter(
@@ -289,9 +299,15 @@ struct ChapterTab: View {
 
 struct FirstWeekChapter: View {
     @Binding var animateContent: Bool
+    let scoreBreakdown: InsightsEngine.ScoreBreakdown?
+    let micronutrientStatus: InsightsEngine.MicronutrientStatus?
     @StateObject private var mockData = MockDataManager.shared
     
     private let startDate = Date().addingTimeInterval(-30 * 24 * 60 * 60) // 30 days ago
+    
+    // Mock starting data for comparison
+    private let startingScore = 42
+    private let startingDeficiencies = 5
     
     var body: some View {
         VStack(spacing: 24) {
@@ -317,7 +333,7 @@ struct FirstWeekChapter: View {
                 HStack(spacing: 16) {
                     StartingStatCard(
                         title: "Initial Score",
-                        value: "42",
+                        value: "\(startingScore)",
                         subtitle: "Room to grow",
                         icon: "chart.line.uptrend.xyaxis",
                         delay: 0.3
@@ -327,11 +343,12 @@ struct FirstWeekChapter: View {
                     .animation(.spring(response: 0.8).delay(0.3), value: animateContent)
                     
                     StartingStatCard(
-                        title: "First Goal",
-                        value: mockData.primaryGoal.displayName,
-                        subtitle: "Your focus",
-                        icon: "target",
-                        delay: 0.4
+                        title: "Current Score",
+                        value: "\(scoreBreakdown?.totalScore ?? 0)",
+                        subtitle: scoreBreakdown?.trend.description ?? "Improving",
+                        icon: "star.fill",
+                        delay: 0.4,
+                        color: scoreBreakdown?.trend.color ?? .green
                     )
                     .opacity(animateContent ? 1 : 0)
                     .scaleEffect(animateContent ? 1 : 0.8)
@@ -349,6 +366,99 @@ struct FirstWeekChapter: View {
             MilestoneTimeline()
                 .opacity(animateContent ? 1 : 0)
                 .animation(.spring(response: 0.8).delay(0.6), value: animateContent)
+            
+            // Score Progress Comparison
+            if let score = scoreBreakdown {
+                PhylloScoreComparison(
+                    startScore: startingScore,
+                    currentScore: score.totalScore,
+                    daysElapsed: 7
+                )
+                .opacity(animateContent ? 1 : 0)
+                .offset(y: animateContent ? 0 : 20)
+                .animation(.spring(response: 0.8).delay(0.65), value: animateContent)
+            }
+            
+            // Nutritional Improvements
+            if let microStatus = micronutrientStatus {
+                VStack(spacing: 16) {
+                    SectionHeader(title: "Nutritional Improvements", icon: "leaf.fill")
+                    
+                    HStack(spacing: 12) {
+                        // Start deficiencies
+                        VStack(spacing: 8) {
+                            Text("Week 1")
+                                .font(.system(size: 12))
+                                .foregroundColor(.phylloTextTertiary)
+                            
+                            VStack(spacing: 4) {
+                                Text("\(startingDeficiencies)")
+                                    .font(.system(size: 28, weight: .bold))
+                                    .foregroundColor(.red)
+                                
+                                Text("deficiencies")
+                                    .font(.system(size: 12))
+                                    .foregroundColor(.phylloTextSecondary)
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
+                        
+                        Image(systemName: "arrow.right")
+                            .font(.system(size: 20))
+                            .foregroundColor(.phylloTextTertiary)
+                        
+                        // Current deficiencies
+                        VStack(spacing: 8) {
+                            Text("Now")
+                                .font(.system(size: 12))
+                                .foregroundColor(.phylloTextTertiary)
+                            
+                            VStack(spacing: 4) {
+                                Text("\(microStatus.deficiencies.count)")
+                                    .font(.system(size: 28, weight: .bold))
+                                    .foregroundColor(microStatus.deficiencies.count < startingDeficiencies ? .green : .orange)
+                                
+                                Text("deficiencies")
+                                    .font(.system(size: 12))
+                                    .foregroundColor(.phylloTextSecondary)
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                    .padding(20)
+                    .background(
+                        LinearGradient(
+                            colors: [Color.white.opacity(0.06), Color.white.opacity(0.02)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .cornerRadius(16)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                    )
+                    
+                    if microStatus.deficiencies.count < startingDeficiencies {
+                        HStack(spacing: 8) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.system(size: 14))
+                                .foregroundColor(.green)
+                            
+                            Text("You've addressed \(startingDeficiencies - microStatus.deficiencies.count) nutritional gaps!")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(.green)
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .background(Color.green.opacity(0.1))
+                        .cornerRadius(20)
+                    }
+                }
+                .opacity(animateContent ? 1 : 0)
+                .offset(y: animateContent ? 0 : 20)
+                .animation(.spring(response: 0.8).delay(0.7), value: animateContent)
+            }
         }
     }
 }
@@ -359,12 +469,13 @@ struct StartingStatCard: View {
     let subtitle: String
     let icon: String
     let delay: Double
+    var color: Color = .blue
     
     var body: some View {
         VStack(spacing: 12) {
             Image(systemName: icon)
                 .font(.system(size: 24))
-                .foregroundColor(.blue)
+                .foregroundColor(color)
             
             VStack(spacing: 4) {
                 Text(title)

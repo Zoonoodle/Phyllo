@@ -10,6 +10,8 @@ import SwiftUI
 
 struct YourPlanChapter: View {
     @Binding var animateContent: Bool
+    let scoreBreakdown: InsightsEngine.ScoreBreakdown?
+    let micronutrientStatus: InsightsEngine.MicronutrientStatus?
     @StateObject private var mockData = MockDataManager.shared
     @State private var selectedPhase = 0
     @State private var expandedProtocol: String? = nil
@@ -134,6 +136,52 @@ struct YourPlanChapter: View {
                 .opacity(animateContent ? 1 : 0)
                 .offset(y: animateContent ? 0 : 30)
                 .animation(.spring(response: 0.8).delay(0.5), value: animateContent)
+            
+            // Today's Starting Point
+            VStack(spacing: 16) {
+                SectionHeader(title: "Today's Starting Point", icon: "gauge")
+                
+                HStack(spacing: 16) {
+                    // PhylloScore
+                    if let score = scoreBreakdown {
+                        VStack(spacing: 12) {
+                            PhylloScoreMini(score: score.totalScore, trend: score.trend)
+                                .opacity(animateContent ? 1 : 0)
+                                .scaleEffect(animateContent ? 1 : 0.9)
+                                .animation(.spring(response: 0.8).delay(0.55), value: animateContent)
+                            
+                            Text("Your baseline score")
+                                .font(.system(size: 12))
+                                .foregroundColor(.phylloTextSecondary)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(16)
+                        .background(
+                            LinearGradient(
+                                colors: [Color.white.opacity(0.06), Color.white.opacity(0.02)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .cornerRadius(16)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16)
+                                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                        )
+                    }
+                }
+                .opacity(animateContent ? 1 : 0)
+                .offset(y: animateContent ? 0 : 20)
+                .animation(.spring(response: 0.8).delay(0.6), value: animateContent)
+                
+                // Micronutrient Status
+                if let microStatus = micronutrientStatus {
+                    MicronutrientHighlights(status: microStatus)
+                        .opacity(animateContent ? 1 : 0)
+                        .offset(y: animateContent ? 0 : 20)
+                        .animation(.spring(response: 0.8).delay(0.65), value: animateContent)
+                }
+            }
         }
     }
 }
@@ -569,8 +617,30 @@ struct MissionStep: View {
 
 #Preview {
     @Previewable @State var animateContent = true
-    YourPlanChapter(animateContent: $animateContent)
-        .padding()
-        .background(Color.phylloBackground)
-        .preferredColorScheme(.dark)
+    YourPlanChapter(
+        animateContent: $animateContent,
+        scoreBreakdown: InsightsEngine.ScoreBreakdown(
+            totalScore: 42,
+            mealTimingScore: 10,
+            macroBalanceScore: 12,
+            micronutrientScore: 8,
+            consistencyScore: 12,
+            trend: .stable
+        ),
+        micronutrientStatus: InsightsEngine.MicronutrientStatus(
+            nutrients: [],
+            topDeficiencies: [
+                InsightsEngine.MicronutrientStatus.NutrientStatus(
+                    nutrient: MicronutrientData(name: "Vitamin D", unit: "mcg", rda: 20.0),
+                    consumed: 5.0,
+                    percentageOfRDA: 25.0,
+                    status: .deficient
+                )
+            ],
+            wellSupplied: []
+        )
+    )
+    .padding()
+    .background(Color.phylloBackground)
+    .preferredColorScheme(.dark)
 }
