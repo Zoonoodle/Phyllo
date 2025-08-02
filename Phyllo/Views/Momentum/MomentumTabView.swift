@@ -13,9 +13,14 @@ import SwiftUI
 struct MomentumTabView: View {
     @Binding var showDeveloperDashboard: Bool
     @StateObject private var mockData = MockDataManager.shared
+    @StateObject private var insightsEngine = InsightsEngine.shared
+    @StateObject private var checkInManager = CheckInManager.shared
     @State private var currentChapter: StoryChapter = .beginning
     @State private var animateContent = false
     @State private var expandedInsight: String? = nil
+    @State private var phylloScore: InsightsEngine.ScoreBreakdown?
+    @State private var micronutrientStatus: InsightsEngine.MicronutrientStatus?
+    @State private var insights: [InsightsEngine.Insight] = []
     
     enum StoryChapter: String, CaseIterable {
         case beginning = "The Beginning"
@@ -112,7 +117,12 @@ struct MomentumTabView: View {
                                         expandedInsight: $expandedInsight
                                     )
                                 case .now:
-                                    NowChapter(animateContent: $animateContent)
+                                    NowChapter(
+                                        animateContent: $animateContent,
+                                        scoreBreakdown: phylloScore,
+                                        micronutrientStatus: micronutrientStatus,
+                                        insights: insights
+                                    )
                                 case .future:
                                     FutureChapter(animateContent: $animateContent)
                                 }
@@ -133,6 +143,43 @@ struct MomentumTabView: View {
             withAnimation(.spring(response: 0.8).delay(0.3)) {
                 animateContent = true
             }
+            calculateRealData()
+        }
+    }
+    
+    // MARK: - Real Data Calculation
+    
+    private func calculateRealData() {
+        // Get today's meals
+        let todayMeals = mockData.todayMeals
+        
+        // Get meal windows
+        let windows = mockData.mealWindows
+        
+        // Get check-ins
+        let checkIns = checkInManager.postMealCheckIns.filter { checkIn in
+            Calendar.current.isDateInToday(checkIn.timestamp)
+        }
+        
+        // Calculate PhylloScore
+        phylloScore = insightsEngine.calculatePhylloScore(
+            todayMeals: todayMeals,
+            mealWindows: windows,
+            checkIns: checkIns,
+            primaryGoal: mockData.userProfile.primaryGoal
+        )
+        
+        // Analyze micronutrients
+        micronutrientStatus = insightsEngine.analyzeMicronutrients(meals: todayMeals)
+        
+        // Generate insights
+        if let score = phylloScore, let microStatus = micronutrientStatus {
+            insights = insightsEngine.generateInsights(
+                meals: todayMeals,
+                checkIns: checkIns,
+                microStatus: microStatus,
+                score: score
+            )
         }
     }
 }
@@ -768,6 +815,9 @@ struct WeekDetailCard: View {
 
 struct NowChapter: View {
     @Binding var animateContent: Bool
+    let scoreBreakdown: InsightsEngine.ScoreBreakdown?
+    let micronutrientStatus: InsightsEngine.MicronutrientStatus?
+    let insights: [InsightsEngine.Insight]
     @StateObject private var mockData = MockDataManager.shared
     
     var body: some View {
@@ -790,10 +840,18 @@ struct NowChapter: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             
             // Live Dashboard
-            LiveDashboard()
+            LiveDashboard(scoreBreakdown: scoreBreakdown)
                 .opacity(animateContent ? 1 : 0)
                 .scaleEffect(animateContent ? 1 : 0.95)
                 .animation(.spring(response: 0.8).delay(0.3), value: animateContent)
+            
+            // Micronutrient Status
+            if let microStatus = micronutrientStatus {
+                MicronutrientStatusView(status: microStatus)
+                    .opacity(animateContent ? 1 : 0)
+                    .offset(y: animateContent ? 0 : 20)
+                    .animation(.spring(response: 0.8).delay(0.35), value: animateContent)
+            }
             
             // Current Strengths & Opportunities
             VStack(spacing: 16) {
@@ -838,7 +896,18 @@ struct NowChapter: View {
 }
 
 struct LiveDashboard: View {
+    let scoreBreakdown: InsightsEngine.ScoreBreakdown?
     @State private var pulseAnimation = false
+    
+    private var displayScore: Int {
+        scoreBreakdown?.totalScore ?? 0
+    }
+    
+    private var scoreColor: Color {
+        if displayScore >= 80 { return .green }
+        else if displayScore >= 60 { return .orange }
+        else { return .red }
+    }
     
     var body: some View {
         VStack(spacing: 20) {
@@ -846,7 +915,7 @@ struct LiveDashboard: View {
             ZStack {
                 // Pulsing background
                 Circle()
-                    .fill(Color.phylloAccent.opacity(0.2))
+                    .fill(scoreColor.opacity(0.2))
                     .frame(width: 160, height: 160)
                     .scaleEffect(pulseAnimation ? 1.2 : 1.0)
                     .opacity(pulseAnimation ? 0.3 : 0.5)
@@ -863,24 +932,57 @@ struct LiveDashboard: View {
                             .foregroundColor(.green)
                     }
                     
-                    Text("87")
+                    Text("\(displayScore)")
                         .font(.system(size: 56, weight: .bold, design: .rounded))
                         .foregroundColor(.white)
                     
-                    Text("Current Score")
-                        .font(.system(size: 14))
-                        .foregroundColor(.phylloTextSecondary)
+                    HStack(spacing: 4) {
+                        if let trend = scoreBreakdown?.trend {
+                            Image(systemName: trend.icon)
+                                .font(.system(size: 12))
+                                .foregroundColor(trend.color)
+                        }
+                        Text("PhylloScore")
+                            .font(.system(size: 14))
+                            .foregroundColor(.phylloTextSecondary)
+                    }
                 }
             }
             
-            // Live Stats Grid
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                LiveStatCard(label: "Today", value: "4/6", subtitle: "Windows")
-                LiveStatCard(label: "Energy", value: "7.2", subtitle: "Level")
-                LiveStatCard(label: "Streak", value: "12", subtitle: "Days")
-                LiveStatCard(label: "Protein", value: "78g", subtitle: "Today")
-                LiveStatCard(label: "Water", value: "1.8L", subtitle: "Intake")
-                LiveStatCard(label: "Active", value: "3h", subtitle: "Window")
+            // Live Stats Grid - Score Breakdown
+            if let breakdown = scoreBreakdown {
+                VStack(spacing: 8) {
+                    Text("Score Breakdown")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.phylloTextTertiary)
+                    
+                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                        ScoreComponentCard(
+                            label: "Meal Timing",
+                            value: breakdown.mealTimingScore,
+                            maxValue: 25,
+                            icon: "clock.fill"
+                        )
+                        ScoreComponentCard(
+                            label: "Macro Balance",
+                            value: breakdown.macroBalanceScore,
+                            maxValue: 25,
+                            icon: "chart.pie.fill"
+                        )
+                        ScoreComponentCard(
+                            label: "Micronutrients",
+                            value: breakdown.micronutrientScore,
+                            maxValue: 25,
+                            icon: "leaf.fill"
+                        )
+                        ScoreComponentCard(
+                            label: "Consistency",
+                            value: breakdown.consistencyScore,
+                            maxValue: 25,
+                            icon: "repeat.circle.fill"
+                        )
+                    }
+                }
             }
         }
         .padding(24)
@@ -899,6 +1001,59 @@ struct LiveDashboard: View {
         .onAppear {
             pulseAnimation = true
         }
+    }
+}
+
+struct ScoreComponentCard: View {
+    let label: String
+    let value: Int
+    let maxValue: Int
+    let icon: String
+    
+    private var percentage: Double {
+        Double(value) / Double(maxValue)
+    }
+    
+    private var color: Color {
+        if percentage >= 0.8 { return .green }
+        else if percentage >= 0.6 { return .orange }
+        else { return .red }
+    }
+    
+    var body: some View {
+        VStack(spacing: 8) {
+            HStack(spacing: 6) {
+                Image(systemName: icon)
+                    .font(.system(size: 14))
+                    .foregroundColor(color)
+                
+                Text(label)
+                    .font(.system(size: 12))
+                    .foregroundColor(.phylloTextSecondary)
+            }
+            
+            Text("\(value)/\(maxValue)")
+                .font(.system(size: 16, weight: .bold, design: .rounded))
+                .foregroundColor(.white)
+            
+            // Progress bar
+            GeometryReader { geometry in
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(Color.white.opacity(0.1))
+                        .frame(height: 4)
+                    
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(color)
+                        .frame(width: geometry.size.width * percentage, height: 4)
+                }
+            }
+            .frame(height: 4)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(12)
+        .background(Color.white.opacity(0.05))
+        .cornerRadius(12)
     }
 }
 

@@ -31,6 +31,11 @@ class MockDataManager: ObservableObject {
     // Today's meals
     @Published var todaysMeals: [LoggedMeal] = []
     
+    // Computed property for compatibility
+    var todayMeals: [LoggedMeal] {
+        todaysMeals
+    }
+    
     // Analyzing meals (in progress)
     @Published var analyzingMeals: [AnalyzingMeal] = []
     
