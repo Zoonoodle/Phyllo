@@ -151,38 +151,6 @@ struct SimplifiedMomentumTabView: View {
                     .padding(20)
                 }
                 .cornerRadius(16)
-                
-                // Quick Actions section (replaces food pills)
-                VStack(spacing: 0) {
-                    Divider()
-                        .background(Color.white.opacity(0.08))
-                    
-                    HStack(spacing: 12) {
-                        // Time-based suggestion
-                        quickActionPill(
-                            icon: "clock.arrow.circlepath",
-                            text: getTimeSuggestion(),
-                            color: .phylloAccent
-                        )
-                        
-                        // Score improvement tip
-                        quickActionPill(
-                            icon: "arrow.up.circle.fill",
-                            text: getImprovementTip(),
-                            color: scoreImprovementColor
-                        )
-                        
-                        // Next window preview
-                        if let nextWindow = getNextMealWindow() {
-                            quickActionPill(
-                                icon: "fork.knife",
-                                text: nextWindow,
-                                color: .blue
-                            )
-                        }
-                    }
-                    .padding(16)
-                }
             }
             .background(Color.white.opacity(0.03))
             .cornerRadius(20)
@@ -237,20 +205,86 @@ struct SimplifiedMomentumTabView: View {
     }
     
     @ViewBuilder
-    private func quickActionPill(icon: String, text: String, color: Color) -> some View {
+    private func getNutrientActionPill(for deficiency: InsightsEngine.MicronutrientStatus.NutrientStatus) -> some View {
+        let action = getNutrientAction(for: deficiency)
+        
         HStack(spacing: 6) {
-            Image(systemName: icon)
-                .font(.system(size: 12, weight: .medium))
+            Image(systemName: action.icon)
+                .font(.system(size: 11, weight: .medium))
             
-            Text(text)
+            Text(action.text)
                 .font(.system(size: 12, weight: .medium))
                 .lineLimit(1)
         }
-        .foregroundColor(color)
+        .foregroundColor(action.color)
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
-        .background(color.opacity(0.1))
-        .cornerRadius(20)
+        .background(action.color.opacity(0.1))
+        .cornerRadius(12)
+    }
+    
+    private func getNutrientAction(for deficiency: InsightsEngine.MicronutrientStatus.NutrientStatus) -> (text: String, icon: String, color: Color) {
+        let percentage = deficiency.percentageOfRDA
+        let nutrientName = deficiency.nutrient.name.lowercased()
+        let currentHour = Calendar.current.component(.hour, from: TimeProvider.shared.currentTime)
+        
+        // Check meal windows
+        let hasActiveWindow = mockData.mealWindows.contains { window in
+            window.startTime <= TimeProvider.shared.currentTime && 
+            window.endTime > TimeProvider.shared.currentTime
+        }
+        
+        // Priority-based suggestions
+        if percentage < 30 {
+            // Critical deficiency - urgent action
+            return ("Add now", "exclamationmark.circle.fill", .orange)
+        } else if hasActiveWindow {
+            // Active window - time-sensitive
+            if let window = mockData.mealWindows.first(where: { 
+                $0.startTime <= TimeProvider.shared.currentTime && 
+                $0.endTime > TimeProvider.shared.currentTime 
+            }) {
+                let timeRemaining = window.endTime.timeIntervalSince(TimeProvider.shared.currentTime)
+                let minutes = Int(timeRemaining / 60)
+                if minutes < 30 {
+                    return ("Quick add", "clock.fill", .phylloAccent)
+                }
+            }
+        }
+        
+        // Time-based suggestions
+        switch nutrientName {
+        case "magnesium":
+            if currentHour >= 17 {
+                return ("Tonight", "moon.fill", .purple)
+            } else {
+                return ("With dinner", "fork.knife", .blue)
+            }
+        case "vitamin d", "calcium", "vitamin b12":
+            if currentHour < 12 {
+                return ("Morning", "sun.max.fill", .orange)
+            } else {
+                return ("Tomorrow AM", "sunrise.fill", .phylloAccent)
+            }
+        case "iron":
+            if currentHour < 10 {
+                return ("Empty stomach", "circle.dashed", .red)
+            } else {
+                return ("Next meal", "fork.knife", .phylloAccent)
+            }
+        case "potassium":
+            return ("Midday", "sun.min.fill", .phylloAccent)
+        case "fiber":
+            return ("Each meal", "leaf.fill", .green)
+        case "omega-3":
+            return ("With fats", "drop.fill", .blue)
+        default:
+            if percentage < 50 {
+                return ("Add soon", "plus.circle.fill", .orange)
+            } else {
+                return ("On track", "checkmark.circle.fill", .green)
+            }
+        }
     }
     
     private func trendIcon(_ trend: InsightsEngine.ScoreBreakdown.ScoreTrend?) -> String {
@@ -326,15 +360,9 @@ struct SimplifiedMomentumTabView: View {
                 
                 Spacer()
                 
-                // Right side: Food suggestion or expand chevron
-                if !isExpanded, let topFood = foodSources.first {
-                    Text(topFood)
-                        .font(.system(size: 12))
-                        .foregroundColor(.phylloAccent)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(Color.phylloAccent.opacity(0.1))
-                        .cornerRadius(12)
+                // Right side: Contextual action or expand chevron
+                if !isExpanded {
+                    getNutrientActionPill(for: deficiency)
                 }
                 
                 Image(systemName: "chevron.down")
@@ -547,103 +575,6 @@ struct SimplifiedMomentumTabView: View {
         else { return .orange }
     }
     
-    private var scoreImprovementColor: Color {
-        guard let score = phylloScore else { return .orange }
-        
-        // Find the weakest component
-        let minScore = min(score.mealTimingScore, score.macroBalanceScore, score.micronutrientScore)
-        
-        if minScore >= 20 { return .green }
-        else if minScore >= 15 { return .phylloAccent }
-        else { return .orange }
-    }
-    
-    private func getTimeSuggestion() -> String {
-        let hour = Calendar.current.component(.hour, from: TimeProvider.shared.currentTime)
-        let hasActiveWindow = mockData.mealWindows.contains { window in
-            window.startTime <= TimeProvider.shared.currentTime && 
-            window.endTime > TimeProvider.shared.currentTime
-        }
-        
-        if hasActiveWindow {
-            if let window = mockData.mealWindows.first(where: { 
-                $0.startTime <= TimeProvider.shared.currentTime && 
-                $0.endTime > TimeProvider.shared.currentTime 
-            }) {
-                let timeRemaining = window.endTime.timeIntervalSince(TimeProvider.shared.currentTime)
-                let minutes = Int(timeRemaining / 60)
-                if minutes > 30 {
-                    return "Window open"
-                } else {
-                    return "\(minutes)m left"
-                }
-            }
-        }
-        
-        // Suggest based on time of day
-        if hour < 10 && mockData.todayMeals.isEmpty {
-            return "Start with breakfast"
-        } else if hour >= 12 && hour < 14 {
-            return "Lunch window"
-        } else if hour >= 15 && hour < 17 {
-            return "Snack time"
-        } else if hour >= 18 && hour < 20 {
-            return "Dinner window"
-        } else {
-            return "Plan tomorrow"
-        }
-        
-        return "Stay on track"
-    }
-    
-    private func getImprovementTip() -> String {
-        guard let score = phylloScore else { return "Track meals" }
-        
-        // Find the weakest component
-        let components = [
-            (score.mealTimingScore, "timing", "Eat on schedule"),
-            (score.macroBalanceScore, "macros", "Balance macros"),
-            (score.micronutrientScore, "nutrients", "Add nutrients")
-        ]
-        
-        let weakest = components.min { $0.0 < $1.0 }
-        
-        if let weakest = weakest {
-            if weakest.0 < 10 {
-                return weakest.2
-            } else if weakest.0 < 15 {
-                return "Improve \(weakest.1)"
-            }
-        }
-        
-        // General tips based on total score
-        if score.totalScore >= 80 {
-            return "Keep it up!"
-        } else if score.totalScore >= 60 {
-            return "Almost there"
-        } else {
-            return "Room to grow"
-        }
-    }
-    
-    private func getNextMealWindow() -> String? {
-        let currentTime = TimeProvider.shared.currentTime
-        
-        // Find next upcoming window
-        if let nextWindow = mockData.mealWindows.first(where: { $0.startTime > currentTime }) {
-            let timeUntil = nextWindow.startTime.timeIntervalSince(currentTime)
-            let hours = Int(timeUntil / 3600)
-            let minutes = Int((timeUntil.truncatingRemainder(dividingBy: 3600)) / 60)
-            
-            if hours > 0 {
-                return "Next in \(hours)h"
-            } else {
-                return "Next in \(minutes)m"
-            }
-        }
-        
-        return nil
-    }
     
     private func loadData() {
         Task {
