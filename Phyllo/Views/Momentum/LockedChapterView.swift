@@ -162,7 +162,13 @@ struct UnlockRequirementRow: View {
             .frame(height: 6)
             
             if remaining > 0 {
-                Text("\(remaining) \(remaining == 1 ? label.lowercased().replacingOccurrences(of: "required", with "").trimmingCharacters(in: .whitespaces).dropLast() : label.lowercased().replacingOccurrences(of: "required", with "").trimmingCharacters(in: .whitespaces)) remaining")
+                let singularLabel = label.lowercased()
+                    .replacingOccurrences(of: "required", with: "")
+                    .trimmingCharacters(in: .whitespaces)
+                let pluralLabel = singularLabel
+                let labelText = remaining == 1 ? String(singularLabel.dropLast()) : singularLabel
+                
+                Text("\(remaining) \(labelText) remaining")
                     .font(.system(size: 12))
                     .foregroundColor(.phylloTextTertiary)
             } else {

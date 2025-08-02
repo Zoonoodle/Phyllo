@@ -125,25 +125,25 @@ struct MomentumTabView: View {
                             .padding(.top, 20)
                             
                             // Chapter Content
-                            Group {
+                            ZStack {
                                 if mockData.storyChapterProgress.isChapterUnlocked(currentChapter.chapterId) {
                                     switch currentChapter {
                                     case .yourPlan:
                                         YourPlanChapter(animateContent: $animateContent)
                                     case .firstWeek:
-                                        FirstWeekChapter(
+                                        FirstWeekChapter(animateContent: $animateContent)
+                                    case .patterns:
+                                        PatternsChapter(
                                             animateContent: $animateContent,
                                             expandedInsight: $expandedInsight
                                         )
-                                    case .patterns:
-                                        PatternsChapter(
+                                    case .peakState:
+                                        PeakStateChapter(
                                             animateContent: $animateContent,
                                             scoreBreakdown: phylloScore,
                                             micronutrientStatus: micronutrientStatus,
                                             insights: insights
                                         )
-                                    case .peakState:
-                                        PeakStateChapter(animateContent: $animateContent)
                                     }
                                 } else {
                                     LockedChapterView(
