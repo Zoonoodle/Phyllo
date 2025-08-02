@@ -31,131 +31,120 @@ struct ScoreEvolutionChart: View {
         max(dataPoints.map { $0.score }.max() ?? 100, 100)
     }
     
+    @ViewBuilder
+    private var headerView: some View {
+        if showLabels {
+            HStack {
+                Text("PhylloScore Evolution")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(.white)
+                
+                Spacer()
+                
+                if let last = dataPoints.last, dataPoints.count > 1 {
+                    let first = dataPoints.first!
+                    let change = last.score - first.score
+                    let changePercent = Double(change) / Double(first.score) * 100
+                    
+                    HStack(spacing: 4) {
+                        Image(systemName: change >= 0 ? "arrow.up.right" : "arrow.down.right")
+                            .font(.system(size: 12))
+                        Text("\(abs(Int(changePercent)))%")
+                            .font(.system(size: 14, weight: .medium))
+                    }
+                    .foregroundColor(change >= 0 ? .green : .red)
+                }
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private var chartView: some View {
+        Chart(dataPoints) { point in
+            // Area under the line
+            AreaMark(
+                x: .value("Day", point.day),
+                y: .value("Score", animateChart ? point.score : 0)
+            )
+            .foregroundStyle(
+                LinearGradient(
+                    colors: [Color.phylloAccent.opacity(0.3), Color.phylloAccent.opacity(0.05)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
+            
+            // Line
+            LineMark(
+                x: .value("Day", point.day),
+                y: .value("Score", animateChart ? point.score : 0)
+            )
+            .foregroundStyle(Color.phylloAccent)
+            .lineStyle(StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round))
+            
+            // Points
+            PointMark(
+                x: .value("Day", point.day),
+                y: .value("Score", animateChart ? point.score : 0)
+            )
+            .foregroundStyle(Color.phylloAccent)
+            .symbolSize(selectedPoint?.id == point.id ? 120 : 60)
+        }
+        .frame(height: height)
+        .chartYScale(domain: 0...100)
+        .chartXAxis {
+            AxisMarks(values: .automatic) { _ in
+                AxisGridLine()
+                    .foregroundStyle(Color.white.opacity(0.1))
+                AxisValueLabel()
+                    .foregroundStyle(Color.phylloTextTertiary)
+                    .font(.system(size: 10))
+            }
+        }
+        .chartYAxis {
+            AxisMarks(position: .leading, values: [0, 25, 50, 75, 100]) { _ in
+                AxisGridLine()
+                    .foregroundStyle(Color.white.opacity(0.1))
+                AxisValueLabel()
+                    .foregroundStyle(Color.phylloTextTertiary)
+                    .font(.system(size: 10))
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private var selectedDetailView: some View {
+        if let selected = selectedPoint {
+            HStack(spacing: 16) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Day \(selected.day)")
+                        .font(.system(size: 12))
+                        .foregroundColor(.phylloTextTertiary)
+                    
+                    Text("Score: \(selected.score)")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.white)
+                }
+                
+                Spacer()
+                
+                if !selected.note.isEmpty {
+                    Text(selected.note)
+                        .font(.system(size: 12))
+                        .foregroundColor(.phylloTextSecondary)
+                }
+            }
+            .padding(12)
+            .background(Color.white.opacity(0.05))
+            .cornerRadius(12)
+        }
+    }
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            if showLabels {
-                HStack {
-                    Text("PhylloScore Evolution")
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundColor(.white)
-                    
-                    Spacer()
-                    
-                    if let last = dataPoints.last, dataPoints.count > 1 {
-                        let first = dataPoints.first!
-                        let change = last.score - first.score
-                        let changePercent = Double(change) / Double(first.score) * 100
-                        
-                        HStack(spacing: 4) {
-                            Image(systemName: change >= 0 ? "arrow.up.right" : "arrow.down.right")
-                                .font(.system(size: 12))
-                            Text("\(abs(Int(changePercent)))%")
-                                .font(.system(size: 14, weight: .medium))
-                        }
-                        .foregroundColor(change >= 0 ? .green : .red)
-                    }
-                }
-            }
-            
-            Chart(dataPoints) { point in
-                // Area under the line
-                AreaMark(
-                    x: .value("Day", point.day),
-                    y: .value("Score", animateChart ? point.score : 0)
-                )
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [Color.phylloAccent.opacity(0.3), Color.phylloAccent.opacity(0.05)],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-                
-                // Line
-                LineMark(
-                    x: .value("Day", point.day),
-                    y: .value("Score", animateChart ? point.score : 0)
-                )
-                .foregroundStyle(Color.phylloAccent)
-                .lineStyle(StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round))
-                
-                // Points
-                PointMark(
-                    x: .value("Day", point.day),
-                    y: .value("Score", animateChart ? point.score : 0)
-                )
-                .foregroundStyle(Color.phylloAccent)
-                .symbolSize(selectedPoint?.id == point.id ? 120 : 60)
-            }
-            .frame(height: height)
-            .chartYScale(domain: 0...100)
-            .chartXAxis {
-                AxisMarks(values: .automatic) { value in
-                    AxisGridLine()
-                        .foregroundStyle(Color.white.opacity(0.1))
-                    AxisValueLabel()
-                        .foregroundStyle(Color.phylloTextTertiary)
-                        .font(.system(size: 10))
-                }
-            }
-            .chartYAxis {
-                AxisMarks(position: .leading, values: [0, 25, 50, 75, 100]) { value in
-                    AxisGridLine()
-                        .foregroundStyle(Color.white.opacity(0.1))
-                    AxisValueLabel()
-                        .foregroundStyle(Color.phylloTextTertiary)
-                        .font(.system(size: 10))
-                }
-            }
-            .chartBackground { chartProxy in
-                GeometryReader { geometry in
-                    // Goal zones
-                    Rectangle()
-                        .fill(Color.green.opacity(0.05))
-                        .frame(height: geometry.size.height * 0.2)
-                        .offset(y: 0)
-                    
-                    Rectangle()
-                        .fill(Color.orange.opacity(0.05))
-                        .frame(height: geometry.size.height * 0.2)
-                        .offset(y: geometry.size.height * 0.2)
-                    
-                    Rectangle()
-                        .fill(Color.red.opacity(0.05))
-                        .frame(height: geometry.size.height * 0.6)
-                        .offset(y: geometry.size.height * 0.4)
-                }
-            }
-            .chartAngleSelection(value: .constant(nil))
-            .onTapGesture { location in
-                // Handle tap to select point
-            }
-            
-            // Selected point detail
-            if let selected = selectedPoint {
-                HStack(spacing: 16) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Day \(selected.day)")
-                            .font(.system(size: 12))
-                            .foregroundColor(.phylloTextTertiary)
-                        
-                        Text("Score: \(selected.score)")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundColor(.white)
-                    }
-                    
-                    Spacer()
-                    
-                    if !selected.note.isEmpty {
-                        Text(selected.note)
-                            .font(.system(size: 12))
-                            .foregroundColor(.phylloTextSecondary)
-                    }
-                }
-                .padding(12)
-                .background(Color.white.opacity(0.05))
-                .cornerRadius(12)
-            }
+            headerView
+            chartView
+            selectedDetailView
         }
         .padding(20)
         .background(

@@ -309,156 +309,187 @@ struct FirstWeekChapter: View {
     private let startingScore = 42
     private let startingDeficiencies = 5
     
+    private func trendText(_ trend: InsightsEngine.ScoreBreakdown.ScoreTrend?) -> String? {
+        guard let trend = trend else { return nil }
+        switch trend {
+        case .improving: return "Improving"
+        case .stable: return "Stable"
+        case .declining: return "Declining"
+        }
+    }
+    
+    @ViewBuilder
+    private var storyIntroduction: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("It all started...")
+                .font(.system(size: 32, weight: .bold))
+                .foregroundColor(.white)
+                .opacity(animateContent ? 1 : 0)
+                .offset(y: animateContent ? 0 : 20)
+            
+            Text("30 days ago, you began your journey with Phyllo. Here's how far you've come.")
+                .font(.system(size: 18))
+                .foregroundColor(.phylloTextSecondary)
+                .opacity(animateContent ? 1 : 0)
+                .offset(y: animateContent ? 0 : 20)
+                .animation(.spring(response: 0.8).delay(0.2), value: animateContent)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+    
+    @ViewBuilder
+    private var startingStats: some View {
+        VStack(spacing: 16) {
+            HStack(spacing: 16) {
+                StartingStatCard(
+                    title: "Initial Score",
+                    value: "\(startingScore)",
+                    subtitle: "Room to grow",
+                    icon: "chart.line.uptrend.xyaxis",
+                    delay: 0.3
+                )
+                .opacity(animateContent ? 1 : 0)
+                .scaleEffect(animateContent ? 1 : 0.8)
+                .animation(.spring(response: 0.8).delay(0.3), value: animateContent)
+                
+                StartingStatCard(
+                    title: "Current Score",
+                    value: "\(scoreBreakdown?.totalScore ?? 0)",
+                    subtitle: trendText(scoreBreakdown?.trend) ?? "Improving",
+                    icon: "star.fill",
+                    delay: 0.4,
+                    color: scoreBreakdown?.trend.color ?? .green
+                )
+                .opacity(animateContent ? 1 : 0)
+                .scaleEffect(animateContent ? 1 : 0.8)
+                .animation(.spring(response: 0.8).delay(0.4), value: animateContent)
+            }
+            
+            // First Week Summary
+            FirstWeekCard()
+                .opacity(animateContent ? 1 : 0)
+                .offset(y: animateContent ? 0 : 30)
+                .animation(.spring(response: 0.8).delay(0.5), value: animateContent)
+        }
+    }
+    
+    @ViewBuilder
+    private var scoreProgressSection: some View {
+        if let score = scoreBreakdown {
+            PhylloScoreComparison(
+                startScore: startingScore,
+                currentScore: score.totalScore,
+                daysElapsed: 7
+            )
+            .opacity(animateContent ? 1 : 0)
+            .offset(y: animateContent ? 0 : 20)
+            .animation(.spring(response: 0.8).delay(0.65), value: animateContent)
+        }
+    }
+    
+    @ViewBuilder
+    private var nutritionalImprovements: some View {
+        if let microStatus = micronutrientStatus {
+            VStack(spacing: 16) {
+                SectionHeader(title: "Nutritional Improvements", icon: "leaf.fill")
+                
+                nutritionalComparisonCard(microStatus: microStatus)
+                
+                if microStatus.topDeficiencies.count < startingDeficiencies {
+                    improvementMessage(microStatus: microStatus)
+                }
+            }
+            .opacity(animateContent ? 1 : 0)
+            .offset(y: animateContent ? 0 : 20)
+            .animation(.spring(response: 0.8).delay(0.7), value: animateContent)
+        }
+    }
+    
+    @ViewBuilder
+    private func nutritionalComparisonCard(microStatus: InsightsEngine.MicronutrientStatus) -> some View {
+        HStack(spacing: 12) {
+            // Start deficiencies
+            nutritionalStatusColumn(
+                title: "Week 1",
+                count: startingDeficiencies,
+                color: .red
+            )
+            
+            Image(systemName: "arrow.right")
+                .font(.system(size: 20))
+                .foregroundColor(.phylloTextTertiary)
+            
+            // Current deficiencies
+            nutritionalStatusColumn(
+                title: "Now",
+                count: microStatus.topDeficiencies.count,
+                color: microStatus.topDeficiencies.count < startingDeficiencies ? .green : .orange
+            )
+        }
+        .padding(20)
+        .background(
+            LinearGradient(
+                colors: [Color.white.opacity(0.06), Color.white.opacity(0.02)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
+        .cornerRadius(16)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+        )
+    }
+    
+    @ViewBuilder
+    private func nutritionalStatusColumn(title: String, count: Int, color: Color) -> some View {
+        VStack(spacing: 8) {
+            Text(title)
+                .font(.system(size: 12))
+                .foregroundColor(.phylloTextTertiary)
+            
+            VStack(spacing: 4) {
+                Text("\(count)")
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundColor(color)
+                
+                Text("deficiencies")
+                    .font(.system(size: 12))
+                    .foregroundColor(.phylloTextSecondary)
+            }
+        }
+        .frame(maxWidth: .infinity)
+    }
+    
+    @ViewBuilder
+    private func improvementMessage(microStatus: InsightsEngine.MicronutrientStatus) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 14))
+                .foregroundColor(.green)
+            
+            Text("You've addressed \(startingDeficiencies - microStatus.topDeficiencies.count) nutritional gaps!")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(.green)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .background(Color.green.opacity(0.1))
+        .cornerRadius(20)
+    }
+    
     var body: some View {
         VStack(spacing: 24) {
-            // Story Introduction
-            VStack(alignment: .leading, spacing: 16) {
-                Text("It all started...")
-                    .font(.system(size: 32, weight: .bold))
-                    .foregroundColor(.white)
-                    .opacity(animateContent ? 1 : 0)
-                    .offset(y: animateContent ? 0 : 20)
-                
-                Text("30 days ago, you began your journey with Phyllo. Here's how far you've come.")
-                    .font(.system(size: 18))
-                    .foregroundColor(.phylloTextSecondary)
-                    .opacity(animateContent ? 1 : 0)
-                    .offset(y: animateContent ? 0 : 20)
-                    .animation(.spring(response: 0.8).delay(0.2), value: animateContent)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            
-            // Starting Stats
-            VStack(spacing: 16) {
-                HStack(spacing: 16) {
-                    StartingStatCard(
-                        title: "Initial Score",
-                        value: "\(startingScore)",
-                        subtitle: "Room to grow",
-                        icon: "chart.line.uptrend.xyaxis",
-                        delay: 0.3
-                    )
-                    .opacity(animateContent ? 1 : 0)
-                    .scaleEffect(animateContent ? 1 : 0.8)
-                    .animation(.spring(response: 0.8).delay(0.3), value: animateContent)
-                    
-                    StartingStatCard(
-                        title: "Current Score",
-                        value: "\(scoreBreakdown?.totalScore ?? 0)",
-                        subtitle: scoreBreakdown?.trend.description ?? "Improving",
-                        icon: "star.fill",
-                        delay: 0.4,
-                        color: scoreBreakdown?.trend.color ?? .green
-                    )
-                    .opacity(animateContent ? 1 : 0)
-                    .scaleEffect(animateContent ? 1 : 0.8)
-                    .animation(.spring(response: 0.8).delay(0.4), value: animateContent)
-                }
-                
-                // First Week Summary
-                FirstWeekCard()
-                    .opacity(animateContent ? 1 : 0)
-                    .offset(y: animateContent ? 0 : 30)
-                    .animation(.spring(response: 0.8).delay(0.5), value: animateContent)
-            }
+            storyIntroduction
+            startingStats
             
             // Milestone Timeline
             MilestoneTimeline()
                 .opacity(animateContent ? 1 : 0)
                 .animation(.spring(response: 0.8).delay(0.6), value: animateContent)
             
-            // Score Progress Comparison
-            if let score = scoreBreakdown {
-                PhylloScoreComparison(
-                    startScore: startingScore,
-                    currentScore: score.totalScore,
-                    daysElapsed: 7
-                )
-                .opacity(animateContent ? 1 : 0)
-                .offset(y: animateContent ? 0 : 20)
-                .animation(.spring(response: 0.8).delay(0.65), value: animateContent)
-            }
-            
-            // Nutritional Improvements
-            if let microStatus = micronutrientStatus {
-                VStack(spacing: 16) {
-                    SectionHeader(title: "Nutritional Improvements", icon: "leaf.fill")
-                    
-                    HStack(spacing: 12) {
-                        // Start deficiencies
-                        VStack(spacing: 8) {
-                            Text("Week 1")
-                                .font(.system(size: 12))
-                                .foregroundColor(.phylloTextTertiary)
-                            
-                            VStack(spacing: 4) {
-                                Text("\(startingDeficiencies)")
-                                    .font(.system(size: 28, weight: .bold))
-                                    .foregroundColor(.red)
-                                
-                                Text("deficiencies")
-                                    .font(.system(size: 12))
-                                    .foregroundColor(.phylloTextSecondary)
-                            }
-                        }
-                        .frame(maxWidth: .infinity)
-                        
-                        Image(systemName: "arrow.right")
-                            .font(.system(size: 20))
-                            .foregroundColor(.phylloTextTertiary)
-                        
-                        // Current deficiencies
-                        VStack(spacing: 8) {
-                            Text("Now")
-                                .font(.system(size: 12))
-                                .foregroundColor(.phylloTextTertiary)
-                            
-                            VStack(spacing: 4) {
-                                Text("\(microStatus.deficiencies.count)")
-                                    .font(.system(size: 28, weight: .bold))
-                                    .foregroundColor(microStatus.deficiencies.count < startingDeficiencies ? .green : .orange)
-                                
-                                Text("deficiencies")
-                                    .font(.system(size: 12))
-                                    .foregroundColor(.phylloTextSecondary)
-                            }
-                        }
-                        .frame(maxWidth: .infinity)
-                    }
-                    .padding(20)
-                    .background(
-                        LinearGradient(
-                            colors: [Color.white.opacity(0.06), Color.white.opacity(0.02)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .cornerRadius(16)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16)
-                            .stroke(Color.white.opacity(0.08), lineWidth: 1)
-                    )
-                    
-                    if microStatus.deficiencies.count < startingDeficiencies {
-                        HStack(spacing: 8) {
-                            Image(systemName: "checkmark.circle.fill")
-                                .font(.system(size: 14))
-                                .foregroundColor(.green)
-                            
-                            Text("You've addressed \(startingDeficiencies - microStatus.deficiencies.count) nutritional gaps!")
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(.green)
-                        }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 8)
-                        .background(Color.green.opacity(0.1))
-                        .cornerRadius(20)
-                    }
-                }
-                .opacity(animateContent ? 1 : 0)
-                .offset(y: animateContent ? 0 : 20)
-                .animation(.spring(response: 0.8).delay(0.7), value: animateContent)
-            }
+            scoreProgressSection
+            nutritionalImprovements
         }
     }
 }
@@ -649,315 +680,6 @@ struct Milestone: Identifiable {
     let title: String
     let icon: String
     let color: Color
-}
-
-// MARK: - Chapter: Your Patterns (Previously Journey)
-
-struct PatternsChapter: View {
-    @Binding var animateContent: Bool
-    @Binding var expandedInsight: String?
-    
-    var body: some View {
-        VStack(spacing: 24) {
-            // Chapter Title
-            VStack(alignment: .leading, spacing: 16) {
-                Text("The Path You've Taken")
-                    .font(.system(size: 32, weight: .bold))
-                    .foregroundColor(.white)
-                    .opacity(animateContent ? 1 : 0)
-                    .offset(y: animateContent ? 0 : 20)
-                
-                Text("Every day tells a story. Let's explore your patterns.")
-                    .font(.system(size: 18))
-                    .foregroundColor(.phylloTextSecondary)
-                    .opacity(animateContent ? 1 : 0)
-                    .offset(y: animateContent ? 0 : 20)
-                    .animation(.spring(response: 0.8).delay(0.2), value: animateContent)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            
-            // Interactive Journey Map
-            JourneyMapView()
-                .opacity(animateContent ? 1 : 0)
-                .scaleEffect(animateContent ? 1 : 0.9)
-                .animation(.spring(response: 0.8).delay(0.3), value: animateContent)
-            
-            // Pattern Discoveries
-            VStack(spacing: 16) {
-                SectionHeader(title: "What We've Discovered", icon: "lightbulb.fill")
-                
-                ForEach(journeyInsights) { insight in
-                    JourneyInsightCard(
-                        insight: insight,
-                        isExpanded: expandedInsight == insight.id,
-                        onTap: {
-                            withAnimation(.spring(response: 0.3)) {
-                                expandedInsight = expandedInsight == insight.id ? nil : insight.id
-                            }
-                        }
-                    )
-                    .opacity(animateContent ? 1 : 0)
-                    .offset(x: animateContent ? 0 : -20)
-                    .animation(.spring(response: 0.8).delay(0.4 + Double(insight.delay) * 0.1), value: animateContent)
-                }
-            }
-        }
-    }
-    
-    private var journeyInsights: [JourneyInsight] {
-        [
-            JourneyInsight(
-                id: "weekday-warrior",
-                title: "Weekday Warrior",
-                summary: "You excel Monday through Friday",
-                detail: "Your scores are 23% higher on weekdays. This suggests your routine supports better nutrition choices during the work week.",
-                icon: "briefcase.fill",
-                color: .blue,
-                delay: 0
-            ),
-            JourneyInsight(
-                id: "morning-momentum",
-                title: "Morning Momentum",
-                summary: "Early meals set your day's tone",
-                detail: "Days when you eat breakfast before 9 AM show 15% higher overall scores. Your body responds well to early nutrition.",
-                icon: "sunrise.fill",
-                color: .orange,
-                delay: 1
-            ),
-            JourneyInsight(
-                id: "consistency-key",
-                title: "Consistency is Your Superpower",
-                summary: "3+ meals = better days",
-                detail: "When you log 3 or more meals, your energy ratings average 7.8/10 compared to 5.2/10 on days with fewer meals.",
-                icon: "repeat.circle.fill",
-                color: .purple,
-                delay: 2
-            )
-        ]
-    }
-}
-
-struct JourneyInsight: Identifiable {
-    let id: String
-    let title: String
-    let summary: String
-    let detail: String
-    let icon: String
-    let color: Color
-    let delay: Int
-}
-
-struct JourneyInsightCard: View {
-    let insight: JourneyInsight
-    let isExpanded: Bool
-    let onTap: () -> Void
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 16) {
-                Image(systemName: insight.icon)
-                    .font(.system(size: 24))
-                    .foregroundColor(insight.color)
-                    .frame(width: 44, height: 44)
-                    .background(insight.color.opacity(0.15))
-                    .cornerRadius(12)
-                
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(insight.title)
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundColor(.white)
-                    
-                    Text(insight.summary)
-                        .font(.system(size: 14))
-                        .foregroundColor(.phylloTextSecondary)
-                }
-                
-                Spacer()
-                
-                Image(systemName: "chevron.down")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(.phylloTextTertiary)
-                    .rotationEffect(.degrees(isExpanded ? 180 : 0))
-            }
-            
-            if isExpanded {
-                Text(insight.detail)
-                    .font(.system(size: 14))
-                    .foregroundColor(.phylloTextSecondary)
-                    .padding(.top, 8)
-                    .transition(.asymmetric(
-                        insertion: .move(edge: .top).combined(with: .opacity),
-                        removal: .move(edge: .top).combined(with: .opacity)
-                    ))
-            }
-        }
-        .padding(20)
-        .background(
-            LinearGradient(
-                colors: [Color.white.opacity(0.06), Color.white.opacity(0.02)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        )
-        .cornerRadius(20)
-        .overlay(
-            RoundedRectangle(cornerRadius: 20)
-                .stroke(Color.white.opacity(0.08), lineWidth: 1)
-        )
-        .onTapGesture(perform: onTap)
-    }
-}
-
-struct JourneyMapView: View {
-    @State private var selectedWeek = 3
-    
-    let weekData = [
-        WeekData(week: 1, avgScore: 58, highlight: "Getting Started"),
-        WeekData(week: 2, avgScore: 65, highlight: "Finding Rhythm"),
-        WeekData(week: 3, avgScore: 78, highlight: "Breakthrough!"),
-        WeekData(week: 4, avgScore: 82, highlight: "Strong Finish")
-    ]
-    
-    var body: some View {
-        VStack(spacing: 20) {
-            // Visual Journey Path
-            GeometryReader { geometry in
-                ZStack {
-                    // Path line
-                    Path { path in
-                        let width = geometry.size.width
-                        let height = geometry.size.height
-                        let stepWidth = width / CGFloat(weekData.count - 1)
-                        
-                        for (index, week) in weekData.enumerated() {
-                            let x = CGFloat(index) * stepWidth
-                            let y = height - (CGFloat(week.avgScore - 40) / 60.0 * height)
-                            
-                            if index == 0 {
-                                path.move(to: CGPoint(x: x, y: y))
-                            } else {
-                                path.addLine(to: CGPoint(x: x, y: y))
-                            }
-                        }
-                    }
-                    .stroke(
-                        LinearGradient(
-                            colors: [Color.purple, Color.phylloAccent],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        ),
-                        lineWidth: 3
-                    )
-                    
-                    // Week nodes
-                    ForEach(Array(weekData.enumerated()), id: \.offset) { index, week in
-                        let stepWidth = geometry.size.width / CGFloat(weekData.count - 1)
-                        let x = CGFloat(index) * stepWidth
-                        let y = geometry.size.height - (CGFloat(week.avgScore - 40) / 60.0 * geometry.size.height)
-                        
-                        WeekNode(
-                            week: week,
-                            isSelected: selectedWeek == week.week,
-                            position: CGPoint(x: x, y: y)
-                        )
-                        .onTapGesture {
-                            withAnimation(.spring(response: 0.3)) {
-                                selectedWeek = week.week
-                            }
-                        }
-                    }
-                }
-            }
-            .frame(height: 150)
-            
-            // Selected Week Details
-            if let selected = weekData.first(where: { $0.week == selectedWeek }) {
-                WeekDetailCard(week: selected)
-                    .transition(.asymmetric(
-                        insertion: .scale.combined(with: .opacity),
-                        removal: .scale.combined(with: .opacity)
-                    ))
-            }
-        }
-        .padding(20)
-        .background(
-            LinearGradient(
-                colors: [Color.purple.opacity(0.1), Color.phylloAccent.opacity(0.05)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        )
-        .cornerRadius(24)
-        .overlay(
-            RoundedRectangle(cornerRadius: 24)
-                .stroke(Color.purple.opacity(0.3), lineWidth: 1)
-        )
-    }
-}
-
-struct WeekData: Identifiable {
-    let id = UUID()
-    let week: Int
-    let avgScore: Int
-    let highlight: String
-}
-
-struct WeekNode: View {
-    let week: WeekData
-    let isSelected: Bool
-    let position: CGPoint
-    
-    var body: some View {
-        ZStack {
-            Circle()
-                .fill(Color.purple.opacity(0.2))
-                .frame(width: 40, height: 40)
-                .scaleEffect(isSelected ? 1.3 : 1.0)
-            
-            Circle()
-                .stroke(Color.purple, lineWidth: 3)
-                .frame(width: 40, height: 40)
-                .scaleEffect(isSelected ? 1.3 : 1.0)
-            
-            Text("W\(week.week)")
-                .font(.system(size: 14, weight: .bold))
-                .foregroundColor(.white)
-        }
-        .position(position)
-    }
-}
-
-struct WeekDetailCard: View {
-    let week: WeekData
-    
-    var body: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Week \(week.week)")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(.white)
-                
-                Text(week.highlight)
-                    .font(.system(size: 14))
-                    .foregroundColor(.phylloTextSecondary)
-            }
-            
-            Spacer()
-            
-            VStack(alignment: .trailing, spacing: 4) {
-                Text("\(week.avgScore)")
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
-                    .foregroundColor(.purple)
-                
-                Text("Avg Score")
-                    .font(.system(size: 12))
-                    .foregroundColor(.phylloTextTertiary)
-            }
-        }
-        .padding(16)
-        .background(Color.white.opacity(0.05))
-        .cornerRadius(16)
-    }
 }
 
 // MARK: - Chapter: Peak State (Previously Now)

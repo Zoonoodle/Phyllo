@@ -10,14 +10,14 @@ import SwiftUI
 
 struct PhylloScoreMini: View {
     let score: Int
-    let trend: InsightsEngine.ScoreTrend?
+    let trend: InsightsEngine.ScoreBreakdown.ScoreTrend?
     let showLabel: Bool
     let animate: Bool
     
     @State private var displayedScore: Int = 0
     @State private var pulseAnimation = false
     
-    init(score: Int, trend: InsightsEngine.ScoreTrend? = nil, showLabel: Bool = true, animate: Bool = true) {
+    init(score: Int, trend: InsightsEngine.ScoreBreakdown.ScoreTrend? = nil, showLabel: Bool = true, animate: Bool = true) {
         self.score = score
         self.trend = trend
         self.showLabel = showLabel
@@ -28,6 +28,14 @@ struct PhylloScoreMini: View {
         if score >= 80 { return .green }
         else if score >= 60 { return .orange }
         else { return .red }
+    }
+    
+    private func trendDescription(_ trend: InsightsEngine.ScoreBreakdown.ScoreTrend) -> String {
+        switch trend {
+        case .improving: return "Improving"
+        case .stable: return "Stable"
+        case .declining: return "Declining"
+        }
     }
     
     var body: some View {
@@ -67,7 +75,7 @@ struct PhylloScoreMini: View {
                                 .font(.system(size: 12))
                                 .foregroundColor(trend.color)
                             
-                            Text(trend.description)
+                            Text(trendDescription(trend))
                                 .font(.system(size: 12))
                                 .foregroundColor(.phylloTextSecondary)
                         }
