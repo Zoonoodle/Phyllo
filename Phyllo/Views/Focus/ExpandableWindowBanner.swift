@@ -169,15 +169,21 @@ struct ExpandableWindowBanner: View {
                 return "Active now"
             }
         } else {
-            // Past window, no meals logged
-            let timeLate = -timeUntil
-            let hours = Int(timeLate) / 3600
-            let minutes = (Int(timeLate) % 3600) / 60
-            
-            if hours > 0 {
-                return "\(hours)h \(minutes)m late"
+            // Past window
+            if hasMeals {
+                // Don't show late text for completed windows
+                return ""
             } else {
-                return "\(minutes)m late"
+                // Only show late for missed windows
+                let timeLate = -timeUntil
+                let hours = Int(timeLate) / 3600
+                let minutes = (Int(timeLate) % 3600) / 60
+                
+                if hours > 0 {
+                    return "\(hours)h \(minutes)m late"
+                } else {
+                    return "\(minutes)m late"
+                }
             }
         }
         
@@ -332,9 +338,11 @@ struct ExpandableWindowBanner: View {
                 .foregroundColor(window.timeRemaining ?? 0 < 1800 ? .orange : .white.opacity(0.9))
                 
             case .passed:
-                Text(timeUntilWindow)
-                    .font(.system(size: 12))
-                    .foregroundColor(.orange.opacity(0.8))
+                if !timeUntilWindow.isEmpty {
+                    Text(timeUntilWindow)
+                        .font(.system(size: 12))
+                        .foregroundColor(.orange.opacity(0.8))
+                }
                 
             case .upcoming:
                 Text(timeUntilWindow)
@@ -458,15 +466,10 @@ struct ExpandableWindowBanner: View {
     
     @ViewBuilder
     private var completedIndicator: some View {
-        ZStack {
-            Circle()
-                .fill(Color.green.opacity(0.15))
-                .frame(width: 50, height: 50)
-            
-            Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 24))
-                .foregroundColor(.green)
-        }
+        Image(systemName: "checkmark")
+            .font(.system(size: 16, weight: .semibold))
+            .foregroundColor(.green)
+            .frame(width: 50, height: 50)
     }
     
     @ViewBuilder
