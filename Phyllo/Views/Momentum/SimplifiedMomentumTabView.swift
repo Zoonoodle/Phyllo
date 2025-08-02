@@ -74,69 +74,191 @@ struct SimplifiedMomentumTabView: View {
     // MARK: - PhylloScore Section
     
     private var phylloScoreSection: some View {
-        VStack(spacing: 20) {
-            // Score Display
-            HStack(spacing: 20) {
-                // Score Circle
+        VStack(spacing: 16) {
+            // Main Score Card
+            VStack(spacing: 0) {
+                // Score display section
                 ZStack {
-                    Circle()
-                        .stroke(Color.white.opacity(0.1), lineWidth: 8)
-                        .frame(width: 100, height: 100)
+                    // Subtle gradient background
+                    LinearGradient(
+                        colors: [
+                            Color.white.opacity(0.05),
+                            Color.white.opacity(0.02)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
                     
-                    Circle()
-                        .trim(from: 0, to: CGFloat(phylloScore?.totalScore ?? 0) / 100)
-                        .stroke(scoreColor, style: StrokeStyle(lineWidth: 8, lineCap: .round))
-                        .frame(width: 100, height: 100)
-                        .rotationEffect(.degrees(-90))
-                    
-                    VStack(spacing: 4) {
-                        Text("\(phylloScore?.totalScore ?? 0)")
-                            .font(.system(size: 36, weight: .bold, design: .rounded))
-                            .foregroundColor(.white)
+                    VStack(spacing: 24) {
+                        // Score header
+                        HStack(alignment: .center) {
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text("PhylloScore")
+                                    .font(.system(size: 20, weight: .semibold))
+                                    .foregroundColor(.white)
+                                
+                                Text("Your nutrition quality today")
+                                    .font(.system(size: 13))
+                                    .foregroundColor(.phylloTextSecondary)
+                            }
+                            
+                            Spacer()
+                            
+                            // Score with subtle animation
+                            HStack(alignment: .bottom, spacing: 8) {
+                                Text("\(phylloScore?.totalScore ?? 0)")
+                                    .font(.system(size: 56, weight: .bold, design: .rounded))
+                                    .foregroundColor(.white)
+                                
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("/100")
+                                        .font(.system(size: 16, weight: .medium))
+                                        .foregroundColor(.phylloTextTertiary)
+                                    
+                                    HStack(spacing: 4) {
+                                        Image(systemName: trendIcon(phylloScore?.trend))
+                                            .font(.system(size: 11))
+                                        Text(trendText(phylloScore?.trend) ?? "stable")
+                                            .font(.system(size: 11, weight: .medium))
+                                    }
+                                    .foregroundColor(scoreColor)
+                                }
+                                .padding(.bottom, 8)
+                            }
+                        }
                         
-                        Text(trendText(phylloScore?.trend) ?? "stable")
-                            .font(.system(size: 12))
-                            .foregroundColor(.phylloTextSecondary)
-                            .textCase(.uppercase)
+                        // Component breakdown
+                        VStack(spacing: 10) {
+                            scoreComponentBar(
+                                label: "Meal Timing",
+                                value: phylloScore?.mealTimingScore ?? 0,
+                                icon: "clock.fill"
+                            )
+                            
+                            scoreComponentBar(
+                                label: "Macro Balance", 
+                                value: phylloScore?.macroBalanceScore ?? 0,
+                                icon: "scalemass.fill"
+                            )
+                            
+                            scoreComponentBar(
+                                label: "Nutrient Density",
+                                value: phylloScore?.micronutrientScore ?? 0,
+                                icon: "leaf.fill"
+                            )
+                        }
                     }
+                    .padding(20)
                 }
+                .cornerRadius(16)
                 
-                // Score Explanation
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("PhylloScore")
-                        .font(.system(size: 20, weight: .semibold))
-                        .foregroundColor(.white)
+                // Quick Actions section (replaces food pills)
+                VStack(spacing: 0) {
+                    Divider()
+                        .background(Color.white.opacity(0.08))
                     
-                    Text("Your daily nutrition quality score based on meal timing, balance, and micronutrient density.")
-                        .font(.system(size: 14))
-                        .foregroundColor(.phylloTextSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                    
-                    // Mini breakdown
-                    HStack(spacing: 16) {
-                        scoreComponent(value: phylloScore?.mealTimingScore ?? 0, label: "Timing")
-                        scoreComponent(value: phylloScore?.macroBalanceScore ?? 0, label: "Balance")
-                        scoreComponent(value: phylloScore?.micronutrientScore ?? 0, label: "Density")
+                    HStack(spacing: 12) {
+                        // Time-based suggestion
+                        quickActionPill(
+                            icon: "clock.arrow.circlepath",
+                            text: getTimeSuggestion(),
+                            color: .phylloAccent
+                        )
+                        
+                        // Score improvement tip
+                        quickActionPill(
+                            icon: "arrow.up.circle.fill",
+                            text: getImprovementTip(),
+                            color: scoreImprovementColor
+                        )
+                        
+                        // Next window preview
+                        if let nextWindow = getNextMealWindow() {
+                            quickActionPill(
+                                icon: "fork.knife",
+                                text: nextWindow,
+                                color: .blue
+                            )
+                        }
                     }
+                    .padding(16)
                 }
-                
-                Spacer()
             }
-            .padding(20)
             .background(Color.white.opacity(0.03))
-            .cornerRadius(16)
+            .cornerRadius(20)
+            .overlay(
+                RoundedRectangle(cornerRadius: 20)
+                    .stroke(Color.white.opacity(0.06), lineWidth: 1)
+            )
         }
     }
     
-    private func scoreComponent(value: Int, label: String) -> some View {
-        VStack(spacing: 4) {
-            Text("\(value)")
-                .font(.system(size: 16, weight: .semibold, design: .rounded))
-                .foregroundColor(.white)
+    private func scoreComponentBar(label: String, value: Int, icon: String) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 14))
+                .foregroundColor(.phylloTextSecondary)
+                .frame(width: 20)
             
-            Text(label)
-                .font(.system(size: 10))
-                .foregroundColor(.phylloTextTertiary)
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text(label)
+                        .font(.system(size: 13))
+                        .foregroundColor(.phylloTextSecondary)
+                    
+                    Spacer()
+                    
+                    Text("\(value)/25")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.white.opacity(0.8))
+                }
+                
+                // Progress bar
+                GeometryReader { geometry in
+                    ZStack(alignment: .leading) {
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(Color.white.opacity(0.08))
+                            .frame(height: 3)
+                        
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(componentBarColor(for: value))
+                            .frame(width: geometry.size.width * CGFloat(value) / 25, height: 3)
+                    }
+                }
+                .frame(height: 3)
+            }
+        }
+    }
+    
+    private func componentBarColor(for value: Int) -> Color {
+        if value >= 20 { return .green.opacity(0.8) }
+        else if value >= 15 { return .phylloAccent.opacity(0.8) }
+        else { return .orange.opacity(0.8) }
+    }
+    
+    @ViewBuilder
+    private func quickActionPill(icon: String, text: String, color: Color) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: icon)
+                .font(.system(size: 12, weight: .medium))
+            
+            Text(text)
+                .font(.system(size: 12, weight: .medium))
+                .lineLimit(1)
+        }
+        .foregroundColor(color)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(color.opacity(0.1))
+        .cornerRadius(20)
+    }
+    
+    private func trendIcon(_ trend: InsightsEngine.ScoreBreakdown.ScoreTrend?) -> String {
+        guard let trend = trend else { return "minus.circle.fill" }
+        switch trend {
+        case .improving: return "arrow.up.circle.fill"
+        case .stable: return "equal.circle.fill"
+        case .declining: return "arrow.down.circle.fill"
         }
     }
     
@@ -425,16 +547,114 @@ struct SimplifiedMomentumTabView: View {
         else { return .orange }
     }
     
+    private var scoreImprovementColor: Color {
+        guard let score = phylloScore else { return .orange }
+        
+        // Find the weakest component
+        let minScore = min(score.mealTimingScore, score.macroBalanceScore, score.micronutrientScore)
+        
+        if minScore >= 20 { return .green }
+        else if minScore >= 15 { return .phylloAccent }
+        else { return .orange }
+    }
+    
+    private func getTimeSuggestion() -> String {
+        let hour = Calendar.current.component(.hour, from: TimeProvider.shared.currentDate)
+        let hasActiveWindow = mockData.mealWindows.contains { window in
+            window.startTime <= TimeProvider.shared.currentDate && 
+            window.endTime > TimeProvider.shared.currentDate
+        }
+        
+        if hasActiveWindow {
+            if let window = mockData.mealWindows.first(where: { 
+                $0.startTime <= TimeProvider.shared.currentDate && 
+                $0.endTime > TimeProvider.shared.currentDate 
+            }) {
+                let timeRemaining = window.endTime.timeIntervalSince(TimeProvider.shared.currentDate)
+                let minutes = Int(timeRemaining / 60)
+                if minutes > 30 {
+                    return "Window open"
+                } else {
+                    return "\(minutes)m left"
+                }
+            }
+        }
+        
+        // Suggest based on time of day
+        if hour < 10 && mockData.todayMeals.isEmpty {
+            return "Start with breakfast"
+        } else if hour >= 12 && hour < 14 {
+            return "Lunch window"
+        } else if hour >= 15 && hour < 17 {
+            return "Snack time"
+        } else if hour >= 18 && hour < 20 {
+            return "Dinner window"
+        } else {
+            return "Plan tomorrow"
+        }
+        
+        return "Stay on track"
+    }
+    
+    private func getImprovementTip() -> String {
+        guard let score = phylloScore else { return "Track meals" }
+        
+        // Find the weakest component
+        let components = [
+            (score.mealTimingScore, "timing", "Eat on schedule"),
+            (score.macroBalanceScore, "macros", "Balance macros"),
+            (score.micronutrientScore, "nutrients", "Add nutrients")
+        ]
+        
+        let weakest = components.min { $0.0 < $1.0 }
+        
+        if let weakest = weakest {
+            if weakest.0 < 10 {
+                return weakest.2
+            } else if weakest.0 < 15 {
+                return "Improve \(weakest.1)"
+            }
+        }
+        
+        // General tips based on total score
+        if score.totalScore >= 80 {
+            return "Keep it up!"
+        } else if score.totalScore >= 60 {
+            return "Almost there"
+        } else {
+            return "Room to grow"
+        }
+    }
+    
+    private func getNextMealWindow() -> String? {
+        let currentDate = TimeProvider.shared.currentDate
+        
+        // Find next upcoming window
+        if let nextWindow = mockData.mealWindows.first(where: { $0.startTime > currentDate }) {
+            let timeUntil = nextWindow.startTime.timeIntervalSince(currentDate)
+            let hours = Int(timeUntil / 3600)
+            let minutes = Int((timeUntil.truncatingRemainder(dividingBy: 3600)) / 60)
+            
+            if hours > 0 {
+                return "Next in \(hours)h"
+            } else {
+                return "Next in \(minutes)m"
+            }
+        }
+        
+        return nil
+    }
+    
     private func loadData() {
         Task {
-            phylloScore = await insightsEngine.calculatePhylloScore(
+            phylloScore = insightsEngine.calculatePhylloScore(
                 todayMeals: mockData.todayMeals,
                 mealWindows: mockData.mealWindows,
                 checkIns: checkInManager.postMealCheckIns,
                 primaryGoal: mockData.userGoals.first ?? .maintainWeight
             )
             
-            micronutrientStatus = await insightsEngine.analyzeMicronutrients(
+            micronutrientStatus = insightsEngine.analyzeMicronutrients(
                 meals: mockData.todayMeals
             )
         }
@@ -470,9 +690,6 @@ struct SimplifiedMomentumTabView: View {
     }
     
     private func getOptimalTiming(for nutrientName: String) -> (windowName: String, shortLabel: String, reason: String) {
-        // Get current time and active windows
-        let currentHour = Calendar.current.component(.hour, from: Date())
-        
         switch nutrientName.lowercased() {
         case "magnesium":
             return ("Evening", "Evening", "Promotes relaxation and better sleep quality when taken with dinner")

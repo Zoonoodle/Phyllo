@@ -133,7 +133,7 @@ struct ExpandableWindowBanner: View {
             } else {
                 return "in \(minutes)m"
             }
-        } else if window.isActive {
+        } else if windowStatus == .active {
             // Currently active window
             if hasMeals {
                 // Check if first meal was logged late, early, or on time
@@ -185,7 +185,7 @@ struct ExpandableWindowBanner: View {
     }
     
     private var windowProgress: Double {
-        guard window.isActive else { return 0 }
+        guard windowStatus == .active else { return 0 }
         let elapsed = timeProvider.currentTime.timeIntervalSince(window.startTime)
         let total = window.duration
         return min(max(elapsed / total, 0), 1)
@@ -196,9 +196,27 @@ struct ExpandableWindowBanner: View {
         return max(0, window.effectiveCalories - consumed)
     }
     
+    // Window status enum for clearer state management
+    private enum WindowStatus {
+        case upcoming
+        case active
+        case passed
+    }
+    
+    private var windowStatus: WindowStatus {
+        let now = timeProvider.currentTime
+        if now < window.startTime {
+            return .upcoming
+        } else if now >= window.startTime && now <= window.endTime {
+            return .active
+        } else {
+            return .passed
+        }
+    }
+    
     // Check if it's optimal time to eat (within first 30% of window)
     private var isOptimalTime: Bool {
-        guard window.isActive && meals.isEmpty else { return false }
+        guard windowStatus == .active && meals.isEmpty else { return false }
         let elapsed = timeProvider.currentTime.timeIntervalSince(window.startTime)
         let optimalPeriod = window.duration * 0.3 // First 30% of window
         return elapsed <= optimalPeriod
@@ -221,10 +239,10 @@ struct ExpandableWindowBanner: View {
             return timeToFinishEating > 0 && timeToFinishEating <= hoursUntilSleep * 3600
         case .preworkout:
             // Should eat 1-2 hours before workout
-            return window.isActive || isStartingSoon
+            return windowStatus == .active || isStartingSoon
         case .postworkout:
             // Critical window - should eat ASAP after workout
-            return window.isActive && meals.isEmpty
+            return windowStatus == .active && meals.isEmpty
         default:
             return false
         }
@@ -246,14 +264,16 @@ struct ExpandableWindowBanner: View {
                 }
             }
             .background(windowBackground)
-            .clipShape(RoundedRectangle(cornerRadius: window.isActive ? 16 : 12))
+            .clipShape(RoundedRectangle(cornerRadius: windowStatus == .active ? 16 : 12))
             .overlay(
-                RoundedRectangle(cornerRadius: window.isActive ? 16 : 12)
+                RoundedRectangle(cornerRadius: windowStatus == .active ? 16 : 12)
                     .strokeBorder(
-                        window.isActive ? window.purpose.color.opacity(0.5) : Color.white.opacity(0.1),
-                        lineWidth: window.isActive ? 2 : 1
+                        windowStatus == .active ? window.purpose.color.opacity(0.5) : 
+                        windowStatus == .passed ? Color.white.opacity(0.05) : Color.white.opacity(0.1),
+                        lineWidth: windowStatus == .active ? 2 : 1
                     )
             )
+            .opacity(windowStatus == .passed ? 0.7 : 1.0)
             .overlay(optimalTimeIndicators)
         }
         .buttonStyle(PlainButtonStyle())
@@ -276,7 +296,7 @@ struct ExpandableWindowBanner: View {
             statusIndicator
                 .frame(width: 50, height: 50)
         }
-        .padding(window.isActive ? 16 : 12)
+        .padding(windowStatus == .active ? 16 : 12)
     }
     
     @ViewBuilder
@@ -284,9 +304,9 @@ struct ExpandableWindowBanner: View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 6) {
                 Image(systemName: mealIcon)
-                    .font(.system(size: window.isActive ? 14 : 12))
+                    .font(.system(size: windowStatus == .active ? 14 : 12))
                 Text(mealType)
-                    .font(.system(size: window.isActive ? 14 : 13, weight: .semibold))
+                    .font(.system(size: windowStatus == .active ? 14 : 13, weight: .semibold))
                     .fixedSize(horizontal: true, vertical: false)
             }
             .foregroundColor(.white)
@@ -298,8 +318,9 @@ struct ExpandableWindowBanner: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
             
-            // Status text with time remaining for active windows
-            if window.isActive {
+            // Status text based on window state
+            switch windowStatus {
+            case .active:
                 HStack(spacing: 4) {
                     if let remaining = window.timeRemaining {
                         Image(systemName: "clock")
@@ -309,7 +330,13 @@ struct ExpandableWindowBanner: View {
                     }
                 }
                 .foregroundColor(window.timeRemaining ?? 0 < 1800 ? .orange : .white.opacity(0.9))
-            } else {
+                
+            case .passed:
+                Text(timeUntilWindow)
+                    .font(.system(size: 12))
+                    .foregroundColor(.orange.opacity(0.8))
+                
+            case .upcoming:
                 Text(timeUntilWindow)
                     .font(.system(size: 12))
                     .foregroundColor(getTimeTextColor())
@@ -320,7 +347,33 @@ struct ExpandableWindowBanner: View {
     @ViewBuilder
     private var quickStatsSection: some View {
         VStack(alignment: .trailing, spacing: 3) {
-            if window.isActive || !meals.isEmpty {
+            switch windowStatus {
+            case .passed:
+                if !meals.isEmpty {
+                    // Show consumed calories for passed windows with meals
+                    let consumed = mockData.caloriesConsumedInWindow(window)
+                    Text("\(consumed) cal")
+                        .font(.system(size: consumed >= 1000 ? 14 : 16, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.7))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                        .layoutPriority(1)
+                    
+                    Text("completed")
+                        .font(.system(size: 12))
+                        .foregroundColor(.white.opacity(0.5))
+                } else {
+                    // Show missed window status
+                    Text("Window")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.5))
+                    
+                    Text("passed")
+                        .font(.system(size: 12))
+                        .foregroundColor(.orange.opacity(0.7))
+                }
+                
+            case .active:
                 Text("\(windowCaloriesRemaining) cal")
                     .font(.system(size: windowCaloriesRemaining >= 1000 ? 14 : 16, weight: .semibold))
                     .foregroundColor(.white)
@@ -331,7 +384,8 @@ struct ExpandableWindowBanner: View {
                 Text("remaining")
                     .font(.system(size: 12))
                     .foregroundColor(.white.opacity(0.5))
-            } else {
+                
+            case .upcoming:
                 Text("\(window.effectiveCalories) cal")
                     .font(.system(size: window.effectiveCalories >= 1000 ? 12 : 14, weight: .semibold))
                     .foregroundColor(.white.opacity(0.9))
@@ -339,7 +393,7 @@ struct ExpandableWindowBanner: View {
                     .minimumScaleFactor(0.7)
                     .layoutPriority(1)
                 
-                AnimatedInfoSwitcher(window: window, isActive: window.isActive)
+                AnimatedInfoSwitcher(window: window, isActive: false)
                     .frame(width: 120)
             }
         }
@@ -347,10 +401,17 @@ struct ExpandableWindowBanner: View {
     
     @ViewBuilder
     private var statusIndicator: some View {
-        if window.isActive || !meals.isEmpty {
+        switch windowStatus {
+        case .active:
             progressRing
-        } else {
-            upcomingLateIndicator
+        case .passed:
+            if !meals.isEmpty {
+                completedIndicator
+            } else {
+                missedIndicator
+            }
+        case .upcoming:
+            upcomingIndicator
         }
     }
     
@@ -383,16 +444,42 @@ struct ExpandableWindowBanner: View {
     }
     
     @ViewBuilder
-    private var upcomingLateIndicator: some View {
-        Text(timeUntilWindow.contains("late") ? "Late" : "Soon")
+    private var upcomingIndicator: some View {
+        Text("Soon")
             .font(.system(size: 10, weight: .semibold))
-            .foregroundColor(timeUntilWindow.contains("late") ? .orange : .white.opacity(0.6))
+            .foregroundColor(.white.opacity(0.6))
             .frame(width: 40)
             .padding(.vertical, 4)
             .background(
                 Capsule()
                     .fill(Color.white.opacity(0.1))
             )
+    }
+    
+    @ViewBuilder
+    private var completedIndicator: some View {
+        ZStack {
+            Circle()
+                .fill(Color.green.opacity(0.15))
+                .frame(width: 50, height: 50)
+            
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 24))
+                .foregroundColor(.green)
+        }
+    }
+    
+    @ViewBuilder
+    private var missedIndicator: some View {
+        ZStack {
+            Circle()
+                .fill(Color.orange.opacity(0.15))
+                .frame(width: 50, height: 50)
+            
+            Text("Missed")
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundColor(.orange)
+        }
     }
     
     @ViewBuilder
@@ -424,11 +511,13 @@ struct ExpandableWindowBanner: View {
     }
     
     private var windowBackground: some View {
-        RoundedRectangle(cornerRadius: window.isActive ? 16 : 12)
+        RoundedRectangle(cornerRadius: windowStatus == .active ? 16 : 12)
             .fill(Color.phylloBackground)  // Fully opaque black background first
             .overlay(
-                RoundedRectangle(cornerRadius: window.isActive ? 16 : 12)
-                    .fill(Color(red: 0.11, green: 0.11, blue: 0.12))  // Dark gray on top
+                RoundedRectangle(cornerRadius: windowStatus == .active ? 16 : 12)
+                    .fill(windowStatus == .passed ? 
+                          Color(red: 0.08, green: 0.08, blue: 0.09) :  // Darker for passed windows
+                          Color(red: 0.11, green: 0.11, blue: 0.12))   // Normal dark gray
             )
             .matchedGeometryEffect(
                 id: "window-\(window.id)",
@@ -496,7 +585,7 @@ struct ExpandableWindowBanner: View {
         ZStack {
             // Glowing border for optimal eating time
             if (isOptimalTime || isCircadianOptimal) && meals.isEmpty {
-                RoundedRectangle(cornerRadius: window.isActive ? 16 : 12)
+                RoundedRectangle(cornerRadius: windowStatus == .active ? 16 : 12)
                     .strokeBorder(
                         LinearGradient(
                             colors: [
@@ -513,7 +602,7 @@ struct ExpandableWindowBanner: View {
             }
             
             // Starting soon indicator
-            if isStartingSoon && !window.isActive {
+            if isStartingSoon && windowStatus == .upcoming {
                 VStack {
                     HStack {
                         Spacer()
@@ -538,7 +627,7 @@ struct ExpandableWindowBanner: View {
             }
             
             // Post-workout urgency indicator
-            if window.purpose == .postworkout && window.isActive && meals.isEmpty {
+            if window.purpose == .postworkout && windowStatus == .active && meals.isEmpty {
                 VStack {
                     Spacer()
                     HStack {
