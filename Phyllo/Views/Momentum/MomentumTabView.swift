@@ -15,7 +15,7 @@ struct MomentumTabView: View {
     @StateObject private var mockData = MockDataManager.shared
     @StateObject private var insightsEngine = InsightsEngine.shared
     @StateObject private var checkInManager = CheckInManager.shared
-    @State private var currentChapter: StoryChapter = .beginning
+    @State private var currentChapter: StoryChapter = .yourPlan
     @State private var animateContent = false
     @State private var expandedInsight: String? = nil
     @State private var phylloScore: InsightsEngine.ScoreBreakdown?
@@ -23,26 +23,44 @@ struct MomentumTabView: View {
     @State private var insights: [InsightsEngine.Insight] = []
     
     enum StoryChapter: String, CaseIterable {
-        case beginning = "The Beginning"
-        case journey = "Your Journey"
-        case now = "Where You Are"
-        case future = "What's Next"
+        case yourPlan = "Your Plan"
+        case firstWeek = "First Week"
+        case patterns = "Your Patterns"
+        case peakState = "Peak State"
+        
+        var chapterId: String {
+            switch self {
+            case .yourPlan: return "yourPlan"
+            case .firstWeek: return "firstWeek"
+            case .patterns: return "patterns"
+            case .peakState: return "peakState"
+            }
+        }
         
         var icon: String {
             switch self {
-            case .beginning: return "book.fill"
-            case .journey: return "map.fill"
-            case .now: return "location.fill"
-            case .future: return "arrow.up.forward.circle.fill"
+            case .yourPlan: return "doc.text.fill"
+            case .firstWeek: return "calendar.badge.clock"
+            case .patterns: return "chart.line.uptrend.xyaxis"
+            case .peakState: return "star.fill"
+            }
+        }
+        
+        var lockedIcon: String {
+            switch self {
+            case .yourPlan: return icon // Never locked
+            case .firstWeek: return "lock.fill"
+            case .patterns: return "lock.fill"
+            case .peakState: return "lock.fill"
             }
         }
         
         var color: Color {
             switch self {
-            case .beginning: return .blue
-            case .journey: return .purple
-            case .now: return .phylloAccent
-            case .future: return .orange
+            case .yourPlan: return .phylloAccent
+            case .firstWeek: return .blue
+            case .patterns: return .purple
+            case .peakState: return .orange
             }
         }
     }
@@ -108,23 +126,30 @@ struct MomentumTabView: View {
                             
                             // Chapter Content
                             Group {
-                                switch currentChapter {
-                                case .beginning:
-                                    BeginningChapter(animateContent: $animateContent)
-                                case .journey:
-                                    JourneyChapter(
-                                        animateContent: $animateContent,
-                                        expandedInsight: $expandedInsight
+                                if mockData.storyChapterProgress.isChapterUnlocked(currentChapter.chapterId) {
+                                    switch currentChapter {
+                                    case .yourPlan:
+                                        YourPlanChapter(animateContent: $animateContent)
+                                    case .firstWeek:
+                                        FirstWeekChapter(
+                                            animateContent: $animateContent,
+                                            expandedInsight: $expandedInsight
+                                        )
+                                    case .patterns:
+                                        PatternsChapter(
+                                            animateContent: $animateContent,
+                                            scoreBreakdown: phylloScore,
+                                            micronutrientStatus: micronutrientStatus,
+                                            insights: insights
+                                        )
+                                    case .peakState:
+                                        PeakStateChapter(animateContent: $animateContent)
+                                    }
+                                } else {
+                                    LockedChapterView(
+                                        chapter: currentChapter,
+                                        progress: mockData.storyChapterProgress
                                     )
-                                case .now:
-                                    NowChapter(
-                                        animateContent: $animateContent,
-                                        scoreBreakdown: phylloScore,
-                                        micronutrientStatus: micronutrientStatus,
-                                        insights: insights
-                                    )
-                                case .future:
-                                    FutureChapter(animateContent: $animateContent)
                                 }
                             }
                             .padding(.horizontal)
@@ -189,6 +214,7 @@ struct MomentumTabView: View {
 struct ChapterNavigator: View {
     @Binding var currentChapter: MomentumTabView.StoryChapter
     let onChapterChange: () -> Void
+    @StateObject private var mockData = MockDataManager.shared
     
     var body: some View {
         HStack(spacing: 12) {
@@ -196,6 +222,7 @@ struct ChapterNavigator: View {
                 ChapterTab(
                     chapter: chapter,
                     isSelected: currentChapter == chapter,
+                    isUnlocked: mockData.storyChapterProgress.isChapterUnlocked(chapter.chapterId),
                     action: {
                         if currentChapter != chapter {
                             currentChapter = chapter
@@ -224,32 +251,43 @@ struct ChapterNavigator: View {
 struct ChapterTab: View {
     let chapter: MomentumTabView.StoryChapter
     let isSelected: Bool
+    let isUnlocked: Bool
     let action: () -> Void
     
     var body: some View {
         Button(action: action) {
             VStack(spacing: 8) {
-                Image(systemName: chapter.icon)
-                    .font(.system(size: 20))
-                    .foregroundColor(isSelected ? .white : chapter.color)
+                ZStack {
+                    Image(systemName: isUnlocked ? chapter.icon : chapter.lockedIcon)
+                        .font(.system(size: 20))
+                        .foregroundColor(isSelected ? .white : (isUnlocked ? chapter.color : .phylloTextTertiary))
+                    
+                    if !isUnlocked && chapter != .yourPlan {
+                        Image(systemName: "lock.fill")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundColor(.phylloTextTertiary)
+                            .offset(x: 8, y: 8)
+                    }
+                }
                 
                 Text(chapter.rawValue)
                     .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(isSelected ? .white : .phylloTextSecondary)
+                    .foregroundColor(isSelected ? .white : (isUnlocked ? .phylloTextSecondary : .phylloTextTertiary))
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 12)
             .background(
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(isSelected ? chapter.color : Color.clear)
+                    .fill(isSelected && isUnlocked ? chapter.color : Color.clear)
             )
+            .opacity(isUnlocked ? 1.0 : 0.7)
         }
     }
 }
 
-// MARK: - Chapter: The Beginning
+// MARK: - Chapter: First Week (Previously Beginning)
 
-struct BeginningChapter: View {
+struct FirstWeekChapter: View {
     @Binding var animateContent: Bool
     @StateObject private var mockData = MockDataManager.shared
     
@@ -502,9 +540,9 @@ struct Milestone: Identifiable {
     let color: Color
 }
 
-// MARK: - Chapter: Your Journey
+// MARK: - Chapter: Your Patterns (Previously Journey)
 
-struct JourneyChapter: View {
+struct PatternsChapter: View {
     @Binding var animateContent: Bool
     @Binding var expandedInsight: String?
     
@@ -811,9 +849,9 @@ struct WeekDetailCard: View {
     }
 }
 
-// MARK: - Chapter: Where You Are Now
+// MARK: - Chapter: Peak State (Previously Now)
 
-struct NowChapter: View {
+struct PeakStateChapter: View {
     @Binding var animateContent: Bool
     let scoreBreakdown: InsightsEngine.ScoreBreakdown?
     let micronutrientStatus: InsightsEngine.MicronutrientStatus?
@@ -1247,9 +1285,9 @@ struct RecommendationRow: View {
     }
 }
 
-// MARK: - Chapter: What's Next
+// MARK: - Chapter: Future Vision (Bonus content for Peak State)
 
-struct FutureChapter: View {
+struct FutureVisionSection: View {
     @Binding var animateContent: Bool
     @State private var selectedGoal: FutureGoal? = nil
     

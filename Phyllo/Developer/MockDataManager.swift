@@ -16,6 +16,38 @@ struct NudgeState {
     var nudgeFrequency: [String: Int] = [:] // Track how many times each nudge has been shown
 }
 
+// MARK: - Story Chapter Progress
+struct StoryChapterProgress {
+    var startDate = Date() // When user first started using the app
+    var totalDaysUsed = 0
+    var totalMealsLogged = 0
+    
+    // Chapter unlock requirements
+    struct ChapterRequirements {
+        let daysRequired: Int
+        let mealsRequired: Int
+    }
+    
+    let requirements: [String: ChapterRequirements] = [
+        "yourPlan": ChapterRequirements(daysRequired: 0, mealsRequired: 0), // Always unlocked
+        "firstWeek": ChapterRequirements(daysRequired: 7, mealsRequired: 10),
+        "patterns": ChapterRequirements(daysRequired: 14, mealsRequired: 20),
+        "peakState": ChapterRequirements(daysRequired: 30, mealsRequired: 40)
+    ]
+    
+    func isChapterUnlocked(_ chapterId: String) -> Bool {
+        guard let req = requirements[chapterId] else { return false }
+        return totalDaysUsed >= req.daysRequired && totalMealsLogged >= req.mealsRequired
+    }
+    
+    func progressToUnlock(_ chapterId: String) -> (days: Int, meals: Int) {
+        guard let req = requirements[chapterId] else { return (0, 0) }
+        let daysRemaining = max(0, req.daysRequired - totalDaysUsed)
+        let mealsRemaining = max(0, req.mealsRequired - totalMealsLogged)
+        return (daysRemaining, mealsRemaining)
+    }
+}
+
 class MockDataManager: ObservableObject {
     static let shared = MockDataManager()
     
@@ -42,9 +74,13 @@ class MockDataManager: ObservableObject {
     // Nudge state
     @Published var nudgeState = NudgeState()
     
+    // Story chapter tracking
+    @Published var storyChapterProgress = StoryChapterProgress()
+    
     // MARK: - Initialization
     init() {
         setupDefaultData()
+        setupStoryProgress()
     }
     
     // MARK: - Setup Methods
@@ -664,6 +700,23 @@ class MockDataManager: ObservableObject {
         }
         
         return nearestWindow
+    }
+    
+    // MARK: - Story Chapter Management
+    private func setupStoryProgress() {
+        // For testing, simulate some progress
+        storyChapterProgress.startDate = Date().addingTimeInterval(-5 * 24 * 60 * 60) // 5 days ago
+        storyChapterProgress.totalDaysUsed = 5
+        storyChapterProgress.totalMealsLogged = 8
+    }
+    
+    func updateStoryProgress() {
+        // Calculate days since start
+        let daysSinceStart = Calendar.current.dateComponents([.day], from: storyChapterProgress.startDate, to: Date()).day ?? 0
+        storyChapterProgress.totalDaysUsed = daysSinceStart
+        
+        // Count total meals logged (in real app, this would query from database)
+        storyChapterProgress.totalMealsLogged = todaysMeals.count + 5 // Adding some historical meals for testing
     }
     
     // MARK: - Window Redistribution
