@@ -81,3 +81,36 @@ struct MicronutrientConsumption {
         return "\(consumedFormatted) / \(targetFormatted) \(info.unit.rawValue)"
     }
 }
+
+// MARK: - Micronutrient Data Model
+
+struct MicronutrientData: Identifiable {
+    let id = UUID()
+    let name: String
+    let unit: String
+    let rda: Double // Recommended Daily Allowance
+    
+    // Static list of all tracked micronutrients
+    static func getAllNutrients() -> [MicronutrientData] {
+        return [
+            MicronutrientData(name: "Vitamin A", unit: "mcg", rda: 900),
+            MicronutrientData(name: "Vitamin C", unit: "mg", rda: 90),
+            MicronutrientData(name: "Vitamin D", unit: "IU", rda: 600),
+            MicronutrientData(name: "Vitamin E", unit: "mg", rda: 15),
+            MicronutrientData(name: "Vitamin K", unit: "mcg", rda: 120),
+            MicronutrientData(name: "B1 Thiamine", unit: "mg", rda: 1.2),
+            MicronutrientData(name: "B2 Riboflavin", unit: "mg", rda: 1.3),
+            MicronutrientData(name: "B3 Niacin", unit: "mg", rda: 16),
+            MicronutrientData(name: "B6", unit: "mg", rda: 1.7),
+            MicronutrientData(name: "B12", unit: "mcg", rda: 2.4),
+            MicronutrientData(name: "Folate", unit: "mcg", rda: 400),
+            MicronutrientData(name: "Calcium", unit: "mg", rda: 1000),
+            MicronutrientData(name: "Iron", unit: "mg", rda: 18),
+            MicronutrientData(name: "Magnesium", unit: "mg", rda: 400),
+            MicronutrientData(name: "Zinc", unit: "mg", rda: 11),
+            MicronutrientData(name: "Potassium", unit: "mg", rda: 3500),
+            MicronutrientData(name: "Omega-3", unit: "g", rda: 1.6),
+            MicronutrientData(name: "Fiber", unit: "g", rda: 28)
+        ]
+    }
+}

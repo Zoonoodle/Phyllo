@@ -235,7 +235,7 @@ class InsightsEngine: ObservableObject {
         let wellSupplied: [NutrientStatus]
         
         struct NutrientStatus {
-            let nutrient: MicronutrientData
+            let nutrient: MicronutrientData // From MicronutrientData.swift model
             let consumed: Double
             let percentageOfRDA: Double
             let status: Status
@@ -321,7 +321,7 @@ class InsightsEngine: ObservableObject {
     
     // MARK: - Insights Generation
     
-    struct Insight {
+    struct Insight: Identifiable {
         let id = UUID()
         let type: InsightType
         let title: String
@@ -384,7 +384,7 @@ class InsightsEngine: ObservableObject {
         
         // Micronutrient insights
         if let topDeficiency = microStatus.topDeficiencies.first {
-            let foods = getFoodsRichIn(nutrient: topDeficiency.nutrient.name)
+            let foods = getFoodsRichInNutrient(topDeficiency.nutrient.name)
             insights.append(Insight(
                 type: .warning,
                 title: "Low \(topDeficiency.nutrient.name)",
@@ -408,7 +408,7 @@ class InsightsEngine: ObservableObject {
         return insights
     }
     
-    private func getFoodsRichIn(nutrient: String) -> [String] {
+    private func getFoodsRichInNutrient(_ nutrient: String) -> [String] {
         let foodSources: [String: [String]] = [
             "Vitamin A": ["sweet potato", "carrots", "spinach"],
             "Vitamin C": ["oranges", "strawberries", "bell peppers"],

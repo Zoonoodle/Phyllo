@@ -59,35 +59,35 @@ class MockDataManager: ObservableObject {
     private func addDefaultMealsForTesting() {
         // Add breakfast
         let breakfastTime = Calendar.current.date(bySettingHour: 8, minute: 0, second: 0, of: Date())!
-        addInstantMeal(
+        addMockMeal(
             name: "Veggie Omelet & Toast",
             calories: 420,
             protein: 24,
             carbs: 35,
             fat: 18,
-            timestamp: breakfastTime
+            at: breakfastTime
         )
         
         // Add lunch
         let lunchTime = Calendar.current.date(bySettingHour: 12, minute: 30, second: 0, of: Date())!
-        addInstantMeal(
+        addMockMeal(
             name: "Grilled Chicken Salad",
             calories: 480,
             protein: 38,
             carbs: 25,
             fat: 22,
-            timestamp: lunchTime
+            at: lunchTime
         )
         
         // Add snack
         let snackTime = Calendar.current.date(bySettingHour: 15, minute: 30, second: 0, of: Date())!
-        addInstantMeal(
+        addMockMeal(
             name: "Greek Yogurt & Berries",
             calories: 280,
             protein: 18,
             carbs: 32,
             fat: 8,
-            timestamp: snackTime
+            at: snackTime
         )
     }
     
