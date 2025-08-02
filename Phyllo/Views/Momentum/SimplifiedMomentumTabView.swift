@@ -15,6 +15,7 @@ struct SimplifiedMomentumTabView: View {
     @State private var phylloScore: InsightsEngine.ScoreBreakdown?
     @State private var micronutrientStatus: InsightsEngine.MicronutrientStatus?
     @State private var expandedSection: String? = nil
+    @State private var expandedNutrient: String? = nil
     
     var body: some View {
         NavigationStack {
@@ -159,23 +160,130 @@ struct SimplifiedMomentumTabView: View {
     
     @ViewBuilder
     private func nutrientDeficiencyCard(deficiency: InsightsEngine.MicronutrientStatus.NutrientStatus) -> some View {
-        HStack(spacing: 12) {
-            // Progress ring
-            nutrientProgressRing(percentage: deficiency.percentageOfRDA, status: deficiency.status)
+        let isExpanded = expandedNutrient == deficiency.nutrient.name
+        let benefit = getNutrientBenefit(for: deficiency.nutrient.name)
+        let timing = getOptimalTiming(for: deficiency.nutrient.name)
+        let foodSources = getAllFoodSources(for: deficiency.nutrient.name)
+        
+        VStack(spacing: 0) {
+            // Main card content
+            HStack(spacing: 12) {
+                // Progress ring
+                nutrientProgressRing(percentage: deficiency.percentageOfRDA, status: deficiency.status)
+                
+                // Nutrient info with benefit
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(deficiency.nutrient.name)
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundColor(.white)
+                    
+                    Text(benefit)
+                        .font(.system(size: 13))
+                        .foregroundColor(.phylloTextSecondary)
+                        .lineLimit(1)
+                    
+                    HStack(spacing: 8) {
+                        Text("\(Int(deficiency.consumed))/\(Int(deficiency.nutrient.rda)) \(deficiency.nutrient.unit)")
+                            .font(.system(size: 12))
+                            .foregroundColor(.phylloTextTertiary)
+                        
+                        if !isExpanded {
+                            Text("•")
+                                .foregroundColor(.phylloTextTertiary)
+                            
+                            HStack(spacing: 4) {
+                                Image(systemName: "clock.fill")
+                                    .font(.system(size: 10))
+                                Text(timing.shortLabel)
+                                    .font(.system(size: 12))
+                            }
+                            .foregroundColor(.phylloAccent.opacity(0.8))
+                        }
+                    }
+                }
+                
+                Spacer()
+                
+                // Right side: Food suggestion or expand chevron
+                if !isExpanded, let topFood = foodSources.first {
+                    Text(topFood)
+                        .font(.system(size: 12))
+                        .foregroundColor(.phylloAccent)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(Color.phylloAccent.opacity(0.1))
+                        .cornerRadius(12)
+                }
+                
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(.phylloTextTertiary)
+                    .rotationEffect(.degrees(isExpanded ? 180 : 0))
+            }
+            .padding(16)
             
-            // Nutrient info
-            nutrientInfo(deficiency: deficiency)
-            
-            Spacer()
-            
-            // Food suggestion
-            if let topFood = getTopFoodSource(for: deficiency.nutrient.name) {
-                foodSuggestion(food: topFood)
+            // Expanded content
+            if isExpanded {
+                VStack(spacing: 16) {
+                    Divider()
+                        .background(Color.white.opacity(0.1))
+                    
+                    // Timing recommendation
+                    HStack(spacing: 12) {
+                        Image(systemName: "clock.fill")
+                            .font(.system(size: 16))
+                            .foregroundColor(.phylloAccent)
+                            .frame(width: 32, height: 32)
+                            .background(Color.phylloAccent.opacity(0.1))
+                            .cornerRadius(8)
+                        
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Best Time: \(timing.windowName)")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(.white)
+                            
+                            Text(timing.reason)
+                                .font(.system(size: 12))
+                                .foregroundColor(.phylloTextSecondary)
+                        }
+                        
+                        Spacer()
+                    }
+                    
+                    // Food sources
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Food Sources")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(.phylloTextSecondary)
+                        
+                        HStack(spacing: 8) {
+                            ForEach(foodSources.prefix(3), id: \.self) { food in
+                                Text(food)
+                                    .font(.system(size: 12))
+                                    .foregroundColor(.white)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 6)
+                                    .background(Color.white.opacity(0.05))
+                                    .cornerRadius(12)
+                            }
+                        }
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 16)
+                .transition(.asymmetric(
+                    insertion: .move(edge: .top).combined(with: .opacity),
+                    removal: .move(edge: .top).combined(with: .opacity)
+                ))
             }
         }
-        .padding(16)
         .background(Color.white.opacity(0.03))
         .cornerRadius(12)
+        .onTapGesture {
+            withAnimation(.spring(response: 0.3)) {
+                expandedNutrient = expandedNutrient == deficiency.nutrient.name ? nil : deficiency.nutrient.name
+            }
+        }
     }
     
     @ViewBuilder
@@ -197,29 +305,6 @@ struct SimplifiedMomentumTabView: View {
         }
     }
     
-    @ViewBuilder
-    private func nutrientInfo(deficiency: InsightsEngine.MicronutrientStatus.NutrientStatus) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(deficiency.nutrient.name)
-                .font(.system(size: 16, weight: .medium))
-                .foregroundColor(.white)
-            
-            Text("\(Int(deficiency.consumed))/\(Int(deficiency.nutrient.rda)) \(deficiency.nutrient.unit)")
-                .font(.system(size: 14))
-                .foregroundColor(.phylloTextSecondary)
-        }
-    }
-    
-    @ViewBuilder
-    private func foodSuggestion(food: String) -> some View {
-        Text(food)
-            .font(.system(size: 12))
-            .foregroundColor(.phylloAccent)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-            .background(Color.phylloAccent.opacity(0.1))
-            .cornerRadius(12)
-    }
     
     // MARK: - Progress Summary
     
@@ -364,25 +449,74 @@ struct SimplifiedMomentumTabView: View {
         }
     }
     
-    private func getTopFoodSource(for nutrientName: String) -> String? {
-        // Return common food sources based on nutrient
+    private func getNutrientBenefit(for nutrientName: String) -> String {
         switch nutrientName.lowercased() {
-        case "vitamin d": return "Salmon"
-        case "vitamin b12": return "Eggs"
-        case "iron": return "Spinach"
-        case "calcium": return "Greek Yogurt"
-        case "magnesium": return "Almonds"
-        case "potassium": return "Banana"
-        case "vitamin c": return "Orange"
-        case "vitamin e": return "Avocado"
-        case "vitamin a": return "Carrots"
-        case "folate": return "Lentils"
-        case "zinc": return "Beef"
-        case "selenium": return "Brazil Nuts"
-        case "omega-3": return "Walnuts"
-        case "fiber": return "Oats"
-        default: return nil
+        case "vitamin d": return "For immune health & mood"
+        case "vitamin b12": return "For energy & brain function"
+        case "iron": return "For oxygen transport & energy"
+        case "calcium": return "For bone health & muscle function"
+        case "magnesium": return "For better sleep & muscle recovery"
+        case "potassium": return "For stable energy & heart health"
+        case "vitamin c": return "For immunity & skin health"
+        case "vitamin e": return "For cell protection & skin"
+        case "vitamin a": return "For vision & immune function"
+        case "folate": return "For cell growth & energy"
+        case "zinc": return "For immunity & healing"
+        case "selenium": return "For thyroid & metabolism"
+        case "omega-3": return "For brain & heart health"
+        case "fiber": return "For sustained fullness & gut health"
+        default: return "For overall health"
         }
+    }
+    
+    private func getOptimalTiming(for nutrientName: String) -> (windowName: String, shortLabel: String, reason: String) {
+        // Get current time and active windows
+        let currentHour = Calendar.current.component(.hour, from: Date())
+        
+        switch nutrientName.lowercased() {
+        case "magnesium":
+            return ("Evening", "Evening", "Promotes relaxation and better sleep quality when taken with dinner")
+        case "vitamin d", "calcium":
+            return ("Morning", "Morning", "Best absorbed with breakfast fats for all-day benefits")
+        case "iron":
+            return ("Morning", "Morning", "Optimal absorption on empty stomach or with vitamin C")
+        case "vitamin b12", "vitamin c":
+            return ("Morning", "Morning", "Boosts energy and immunity for the day ahead")
+        case "potassium":
+            return ("Lunch", "Midday", "Maintains stable energy through afternoon hours")
+        case "fiber":
+            return ("Throughout", "All meals", "Spread across meals for sustained fullness")
+        case "omega-3":
+            return ("Lunch/Dinner", "With meals", "Better absorbed with meal fats")
+        case "zinc":
+            return ("Evening", "Evening", "Best taken away from calcium-rich foods")
+        default:
+            return ("Anytime", "Flexible", "Can be consumed at any meal")
+        }
+    }
+    
+    private func getAllFoodSources(for nutrientName: String) -> [String] {
+        switch nutrientName.lowercased() {
+        case "vitamin d": return ["Salmon", "Egg yolks", "Mushrooms"]
+        case "vitamin b12": return ["Eggs", "Greek yogurt", "Nutritional yeast"]
+        case "iron": return ["Spinach", "Lentils", "Dark chocolate"]
+        case "calcium": return ["Greek yogurt", "Almonds", "Kale"]
+        case "magnesium": return ["Almonds", "Dark chocolate", "Avocado"]
+        case "potassium": return ["Banana", "Sweet potato", "Spinach"]
+        case "vitamin c": return ["Orange", "Bell peppers", "Strawberries"]
+        case "vitamin e": return ["Avocado", "Almonds", "Sunflower seeds"]
+        case "vitamin a": return ["Carrots", "Sweet potato", "Spinach"]
+        case "folate": return ["Lentils", "Asparagus", "Avocado"]
+        case "zinc": return ["Beef", "Pumpkin seeds", "Chickpeas"]
+        case "selenium": return ["Brazil nuts", "Tuna", "Eggs"]
+        case "omega-3": return ["Walnuts", "Chia seeds", "Flax seeds"]
+        case "fiber": return ["Oats", "Chia seeds", "Berries"]
+        default: return ["Varied whole foods"]
+        }
+    }
+    
+    private func getTopFoodSource(for nutrientName: String) -> String? {
+        getAllFoodSources(for: nutrientName).first
     }
 }
 
