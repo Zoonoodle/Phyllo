@@ -853,36 +853,37 @@ struct NowChapter: View {
                     .animation(.spring(response: 0.8).delay(0.35), value: animateContent)
             }
             
-            // Current Strengths & Opportunities
-            VStack(spacing: 16) {
-                SectionHeader(title: "Your Current State", icon: "location.fill")
-                
-                HStack(spacing: 16) {
-                    StrengthCard(
-                        title: "Strengths",
-                        items: [
-                            "Consistent meal timing",
-                            "Great protein intake",
-                            "Energy levels rising"
-                        ],
-                        color: .green
-                    )
-                    .opacity(animateContent ? 1 : 0)
-                    .offset(x: animateContent ? 0 : -20)
-                    .animation(.spring(response: 0.8).delay(0.4), value: animateContent)
+            // Today's Insights
+            if !insights.isEmpty {
+                VStack(spacing: 16) {
+                    SectionHeader(title: "Today's Insights", icon: "lightbulb.fill")
                     
-                    OpportunityCard(
-                        title: "Opportunities",
-                        items: [
-                            "Weekend consistency",
-                            "Hydration tracking",
-                            "Evening windows"
-                        ],
-                        color: .orange
-                    )
-                    .opacity(animateContent ? 1 : 0)
-                    .offset(x: animateContent ? 0 : 20)
-                    .animation(.spring(response: 0.8).delay(0.5), value: animateContent)
+                    ForEach(insights.prefix(3)) { insight in
+                        InsightCard(insight: insight)
+                            .opacity(animateContent ? 1 : 0)
+                            .offset(y: animateContent ? 0 : 20)
+                            .animation(.spring(response: 0.8).delay(0.4), value: animateContent)
+                    }
+                }
+            } else {
+                // Fallback to static content if no insights yet
+                VStack(spacing: 16) {
+                    SectionHeader(title: "Your Current State", icon: "location.fill")
+                    
+                    HStack(spacing: 16) {
+                        StrengthCard(
+                            title: "Getting Started",
+                            items: [
+                                "Log more meals",
+                                "Complete check-ins",
+                                "Track consistently"
+                            ],
+                            color: .blue
+                        )
+                        .opacity(animateContent ? 1 : 0)
+                        .offset(x: animateContent ? 0 : -20)
+                        .animation(.spring(response: 0.8).delay(0.4), value: animateContent)
+                    }
                 }
             }
             
@@ -1590,6 +1591,72 @@ struct CTACard: View {
 }
 
 // MARK: - Helper Components
+
+struct InsightCard: View {
+    let insight: InsightsEngine.Insight
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 12) {
+                Image(systemName: insight.type.icon)
+                    .font(.system(size: 20))
+                    .foregroundColor(insight.type.color)
+                    .frame(width: 36, height: 36)
+                    .background(insight.type.color.opacity(0.15))
+                    .cornerRadius(10)
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(insight.title)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.white)
+                    
+                    Text(insight.message)
+                        .font(.system(size: 14))
+                        .foregroundColor(.phylloTextSecondary)
+                        .lineLimit(2)
+                }
+                
+                Spacer()
+            }
+            
+            if let evidence = insight.evidence {
+                Text(evidence)
+                    .font(.system(size: 12))
+                    .foregroundColor(.phylloTextTertiary)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color.white.opacity(0.05))
+                    .cornerRadius(6)
+            }
+            
+            if let action = insight.action {
+                HStack(spacing: 4) {
+                    Image(systemName: "arrow.right.circle.fill")
+                        .font(.system(size: 12))
+                        .foregroundColor(insight.type.color)
+                    
+                    Text(action)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(insight.type.color)
+                }
+                .padding(.top, 4)
+            }
+        }
+        .padding(16)
+        .background(
+            LinearGradient(
+                colors: [Color.white.opacity(0.06), Color.white.opacity(0.02)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
+        .cornerRadius(16)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(insight.type.color.opacity(0.2), lineWidth: 1)
+        )
+    }
+}
 
 struct SectionHeader: View {
     let title: String

@@ -51,6 +51,44 @@ class MockDataManager: ObservableObject {
     func setupDefaultData() {
         userGoals = [.performanceFocus, .betterSleep]
         generateMockWindows(for: userProfile.primaryGoal)
+        
+        // Add some default meals for testing
+        addDefaultMealsForTesting()
+    }
+    
+    private func addDefaultMealsForTesting() {
+        // Add breakfast
+        let breakfastTime = Calendar.current.date(bySettingHour: 8, minute: 0, second: 0, of: Date())!
+        addInstantMeal(
+            name: "Veggie Omelet & Toast",
+            calories: 420,
+            protein: 24,
+            carbs: 35,
+            fat: 18,
+            timestamp: breakfastTime
+        )
+        
+        // Add lunch
+        let lunchTime = Calendar.current.date(bySettingHour: 12, minute: 30, second: 0, of: Date())!
+        addInstantMeal(
+            name: "Grilled Chicken Salad",
+            calories: 480,
+            protein: 38,
+            carbs: 25,
+            fat: 22,
+            timestamp: lunchTime
+        )
+        
+        // Add snack
+        let snackTime = Calendar.current.date(bySettingHour: 15, minute: 30, second: 0, of: Date())!
+        addInstantMeal(
+            name: "Greek Yogurt & Berries",
+            calories: 280,
+            protein: 18,
+            carbs: 32,
+            fat: 8,
+            timestamp: snackTime
+        )
     }
     
     // MARK: - Goal Management
@@ -380,33 +418,53 @@ class MockDataManager: ObservableObject {
     private func generateMicronutrients(for purpose: WindowPurpose, mealName: String) -> [String: Double] {
         var micronutrients: [String: Double] = [:]
         
-        // Generate reasonable values based on window purpose
-        // These are mock values - in a real app these would come from a nutrition database
+        // Base micronutrients - all meals contribute some amount of each
+        // Values are per meal, aiming for 3-4 meals to reach ~100% RDA
+        micronutrients["Vitamin A"] = Double.random(in: 200...400) // mcg
+        micronutrients["Vitamin C"] = Double.random(in: 15...40) // mg
+        micronutrients["Vitamin D"] = Double.random(in: 100...300) // IU
+        micronutrients["Vitamin E"] = Double.random(in: 3...6) // mg
+        micronutrients["Vitamin K"] = Double.random(in: 20...40) // mcg
+        micronutrients["B1 Thiamine"] = Double.random(in: 0.3...0.5) // mg
+        micronutrients["B2 Riboflavin"] = Double.random(in: 0.3...0.5) // mg
+        micronutrients["B3 Niacin"] = Double.random(in: 4...8) // mg
+        micronutrients["B6"] = Double.random(in: 0.3...0.6) // mg
+        micronutrients["B12"] = Double.random(in: 0.5...1.2) // mcg
+        micronutrients["Folate"] = Double.random(in: 80...150) // mcg
+        micronutrients["Calcium"] = Double.random(in: 200...400) // mg
+        micronutrients["Iron"] = Double.random(in: 3...6) // mg
+        micronutrients["Magnesium"] = Double.random(in: 60...120) // mg
+        micronutrients["Zinc"] = Double.random(in: 2...4) // mg
+        micronutrients["Potassium"] = Double.random(in: 500...1000) // mg
+        micronutrients["Omega-3"] = Double.random(in: 0.3...0.8) // g
+        micronutrients["Fiber"] = Double.random(in: 5...10) // g
+        
+        // Boost certain nutrients based on window purpose
         switch purpose {
         case .sustainedEnergy:
-            micronutrients["B12"] = Double.random(in: 0.3...0.8)
-            micronutrients["Iron"] = Double.random(in: 2.0...5.0)
-            micronutrients["Magnesium"] = Double.random(in: 50...120)
+            micronutrients["B12"] = micronutrients["B12"]! * 1.5
+            micronutrients["Iron"] = micronutrients["Iron"]! * 1.5
+            micronutrients["Magnesium"] = micronutrients["Magnesium"]! * 1.3
             
         case .focusBoost:
-            micronutrients["Omega-3"] = Double.random(in: 0.2...0.5)
-            micronutrients["B6"] = Double.random(in: 0.2...0.4)
-            micronutrients["Vitamin D"] = Double.random(in: 80...200)
+            micronutrients["Omega-3"] = micronutrients["Omega-3"]! * 2.0
+            micronutrients["B6"] = micronutrients["B6"]! * 1.5
+            micronutrients["Vitamin D"] = micronutrients["Vitamin D"]! * 1.3
             
         case .recovery:
-            micronutrients["Vitamin C"] = Double.random(in: 15...35)
-            micronutrients["Zinc"] = Double.random(in: 1.5...3.5)
-            micronutrients["Potassium"] = Double.random(in: 400...800)
+            micronutrients["Vitamin C"] = micronutrients["Vitamin C"]! * 2.0
+            micronutrients["Zinc"] = micronutrients["Zinc"]! * 1.5
+            micronutrients["Potassium"] = micronutrients["Potassium"]! * 1.5
             
         case .preworkout:
-            micronutrients["B-Complex"] = Double.random(in: 8...15)
-            micronutrients["Caffeine"] = Double.random(in: 40...100)
-            micronutrients["L-Arginine"] = Double.random(in: 0.8...1.5)
+            micronutrients["B1 Thiamine"] = micronutrients["B1 Thiamine"]! * 1.5
+            micronutrients["B3 Niacin"] = micronutrients["B3 Niacin"]! * 1.5
+            micronutrients["Potassium"] = micronutrients["Potassium"]! * 1.3
             
         case .postworkout:
-            micronutrients["Protein"] = Double.random(in: 8...15) // Additional protein tracking
-            micronutrients["Leucine"] = Double.random(in: 0.4...0.8)
-            micronutrients["Magnesium"] = Double.random(in: 50...120)
+            micronutrients["Magnesium"] = micronutrients["Magnesium"]! * 1.5
+            micronutrients["Zinc"] = micronutrients["Zinc"]! * 1.3
+            micronutrients["Calcium"] = micronutrients["Calcium"]! * 1.3
             
         case .metabolicBoost:
             micronutrients["Green Tea"] = Double.random(in: 30...60)
