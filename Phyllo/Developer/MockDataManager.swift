@@ -89,7 +89,7 @@ class MockDataManager: ObservableObject {
         generateMockWindows(for: userProfile.primaryGoal)
         
         // Add some default meals for testing
-        addDefaultMealsForTesting()
+        // addDefaultMealsForTesting() // Commented out to start with empty schedule
     }
     
     private func addDefaultMealsForTesting() {
