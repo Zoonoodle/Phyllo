@@ -38,6 +38,7 @@ Whenever you add or change ANY code:
    ```
 5. NEVER commit or finish a task without confirming the build succeeds
 6. Fix ALL build errors before marking any task as complete
+7. **ALWAYS delete build logs after reading them** - Clean up build_log.txt and any other temporary build files immediately after fixing errors or confirming build success
 
 ### **Simplified Git Workflow**
 

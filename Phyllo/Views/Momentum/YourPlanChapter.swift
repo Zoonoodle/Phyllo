@@ -615,6 +615,27 @@ struct MissionStep: View {
     }
 }
 
+// MARK: - Section Header Component
+
+struct SectionHeader: View {
+    let title: String
+    let icon: String
+    
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.system(size: 18))
+                .foregroundColor(.phylloAccent)
+            
+            Text(title)
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundColor(.white)
+            
+            Spacer()
+        }
+    }
+}
+
 #Preview {
     @Previewable @State var animateContent = true
     YourPlanChapter(
