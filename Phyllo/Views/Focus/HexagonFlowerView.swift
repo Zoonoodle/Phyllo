@@ -37,15 +37,15 @@ struct HexagonFlowerView: View {
         var petals: [(color: Color, rotation: Double, nutrientName: String, icon: String)] = []
         var petalIndex = 0
         
-        // Map nutrient names to icons
+        // Map nutrient names to SF Symbol names
         let nutrientIcons: [String: String] = [
-            "Iron": "🩸",
-            "Vitamin D": "☀️",
-            "Vit D": "☀️",
-            "Calcium": "🦴",
-            "B12": "⚡",
-            "Folate": "🌿",
-            "Zinc": "🛡️"
+            "Iron": "drop.fill",
+            "Vitamin D": "sun.max.fill",
+            "Vit D": "sun.max.fill",
+            "Calcium": "circle.hexagongrid.fill",
+            "B12": "bolt.fill",
+            "Folate": "leaf.fill",
+            "Zinc": "shield.fill"
         ]
         
         for (index, nutrient) in micronutrients.enumerated() {
@@ -215,8 +215,9 @@ struct HexagonPetal: View {
                 // Nutrient icon and name inside petal
                 VStack(spacing: 2) {
                     if !icon.isEmpty {
-                        Text(icon)
-                            .font(.system(size: size * 0.08))
+                        Image(systemName: icon)
+                            .font(.system(size: size * 0.07, weight: .medium))
+                            .foregroundColor(.white)
                             .rotationEffect(.degrees(-rotation)) // Counter-rotate to keep upright
                     }
                     

@@ -946,8 +946,8 @@ struct NutritionDashboardView: View {
             )
             .frame(maxWidth: .infinity)
             
-            // Nutrient detail grid below the flower
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
+            // Nutrient detail grid below the flower - 2 columns for more space
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
                 ForEach(topNutrients, id: \.name) { nutrient in
                     NutrientDetailCard(nutrient: nutrient)
                 }
@@ -962,47 +962,47 @@ struct NutritionDashboardView: View {
         let nutrient: NutrientInfo
         @State private var isExpanded = false
         
-        // Nutrient benefits data
+        // Nutrient benefits data with SF Symbol icons
         private var nutrientBenefits: (icon: String, benefits: [String]) {
             switch nutrient.name {
             case "Iron":
-                return ("🩸", [
+                return ("drop.fill", [
                     "Oxygen transport to muscles",
                     "Energy production",
                     "Immune system support"
                 ])
             case "Vitamin D", "Vit D":
-                return ("☀️", [
+                return ("sun.max.fill", [
                     "Bone health & calcium absorption",
                     "Muscle function",
                     "Mood regulation"
                 ])
             case "Calcium":
-                return ("🦴", [
+                return ("circle.hexagongrid.fill", [
                     "Strong bones and teeth",
                     "Muscle contractions",
                     "Nerve signaling"
                 ])
             case "B12":
-                return ("⚡", [
+                return ("bolt.fill", [
                     "Energy metabolism",
                     "Red blood cell formation",
                     "Neurological function"
                 ])
             case "Folate":
-                return ("🌿", [
+                return ("leaf.fill", [
                     "DNA synthesis",
                     "Cell division",
                     "Mental clarity"
                 ])
             case "Zinc":
-                return ("🛡️", [
+                return ("shield.fill", [
                     "Immune defense",
                     "Wound healing",
                     "Protein synthesis"
                 ])
             default:
-                return ("💊", ["Essential nutrient"])
+                return ("pills.fill", ["Essential nutrient"])
             }
         }
         
@@ -1011,23 +1011,26 @@ struct NutritionDashboardView: View {
                 // Main card content
                 VStack(spacing: 8) {
                     // Nutrient name and percentage
-                    HStack {
-                        Text(nutrientBenefits.icon)
-                            .font(.system(size: 16))
+                    HStack(spacing: 8) {
+                        Image(systemName: nutrientBenefits.icon)
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(nutrient.color)
+                            .frame(width: 20)
                         
                         Text(nutrient.name == "Vit D" ? "Vitamin D" : nutrient.name)
-                            .font(.system(size: 13, weight: .medium))
+                            .font(.system(size: 14, weight: .medium))
                             .foregroundColor(.white)
-                            .fixedSize(horizontal: false, vertical: true)
+                            .lineLimit(1)
+                            .layoutPriority(1)
                         
                         Spacer()
                         
                         Text("\(Int(nutrient.percentage * 100))%")
-                            .font(.system(size: 13, weight: .semibold))
+                            .font(.system(size: 14, weight: .semibold))
                             .foregroundColor(nutrient.color)
                         
                         Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                            .font(.system(size: 10))
+                            .font(.system(size: 10, weight: .medium))
                             .foregroundColor(.white.opacity(0.5))
                     }
                     
@@ -1044,7 +1047,8 @@ struct NutritionDashboardView: View {
                     }
                     .frame(height: 4)
                 }
-                .padding(12)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
                 
                 // Expandable benefits section
                 if isExpanded {
@@ -1065,8 +1069,8 @@ struct NutritionDashboardView: View {
                             }
                         }
                     }
-                    .padding(.horizontal, 12)
-                    .padding(.bottom, 12)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 14)
                     .transition(.asymmetric(
                         insertion: .push(from: .top).combined(with: .opacity),
                         removal: .push(from: .bottom).combined(with: .opacity)
