@@ -946,10 +946,14 @@ struct NutritionDashboardView: View {
             )
             .frame(maxWidth: .infinity)
             
-            // Nutrient detail grid below the flower - 2 columns for more space
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+            // Nutrient detail grid - 2 columns with flexible sizing
+            LazyVGrid(columns: [
+                GridItem(.flexible(minimum: 140)),
+                GridItem(.flexible(minimum: 140))
+            ], spacing: 12) {
                 ForEach(topNutrients, id: \.name) { nutrient in
                     NutrientDetailCard(nutrient: nutrient)
+                        .frame(minHeight: 80)
                 }
             }
         }
@@ -1009,46 +1013,50 @@ struct NutritionDashboardView: View {
         var body: some View {
             VStack(spacing: 0) {
                 // Main card content
-                VStack(spacing: 8) {
-                    // Nutrient name and percentage
-                    HStack(spacing: 8) {
+                VStack(alignment: .leading, spacing: 10) {
+                    // Top row with icon and name
+                    HStack {
                         Image(systemName: nutrientBenefits.icon)
-                            .font(.system(size: 14, weight: .medium))
+                            .font(.system(size: 16, weight: .medium))
                             .foregroundColor(nutrient.color)
-                            .frame(width: 20)
+                            .frame(width: 24)
                         
                         Text(nutrient.name == "Vit D" ? "Vitamin D" : nutrient.name)
-                            .font(.system(size: 14, weight: .medium))
+                            .font(.system(size: 14, weight: .semibold))
                             .foregroundColor(.white)
                             .lineLimit(1)
-                            .layoutPriority(1)
+                            .minimumScaleFactor(0.8)
                         
                         Spacer()
-                        
-                        Text("\(Int(nutrient.percentage * 100))%")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(nutrient.color)
                         
                         Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
                             .font(.system(size: 10, weight: .medium))
                             .foregroundColor(.white.opacity(0.5))
                     }
                     
-                    // Progress bar
-                    GeometryReader { geometry in
-                        ZStack(alignment: .leading) {
-                            RoundedRectangle(cornerRadius: 2)
-                                .fill(Color.white.opacity(0.1))
-                            
-                            RoundedRectangle(cornerRadius: 2)
-                                .fill(nutrient.color.opacity(0.8))
-                                .frame(width: geometry.size.width * nutrient.percentage)
+                    // Percentage and progress bar
+                    HStack {
+                        Text("\(Int(nutrient.percentage * 100))%")
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundColor(nutrient.color)
+                            .frame(width: 40, alignment: .leading)
+                        
+                        // Progress bar
+                        GeometryReader { geometry in
+                            ZStack(alignment: .leading) {
+                                RoundedRectangle(cornerRadius: 2)
+                                    .fill(Color.white.opacity(0.1))
+                                
+                                RoundedRectangle(cornerRadius: 2)
+                                    .fill(nutrient.color.opacity(0.8))
+                                    .frame(width: geometry.size.width * nutrient.percentage)
+                            }
                         }
+                        .frame(height: 4)
                     }
-                    .frame(height: 4)
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 14)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 12)
                 
                 // Expandable benefits section
                 if isExpanded {
@@ -1069,8 +1077,8 @@ struct NutritionDashboardView: View {
                             }
                         }
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 14)
+                    .padding(.horizontal, 12)
+                    .padding(.bottom, 12)
                     .transition(.asymmetric(
                         insertion: .push(from: .top).combined(with: .opacity),
                         removal: .push(from: .bottom).combined(with: .opacity)
