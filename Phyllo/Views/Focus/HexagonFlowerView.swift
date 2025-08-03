@@ -20,21 +20,20 @@ struct HexagonFlowerView: View {
     }
     
     // Calculate total petals based on new formula
-    // 50% = 1 petal, >90% = 2 petals
+    // Always 1 petal, >90% = 2 petals
     private var totalPetals: Int {
         micronutrients.reduce(0) { total, nutrient in
             if nutrient.percentage >= 0.9 {
                 return total + 2
-            } else if nutrient.percentage >= 0.5 {
+            } else {
                 return total + 1
             }
-            return total
         }
     }
     
     // Create petal data with colors based on which nutrient they represent
-    private var petalData: [(color: Color, rotation: Double, nutrientName: String, icon: String)] {
-        var petals: [(color: Color, rotation: Double, nutrientName: String, icon: String)] = []
+    private var petalData: [(color: Color, rotation: Double, nutrientName: String, icon: String, percentage: Double)] {
+        var petals: [(color: Color, rotation: Double, nutrientName: String, icon: String, percentage: Double)] = []
         var petalIndex = 0
         
         // Map nutrient names to SF Symbol names
@@ -60,7 +59,8 @@ struct HexagonFlowerView: View {
             ]
             let color = index < nutrientColors.count ? nutrientColors[index] : Color.phylloAccent
             
-            let petalCount = nutrient.percentage >= 0.9 ? 2 : (nutrient.percentage >= 0.5 ? 1 : 0)
+            // Always create at least one petal, two if >= 90%
+            let petalCount = nutrient.percentage >= 0.9 ? 2 : 1
             let icon = nutrientIcons[nutrient.name] ?? "💊"
             
             for i in 0..<petalCount {
@@ -68,7 +68,7 @@ struct HexagonFlowerView: View {
                     let rotation = Double(petalIndex) * 60
                     // Only add name to first petal of each nutrient
                     let name = i == 0 ? nutrient.name : ""
-                    petals.append((color: color, rotation: rotation, nutrientName: name, icon: icon))
+                    petals.append((color: color, rotation: rotation, nutrientName: name, icon: icon, percentage: nutrient.percentage))
                     petalIndex += 1
                 }
             }
@@ -83,10 +83,11 @@ struct HexagonFlowerView: View {
         var petalIndex = 0
         
         for nutrient in micronutrients {
-            let petalCount = nutrient.percentage >= 0.9 ? 2 : (nutrient.percentage >= 0.5 ? 1 : 0)
+            // Always create at least one petal, two if >= 90%
+            let petalCount = nutrient.percentage >= 0.9 ? 2 : 1
             
             // Add label for first petal of each nutrient
-            if petalCount > 0 && petalIndex < 6 {
+            if petalIndex < 6 {
                 let rotation = Double(petalIndex) * 60
                 labels.append((name: nutrient.name, rotation: rotation))
                 petalIndex += petalCount
@@ -123,7 +124,8 @@ struct HexagonFlowerView: View {
         // Find which nutrient this petal belongs to
         var petalIndex = 0
         for nutrient in micronutrients {
-            let petalCount = nutrient.percentage >= 0.9 ? 2 : (nutrient.percentage >= 0.5 ? 1 : 0)
+            // Always create at least one petal, two if >= 90%
+            let petalCount = nutrient.percentage >= 0.9 ? 2 : 1
             if index >= petalIndex && index < petalIndex + petalCount {
                 return micronutrientToPurpose[nutrient.name] ?? "Health"
             }
@@ -151,6 +153,7 @@ struct HexagonFlowerView: View {
                     purposeText: purposeForPetal(at: index),
                     nutrientName: petal.nutrientName,
                     icon: petal.icon,
+                    percentage: petal.percentage,
                     size: size,
                     showPurposeText: showPurposeText
                 )
@@ -201,15 +204,33 @@ struct HexagonPetal: View {
     let purposeText: String
     var nutrientName: String = ""
     var icon: String = ""
+    var percentage: Double = 1.0
     var size: CGFloat = 180 // Parent size
     var showPurposeText: Bool = true
     
+    // Calculate opacity based on percentage - similar to ring effect
+    private var fillOpacity: Double {
+        // Start very transparent (0.05) and gradually increase to 0.3 at 100%
+        let minOpacity = 0.05
+        let maxOpacity = 0.3
+        return minOpacity + (maxOpacity - minOpacity) * percentage
+    }
+    
+    private var strokeOpacity: Double {
+        // Stroke starts invisible and becomes fully visible at 50%
+        if percentage < 0.5 {
+            return percentage * 2 // 0-0.5 maps to 0-1 opacity
+        } else {
+            return 1.0
+        }
+    }
+    
     var body: some View {
         HexagonShape()
-            .fill(color.opacity(0.3))
+            .fill(color.opacity(fillOpacity))
             .overlay(
                 HexagonShape()
-                    .stroke(color, lineWidth: 2)
+                    .stroke(color.opacity(strokeOpacity), lineWidth: 2)
             )
             .overlay(
                 // Nutrient icon and name inside petal
@@ -217,14 +238,14 @@ struct HexagonPetal: View {
                     if !icon.isEmpty {
                         Image(systemName: icon)
                             .font(.system(size: size * 0.07, weight: .medium))
-                            .foregroundColor(.white)
+                            .foregroundColor(.white.opacity(percentage > 0.3 ? 1.0 : percentage * 3))
                             .rotationEffect(.degrees(-rotation)) // Counter-rotate to keep upright
                     }
                     
-                    if !nutrientName.isEmpty && showPurposeText {
+                    if !nutrientName.isEmpty && showPurposeText && percentage > 0.3 {
                         Text(nutrientName)
                             .font(.system(size: size * 0.04, weight: .medium))
-                            .foregroundColor(.white)
+                            .foregroundColor(.white.opacity(percentage > 0.5 ? 1.0 : percentage * 2))
                             .lineLimit(1)
                             .minimumScaleFactor(0.5)
                             .rotationEffect(.degrees(-rotation)) // Counter-rotate to keep upright
@@ -365,13 +386,30 @@ struct ArrowShape: Shape {
     ZStack {
         Color.phylloBackground.ignoresSafeArea()
         
-        HexagonFlowerView(micronutrients: [
-            ("B12", 0.82),
-            ("Iron", 0.91),
-            ("Magnesium", 0.78),
-            ("Vitamin D", 0.65),
-            ("Omega-3", 0.45),
-            ("Zinc", 0.88)
-        ])
+        VStack(spacing: 30) {
+            Text("Transparency Gradient Effect")
+                .font(.title2)
+                .foregroundColor(.white)
+            
+            // Original percentages
+            HexagonFlowerView(micronutrients: [
+                ("B12", 0.82),
+                ("Iron", 0.91),
+                ("Magnesium", 0.78),
+                ("Vitamin D", 0.65),
+                ("Omega-3", 0.45),
+                ("Zinc", 0.88)
+            ])
+            
+            // Low percentages to show transparency effect
+            HexagonFlowerView(micronutrients: [
+                ("B12", 0.10),
+                ("Iron", 0.25),
+                ("Magnesium", 0.35),
+                ("Vitamin D", 0.50),
+                ("Omega-3", 0.75),
+                ("Zinc", 0.95)
+            ])
+        }
     }
 }
