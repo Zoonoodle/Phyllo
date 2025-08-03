@@ -115,6 +115,29 @@ struct MealWindow: Identifiable {
         TimeProvider.shared.currentTime > endTime
     }
     
+    // Check if window is "late but doable" - past but before the next window
+    func isLateButDoable(nextWindow: MealWindow?) -> Bool {
+        guard isPast else { return false }
+        
+        let now = TimeProvider.shared.currentTime
+        
+        // If there's a next window, check if we're before it
+        if let nextWindow = nextWindow {
+            return now < nextWindow.startTime
+        }
+        
+        // If no next window, consider it doable if less than 2 hours late
+        let timeSinceEnd = now.timeIntervalSince(endTime)
+        return timeSinceEnd < 2 * 3600  // 2 hours
+    }
+    
+    // Calculate how late this window is
+    var hoursLate: Double? {
+        guard isPast else { return nil }
+        let timeSinceEnd = TimeProvider.shared.currentTime.timeIntervalSince(endTime)
+        return timeSinceEnd / 3600
+    }
+    
     var formattedTimeRange: String {
         let formatter = DateFormatter()
         formatter.timeStyle = .short

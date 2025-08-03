@@ -76,113 +76,90 @@ struct SimplifiedMomentumTabView: View {
     private var phylloScoreSection: some View {
         VStack(spacing: 16) {
             // Header
-            HStack {
-                Text("PhylloScore")
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Health Improvement Score")
                     .font(.system(size: 20, weight: .semibold))
                     .foregroundColor(.white)
-                Spacer()
+                
+                if let score = phylloScore?.totalScore, 
+                   let previousScore = phylloScore?.totalScore,
+                   score > 0 {
+                    Text("Congrats! Your score increased by 1 point this week.")
+                        .font(.system(size: 14))
+                        .foregroundColor(.phylloTextSecondary)
+                }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             
-            // Main Score Card with Concentric Rings
-            VStack(spacing: 20) {
-                // Concentric rings visualization
+            // Main Score Card with Dot Pattern
+            VStack(spacing: 28) {
+                // Dot pattern visualization
                 ZStack {
-                    // Background rings (outer to inner)
-                    // Outer ring - Timing
-                    Circle()
-                        .stroke(Color.white.opacity(0.05), lineWidth: 4)
-                        .frame(width: 180, height: 180)
-                    
-                    // Middle ring - Macros
-                    Circle()
-                        .stroke(Color.white.opacity(0.05), lineWidth: 4)
-                        .frame(width: 140, height: 140)
-                    
-                    // Inner ring - Nutrients
-                    Circle()
-                        .stroke(Color.white.opacity(0.05), lineWidth: 4)
-                        .frame(width: 100, height: 100)
-                    
-                    // Active ring portions
-                    // Timing ring (outer)
-                    Circle()
-                        .trim(from: 0, to: timingProgress)
-                        .stroke(
-                            timingColor.opacity(0.8),
-                            style: StrokeStyle(lineWidth: 4, lineCap: .round)
-                        )
-                        .frame(width: 180, height: 180)
-                        .rotationEffect(.degrees(-90))
-                        .animation(.spring(response: 0.8, dampingFraction: 0.7).delay(0), value: timingProgress)
-                    
-                    // Macros ring (middle)
-                    Circle()
-                        .trim(from: 0, to: macroProgress)
-                        .stroke(
-                            macroColor.opacity(0.8),
-                            style: StrokeStyle(lineWidth: 4, lineCap: .round)
-                        )
-                        .frame(width: 140, height: 140)
-                        .rotationEffect(.degrees(-90))
-                        .animation(.spring(response: 0.8, dampingFraction: 0.7).delay(0.15), value: macroProgress)
-                    
-                    // Nutrients ring (inner)
-                    Circle()
-                        .trim(from: 0, to: nutrientProgress)
-                        .stroke(
-                            nutrientColor.opacity(0.8),
-                            style: StrokeStyle(lineWidth: 4, lineCap: .round)
-                        )
-                        .frame(width: 100, height: 100)
-                        .rotationEffect(.degrees(-90))
-                        .animation(.spring(response: 0.8, dampingFraction: 0.7).delay(0.3), value: nutrientProgress)
+                    // Scattered dots in circular pattern
+                    ForEach(scoreDots, id: \.id) { dot in
+                        Circle()
+                            .fill(dot.color)
+                            .frame(width: dot.size, height: dot.size)
+                            .offset(x: dot.x, y: dot.y)
+                            .opacity(dot.opacity)
+                            .scaleEffect(dot.scale)
+                            .animation(
+                                .spring(response: 0.6, dampingFraction: 0.7)
+                                .delay(dot.animationDelay),
+                                value: dot.scale
+                            )
+                    }
                     
                     // Center content
-                    VStack(spacing: 2) {
+                    VStack(spacing: 0) {
+                        // Date
+                        Text(formattedDate)
+                            .font(.system(size: 13))
+                            .foregroundColor(.phylloTextTertiary)
+                            .padding(.bottom, 12)
+                        
+                        // Score
                         Text("\(phylloScore?.totalScore ?? 0)")
-                            .font(.system(size: 48, weight: .bold, design: .rounded))
+                            .font(.system(size: 64, weight: .bold, design: .rounded))
                             .foregroundColor(.white)
                         
-                        Text("Score")
-                            .font(.system(size: 12))
+                        // Out of 100
+                        Text("out of 100")
+                            .font(.system(size: 16))
                             .foregroundColor(.phylloTextSecondary)
-                        
-                        HStack(spacing: 3) {
-                            Image(systemName: trendIcon(phylloScore?.trend))
-                                .font(.system(size: 10))
-                            Text(trendText(phylloScore?.trend) ?? "stable")
-                                .font(.system(size: 10, weight: .medium))
-                        }
-                        .foregroundColor(scoreColor.opacity(0.8))
+                            .padding(.top, 4)
                     }
                 }
-                .padding(.vertical, 12)
+                .frame(width: 300, height: 300)
                 
-                // Component labels
-                HStack(spacing: 24) {
-                    componentLabel(
-                        icon: "clock.fill",
+                // Component cards
+                HStack(spacing: 12) {
+                    componentCard(
+                        icon: "figure.run",
                         label: "Timing",
-                        value: Int(timingProgress * 100),
-                        color: timingColor
+                        value: phylloScore?.mealTimingScore ?? 0,
+                        status: timingStatus,
+                        color: timingCardColor
                     )
                     
-                    componentLabel(
-                        icon: "scalemass.fill",
+                    componentCard(
+                        icon: "scalemass",
                         label: "Macros",
-                        value: Int(macroProgress * 100),
-                        color: macroColor
+                        value: phylloScore?.macroBalanceScore ?? 0,
+                        status: macroStatus,
+                        color: macroCardColor
                     )
                     
-                    componentLabel(
-                        icon: "leaf.fill",
+                    componentCard(
+                        icon: "leaf",
                         label: "Nutrients",
-                        value: Int(nutrientProgress * 100),
-                        color: nutrientColor
+                        value: phylloScore?.micronutrientScore ?? 0,
+                        status: nutrientStatus,
+                        color: nutrientCardColor
                     )
                 }
             }
-            .padding(24)
+            .padding(20)
             .background(Color.white.opacity(0.03))
             .cornerRadius(20)
             .overlay(
@@ -193,26 +170,128 @@ struct SimplifiedMomentumTabView: View {
     }
     
     @ViewBuilder
-    private func componentLabel(icon: String, label: String, value: Int, color: Color) -> some View {
-        VStack(spacing: 4) {
-            ZStack {
-                Circle()
-                    .fill(color.opacity(0.1))
-                    .frame(width: 32, height: 32)
-                
+    private func componentCard(icon: String, label: String, value: Int, status: String, color: Color) -> some View {
+        VStack(spacing: 0) {
+            // Colored background area
+            VStack(spacing: 8) {
                 Image(systemName: icon)
-                    .font(.system(size: 14))
-                    .foregroundColor(color.opacity(0.8))
+                    .font(.system(size: 24))
+                    .foregroundColor(.white)
+                
+                Text(label)
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.white)
             }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 20)
+            .background(color)
             
-            Text(label)
-                .font(.system(size: 11))
-                .foregroundColor(.phylloTextSecondary)
-            
-            Text("\(value)%")
-                .font(.system(size: 13, weight: .medium))
-                .foregroundColor(.white)
+            // Status area
+            VStack(spacing: 4) {
+                if value > 0 {
+                    Text("+\(value) points")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(.white)
+                } else {
+                    Text("\(value) points")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(.white)
+                }
+                
+                Text(status)
+                    .font(.system(size: 11))
+                    .foregroundColor(.phylloTextSecondary)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
+            .background(Color.white.opacity(0.05))
         }
+        .frame(maxWidth: .infinity)
+        .cornerRadius(16)
+    }
+    
+    // Dot pattern generation
+    private var scoreDots: [DotData] {
+        var dots: [DotData] = []
+        let totalScore = phylloScore?.totalScore ?? 0
+        let baseCount = Int(Double(totalScore) * 1.2) // More dots for higher scores
+        
+        // Generate dots for each component
+        let timingDots = Int(Double(baseCount) * 0.33 * timingProgress)
+        let macroDots = Int(Double(baseCount) * 0.33 * macroProgress)
+        let nutrientDots = Int(Double(baseCount) * 0.34 * nutrientProgress)
+        
+        var index = 0
+        
+        // Timing dots
+        for i in 0..<timingDots {
+            let angle = Double.random(in: 0...(2 * .pi))
+            let radius = Double.random(in: 80...140)
+            let size = Double.random(in: 4...8)
+            
+            dots.append(DotData(
+                id: "timing-\(i)",
+                x: radius * cos(angle),
+                y: radius * sin(angle),
+                size: size,
+                color: timingDotColor,
+                opacity: Double.random(in: 0.3...0.8),
+                scale: 1.0,
+                animationDelay: Double(index) * 0.01
+            ))
+            index += 1
+        }
+        
+        // Macro dots
+        for i in 0..<macroDots {
+            let angle = Double.random(in: 0...(2 * .pi))
+            let radius = Double.random(in: 70...130)
+            let size = Double.random(in: 4...8)
+            
+            dots.append(DotData(
+                id: "macro-\(i)",
+                x: radius * cos(angle),
+                y: radius * sin(angle),
+                size: size,
+                color: macroDotColor,
+                opacity: Double.random(in: 0.3...0.8),
+                scale: 1.0,
+                animationDelay: Double(index) * 0.01
+            ))
+            index += 1
+        }
+        
+        // Nutrient dots
+        for i in 0..<nutrientDots {
+            let angle = Double.random(in: 0...(2 * .pi))
+            let radius = Double.random(in: 60...120)
+            let size = Double.random(in: 4...8)
+            
+            dots.append(DotData(
+                id: "nutrient-\(i)",
+                x: radius * cos(angle),
+                y: radius * sin(angle),
+                size: size,
+                color: nutrientDotColor,
+                opacity: Double.random(in: 0.3...0.8),
+                scale: 1.0,
+                animationDelay: Double(index) * 0.01
+            ))
+            index += 1
+        }
+        
+        return dots
+    }
+    
+    struct DotData {
+        let id: String
+        let x: Double
+        let y: Double
+        let size: Double
+        let color: Color
+        let opacity: Double
+        let scale: Double
+        let animationDelay: Double
     }
     
     // Progress calculations
@@ -231,25 +310,82 @@ struct SimplifiedMomentumTabView: View {
         return Double(score) / 25.0
     }
     
-    private var timingColor: Color {
-        guard let score = phylloScore?.mealTimingScore else { return .orange }
-        if score >= 20 { return Color(hex: "10B981") } // Emerald green
+    // Dot colors (softer for the pattern)
+    private var timingDotColor: Color {
+        guard let score = phylloScore?.mealTimingScore else { return Color(hex: "F59E0B") }
+        if score >= 20 { return Color(hex: "10B981") } // Green
         else if score >= 15 { return Color(hex: "F59E0B") } // Amber
         else { return Color(hex: "EF4444") } // Red
     }
     
-    private var macroColor: Color {
-        guard let score = phylloScore?.macroBalanceScore else { return .orange }
+    private var macroDotColor: Color {
+        guard let score = phylloScore?.macroBalanceScore else { return Color(hex: "8B5CF6") }
         if score >= 20 { return Color(hex: "3B82F6") } // Blue
         else if score >= 15 { return Color(hex: "8B5CF6") } // Purple
         else { return Color(hex: "F59E0B") } // Amber
     }
     
-    private var nutrientColor: Color {
-        guard let score = phylloScore?.micronutrientScore else { return .orange }
-        if score >= 20 { return Color(hex: "10B981") } // Emerald green
+    private var nutrientDotColor: Color {
+        guard let score = phylloScore?.micronutrientScore else { return Color(hex: "F59E0B") }
+        if score >= 20 { return Color(hex: "10B981") } // Green
         else if score >= 15 { return Color(hex: "F59E0B") } // Amber
         else { return Color(hex: "EF4444") } // Red
+    }
+    
+    // Card background colors (matching Withings style)
+    private var timingCardColor: Color {
+        Color(hex: "F59E0B").opacity(0.9) // Amber
+    }
+    
+    private var macroCardColor: Color {
+        Color(hex: "8B5CF6").opacity(0.9) // Purple
+    }
+    
+    private var nutrientCardColor: Color {
+        Color(hex: "EF4444").opacity(0.9) // Red/Pink
+    }
+    
+    // Status text
+    private var timingStatus: String {
+        guard let score = phylloScore?.mealTimingScore else { return "No data" }
+        if score >= 20 { return "Excellent" }
+        else if score >= 15 { return "Good" }
+        else if score >= 10 { return "Improving" }
+        else { return "Needs work" }
+    }
+    
+    private var macroStatus: String {
+        guard let score = phylloScore?.macroBalanceScore else { return "No data" }
+        if score >= 20 { return "Balanced" }
+        else if score >= 15 { return "Good" }
+        else if score >= 10 { return "Moderate" }
+        else { return "Unbalanced" }
+    }
+    
+    private var nutrientStatus: String {
+        guard let score = phylloScore?.micronutrientScore else { return "No data" }
+        let count = nutrientDots.count
+        if count >= 5 { return "\(count) of 9" }
+        else { return "Low" }
+    }
+    
+    // Date formatter
+    private var formattedDate: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "dd-dd MMM yyyy"
+        let date = TimeProvider.shared.currentTime
+        
+        // For now, just show single date (could expand to date range)
+        formatter.dateFormat = "dd MMM yyyy"
+        return formatter.string(from: date)
+    }
+    
+    // Helper to count nutrient items (simulated)
+    private var nutrientDots: [String] {
+        // This would normally come from actual nutrient data
+        let score = phylloScore?.micronutrientScore ?? 0
+        let count = Int(Double(score) / 25.0 * 9) // Max 9 nutrients
+        return Array(repeating: "dot", count: count)
     }
     
     @ViewBuilder

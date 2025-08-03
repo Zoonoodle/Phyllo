@@ -133,7 +133,7 @@ struct ExpandableWindowBanner: View {
             } else {
                 return "in \(minutes)m"
             }
-        } else if windowStatus == .active {
+        } else if case .active = windowStatus {
             // Currently active window
             if hasMeals {
                 // Check if first meal was logged late, early, or on time
@@ -191,7 +191,7 @@ struct ExpandableWindowBanner: View {
     }
     
     private var windowProgress: Double {
-        guard windowStatus == .active else { return 0 }
+        guard case .active = windowStatus else { return 0 }
         let elapsed = timeProvider.currentTime.timeIntervalSince(window.startTime)
         let total = window.duration
         return min(max(elapsed / total, 0), 1)
@@ -206,26 +206,91 @@ struct ExpandableWindowBanner: View {
     private enum WindowStatus {
         case upcoming
         case active
-        case passed
+        case lateButDoable
+        case completed(consumed: Int, target: Int, redistribution: WindowRedistributionManager.RedistributionReason?)
+        case missed(redistribution: WindowRedistributionManager.RedistributionReason?)
     }
     
     private var windowStatus: WindowStatus {
         let now = timeProvider.currentTime
+        
         if now < window.startTime {
             return .upcoming
         } else if now >= window.startTime && now <= window.endTime {
             return .active
         } else {
-            return .passed
+            // Window is past - determine the specific status
+            let hasMeals = !meals.isEmpty
+            
+            if hasMeals {
+                // Window has meals - it's completed
+                let consumed = mockData.caloriesConsumedInWindow(window)
+                return .completed(
+                    consumed: consumed,
+                    target: window.effectiveCalories,
+                    redistribution: window.redistributionReason
+                )
+            } else {
+                // No meals - check if it's late but doable
+                let nextWindow = mockData.mealWindows.first { 
+                    $0.startTime > window.startTime && $0.id != window.id 
+                }
+                
+                if window.isLateButDoable(nextWindow: nextWindow) {
+                    return .lateButDoable
+                } else {
+                    return .missed(redistribution: window.redistributionReason)
+                }
+            }
         }
     }
     
     // Check if it's optimal time to eat (within first 30% of window)
     private var isOptimalTime: Bool {
-        guard windowStatus == .active && meals.isEmpty else { return false }
+        guard case .active = windowStatus, meals.isEmpty else { return false }
         let elapsed = timeProvider.currentTime.timeIntervalSince(window.startTime)
         let optimalPeriod = window.duration * 0.3 // First 30% of window
         return elapsed <= optimalPeriod
+    }
+    
+    // Window opacity based on status
+    private var windowOpacity: Double {
+        switch windowStatus {
+        case .completed, .missed:
+            return 0.7
+        case .lateButDoable:
+            return 0.85
+        case .active, .upcoming:
+            return 1.0
+        }
+    }
+    
+    // Window border color based on status
+    private var windowBorderColor: Color {
+        switch windowStatus {
+        case .active:
+            return window.purpose.color.opacity(0.5)
+        case .lateButDoable:
+            return Color.yellow.opacity(0.3)
+        case .completed:
+            return Color.white.opacity(0.05)
+        case .missed:
+            return Color.orange.opacity(0.2)
+        case .upcoming:
+            return Color.white.opacity(0.1)
+        }
+    }
+    
+    // Window background color based on status
+    private var windowBackgroundColor: Color {
+        switch windowStatus {
+        case .completed, .missed:
+            return Color(red: 0.08, green: 0.08, blue: 0.09)  // Darker for passed windows
+        case .lateButDoable:
+            return Color(red: 0.12, green: 0.11, blue: 0.10)  // Slightly yellow tint
+        case .active, .upcoming:
+            return Color(red: 0.11, green: 0.11, blue: 0.12)  // Normal dark gray
+        }
     }
     
     // Check if window is about to start (within 15 minutes)
@@ -245,10 +310,12 @@ struct ExpandableWindowBanner: View {
             return timeToFinishEating > 0 && timeToFinishEating <= hoursUntilSleep * 3600
         case .preworkout:
             // Should eat 1-2 hours before workout
-            return windowStatus == .active || isStartingSoon
+            if case .active = windowStatus { return true }
+            return isStartingSoon
         case .postworkout:
             // Critical window - should eat ASAP after workout
-            return windowStatus == .active && meals.isEmpty
+            if case .active = windowStatus, meals.isEmpty { return true }
+            return false
         default:
             return false
         }
@@ -270,16 +337,15 @@ struct ExpandableWindowBanner: View {
                 }
             }
             .background(windowBackground)
-            .clipShape(RoundedRectangle(cornerRadius: windowStatus == .active ? 16 : 12))
+            .clipShape(RoundedRectangle(cornerRadius: { if case .active = windowStatus { return 16 } else { return 12 } }()))
             .overlay(
                 RoundedRectangle(cornerRadius: windowStatus == .active ? 16 : 12)
                     .strokeBorder(
-                        windowStatus == .active ? window.purpose.color.opacity(0.5) : 
-                        windowStatus == .passed ? Color.white.opacity(0.05) : Color.white.opacity(0.1),
-                        lineWidth: windowStatus == .active ? 2 : 1
+                        windowBorderColor,
+                        lineWidth: { if case .active = windowStatus { return 2 } else { return 1 } }()
                     )
             )
-            .opacity(windowStatus == .passed ? 0.7 : 1.0)
+            .opacity(windowOpacity)
             .overlay(optimalTimeIndicators)
         }
         .buttonStyle(PlainButtonStyle())
@@ -302,7 +368,7 @@ struct ExpandableWindowBanner: View {
             statusIndicator
                 .frame(width: 50, height: 50)
         }
-        .padding(windowStatus == .active ? 16 : 12)
+        .padding({ if case .active = windowStatus { return 16 } else { return 12 } }())
     }
     
     @ViewBuilder
@@ -310,7 +376,7 @@ struct ExpandableWindowBanner: View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 6) {
                 Image(systemName: mealIcon)
-                    .font(.system(size: windowStatus == .active ? 14 : 12))
+                    .font(.system(size: { if case .active = windowStatus { return 14 } else { return 12 } }()))
                 Text(mealType)
                     .font(.system(size: windowStatus == .active ? 14 : 13, weight: .semibold))
                     .fixedSize(horizontal: true, vertical: false)
@@ -337,7 +403,22 @@ struct ExpandableWindowBanner: View {
                 }
                 .foregroundColor(window.timeRemaining ?? 0 < 1800 ? .orange : .white.opacity(0.9))
                 
-            case .passed:
+            case .lateButDoable:
+                if let hoursLate = window.hoursLate {
+                    HStack(spacing: 4) {
+                        Image(systemName: "exclamationmark.circle")
+                            .font(.system(size: 11))
+                        if hoursLate < 1 {
+                            Text("\(Int(hoursLate * 60))m late • still doable")
+                        } else {
+                            Text("\(Int(hoursLate))h late • still doable")
+                        }
+                    }
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(.yellow)
+                }
+                
+            case .completed, .missed:
                 if !timeUntilWindow.isEmpty {
                     Text(timeUntilWindow)
                         .font(.system(size: 12))
@@ -356,30 +437,59 @@ struct ExpandableWindowBanner: View {
     private var quickStatsSection: some View {
         VStack(alignment: .trailing, spacing: 3) {
             switch windowStatus {
-            case .passed:
-                if !meals.isEmpty {
-                    // Show consumed calories for passed windows with meals
-                    let consumed = mockData.caloriesConsumedInWindow(window)
-                    Text("\(consumed) cal")
-                        .font(.system(size: consumed >= 1000 ? 14 : 16, weight: .semibold))
+            case .completed(let consumed, let target, let redistribution):
+                // Show consumed vs target
+                HStack(spacing: 4) {
+                    Text("\(consumed)")
+                        .font(.system(size: consumed >= 1000 ? 13 : 14, weight: .semibold))
+                        .foregroundColor(consumptionColor(consumed: consumed, target: target))
+                    Text("/")
+                        .font(.system(size: 12))
+                        .foregroundColor(.white.opacity(0.5))
+                    Text("\(target) cal")
+                        .font(.system(size: 12))
                         .foregroundColor(.white.opacity(0.7))
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.7)
-                        .layoutPriority(1)
-                    
+                }
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                
+                // Show redistribution info if available
+                if let reason = redistribution {
+                    redistributionText(for: reason)
+                        .font(.system(size: 10))
+                        .foregroundColor(redistributionColor(for: reason))
+                } else {
                     Text("completed")
                         .font(.system(size: 12))
                         .foregroundColor(.white.opacity(0.5))
+                }
+                
+            case .missed(let redistribution):
+                Text("\(window.effectiveCalories) cal")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.orange.opacity(0.8))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                
+                if let reason = redistribution {
+                    redistributionText(for: reason)
+                        .font(.system(size: 10))
+                        .foregroundColor(.orange.opacity(0.7))
                 } else {
-                    // Show missed window status
-                    Text("Window")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.5))
-                    
-                    Text("passed")
+                    Text("missed")
                         .font(.system(size: 12))
                         .foregroundColor(.orange.opacity(0.7))
                 }
+                
+            case .lateButDoable:
+                Text("\(window.effectiveCalories) cal")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.9))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                
+                AnimatedInfoSwitcher(window: window, isActive: false)
+                    .frame(width: 120)
                 
             case .active:
                 Text("\(windowCaloriesRemaining) cal")
@@ -412,12 +522,12 @@ struct ExpandableWindowBanner: View {
         switch windowStatus {
         case .active:
             progressRing
-        case .passed:
-            if !meals.isEmpty {
-                completedIndicator
-            } else {
-                missedIndicator
-            }
+        case .completed:
+            completedIndicator
+        case .missed:
+            missedIndicator
+        case .lateButDoable:
+            lateButDoableIndicator
         case .upcoming:
             upcomingIndicator
         }
@@ -486,6 +596,31 @@ struct ExpandableWindowBanner: View {
     }
     
     @ViewBuilder
+    private var lateButDoableIndicator: some View {
+        ZStack {
+            Circle()
+                .fill(Color.yellow.opacity(0.15))
+                .frame(width: 50, height: 50)
+            
+            VStack(spacing: 0) {
+                Text("Late")
+                    .font(.system(size: 10, weight: .semibold))
+                
+                if let hoursLate = window.hoursLate {
+                    if hoursLate < 1 {
+                        Text("\(Int(hoursLate * 60))m")
+                            .font(.system(size: 9))
+                    } else {
+                        Text("\(Int(hoursLate))h")
+                            .font(.system(size: 9))
+                    }
+                }
+            }
+            .foregroundColor(.yellow)
+        }
+    }
+    
+    @ViewBuilder
     private var mealsSection: some View {
         VStack(spacing: 8) {
             Rectangle()
@@ -518,9 +653,7 @@ struct ExpandableWindowBanner: View {
             .fill(Color.phylloBackground)  // Fully opaque black background first
             .overlay(
                 RoundedRectangle(cornerRadius: windowStatus == .active ? 16 : 12)
-                    .fill(windowStatus == .passed ? 
-                          Color(red: 0.08, green: 0.08, blue: 0.09) :  // Darker for passed windows
-                          Color(red: 0.11, green: 0.11, blue: 0.12))   // Normal dark gray
+                    .fill(windowBackgroundColor)
             )
             .matchedGeometryEffect(
                 id: "window-\(window.id)",
@@ -630,7 +763,7 @@ struct ExpandableWindowBanner: View {
             }
             
             // Post-workout urgency indicator
-            if window.purpose == .postworkout && windowStatus == .active && meals.isEmpty {
+            if window.purpose == .postworkout, case .active = windowStatus, meals.isEmpty {
                 VStack {
                     Spacer()
                     HStack {
@@ -653,6 +786,51 @@ struct ExpandableWindowBanner: View {
                     }
                 }
             }
+        }
+    }
+    
+    // Helper function to determine color based on consumption
+    private func consumptionColor(consumed: Int, target: Int) -> Color {
+        let percentage = Double(consumed) / Double(target)
+        
+        if percentage < 0.8 {
+            return .yellow // Under-consumed
+        } else if percentage > 1.2 {
+            return .orange // Over-consumed
+        } else {
+            return .green // Within range
+        }
+    }
+    
+    // Helper function to get redistribution text
+    private func redistributionText(for reason: WindowRedistributionManager.RedistributionReason) -> Text {
+        switch reason {
+        case .overconsumption(let percent):
+            return Text("\(percent)% redistributed →")
+        case .underconsumption(let percent):
+            return Text("\(percent)% redistributed →")
+        case .missedWindow:
+            return Text("redistributed →")
+        case .earlyConsumption:
+            return Text("early • redistributed →")
+        case .lateConsumption:
+            return Text("late • redistributed →")
+        }
+    }
+    
+    // Helper function to get redistribution color
+    private func redistributionColor(for reason: WindowRedistributionManager.RedistributionReason) -> Color {
+        switch reason {
+        case .overconsumption:
+            return .orange.opacity(0.7)
+        case .underconsumption:
+            return .yellow.opacity(0.7)
+        case .missedWindow:
+            return .orange.opacity(0.7)
+        case .earlyConsumption:
+            return .blue.opacity(0.7)
+        case .lateConsumption:
+            return .yellow.opacity(0.7)
         }
     }
 }
