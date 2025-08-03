@@ -60,11 +60,6 @@ struct NutritionDashboardView: View {
                     }
                 }
             }
-            .overlay(alignment: .topTrailing) {
-                settingsButton
-                    .padding(.top, 60)
-                    .padding(.trailing, 20)
-            }
         }
         .onAppear {
             loadData()
@@ -75,20 +70,34 @@ struct NutritionDashboardView: View {
     // MARK: - Header Section
     
     private var headerSection: some View {
-        VStack(spacing: 16) {
-            // Title
-            HStack {
-                Text("Nutrition Performance")
-                    .font(.system(size: 28, weight: .bold))
+        VStack(spacing: 12) {
+            // Centered title with settings button
+            ZStack {
+                // Settings button on the right
+                HStack {
+                    Spacer()
+                    
+                    Button(action: { showDeveloperDashboard = true }) {
+                        Image(systemName: "gearshape.fill")
+                            .font(.system(size: 20))
+                            .foregroundColor(.white.opacity(0.6))
+                            .frame(width: 36, height: 36)
+                            .background(Color.white.opacity(0.1))
+                            .clipShape(Circle())
+                    }
+                }
+                
+                // Centered title
+                Text("Performance")
+                    .font(.system(size: 24, weight: .bold))
                     .foregroundColor(.white)
-                Spacer()
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 60)
+            .padding(.horizontal, 24)
+            
             
             // View selector tabs
             viewSelector
-                .padding(.horizontal, 20)
+                .padding(.horizontal, 24)
         }
     }
     
@@ -154,8 +163,8 @@ struct NutritionDashboardView: View {
                     lineWidth: 24,
                     backgroundColor: Color(hex: "FF3B30").opacity(0.2),
                     foregroundColors: [Color(hex: "FF3B30"), Color(hex: "FF6B6B")],
-                    icon: "clock.arrow.circlepath",
-                    iconAngle: 45
+                    icon: "clock.fill",
+                    iconAngle: 0
                 )
                 .animation(.spring(response: 1.0, dampingFraction: 0.8), value: ringAnimations.timingProgress)
                 
@@ -166,8 +175,8 @@ struct NutritionDashboardView: View {
                     lineWidth: 24,
                     backgroundColor: Color(hex: "34C759").opacity(0.2),
                     foregroundColors: [Color(hex: "34C759"), Color(hex: "5EDD79")],
-                    icon: "leaf.arrow.circlepath",
-                    iconAngle: 165
+                    icon: "leaf.fill",
+                    iconAngle: 0
                 )
                 .animation(.spring(response: 1.0, dampingFraction: 0.8).delay(0.1), value: ringAnimations.nutrientProgress)
                 
@@ -178,8 +187,8 @@ struct NutritionDashboardView: View {
                     lineWidth: 24,
                     backgroundColor: Color(hex: "007AFF").opacity(0.2),
                     foregroundColors: [Color(hex: "007AFF"), Color(hex: "4FA0FF")],
-                    icon: "checkmark.arrow.circlepath",
-                    iconAngle: 285
+                    icon: "checkmark.circle.fill",
+                    iconAngle: 0
                 )
                 .animation(.spring(response: 1.0, dampingFraction: 0.8).delay(0.2), value: ringAnimations.adherenceProgress)
                 
@@ -684,8 +693,28 @@ struct NutritionDashboardView: View {
     }
     
     private var nutrientsHit: Int {
-        // Simulate nutrient tracking
-        Int.random(in: 12...16)
+        // Calculate micronutrients that meet at least 25% of RDA
+        var nutrientsWithGoodIntake = 0
+        var nutrientTotals: [String: Double] = [:]
+        
+        // Aggregate all micronutrients from today's meals
+        for meal in mockData.todayMeals {
+            for (nutrientName, amount) in meal.micronutrients {
+                nutrientTotals[nutrientName, default: 0] += amount
+            }
+        }
+        
+        // Check against RDA values
+        for (nutrientName, totalAmount) in nutrientTotals {
+            if let micronutrient = MicronutrientData.getAllNutrients().first(where: { $0.name == nutrientName }) {
+                let percentageOfRDA = (totalAmount / micronutrient.rda) * 100
+                if percentageOfRDA >= 25 { // Count if at least 25% of RDA is met
+                    nutrientsWithGoodIntake += 1
+                }
+            }
+        }
+        
+        return nutrientsWithGoodIntake
     }
     
     private var nutrientsStatus: String {
@@ -1081,14 +1110,48 @@ struct NutritionDashboardView: View {
     }
     
     private var topNutrients: [NutrientInfo] {
-        [
-            NutrientInfo(name: "Iron", percentage: 0.85, color: .red),
-            NutrientInfo(name: "Vit D", percentage: 0.65, color: .orange),
-            NutrientInfo(name: "Calcium", percentage: 0.9, color: .blue),
-            NutrientInfo(name: "Vit B12", percentage: 0.75, color: .purple),
-            NutrientInfo(name: "Folate", percentage: 0.8, color: .green),
-            NutrientInfo(name: "Zinc", percentage: 0.7, color: .pink)
+        // Calculate actual nutrient percentages from today's meals
+        var nutrientTotals: [String: Double] = [:]
+        
+        // Aggregate all micronutrients from today's meals
+        for meal in mockData.todayMeals {
+            for (nutrientName, amount) in meal.micronutrients {
+                nutrientTotals[nutrientName, default: 0] += amount
+            }
+        }
+        
+        // Select top 6 nutrients to display
+        let displayNutrients = [
+            ("Iron", Color.red),
+            ("Vitamin D", Color.orange),
+            ("Calcium", Color.blue),
+            ("B12", Color.purple),
+            ("Folate", Color.green),
+            ("Zinc", Color.pink)
         ]
+        
+        return displayNutrients.compactMap { nutrientPair in
+            let (displayName, color) = nutrientPair
+            
+            // Find the matching nutrient in our data
+            let matchingKey = nutrientTotals.keys.first { key in
+                key.contains(displayName) || 
+                (displayName == "Vitamin D" && key == "Vitamin D") ||
+                (displayName == "B12" && key.contains("B12"))
+            }
+            
+            guard let key = matchingKey,
+                  let totalAmount = nutrientTotals[key],
+                  let micronutrient = MicronutrientData.getAllNutrients().first(where: { $0.name == key }) else {
+                // Return default low value if no data
+                return NutrientInfo(name: displayName, percentage: 0.1, color: color)
+            }
+            
+            // Calculate percentage of RDA (cap at 100%)
+            let percentage = min((totalAmount / micronutrient.rda), 1.0)
+            
+            return NutrientInfo(name: displayName, percentage: percentage, color: color)
+        }
     }
     
     // MARK: - Helper Methods
@@ -1140,9 +1203,9 @@ struct AppleStyleRing: View {
     
     var body: some View {
         ZStack {
-            // Background ring (dimmed)
+            // Background ring (dimmed more for contrast)
             Circle()
-                .stroke(backgroundColor, lineWidth: lineWidth)
+                .stroke(backgroundColor.opacity(0.3), lineWidth: lineWidth)
                 .frame(width: diameter, height: diameter)
             
             // Active ring with 3D effect
@@ -1179,19 +1242,17 @@ struct AppleStyleRing: View {
                         .blur(radius: 1)
                 )
             
-            // Icon with arrow
-            if progress > 0.05 {
-                Image(systemName: icon)
-                    .font(.system(size: lineWidth * 0.7, weight: .medium))
-                    .foregroundColor(foregroundColors.first)
-                    .rotationEffect(.degrees(iconAngle - 90))
-                    .offset(
-                        x: cos(iconAngle * .pi / 180) * (diameter / 2 - lineWidth / 2),
-                        y: sin(iconAngle * .pi / 180) * (diameter / 2 - lineWidth / 2)
-                    )
-                    .scaleEffect(progress > 0.1 ? 1 : 0)
-                    .animation(.spring(response: 0.5, dampingFraction: 0.7), value: progress)
-            }
+            // Icon at starting point (top center)
+            Image(systemName: icon)
+                .font(.system(size: lineWidth * 0.9, weight: .bold))
+                .foregroundColor(progress > 0.01 ? foregroundColors.first : backgroundColor.opacity(0.5))
+                .background(
+                    Circle()
+                        .fill(Color.phylloBackground)
+                        .frame(width: lineWidth * 1.3, height: lineWidth * 1.3)
+                )
+                .offset(y: -(diameter / 2))
+                .animation(.easeInOut(duration: 0.3), value: progress)
         }
     }
 }

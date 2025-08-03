@@ -402,51 +402,50 @@ class MockDataManager: ObservableObject {
     
     // MARK: - Micronutrient Tracking
     func getMicronutrientConsumption(for purpose: WindowPurpose) -> [MicronutrientConsumption] {
-        // Mock consumed values based on window purpose
-        // In a real app, these would be calculated from actual food data
+        // Calculate actual micronutrient consumption from today's meals
+        var nutrientTotals: [String: Double] = [:]
+        
+        // Aggregate all micronutrients from today's meals
+        for meal in todaysMeals {
+            for (nutrientName, amount) in meal.micronutrients {
+                nutrientTotals[nutrientName, default: 0] += amount
+            }
+        }
+        
+        // Select nutrients to display based on window purpose
+        let nutrientsForPurpose: [MicronutrientInfo]
         switch purpose {
         case .sustainedEnergy:
-            return [
-                MicronutrientConsumption(info: .b12, consumed: 2.0),
-                MicronutrientConsumption(info: .iron, consumed: 11.7),
-                MicronutrientConsumption(info: .magnesium, consumed: 364.0)
-            ]
+            nutrientsForPurpose = [.b12, .iron, .magnesium]
         case .focusBoost:
-            return [
-                MicronutrientConsumption(info: .omega3, consumed: 1.0),
-                MicronutrientConsumption(info: .b6, consumed: 1.1),
-                MicronutrientConsumption(info: .vitaminD, consumed: 520.0)
-            ]
+            nutrientsForPurpose = [.omega3, .b6, .vitaminD]
         case .recovery:
-            return [
-                MicronutrientConsumption(info: .vitaminC, consumed: 73.8),
-                MicronutrientConsumption(info: .zinc, consumed: 7.2),
-                MicronutrientConsumption(info: .potassium, consumed: 3185.0)
-            ]
+            nutrientsForPurpose = [.vitaminC, .zinc, .potassium]
         case .preworkout:
-            return [
-                MicronutrientConsumption(info: .bComplex, consumed: 41.0),
-                MicronutrientConsumption(info: .caffeine, consumed: 260.0),
-                MicronutrientConsumption(info: .lArginine, consumed: 4.9)
-            ]
+            nutrientsForPurpose = [.bComplex, .caffeine, .lArginine]
         case .postworkout:
-            return [
-                MicronutrientConsumption(info: .protein, consumed: 41.0),
-                MicronutrientConsumption(info: .leucine, consumed: 2.3),
-                MicronutrientConsumption(info: .magnesium, consumed: 364.0)
-            ]
+            nutrientsForPurpose = [.protein, .leucine, .magnesium]
         case .metabolicBoost:
-            return [
-                MicronutrientConsumption(info: .greenTea, consumed: 180.0),
-                MicronutrientConsumption(info: .chromium, consumed: 31.5),
-                MicronutrientConsumption(info: .lCarnitine, consumed: 1.8)
-            ]
+            nutrientsForPurpose = [.greenTea, .chromium, .lCarnitine]
         case .sleepOptimization:
-            return [
-                MicronutrientConsumption(info: .magnesium, consumed: 328.0),
-                MicronutrientConsumption(info: .tryptophan, consumed: 200.0),
-                MicronutrientConsumption(info: .b6, consumed: 1.4)
-            ]
+            nutrientsForPurpose = [.magnesium, .tryptophan, .b6]
+        }
+        
+        // Create MicronutrientConsumption objects with actual data
+        return nutrientsForPurpose.compactMap { info in
+            // Find matching nutrient in totals (handle different naming conventions)
+            let matchingKey = nutrientTotals.keys.first { key in
+                key.lowercased().contains(info.name.lowercased()) ||
+                (info.name == "B12" && key.contains("B12")) ||
+                (info.name == "B6" && key.contains("B6")) ||
+                (info.name == "Vitamin D" && key == "Vitamin D") ||
+                (info.name == "Vitamin C" && key == "Vitamin C") ||
+                (info.name == "Omega-3" && key.contains("Omega-3"))
+            }
+            
+            let consumed = matchingKey != nil ? nutrientTotals[matchingKey!] ?? 0 : 0
+            
+            return MicronutrientConsumption(info: info, consumed: consumed)
         }
     }
     
