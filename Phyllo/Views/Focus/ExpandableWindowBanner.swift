@@ -203,12 +203,25 @@ struct ExpandableWindowBanner: View {
     }
     
     // Window status enum for clearer state management
-    private enum WindowStatus {
+    private enum WindowStatus: Equatable {
         case upcoming
         case active
         case lateButDoable
         case completed(consumed: Int, target: Int, redistribution: WindowRedistributionManager.RedistributionReason?)
         case missed(redistribution: WindowRedistributionManager.RedistributionReason?)
+        
+        static func == (lhs: WindowStatus, rhs: WindowStatus) -> Bool {
+            switch (lhs, rhs) {
+            case (.upcoming, .upcoming), (.active, .active), (.lateButDoable, .lateButDoable):
+                return true
+            case (.completed(let lConsumed, let lTarget, _), .completed(let rConsumed, let rTarget, _)):
+                return lConsumed == rConsumed && lTarget == rTarget
+            case (.missed(_), .missed(_)):
+                return true
+            default:
+                return false
+            }
+        }
     }
     
     private var windowStatus: WindowStatus {
@@ -339,7 +352,7 @@ struct ExpandableWindowBanner: View {
             .background(windowBackground)
             .clipShape(RoundedRectangle(cornerRadius: { if case .active = windowStatus { return 16 } else { return 12 } }()))
             .overlay(
-                RoundedRectangle(cornerRadius: windowStatus == .active ? 16 : 12)
+                RoundedRectangle(cornerRadius: { if case .active = windowStatus { return 16 } else { return 12 } }())
                     .strokeBorder(
                         windowBorderColor,
                         lineWidth: { if case .active = windowStatus { return 2 } else { return 1 } }()
@@ -378,7 +391,7 @@ struct ExpandableWindowBanner: View {
                 Image(systemName: mealIcon)
                     .font(.system(size: { if case .active = windowStatus { return 14 } else { return 12 } }()))
                 Text(mealType)
-                    .font(.system(size: windowStatus == .active ? 14 : 13, weight: .semibold))
+                    .font(.system(size: { if case .active = windowStatus { return 14 } else { return 13 } }(), weight: .semibold))
                     .fixedSize(horizontal: true, vertical: false)
             }
             .foregroundColor(.white)
@@ -649,10 +662,10 @@ struct ExpandableWindowBanner: View {
     }
     
     private var windowBackground: some View {
-        RoundedRectangle(cornerRadius: windowStatus == .active ? 16 : 12)
+        RoundedRectangle(cornerRadius: { if case .active = windowStatus { return 16 } else { return 12 } }())
             .fill(Color.phylloBackground)  // Fully opaque black background first
             .overlay(
-                RoundedRectangle(cornerRadius: windowStatus == .active ? 16 : 12)
+                RoundedRectangle(cornerRadius: { if case .active = windowStatus { return 16 } else { return 12 } }())
                     .fill(windowBackgroundColor)
             )
             .matchedGeometryEffect(
@@ -721,7 +734,7 @@ struct ExpandableWindowBanner: View {
         ZStack {
             // Glowing border for optimal eating time
             if (isOptimalTime || isCircadianOptimal) && meals.isEmpty {
-                RoundedRectangle(cornerRadius: windowStatus == .active ? 16 : 12)
+                RoundedRectangle(cornerRadius: { if case .active = windowStatus { return 16 } else { return 12 } }())
                     .strokeBorder(
                         LinearGradient(
                             colors: [
@@ -738,7 +751,7 @@ struct ExpandableWindowBanner: View {
             }
             
             // Starting soon indicator
-            if isStartingSoon && windowStatus == .upcoming {
+            if isStartingSoon, case .upcoming = windowStatus {
                 VStack {
                     HStack {
                         Spacer()

@@ -20,7 +20,7 @@ class WindowRedistributionManager {
         let redistributionReason: RedistributionReason?
     }
     
-    enum RedistributionReason {
+    enum RedistributionReason: Equatable {
         case overconsumption(percentOver: Int)
         case underconsumption(percentUnder: Int)
         case missedWindow
