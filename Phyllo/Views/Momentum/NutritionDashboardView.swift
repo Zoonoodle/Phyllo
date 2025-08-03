@@ -32,7 +32,7 @@ struct NutritionDashboardView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color.black.ignoresSafeArea()
+                Color.phylloBackground.ignoresSafeArea()
                 
                 VStack(spacing: 0) {
                     // Header with tabs
@@ -147,57 +147,41 @@ struct NutritionDashboardView: View {
         VStack(spacing: 20) {
             // Three concentric activity rings
             ZStack {
-                // Background rings
-                ForEach(ringData, id: \.id) { ring in
-                    Circle()
-                        .stroke(Color.white.opacity(0.1), lineWidth: 20)
-                        .frame(width: ring.diameter, height: ring.diameter)
-                }
+                // Timing Ring (Outer)
+                AppleStyleRing(
+                    progress: ringAnimations.timingProgress,
+                    diameter: 260,
+                    lineWidth: 24,
+                    backgroundColor: Color(hex: "FF3B30").opacity(0.2),
+                    foregroundColors: [Color(hex: "FF3B30"), Color(hex: "FF6B6B")],
+                    icon: "clock.arrow.circlepath",
+                    iconAngle: 45
+                )
+                .animation(.spring(response: 1.0, dampingFraction: 0.8), value: ringAnimations.timingProgress)
                 
-                // Timing Ring (Outer - Blue)
-                Circle()
-                    .trim(from: 0, to: ringAnimations.timingProgress)
-                    .stroke(
-                        LinearGradient(
-                            colors: [Color(hex: "3B82F6"), Color(hex: "60A5FA")],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ),
-                        style: StrokeStyle(lineWidth: 20, lineCap: .round)
-                    )
-                    .frame(width: 240, height: 240)
-                    .rotationEffect(.degrees(-90))
-                    .animation(.spring(response: 1.0, dampingFraction: 0.8), value: ringAnimations.timingProgress)
+                // Nutrients Ring (Middle)
+                AppleStyleRing(
+                    progress: ringAnimations.nutrientProgress,
+                    diameter: 210,
+                    lineWidth: 24,
+                    backgroundColor: Color(hex: "34C759").opacity(0.2),
+                    foregroundColors: [Color(hex: "34C759"), Color(hex: "5EDD79")],
+                    icon: "leaf.arrow.circlepath",
+                    iconAngle: 165
+                )
+                .animation(.spring(response: 1.0, dampingFraction: 0.8).delay(0.1), value: ringAnimations.nutrientProgress)
                 
-                // Nutrients Ring (Middle - Green)
-                Circle()
-                    .trim(from: 0, to: ringAnimations.nutrientProgress)
-                    .stroke(
-                        LinearGradient(
-                            colors: [Color(hex: "10B981"), Color(hex: "34D399")],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ),
-                        style: StrokeStyle(lineWidth: 20, lineCap: .round)
-                    )
-                    .frame(width: 200, height: 200)
-                    .rotationEffect(.degrees(-90))
-                    .animation(.spring(response: 1.0, dampingFraction: 0.8).delay(0.1), value: ringAnimations.nutrientProgress)
-                
-                // Adherence Ring (Inner - Orange)
-                Circle()
-                    .trim(from: 0, to: ringAnimations.adherenceProgress)
-                    .stroke(
-                        LinearGradient(
-                            colors: [Color(hex: "F59E0B"), Color(hex: "FCD34D")],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ),
-                        style: StrokeStyle(lineWidth: 20, lineCap: .round)
-                    )
-                    .frame(width: 160, height: 160)
-                    .rotationEffect(.degrees(-90))
-                    .animation(.spring(response: 1.0, dampingFraction: 0.8).delay(0.2), value: ringAnimations.adherenceProgress)
+                // Adherence Ring (Inner)
+                AppleStyleRing(
+                    progress: ringAnimations.adherenceProgress,
+                    diameter: 160,
+                    lineWidth: 24,
+                    backgroundColor: Color(hex: "007AFF").opacity(0.2),
+                    foregroundColors: [Color(hex: "007AFF"), Color(hex: "4FA0FF")],
+                    icon: "checkmark.arrow.circlepath",
+                    iconAngle: 285
+                )
+                .animation(.spring(response: 1.0, dampingFraction: 0.8).delay(0.2), value: ringAnimations.adherenceProgress)
                 
                 // Center metrics
                 VStack(spacing: 4) {
@@ -210,23 +194,23 @@ struct NutritionDashboardView: View {
                         .foregroundColor(.phylloTextSecondary)
                 }
             }
-            .frame(height: 260)
+            .frame(height: 300)
             
             // Ring labels
             HStack(spacing: 20) {
-                ringLabel(color: Color(hex: "3B82F6"), label: "TIMING", value: Int(timingPercentage))
-                ringLabel(color: Color(hex: "10B981"), label: "NUTRIENTS", value: Int(nutrientPercentage))
-                ringLabel(color: Color(hex: "F59E0B"), label: "ADHERENCE", value: Int(adherencePercentage))
+                ringLabel(color: Color(hex: "FF3B30"), label: "TIMING", value: Int(timingPercentage), icon: "clock.fill")
+                ringLabel(color: Color(hex: "34C759"), label: "NUTRIENTS", value: Int(nutrientPercentage), icon: "leaf.fill")
+                ringLabel(color: Color(hex: "007AFF"), label: "ADHERENCE", value: Int(adherencePercentage), icon: "checkmark.circle.fill")
             }
         }
         .padding(.vertical, 20)
     }
     
-    private func ringLabel(color: Color, label: String, value: Int) -> some View {
+    private func ringLabel(color: Color, label: String, value: Int, icon: String) -> some View {
         HStack(spacing: 8) {
-            Circle()
-                .fill(color)
-                .frame(width: 12, height: 12)
+            Image(systemName: icon)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(color)
             
             VStack(alignment: .leading, spacing: 0) {
                 Text(label)
@@ -315,7 +299,7 @@ struct NutritionDashboardView: View {
                 GeometryReader { geometry in
                     ZStack(alignment: .leading) {
                         RoundedRectangle(cornerRadius: 2)
-                            .fill(Color.white.opacity(0.1))
+                            .fill(Color.phylloBorder)
                         
                         RoundedRectangle(cornerRadius: 2)
                             .fill(color.opacity(0.8))
@@ -325,7 +309,7 @@ struct NutritionDashboardView: View {
                 .frame(height: 4)
             }
             .padding(16)
-            .background(Color.white.opacity(0.03))
+            .background(Color.phylloElevated)
             .cornerRadius(12)
         }
     }
@@ -363,7 +347,7 @@ struct NutritionDashboardView: View {
             ZStack(alignment: .leading) {
                 // Background line
                 RoundedRectangle(cornerRadius: 2)
-                    .fill(Color.white.opacity(0.1))
+                    .fill(Color.phylloBorder)
                     .frame(height: 8)
                 
                 // Active windows
@@ -623,7 +607,7 @@ struct NutritionDashboardView: View {
                 }
             }
             .padding(20)
-            .background(Color.white.opacity(0.03))
+            .background(Color.phylloElevated)
             .cornerRadius(16)
         }
     }
@@ -636,7 +620,7 @@ struct NutritionDashboardView: View {
                 .font(.system(size: 20))
                 .foregroundColor(.white.opacity(0.6))
                 .frame(width: 44, height: 44)
-                .background(Color.white.opacity(0.05))
+                .background(Color.phylloElevated)
                 .cornerRadius(12)
         }
     }
@@ -1013,7 +997,7 @@ struct NutritionDashboardView: View {
                 VStack(spacing: 20) {
                     ForEach(0..<5) { _ in
                         Rectangle()
-                            .fill(Color.white.opacity(0.05))
+                            .fill(Color.phylloDivider)
                             .frame(height: 1)
                     }
                 }
@@ -1141,6 +1125,75 @@ struct NutrientInfo {
     let name: String
     let percentage: Double
     let color: Color
+}
+
+// MARK: - Apple Style Ring Component
+
+struct AppleStyleRing: View {
+    let progress: Double
+    let diameter: CGFloat
+    let lineWidth: CGFloat
+    let backgroundColor: Color
+    let foregroundColors: [Color]
+    let icon: String
+    let iconAngle: Double
+    
+    var body: some View {
+        ZStack {
+            // Background ring (dimmed)
+            Circle()
+                .stroke(backgroundColor, lineWidth: lineWidth)
+                .frame(width: diameter, height: diameter)
+            
+            // Active ring with 3D effect
+            Circle()
+                .trim(from: 0, to: progress)
+                .stroke(
+                    LinearGradient(
+                        colors: foregroundColors,
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
+                )
+                .frame(width: diameter, height: diameter)
+                .rotationEffect(.degrees(-90))
+                .shadow(color: foregroundColors.first?.opacity(0.3) ?? .clear, radius: 4, x: 0, y: 2)
+                .overlay(
+                    // Add highlight for 3D effect
+                    Circle()
+                        .trim(from: 0, to: progress * 0.98)
+                        .stroke(
+                            LinearGradient(
+                                colors: [
+                                    foregroundColors.last?.opacity(0.4) ?? .clear,
+                                    .clear
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            style: StrokeStyle(lineWidth: lineWidth * 0.3, lineCap: .round)
+                        )
+                        .frame(width: diameter - lineWidth, height: diameter - lineWidth)
+                        .rotationEffect(.degrees(-90))
+                        .blur(radius: 1)
+                )
+            
+            // Icon with arrow
+            if progress > 0.05 {
+                Image(systemName: icon)
+                    .font(.system(size: lineWidth * 0.7, weight: .medium))
+                    .foregroundColor(foregroundColors.first)
+                    .rotationEffect(.degrees(iconAngle - 90))
+                    .offset(
+                        x: cos(iconAngle * .pi / 180) * (diameter / 2 - lineWidth / 2),
+                        y: sin(iconAngle * .pi / 180) * (diameter / 2 - lineWidth / 2)
+                    )
+                    .scaleEffect(progress > 0.1 ? 1 : 0)
+                    .animation(.spring(response: 0.5, dampingFraction: 0.7), value: progress)
+            }
+        }
+    }
 }
 
 #Preview {
