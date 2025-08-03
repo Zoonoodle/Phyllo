@@ -1,4 +1,3 @@
-///exitafter  
 //  ContentView.swift
 //  Phyllo
 //

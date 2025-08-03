@@ -30,7 +30,7 @@ struct MainTabView: View {
                 .tag(0)
                 .ignoresSafeArea(edges: [.top, .bottom])
                 
-                SimplifiedMomentumTabView(showDeveloperDashboard: $showDeveloperDashboard)
+                NutritionDashboardView(showDeveloperDashboard: $showDeveloperDashboard)
                     .tag(1)
                 .ignoresSafeArea(edges: [.top, .bottom])
                 
