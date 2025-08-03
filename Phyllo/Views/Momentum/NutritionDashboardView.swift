@@ -932,15 +932,24 @@ struct NutritionDashboardView: View {
     }
     
     private var nutrientBreakdownSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 20) {
             Text("Nutrient Status")
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundColor(.white)
             
-            // Nutrient grid
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+            // Large Phyllo Petals visualization
+            HexagonFlowerView(
+                micronutrients: topNutrients.map { ($0.name, $0.percentage) },
+                size: 240,
+                showLabels: false,
+                showPurposeText: false
+            )
+            .frame(maxWidth: .infinity)
+            
+            // Nutrient detail grid below the flower
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
                 ForEach(topNutrients, id: \.name) { nutrient in
-                    NutrientStatusBadge(nutrient: nutrient)
+                    NutrientDetailCard(nutrient: nutrient)
                 }
             }
         }
@@ -949,31 +958,45 @@ struct NutritionDashboardView: View {
         .cornerRadius(16)
     }
     
-    struct NutrientStatusBadge: View {
+    struct NutrientDetailCard: View {
         let nutrient: NutrientInfo
         
         var body: some View {
-            VStack(spacing: 4) {
-                ZStack {
+            VStack(spacing: 8) {
+                // Nutrient name and percentage
+                HStack {
                     Circle()
-                        .stroke(Color.white.opacity(0.2), lineWidth: 2)
-                        .frame(width: 40, height: 40)
+                        .fill(nutrient.color)
+                        .frame(width: 8, height: 8)
                     
-                    Circle()
-                        .trim(from: 0, to: nutrient.percentage)
-                        .stroke(nutrient.color, lineWidth: 2)
-                        .frame(width: 40, height: 40)
-                        .rotationEffect(.degrees(-90))
+                    Text(nutrient.name)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.white)
+                        .lineLimit(1)
+                    
+                    Spacer()
                     
                     Text("\(Int(nutrient.percentage * 100))%")
-                        .font(.system(size: 10, weight: .medium))
-                        .foregroundColor(.white)
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(nutrient.color)
                 }
                 
-                Text(nutrient.name)
-                    .font(.system(size: 10))
-                    .foregroundColor(.phylloTextSecondary)
+                // Progress bar
+                GeometryReader { geometry in
+                    ZStack(alignment: .leading) {
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(Color.white.opacity(0.1))
+                        
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(nutrient.color.opacity(0.8))
+                            .frame(width: geometry.size.width * nutrient.percentage)
+                    }
+                }
+                .frame(height: 4)
             }
+            .padding(12)
+            .background(Color.white.opacity(0.02))
+            .cornerRadius(8)
         }
     }
     

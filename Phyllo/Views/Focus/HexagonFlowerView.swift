@@ -9,6 +9,9 @@ import SwiftUI
 
 struct HexagonFlowerView: View {
     let micronutrients: [(name: String, percentage: Double)]
+    var size: CGFloat = 180 // Default size, can be customized
+    var showLabels: Bool = true // Option to show/hide labels
+    var showPurposeText: Bool = true // Option to show/hide purpose text
     
     // Overall score is average of all micronutrients
     private var overallScore: Int {
@@ -121,25 +124,30 @@ struct HexagonFlowerView: View {
                 HexagonPetal(
                     color: petal.color,
                     rotation: petal.rotation,
-                    purposeText: purposeForPetal(at: index)
+                    purposeText: purposeForPetal(at: index),
+                    size: size,
+                    showPurposeText: showPurposeText
                 )
                 .zIndex(0)
             }
             
             // Petal labels with arrows
-            ForEach(Array(petalLabels.enumerated()), id: \.offset) { index, label in
-                PetalLabel(
-                    text: label.name,
-                    rotation: label.rotation,
-                    offset: 100  // Moved closer to petal
-                )
-                .zIndex(2)
+            if showLabels {
+                ForEach(Array(petalLabels.enumerated()), id: \.offset) { index, label in
+                    PetalLabel(
+                        text: label.name,
+                        rotation: label.rotation,
+                        offset: size * 0.55,  // Scale with size
+                        size: size
+                    )
+                    .zIndex(2)
+                }
             }
             
             // Center circle with overall score (enlarged)
             Circle()
                 .fill(Color.phylloBackground)
-                .frame(width: 100, height: 100) // Larger center circle
+                .frame(width: size * 0.55, height: size * 0.55) // Scale with size
                 .overlay(
                     Circle()
                         .strokeBorder(Color.white.opacity(0.1), lineWidth: 1)
@@ -147,17 +155,17 @@ struct HexagonFlowerView: View {
                 .overlay(
                     VStack(spacing: 2) {
                         Text("\(overallScore)%")
-                            .font(.system(size: 28, weight: .bold))
+                            .font(.system(size: size * 0.15, weight: .bold))
                             .foregroundColor(.white)
                         
                         Text("Micros")
-                            .font(.system(size: 14))
+                            .font(.system(size: size * 0.08))
                             .foregroundColor(.white.opacity(0.5))
                     }
                 )
                 .zIndex(1)
         }
-        .frame(width: 180, height: 180) // Match calorie ring frame
+        .frame(width: size, height: size)
     }
 }
 
@@ -165,6 +173,8 @@ struct HexagonPetal: View {
     let color: Color
     let rotation: Double
     let purposeText: String
+    var size: CGFloat = 180 // Parent size
+    var showPurposeText: Bool = true
     
     var body: some View {
         HexagonShape()
@@ -175,14 +185,18 @@ struct HexagonPetal: View {
             )
             .overlay(
                 // Purpose text inside petal
-                Text(purposeText)
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundColor(.white)
-                    .rotationEffect(.degrees(-rotation)) // Counter-rotate to keep text upright
+                Group {
+                    if showPurposeText {
+                        Text(purposeText)
+                            .font(.system(size: size * 0.055, weight: .semibold))
+                            .foregroundColor(.white)
+                            .rotationEffect(.degrees(-rotation)) // Counter-rotate to keep text upright
+                    }
+                }
             )
-            .frame(width: 60, height: 72)
+            .frame(width: size * 0.33, height: size * 0.4)
             .scaleEffect(0.9) // Larger scale
-            .offset(x: 55) // Increased offset to reach edge
+            .offset(x: size * 0.3) // Scale offset with size
             .rotationEffect(.degrees(rotation))
             .animation(.spring(response: 0.6, dampingFraction: 0.8), value: rotation)
     }
@@ -219,6 +233,7 @@ struct PetalLabel: View {
     let text: String
     let rotation: Double
     let offset: CGFloat
+    var size: CGFloat = 180 // Parent size for scaling
     
     // Determine if text should be on left or right side based on rotation
     private var isLeftSide: Bool {
@@ -240,7 +255,7 @@ struct PetalLabel: View {
                 // Text on left, arrow pointing right
                 HStack(spacing: 4) {
                     Text(text)
-                        .font(.system(size: 11, weight: .medium))
+                        .font(.system(size: size * 0.06, weight: .medium))
                         .foregroundColor(.white.opacity(0.5))
                     
                     ArrowShape(pointingLeft: false, isVertical: isVertical)
@@ -255,7 +270,7 @@ struct PetalLabel: View {
                         .frame(width: 15, height: 15)
                     
                     Text(text)
-                        .font(.system(size: 11, weight: .medium))
+                        .font(.system(size: size * 0.06, weight: .medium))
                         .foregroundColor(.white.opacity(0.5))
                 }
             }
