@@ -942,7 +942,7 @@ struct NutritionDashboardView: View {
                 micronutrients: topNutrients.map { ($0.name, $0.percentage) },
                 size: 240,
                 showLabels: false,
-                showPurposeText: false
+                showPurposeText: true  // Show nutrient names in petals
             )
             .frame(maxWidth: .infinity)
             
@@ -960,43 +960,126 @@ struct NutritionDashboardView: View {
     
     struct NutrientDetailCard: View {
         let nutrient: NutrientInfo
+        @State private var isExpanded = false
+        
+        // Nutrient benefits data
+        private var nutrientBenefits: (icon: String, benefits: [String]) {
+            switch nutrient.name {
+            case "Iron":
+                return ("🩸", [
+                    "Oxygen transport to muscles",
+                    "Energy production",
+                    "Immune system support"
+                ])
+            case "Vitamin D", "Vit D":
+                return ("☀️", [
+                    "Bone health & calcium absorption",
+                    "Muscle function",
+                    "Mood regulation"
+                ])
+            case "Calcium":
+                return ("🦴", [
+                    "Strong bones and teeth",
+                    "Muscle contractions",
+                    "Nerve signaling"
+                ])
+            case "B12":
+                return ("⚡", [
+                    "Energy metabolism",
+                    "Red blood cell formation",
+                    "Neurological function"
+                ])
+            case "Folate":
+                return ("🌿", [
+                    "DNA synthesis",
+                    "Cell division",
+                    "Mental clarity"
+                ])
+            case "Zinc":
+                return ("🛡️", [
+                    "Immune defense",
+                    "Wound healing",
+                    "Protein synthesis"
+                ])
+            default:
+                return ("💊", ["Essential nutrient"])
+            }
+        }
         
         var body: some View {
-            VStack(spacing: 8) {
-                // Nutrient name and percentage
-                HStack {
-                    Circle()
-                        .fill(nutrient.color)
-                        .frame(width: 8, height: 8)
-                    
-                    Text(nutrient.name)
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundColor(.white)
-                        .lineLimit(1)
-                    
-                    Spacer()
-                    
-                    Text("\(Int(nutrient.percentage * 100))%")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundColor(nutrient.color)
-                }
-                
-                // Progress bar
-                GeometryReader { geometry in
-                    ZStack(alignment: .leading) {
-                        RoundedRectangle(cornerRadius: 2)
-                            .fill(Color.white.opacity(0.1))
+            VStack(spacing: 0) {
+                // Main card content
+                VStack(spacing: 8) {
+                    // Nutrient name and percentage
+                    HStack {
+                        Text(nutrientBenefits.icon)
+                            .font(.system(size: 16))
                         
-                        RoundedRectangle(cornerRadius: 2)
-                            .fill(nutrient.color.opacity(0.8))
-                            .frame(width: geometry.size.width * nutrient.percentage)
+                        Text(nutrient.name == "Vit D" ? "Vitamin D" : nutrient.name)
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundColor(.white)
+                            .fixedSize(horizontal: false, vertical: true)
+                        
+                        Spacer()
+                        
+                        Text("\(Int(nutrient.percentage * 100))%")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundColor(nutrient.color)
+                        
+                        Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                            .font(.system(size: 10))
+                            .foregroundColor(.white.opacity(0.5))
                     }
+                    
+                    // Progress bar
+                    GeometryReader { geometry in
+                        ZStack(alignment: .leading) {
+                            RoundedRectangle(cornerRadius: 2)
+                                .fill(Color.white.opacity(0.1))
+                            
+                            RoundedRectangle(cornerRadius: 2)
+                                .fill(nutrient.color.opacity(0.8))
+                                .frame(width: geometry.size.width * nutrient.percentage)
+                        }
+                    }
+                    .frame(height: 4)
                 }
-                .frame(height: 4)
+                .padding(12)
+                
+                // Expandable benefits section
+                if isExpanded {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Benefits")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.7))
+                        
+                        ForEach(nutrientBenefits.benefits, id: \.self) { benefit in
+                            HStack(alignment: .top, spacing: 6) {
+                                Text("•")
+                                    .font(.system(size: 10))
+                                    .foregroundColor(.white.opacity(0.5))
+                                Text(benefit)
+                                    .font(.system(size: 11))
+                                    .foregroundColor(.white.opacity(0.6))
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.bottom, 12)
+                    .transition(.asymmetric(
+                        insertion: .push(from: .top).combined(with: .opacity),
+                        removal: .push(from: .bottom).combined(with: .opacity)
+                    ))
+                }
             }
-            .padding(12)
             .background(Color.white.opacity(0.02))
             .cornerRadius(8)
+            .onTapGesture {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                    isExpanded.toggle()
+                }
+            }
         }
     }
     

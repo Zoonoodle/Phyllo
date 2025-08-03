@@ -33,18 +33,42 @@ struct HexagonFlowerView: View {
     }
     
     // Create petal data with colors based on which nutrient they represent
-    private var petalData: [(color: Color, rotation: Double)] {
-        var petals: [(color: Color, rotation: Double)] = []
+    private var petalData: [(color: Color, rotation: Double, nutrientName: String, icon: String)] {
+        var petals: [(color: Color, rotation: Double, nutrientName: String, icon: String)] = []
         var petalIndex = 0
         
-        for nutrient in micronutrients {
-            let color = colorForPercentage(nutrient.percentage)
-            let petalCount = nutrient.percentage >= 0.9 ? 2 : (nutrient.percentage >= 0.5 ? 1 : 0)
+        // Map nutrient names to icons
+        let nutrientIcons: [String: String] = [
+            "Iron": "🩸",
+            "Vitamin D": "☀️",
+            "Vit D": "☀️",
+            "Calcium": "🦴",
+            "B12": "⚡",
+            "Folate": "🌿",
+            "Zinc": "🛡️"
+        ]
+        
+        for (index, nutrient) in micronutrients.enumerated() {
+            // Use specific color for each nutrient position (not based on percentage)
+            let nutrientColors = [
+                Color.red,      // Iron
+                Color.orange,   // Vitamin D
+                Color.blue,     // Calcium
+                Color.purple,   // B12
+                Color.green,    // Folate
+                Color.pink      // Zinc
+            ]
+            let color = index < nutrientColors.count ? nutrientColors[index] : Color.phylloAccent
             
-            for _ in 0..<petalCount {
+            let petalCount = nutrient.percentage >= 0.9 ? 2 : (nutrient.percentage >= 0.5 ? 1 : 0)
+            let icon = nutrientIcons[nutrient.name] ?? "💊"
+            
+            for i in 0..<petalCount {
                 if petalIndex < 6 { // Max 6 petals
                     let rotation = Double(petalIndex) * 60
-                    petals.append((color: color, rotation: rotation))
+                    // Only add name to first petal of each nutrient
+                    let name = i == 0 ? nutrient.name : ""
+                    petals.append((color: color, rotation: rotation, nutrientName: name, icon: icon))
                     petalIndex += 1
                 }
             }
@@ -125,6 +149,8 @@ struct HexagonFlowerView: View {
                     color: petal.color,
                     rotation: petal.rotation,
                     purposeText: purposeForPetal(at: index),
+                    nutrientName: petal.nutrientName,
+                    icon: petal.icon,
                     size: size,
                     showPurposeText: showPurposeText
                 )
@@ -173,24 +199,34 @@ struct HexagonPetal: View {
     let color: Color
     let rotation: Double
     let purposeText: String
+    var nutrientName: String = ""
+    var icon: String = ""
     var size: CGFloat = 180 // Parent size
     var showPurposeText: Bool = true
     
     var body: some View {
         HexagonShape()
-            .fill(color.opacity(0.4))
+            .fill(color.opacity(0.3))
             .overlay(
                 HexagonShape()
                     .stroke(color, lineWidth: 2)
             )
             .overlay(
-                // Purpose text inside petal
-                Group {
-                    if showPurposeText {
-                        Text(purposeText)
-                            .font(.system(size: size * 0.055, weight: .semibold))
+                // Nutrient icon and name inside petal
+                VStack(spacing: 2) {
+                    if !icon.isEmpty {
+                        Text(icon)
+                            .font(.system(size: size * 0.08))
+                            .rotationEffect(.degrees(-rotation)) // Counter-rotate to keep upright
+                    }
+                    
+                    if !nutrientName.isEmpty && showPurposeText {
+                        Text(nutrientName)
+                            .font(.system(size: size * 0.04, weight: .medium))
                             .foregroundColor(.white)
-                            .rotationEffect(.degrees(-rotation)) // Counter-rotate to keep text upright
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.5)
+                            .rotationEffect(.degrees(-rotation)) // Counter-rotate to keep upright
                     }
                 }
             )
