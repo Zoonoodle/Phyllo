@@ -1304,8 +1304,8 @@ struct NutritionDashboardView: View {
             guard let key = matchingKey,
                   let totalAmount = nutrientTotals[key],
                   let micronutrient = MicronutrientData.getAllNutrients().first(where: { $0.name == key }) else {
-                // Return default low value if no data
-                return NutrientInfo(name: displayName, percentage: 0.1, color: color)
+                // Return 0 if no data
+                return NutrientInfo(name: displayName, percentage: 0.0, color: color)
             }
             
             // Calculate percentage of RDA (cap at 100%)
