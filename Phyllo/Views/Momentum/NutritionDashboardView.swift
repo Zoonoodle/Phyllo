@@ -17,6 +17,9 @@ struct NutritionDashboardView: View {
     @State private var selectedView: DashboardView = .now
     @State private var ringAnimations = RingAnimationState()
     @State private var refreshing = false
+    @State private var showingTimingInfo = false
+    @State private var showingNutrientsInfo = false
+    @State private var showingAdherenceInfo = false
     
     enum DashboardView {
         case now, today, week, insights
@@ -205,30 +208,89 @@ struct NutritionDashboardView: View {
             }
             .frame(height: 300)
             
-            // Ring labels
+            // Ring labels with info buttons
             HStack(spacing: 20) {
-                ringLabel(color: Color(hex: "FF3B30"), label: "TIMING", value: Int(timingPercentage), icon: "clock.fill")
-                ringLabel(color: Color(hex: "34C759"), label: "NUTRIENTS", value: Int(nutrientPercentage), icon: "leaf.fill")
-                ringLabel(color: Color(hex: "007AFF"), label: "ADHERENCE", value: Int(adherencePercentage), icon: "checkmark.circle.fill")
+                ringLabelWithInfo(
+                    color: Color(hex: "FF3B30"), 
+                    label: "TIMING", 
+                    value: Int(timingPercentage), 
+                    icon: "clock.fill",
+                    showingInfo: $showingTimingInfo,
+                    infoTitle: "Timing Score",
+                    infoDescription: "Measures how well you eat within your scheduled windows:\n\n• 100% = Meal within window\n• -10% per 30min early\n• -15% per 30min late\n\nEating on time optimizes digestion, energy, and circadian rhythm."
+                )
+                
+                ringLabelWithInfo(
+                    color: Color(hex: "34C759"), 
+                    label: "NUTRIENTS", 
+                    value: Int(nutrientPercentage), 
+                    icon: "leaf.fill",
+                    showingInfo: $showingNutrientsInfo,
+                    infoTitle: "Nutrient Score",
+                    infoDescription: "Complete nutrition assessment:\n\n• 20% - Calorie accuracy\n• 30% - Macro balance (protein, fat, carbs)\n• 50% - Micronutrient coverage (vitamins & minerals)\n\nBalanced nutrition supports all body functions."
+                )
+                
+                ringLabelWithInfo(
+                    color: Color(hex: "007AFF"), 
+                    label: "ADHERENCE", 
+                    value: Int(adherencePercentage), 
+                    icon: "checkmark.circle.fill",
+                    showingInfo: $showingAdherenceInfo,
+                    infoTitle: "Adherence Score",
+                    infoDescription: "How well you follow your plan:\n\n• 40% - Meal frequency\n• 30% - Window utilization\n• 30% - Consistent spacing (3-5hrs)\n\nConsistency builds sustainable habits."
+                )
             }
         }
         .padding(.vertical, 20)
     }
     
-    private func ringLabel(color: Color, label: String, value: Int, icon: String) -> some View {
+    private func ringLabelWithInfo(
+        color: Color, 
+        label: String, 
+        value: Int, 
+        icon: String,
+        showingInfo: Binding<Bool>,
+        infoTitle: String,
+        infoDescription: String
+    ) -> some View {
         HStack(spacing: 8) {
             Image(systemName: icon)
                 .font(.system(size: 14, weight: .medium))
                 .foregroundColor(color)
             
             VStack(alignment: .leading, spacing: 0) {
-                Text(label)
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundColor(.phylloTextSecondary)
+                HStack(spacing: 4) {
+                    Text(label)
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundColor(.phylloTextSecondary)
+                    
+                    Button(action: { showingInfo.wrappedValue.toggle() }) {
+                        Image(systemName: "info.circle.fill")
+                            .font(.system(size: 10))
+                            .foregroundColor(.phylloTextTertiary)
+                    }
+                }
+                
                 Text("\(value)%")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(.white)
             }
+        }
+        .popover(isPresented: showingInfo) {
+            VStack(alignment: .leading, spacing: 12) {
+                Text(infoTitle)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(.white)
+                
+                Text(infoDescription)
+                    .font(.system(size: 13))
+                    .foregroundColor(.phylloTextSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(20)
+            .frame(width: 280)
+            .background(Color.phylloBackground)
+            .presentationBackground(Color.phylloElevated)
         }
     }
     
@@ -658,34 +720,140 @@ struct NutritionDashboardView: View {
     // MARK: - Computed Properties
     
     private var timingPercentage: Double {
-        // Calculate based on windows hit on time
-        let windowsHit = mockData.mealWindows.filter { window in
-            mockData.todayMeals.contains { meal in
-                meal.timestamp >= window.startTime && meal.timestamp <= window.endTime
+        // Calculate based on meal timing accuracy
+        var totalScore: Double = 0
+        var windowsProcessed = 0
+        
+        for window in mockData.mealWindows {
+            // Skip future windows
+            if window.startTime > TimeProvider.shared.currentTime { continue }
+            
+            windowsProcessed += 1
+            
+            // Find meals near this window
+            let windowMeals = mockData.todayMeals.filter { meal in
+                // Check meals within 2 hours before or after window
+                let windowRange = window.startTime.addingTimeInterval(-7200)...window.endTime.addingTimeInterval(7200)
+                return windowRange.contains(meal.timestamp)
             }
-        }.count
+            
+            if windowMeals.isEmpty {
+                // No meal for this window = 0 points
+                continue
+            }
+            
+            // Calculate timing score for each meal
+            var bestScore: Double = 0
+            for meal in windowMeals {
+                var score: Double = 0
+                
+                if meal.timestamp >= window.startTime && meal.timestamp <= window.endTime {
+                    // Perfect timing = 100%
+                    score = 1.0
+                } else if meal.timestamp < window.startTime {
+                    // Early meal - lose 10% per 30 minutes early
+                    let minutesEarly = window.startTime.timeIntervalSince(meal.timestamp) / 60
+                    score = max(0.3, 1.0 - (minutesEarly / 30) * 0.1)
+                } else {
+                    // Late meal - lose 15% per 30 minutes late
+                    let minutesLate = meal.timestamp.timeIntervalSince(window.endTime) / 60
+                    score = max(0.2, 1.0 - (minutesLate / 30) * 0.15)
+                }
+                
+                bestScore = max(bestScore, score)
+            }
+            
+            totalScore += bestScore
+        }
         
-        let totalWindows = mockData.mealWindows.filter { $0.endTime > TimeProvider.shared.currentTime }.count
-        guard totalWindows > 0 else { return 0 }
-        
-        return Double(windowsHit) / Double(totalWindows) * 100
+        guard windowsProcessed > 0 else { return 0 }
+        return (totalScore / Double(windowsProcessed)) * 100
     }
     
     private var nutrientPercentage: Double {
-        // Calculate based on micronutrients hit
+        // Calculate comprehensive nutrition score
+        var scores: [Double] = []
+        
+        // 1. Calorie accuracy (20% weight)
+        let calorieScore = min(dailyCalorieProgress, 1.2) // Allow up to 120%
+        let calorieAccuracy = 1.0 - abs(1.0 - calorieScore) // Penalize over/under
+        scores.append(calorieAccuracy * 0.2)
+        
+        // 2. Macro balance (30% weight)
+        let proteinProgress = Double(totalProtein) / Double(max(dailyProteinTarget, 1))
+        let fatProgress = Double(totalFat) / Double(max(dailyFatTarget, 1))
+        let carbProgress = Double(totalCarbs) / Double(max(dailyCarbsTarget, 1))
+        
+        let proteinScore = min(proteinProgress, 1.2)
+        let fatScore = min(fatProgress, 1.2)
+        let carbScore = min(carbProgress, 1.2)
+        
+        let macroAccuracy = (
+            (1.0 - abs(1.0 - proteinScore)) +
+            (1.0 - abs(1.0 - fatScore)) +
+            (1.0 - abs(1.0 - carbScore))
+        ) / 3.0
+        scores.append(macroAccuracy * 0.3)
+        
+        // 3. Micronutrient coverage (50% weight)
         let targetNutrients = 18
-        let nutrientsHit = min(nutrientsHit, targetNutrients)
-        return Double(nutrientsHit) / Double(targetNutrients) * 100
+        let nutrientsWithGoodIntake = min(nutrientsHit, targetNutrients)
+        let microScore = Double(nutrientsWithGoodIntake) / Double(targetNutrients)
+        scores.append(microScore * 0.5)
+        
+        return scores.reduce(0, +) * 100
     }
     
     private var adherencePercentage: Double {
-        // Calculate based on following meal plan
+        // Calculate plan adherence score
+        var adherenceFactors: [Double] = []
+        
+        // 1. Meal frequency (40% weight)
         let mealsLogged = mockData.todayMeals.count
         let targetMeals = mockData.mealWindows.count
-        guard targetMeals > 0 else { return 0 }
+        let mealFrequencyScore = targetMeals > 0 ? min(Double(mealsLogged) / Double(targetMeals), 1.0) : 0
+        adherenceFactors.append(mealFrequencyScore * 0.4)
         
-        let adherence = min(Double(mealsLogged) / Double(targetMeals), 1.0) * 100
-        return adherence
+        // 2. Window utilization (30% weight)
+        let windowsUsed = mockData.mealWindows.filter { window in
+            mockData.todayMeals.contains { meal in
+                let windowRange = window.startTime.addingTimeInterval(-3600)...window.endTime.addingTimeInterval(3600)
+                return windowRange.contains(meal.timestamp)
+            }
+        }.count
+        let windowUtilization = targetMeals > 0 ? Double(windowsUsed) / Double(targetMeals) : 0
+        adherenceFactors.append(windowUtilization * 0.3)
+        
+        // 3. Consistency score (30% weight)
+        // Check if meals are spread throughout the day as planned
+        let consistencyScore = calculateConsistencyScore()
+        adherenceFactors.append(consistencyScore * 0.3)
+        
+        return adherenceFactors.reduce(0, +) * 100
+    }
+    
+    private func calculateConsistencyScore() -> Double {
+        guard !mockData.todayMeals.isEmpty else { return 0 }
+        
+        // Check meal spacing - ideal is 3-5 hours between meals
+        let sortedMeals = mockData.todayMeals.sorted { $0.timestamp < $1.timestamp }
+        var spacingScores: [Double] = []
+        
+        for i in 1..<sortedMeals.count {
+            let gap = sortedMeals[i].timestamp.timeIntervalSince(sortedMeals[i-1].timestamp) / 3600
+            
+            if gap >= 3 && gap <= 5 {
+                spacingScores.append(1.0) // Perfect spacing
+            } else if gap >= 2 && gap <= 6 {
+                spacingScores.append(0.8) // Good spacing
+            } else if gap < 2 {
+                spacingScores.append(0.4) // Too close
+            } else {
+                spacingScores.append(0.5) // Too far
+            }
+        }
+        
+        return spacingScores.isEmpty ? 1.0 : spacingScores.reduce(0, +) / Double(spacingScores.count)
     }
     
     private var totalPercentage: Int {
