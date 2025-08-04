@@ -17,9 +17,14 @@ struct NutritionDashboardView: View {
     @State private var selectedView: DashboardView = .now
     @State private var ringAnimations = RingAnimationState()
     @State private var refreshing = false
-    @State private var showingTimingInfo = false
-    @State private var showingNutrientsInfo = false
-    @State private var showingAdherenceInfo = false
+    @State private var infoPopupData: InfoPopupData? = nil
+    
+    struct InfoPopupData {
+        let title: String
+        let description: String
+        let color: Color
+        let position: CGPoint
+    }
     
     enum DashboardView {
         case now, today, week, insights
@@ -61,6 +66,14 @@ struct NutritionDashboardView: View {
                     .refreshable {
                         await refresh()
                     }
+                }
+                
+                // Info popup overlay
+                if let popupData = infoPopupData {
+                    InfoFloatingCard(
+                        data: popupData,
+                        onDismiss: { infoPopupData = nil }
+                    )
                 }
             }
         }
@@ -215,7 +228,6 @@ struct NutritionDashboardView: View {
                     label: "TIMING", 
                     value: Int(timingPercentage), 
                     icon: "clock.fill",
-                    showingInfo: $showingTimingInfo,
                     infoTitle: "Timing Score",
                     infoDescription: "Measures how well you eat within your scheduled windows:\n\n• 100% = Meal within window\n• -10% per 30min early\n• -15% per 30min late\n\nEating on time optimizes digestion, energy, and circadian rhythm."
                 )
@@ -225,7 +237,6 @@ struct NutritionDashboardView: View {
                     label: "NUTRIENTS", 
                     value: Int(nutrientPercentage), 
                     icon: "leaf.fill",
-                    showingInfo: $showingNutrientsInfo,
                     infoTitle: "Nutrient Score",
                     infoDescription: "Complete nutrition assessment:\n\n• 20% - Calorie accuracy\n• 30% - Macro balance (protein, fat, carbs)\n• 50% - Micronutrient coverage (vitamins & minerals)\n\nBalanced nutrition supports all body functions."
                 )
@@ -235,7 +246,6 @@ struct NutritionDashboardView: View {
                     label: "ADHERENCE", 
                     value: Int(adherencePercentage), 
                     icon: "checkmark.circle.fill",
-                    showingInfo: $showingAdherenceInfo,
                     infoTitle: "Adherence Score",
                     infoDescription: "How well you follow your plan:\n\n• 40% - Meal frequency\n• 30% - Window utilization\n• 30% - Consistent spacing (3-5hrs)\n\nConsistency builds sustainable habits."
                 )
@@ -249,7 +259,6 @@ struct NutritionDashboardView: View {
         label: String, 
         value: Int, 
         icon: String,
-        showingInfo: Binding<Bool>,
         infoTitle: String,
         infoDescription: String
     ) -> some View {
@@ -264,33 +273,28 @@ struct NutritionDashboardView: View {
                         .font(.system(size: 10, weight: .medium))
                         .foregroundColor(.phylloTextSecondary)
                     
-                    Button(action: { showingInfo.wrappedValue.toggle() }) {
-                        Image(systemName: "info.circle.fill")
-                            .font(.system(size: 10))
-                            .foregroundColor(.phylloTextTertiary)
+                    GeometryReader { geo in
+                        Button(action: { 
+                            let frame = geo.frame(in: .global)
+                            infoPopupData = InfoPopupData(
+                                title: infoTitle,
+                                description: infoDescription,
+                                color: color,
+                                position: CGPoint(x: frame.midX, y: frame.midY)
+                            )
+                        }) {
+                            Image(systemName: "info.circle.fill")
+                                .font(.system(size: 10))
+                                .foregroundColor(.phylloTextTertiary)
+                        }
                     }
+                    .frame(width: 12, height: 12)
                 }
                 
                 Text("\(value)%")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(.white)
             }
-        }
-        .popover(isPresented: showingInfo) {
-            VStack(alignment: .leading, spacing: 12) {
-                Text(infoTitle)
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(.white)
-                
-                Text(infoDescription)
-                    .font(.system(size: 13))
-                    .foregroundColor(.phylloTextSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .padding(20)
-            .frame(width: 280)
-            .background(Color.phylloBackground)
-            .presentationBackground(Color.phylloElevated)
         }
     }
     
@@ -1582,6 +1586,115 @@ struct AppleStyleRing: View {
                 )
                 .offset(y: -(diameter / 2))
                 .animation(.easeInOut(duration: 0.3), value: progress)
+        }
+    }
+}
+
+// MARK: - Info Floating Card
+
+struct InfoFloatingCard: View {
+    let data: NutritionDashboardView.InfoPopupData
+    let onDismiss: () -> Void
+    
+    @State private var animateIn = false
+    @State private var dragOffset: CGSize = .zero
+    @State private var isDragging = false
+    
+    var body: some View {
+        GeometryReader { geometry in
+            VStack(alignment: .leading, spacing: 16) {
+                // Header
+                HStack {
+                    Circle()
+                        .fill(data.color.opacity(0.2))
+                        .frame(width: 32, height: 32)
+                        .overlay(
+                            Image(systemName: "info.circle.fill")
+                                .font(.system(size: 16))
+                                .foregroundColor(data.color)
+                        )
+                    
+                    Text(data.title)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.white)
+                    
+                    Spacer()
+                    
+                    Button(action: onDismiss) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 20))
+                            .foregroundColor(.phylloTextTertiary)
+                    }
+                }
+                
+                Text(data.description)
+                    .font(.system(size: 13))
+                    .foregroundColor(.phylloTextSecondary)
+                    .lineSpacing(4)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(20)
+            .frame(width: 320)
+            .background(
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(Color(red: 0.11, green: 0.11, blue: 0.12))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 20)
+                            .strokeBorder(Color.phylloBorder, lineWidth: 1)
+                    )
+                    .shadow(color: .black.opacity(0.4), radius: 30, x: 0, y: 10)
+            )
+            .position(
+                x: min(max(160, data.position.x), geometry.size.width - 160),
+                y: min(max(150, data.position.y + 50), geometry.size.height - 200)
+            )
+            .offset(dragOffset)
+            .scaleEffect(isDragging ? 0.95 : (animateIn ? 1 : 0.8))
+            .opacity(animateIn ? 1 : 0)
+            .animation(.spring(response: 0.4, dampingFraction: 0.8), value: animateIn)
+            .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isDragging)
+            .gesture(
+                DragGesture()
+                    .onChanged { value in
+                        isDragging = true
+                        dragOffset = value.translation
+                    }
+                    .onEnded { value in
+                        isDragging = false
+                        
+                        // Snap to dismiss if dragged far enough
+                        if abs(value.translation.width) > 100 || abs(value.translation.height) > 100 {
+                            withAnimation(.spring(response: 0.3)) {
+                                dragOffset = CGSize(
+                                    width: value.translation.width * 3,
+                                    height: value.translation.height * 3
+                                )
+                                animateIn = false
+                            }
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                                onDismiss()
+                            }
+                        } else {
+                            // Snap back
+                            withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+                                dragOffset = .zero
+                            }
+                        }
+                    }
+            )
+            .onTapGesture(count: 2) {
+                withAnimation(.spring(response: 0.3)) {
+                    animateIn = false
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    onDismiss()
+                }
+            }
+        }
+        .onAppear {
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.1)) {
+                animateIn = true
+            }
         }
     }
 }
