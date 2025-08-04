@@ -390,27 +390,66 @@ struct NutritionDashboardView: View {
     }
     
     private var currentWindowCard: some View {
-        VStack(spacing: 16) {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Next Meal Window")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(.phylloTextSecondary)
+        VStack(spacing: 20) {
+            // Header with next window info
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("NEXT MEAL WINDOW")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(.phylloTextTertiary)
+                        .tracking(0.5)
                     
-                    Text(nextWindowName)
-                        .font(.system(size: 20, weight: .bold))
-                        .foregroundColor(.white)
+                    HStack(spacing: 8) {
+                        Text(nextWindowName)
+                            .font(.system(size: 24, weight: .bold))
+                            .foregroundColor(.white)
+                        
+                        if let timeUntil = timeUntilNextWindow {
+                            Text("• \(timeUntil)")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(.phylloTextSecondary)
+                        }
+                    }
                 }
                 
                 Spacer()
                 
-                Text(nextWindowTime)
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(.phylloAccent)
+                // Time badge
+                VStack(alignment: .trailing, spacing: 4) {
+                    Text(nextWindowTime)
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(.white)
+                    
+                    if let duration = nextWindowDuration {
+                        Text(duration)
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(.phylloTextTertiary)
+                    }
+                }
             }
             
-            // Window timeline preview
-            windowTimelinePreview
+            // Enhanced timeline with labels
+            VStack(spacing: 8) {
+                // Timeline visualization
+                windowTimelinePreview
+                
+                // Window labels
+                HStack {
+                    ForEach(["Completed", "Missed", "Upcoming", "Next"], id: \.self) { label in
+                        HStack(spacing: 4) {
+                            Circle()
+                                .fill(legendColor(for: label))
+                                .frame(width: 8, height: 8)
+                            Text(label)
+                                .font(.system(size: 11, weight: .medium))
+                                .foregroundColor(.phylloTextTertiary)
+                        }
+                        if label != "Next" {
+                            Spacer()
+                        }
+                    }
+                }
+            }
         }
         .padding(20)
         .background(Color.white.opacity(0.03))
@@ -420,29 +459,44 @@ struct NutritionDashboardView: View {
     private var windowTimelinePreview: some View {
         GeometryReader { geometry in
             ZStack(alignment: .leading) {
-                // Background line
-                RoundedRectangle(cornerRadius: 2)
-                    .fill(Color.phylloBorder)
-                    .frame(height: 8)
+                // Background track
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(Color.white.opacity(0.05))
+                    .frame(height: 12)
                 
-                // Active windows
+                // Active windows with enhanced styling
                 ForEach(mockData.mealWindows) { window in
                     if let position = windowPosition(for: window, in: geometry.size.width) {
-                        RoundedRectangle(cornerRadius: 2)
+                        RoundedRectangle(cornerRadius: 4)
                             .fill(windowColor(for: window))
-                            .frame(width: position.width, height: 8)
+                            .frame(width: position.width, height: 12)
+                            .offset(x: position.offset)
+                            .overlay(
+                                // Add subtle border for better definition
+                                RoundedRectangle(cornerRadius: 4)
+                                    .strokeBorder(windowBorderColor(for: window), lineWidth: 1)
+                            )
                             .offset(x: position.offset)
                     }
                 }
                 
-                // Current time indicator
-                Circle()
-                    .fill(Color.white)
-                    .frame(width: 12, height: 12)
-                    .offset(x: currentTimePosition(in: geometry.size.width) - 6)
+                // Enhanced current time indicator
+                VStack(spacing: 2) {
+                    // Time marker
+                    Circle()
+                        .fill(Color.white)
+                        .frame(width: 16, height: 16)
+                        .shadow(color: .black.opacity(0.3), radius: 2, x: 0, y: 1)
+                        .overlay(
+                            Circle()
+                                .fill(Color.phylloAccent)
+                                .frame(width: 8, height: 8)
+                        )
+                }
+                .offset(x: currentTimePosition(in: geometry.size.width) - 8)
             }
         }
-        .frame(height: 12)
+        .frame(height: 16)
     }
     
     private var quickActionsRow: some View {
@@ -993,6 +1047,38 @@ struct NutritionDashboardView: View {
         return "—"
     }
     
+    private var timeUntilNextWindow: String? {
+        if let window = mockData.mealWindows.first(where: { $0.startTime > TimeProvider.shared.currentTime }) {
+            let timeInterval = window.startTime.timeIntervalSince(TimeProvider.shared.currentTime)
+            let hours = Int(timeInterval) / 3600
+            let minutes = (Int(timeInterval) % 3600) / 60
+            
+            if hours > 0 {
+                return "in \(hours)h \(minutes)m"
+            } else {
+                return "in \(minutes)m"
+            }
+        }
+        return nil
+    }
+    
+    private var nextWindowDuration: String? {
+        if let window = mockData.mealWindows.first(where: { $0.startTime > TimeProvider.shared.currentTime }) {
+            let duration = window.endTime.timeIntervalSince(window.startTime)
+            let hours = Int(duration) / 3600
+            let minutes = (Int(duration) % 3600) / 60
+            
+            if hours > 0 && minutes > 0 {
+                return "\(hours)h \(minutes)m window"
+            } else if hours > 0 {
+                return "\(hours)h window"
+            } else {
+                return "\(minutes)m window"
+            }
+        }
+        return nil
+    }
+    
     private func windowPosition(for window: MealWindow, in width: CGFloat) -> (offset: CGFloat, width: CGFloat)? {
         let dayStart = Calendar.current.startOfDay(for: TimeProvider.shared.currentTime)
         let dayEnd = Calendar.current.date(byAdding: .day, value: 1, to: dayStart)!
@@ -1007,14 +1093,43 @@ struct NutritionDashboardView: View {
     }
     
     private func windowColor(for window: MealWindow) -> Color {
+        // Check if this is the next upcoming window
+        let isNextWindow = mockData.mealWindows.first(where: { $0.startTime > TimeProvider.shared.currentTime })?.id == window.id
+        
         if mockData.todayMeals.contains(where: { meal in
-            meal.timestamp >= window.startTime && meal.timestamp <= window.endTime
+            meal.windowId == window.id
         }) {
-            return .phylloAccent
+            return .phylloAccent // Completed - green
         } else if window.endTime < TimeProvider.shared.currentTime {
-            return .red.opacity(0.6)
+            return Color(hex: "E94B3C").opacity(0.8) // Missed - soft red
+        } else if isNextWindow {
+            return Color(hex: "F4A460") // Next - soft orange highlight
         } else {
-            return .white.opacity(0.3)
+            return Color.white.opacity(0.15) // Upcoming - subtle
+        }
+    }
+    
+    private func windowBorderColor(for window: MealWindow) -> Color {
+        let isNextWindow = mockData.mealWindows.first(where: { $0.startTime > TimeProvider.shared.currentTime })?.id == window.id
+        
+        if isNextWindow {
+            return Color(hex: "F4A460").opacity(0.5)
+        }
+        return Color.clear
+    }
+    
+    private func legendColor(for label: String) -> Color {
+        switch label {
+        case "Completed":
+            return .phylloAccent
+        case "Missed":
+            return Color(hex: "E94B3C").opacity(0.8)
+        case "Next":
+            return Color(hex: "F4A460")
+        case "Upcoming":
+            return Color.white.opacity(0.15)
+        default:
+            return Color.white.opacity(0.15)
         }
     }
     
