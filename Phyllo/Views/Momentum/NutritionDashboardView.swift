@@ -443,8 +443,8 @@ struct NutritionDashboardView: View {
             // Daily summary card
             dailySummaryCard
             
-            // Meal timeline
-            mealTimelineSection
+            // Daily macros (replacing meal timeline)
+            dailyMacrosSection
             
             // Nutrient breakdown
             nutrientBreakdownSection
@@ -865,70 +865,113 @@ struct NutritionDashboardView: View {
         mockData.todayMeals.reduce(0) { $0 + $1.calories }
     }
     
+    private var totalProtein: Int {
+        mockData.todayMeals.reduce(0) { $0 + $1.protein }
+    }
+    
+    private var totalFat: Int {
+        mockData.todayMeals.reduce(0) { $0 + $1.fat }
+    }
+    
+    private var totalCarbs: Int {
+        mockData.todayMeals.reduce(0) { $0 + $1.carbs }
+    }
+    
+    // Daily targets based on user goals
+    private var dailyCalorieTarget: Int {
+        mockData.mealWindows.reduce(0) { $0 + $1.effectiveCalories }
+    }
+    
+    private var dailyProteinTarget: Int {
+        mockData.mealWindows.reduce(0) { $0 + $1.effectiveMacros.protein }
+    }
+    
+    private var dailyFatTarget: Int {
+        mockData.mealWindows.reduce(0) { $0 + $1.effectiveMacros.fat }
+    }
+    
+    private var dailyCarbsTarget: Int {
+        mockData.mealWindows.reduce(0) { $0 + $1.effectiveMacros.carbs }
+    }
+    
+    private var dailyCalorieProgress: Double {
+        guard dailyCalorieTarget > 0 else { return 0 }
+        return Double(totalCalories) / Double(dailyCalorieTarget)
+    }
+    
     private var todayScore: Int {
         Int((timingPercentage + nutrientPercentage + adherencePercentage) / 3)
     }
     
-    private var mealTimelineSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Meal Timeline")
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundColor(.white)
+    private var dailyMacrosSection: some View {
+        VStack(spacing: 24) {
+            // Title
+            HStack {
+                Text("Daily Macros")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(.white)
+                Spacer()
+            }
             
-            // Timeline items
-            VStack(spacing: 0) {
-                ForEach(mockData.todayMeals) { meal in
-                    MealTimelineItem(meal: meal)
+            // Calorie ring with more top padding
+            ZStack {
+                // Background ring with open bottom
+                Circle()
+                    .trim(from: 0.12, to: 0.88)
+                    .stroke(Color.white.opacity(0.1), lineWidth: 6)
+                    .frame(width: 180, height: 180)
+                    .rotationEffect(.degrees(90))
+                
+                // Progress ring with open bottom and tapered ends
+                Circle()
+                    .trim(from: 0, to: min(dailyCalorieProgress * 0.76, 0.76))
+                    .stroke(
+                        LinearGradient(colors: [Color.phylloAccent, Color.phylloAccent.opacity(0.8)], startPoint: .leading, endPoint: .trailing),
+                        style: StrokeStyle(lineWidth: 6, lineCap: .round)
+                    )
+                    .frame(width: 180, height: 180)
+                    .rotationEffect(.degrees(126))
+                    .animation(.spring(response: 0.6, dampingFraction: 0.8), value: dailyCalorieProgress)
+                
+                // Center text
+                VStack(spacing: 4) {
+                    Text("\(Int(dailyCalorieProgress * 100))% Complete")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.white)
+                    
+                    Text("\(totalCalories) / \(dailyCalorieTarget) cal")
+                        .font(.system(size: 14))
+                        .foregroundColor(.white.opacity(0.7))
                 }
+            }
+            
+            // Macro bars with proper padding
+            HStack(spacing: 20) {
+                MacroProgressBar(
+                    title: "Protein",
+                    consumed: totalProtein,
+                    target: dailyProteinTarget,
+                    color: .orange
+                )
+                
+                MacroProgressBar(
+                    title: "Fat",
+                    consumed: totalFat,
+                    target: dailyFatTarget,
+                    color: .yellow
+                )
+                
+                MacroProgressBar(
+                    title: "Carbs",
+                    consumed: totalCarbs,
+                    target: dailyCarbsTarget,
+                    color: .blue
+                )
             }
         }
         .padding(20)
         .background(Color.white.opacity(0.03))
         .cornerRadius(16)
-    }
-    
-    struct MealTimelineItem: View {
-        let meal: LoggedMeal
-        
-        var body: some View {
-            HStack(spacing: 12) {
-                // Time
-                Text(timeString)
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(.phylloTextSecondary)
-                    .frame(width: 50, alignment: .trailing)
-                
-                // Timeline dot and line
-                VStack(spacing: 0) {
-                    Circle()
-                        .fill(Color.phylloAccent)
-                        .frame(width: 8, height: 8)
-                    
-                    Rectangle()
-                        .fill(Color.white.opacity(0.1))
-                        .frame(width: 1, height: 40)
-                }
-                
-                // Meal info
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(meal.name)
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(.white)
-                    
-                    Text("\(meal.calories) cal • \(meal.protein)g P")
-                        .font(.system(size: 12))
-                        .foregroundColor(.phylloTextTertiary)
-                }
-                
-                Spacer()
-            }
-        }
-        
-        private var timeString: String {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "h:mm a"
-            return formatter.string(from: meal.timestamp)
-        }
     }
     
     private var nutrientBreakdownSection: some View {
