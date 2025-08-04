@@ -443,7 +443,7 @@ class MockDataManager: ObservableObject {
                 (info.name == "Omega-3" && key.contains("Omega-3"))
             }
             
-            let consumed = matchingKey != nil ? nutrientTotals[matchingKey!] ?? 0 : 0
+            let consumed = matchingKey.flatMap { nutrientTotals[$0] } ?? 0
             
             return MicronutrientConsumption(info: info, consumed: consumed)
         }
