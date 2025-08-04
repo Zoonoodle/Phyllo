@@ -94,22 +94,78 @@ class InsightsEngine: ObservableObject {
     }
     
     private func calculateMealTimingScore(meals: [LoggedMeal], windows: [MealWindow]) -> Int {
-        guard !meals.isEmpty && !windows.isEmpty else { return 0 }
+        guard !windows.isEmpty else { return 0 }
         
-        var score = 0
         let maxScore = 25
+        var totalWindowScore: Double = 0
         
-        // Check how many meals were eaten within their designated windows
-        let mealsInWindows = meals.filter { meal in
-            windows.contains { window in
-                meal.timestamp >= window.startTime && meal.timestamp <= window.endTime
+        // Score each window individually
+        for window in windows {
+            var windowScore: Double = 0
+            
+            // Check if any meal was logged for this window
+            if let meal = meals.first(where: { $0.windowId == window.id }) {
+                // Calculate how close the meal was to the window timing
+                let mealTime = meal.timestamp
+                
+                if mealTime >= window.startTime && mealTime <= window.endTime {
+                    // Perfect timing - within window
+                    windowScore = 1.0
+                } else if mealTime < window.startTime {
+                    // Early logging - give partial credit based on how early
+                    let minutesEarly = window.startTime.timeIntervalSince(mealTime) / 60
+                    if minutesEarly <= 15 {
+                        windowScore = 0.9 // 90% for up to 15 min early
+                    } else if minutesEarly <= 30 {
+                        windowScore = 0.7 // 70% for 15-30 min early
+                    } else if minutesEarly <= 60 {
+                        windowScore = 0.5 // 50% for 30-60 min early
+                    } else {
+                        windowScore = 0.3 // 30% for over 60 min early
+                    }
+                } else {
+                    // Late logging - penalize more than early
+                    let minutesLate = mealTime.timeIntervalSince(window.endTime) / 60
+                    if minutesLate <= 15 {
+                        windowScore = 0.8 // 80% for up to 15 min late
+                    } else if minutesLate <= 30 {
+                        windowScore = 0.5 // 50% for 15-30 min late
+                    } else if minutesLate <= 60 {
+                        windowScore = 0.3 // 30% for 30-60 min late
+                    } else {
+                        windowScore = 0.1 // 10% for over 60 min late
+                    }
+                }
+            } else {
+                // No meal for this window
+                // Check if window is still in the future
+                if window.startTime > Date() {
+                    // Future window - don't penalize
+                    continue
+                } else if window.endTime < Date() {
+                    // Missed window completely - 0 points
+                    windowScore = 0
+                } else {
+                    // Window is currently active - don't penalize yet
+                    continue
+                }
             }
+            
+            totalWindowScore += windowScore
         }
         
-        let windowAdherence = Double(mealsInWindows.count) / Double(meals.count)
-        score = Int(windowAdherence * Double(maxScore))
+        // Calculate average score across all relevant windows (past and with meals)
+        let relevantWindows = windows.filter { window in
+            // Count windows that are either past or have meals logged
+            window.endTime < Date() || meals.contains { $0.windowId == window.id }
+        }
         
-        return score
+        if relevantWindows.isEmpty {
+            return maxScore // No windows to score yet, give full points
+        }
+        
+        let averageScore = totalWindowScore / Double(relevantWindows.count)
+        return Int(averageScore * Double(maxScore))
     }
     
     private func calculateMacroBalanceScore(meals: [LoggedMeal], primaryGoal: NutritionGoal) -> Int {

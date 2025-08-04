@@ -724,54 +724,65 @@ struct NutritionDashboardView: View {
     // MARK: - Computed Properties
     
     private var timingPercentage: Double {
-        // Calculate based on meal timing accuracy
+        // Calculate based on meal timing accuracy for each window
         var totalScore: Double = 0
-        var windowsProcessed = 0
+        var relevantWindows = 0
         
         for window in mockData.mealWindows {
-            // Skip future windows
-            if window.startTime > TimeProvider.shared.currentTime { continue }
+            var windowScore: Double = 0
             
-            windowsProcessed += 1
-            
-            // Find meals near this window
-            let windowMeals = mockData.todayMeals.filter { meal in
-                // Check meals within 2 hours before or after window
-                let windowRange = window.startTime.addingTimeInterval(-7200)...window.endTime.addingTimeInterval(7200)
-                return windowRange.contains(meal.timestamp)
-            }
-            
-            if windowMeals.isEmpty {
-                // No meal for this window = 0 points
-                continue
-            }
-            
-            // Calculate timing score for each meal
-            var bestScore: Double = 0
-            for meal in windowMeals {
-                var score: Double = 0
+            // Check if any meal was logged for this specific window
+            if let meal = mockData.todayMeals.first(where: { $0.windowId == window.id }) {
+                // Calculate how close the meal was to the window timing
+                let mealTime = meal.timestamp
                 
-                if meal.timestamp >= window.startTime && meal.timestamp <= window.endTime {
-                    // Perfect timing = 100%
-                    score = 1.0
-                } else if meal.timestamp < window.startTime {
-                    // Early meal - lose 10% per 30 minutes early
-                    let minutesEarly = window.startTime.timeIntervalSince(meal.timestamp) / 60
-                    score = max(0.3, 1.0 - (minutesEarly / 30) * 0.1)
+                if mealTime >= window.startTime && mealTime <= window.endTime {
+                    // Perfect timing - within window
+                    windowScore = 1.0
+                } else if mealTime < window.startTime {
+                    // Early logging - give partial credit based on how early
+                    let minutesEarly = window.startTime.timeIntervalSince(mealTime) / 60
+                    if minutesEarly <= 15 {
+                        windowScore = 0.9 // 90% for up to 15 min early
+                    } else if minutesEarly <= 30 {
+                        windowScore = 0.7 // 70% for 15-30 min early
+                    } else if minutesEarly <= 60 {
+                        windowScore = 0.5 // 50% for 30-60 min early
+                    } else {
+                        windowScore = 0.3 // 30% for over 60 min early
+                    }
                 } else {
-                    // Late meal - lose 15% per 30 minutes late
-                    let minutesLate = meal.timestamp.timeIntervalSince(window.endTime) / 60
-                    score = max(0.2, 1.0 - (minutesLate / 30) * 0.15)
+                    // Late logging - penalize more than early
+                    let minutesLate = mealTime.timeIntervalSince(window.endTime) / 60
+                    if minutesLate <= 15 {
+                        windowScore = 0.8 // 80% for up to 15 min late
+                    } else if minutesLate <= 30 {
+                        windowScore = 0.5 // 50% for 15-30 min late
+                    } else if minutesLate <= 60 {
+                        windowScore = 0.3 // 30% for 30-60 min late
+                    } else {
+                        windowScore = 0.1 // 10% for over 60 min late
+                    }
                 }
                 
-                bestScore = max(bestScore, score)
+                totalScore += windowScore
+                relevantWindows += 1
+            } else {
+                // No meal for this window
+                // Only count it if the window has passed
+                if window.endTime < TimeProvider.shared.currentTime {
+                    // Missed window completely - 0 points
+                    totalScore += 0
+                    relevantWindows += 1
+                }
+                // Don't count future or currently active windows without meals
             }
-            
-            totalScore += bestScore
         }
         
-        guard windowsProcessed > 0 else { return 0 }
-        return (totalScore / Double(windowsProcessed)) * 100
+        // If no relevant windows yet, show 100% (benefit of doubt)
+        guard relevantWindows > 0 else { return 100 }
+        
+        return (totalScore / Double(relevantWindows)) * 100
     }
     
     private var nutrientPercentage: Double {
