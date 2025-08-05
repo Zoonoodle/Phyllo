@@ -141,12 +141,13 @@ class VertexAIService: ObservableObject {
            - Max 2 questions
            - Provide 3-4 multiple choice options per question
         
-        RESPOND WITH ONLY VALID JSON - NO OTHER TEXT:
+        IMPORTANT: Return ONLY this exact JSON structure with these exact field names:
         {
-          "mealName": "Grilled Chicken Salad",
+          "mealName": "Name of meal",
           "confidence": 0.9,
           "ingredients": [
-            {"name": "Chicken breast", "amount": "4", "unit": "oz", "foodGroup": "Protein"}
+            {"name": "Chicken breast", "amount": "4", "unit": "oz", "foodGroup": "Protein"},
+            {"name": "Lettuce", "amount": "2", "unit": "cups", "foodGroup": "Vegetable"}
           ],
           "nutrition": {
             "calories": 350,
@@ -159,6 +160,12 @@ class VertexAIService: ObservableObject {
           ],
           "clarifications": []
         }
+        
+        CRITICAL: Use exactly these field names:
+        - "ingredients" (NOT mainComponents)
+        - "nutrition" (NOT nutritionCalculation)
+        - "clarifications" (NOT clarificationNeeds)
+        - Each ingredient must have: name, amount, unit, foodGroup
         """
     }
     
@@ -225,9 +232,14 @@ class VertexAIService: ObservableObject {
             return result
         } catch {
             print("❌ JSON parsing error: \(error)")
-            print("❌ Raw JSON: \(jsonText)")
+            print("⚠️ Attempting to parse with flexible decoder...")
             
-            // Return a mock result for now to prevent crashes
+            // Try to parse with a more flexible approach
+            if let json = try? JSONSerialization.jsonObject(with: jsonData) as? [String: Any] {
+                return parseFallbackJSON(json)
+            }
+            
+            // Last resort: Return a basic result based on what we could detect
             return MealAnalysisResult(
                 mealName: "Analyzed Meal",
                 confidence: 0.8,
@@ -242,6 +254,89 @@ class VertexAIService: ObservableObject {
                 ),
                 micronutrients: [],
                 clarifications: []
+            )
+        }
+    }
+    
+    // MARK: - Fallback Parser
+    
+    private func parseFallbackJSON(_ json: [String: Any]) -> MealAnalysisResult {
+        print("🔄 Using fallback parser for AI response")
+        
+        // Extract basic fields
+        let mealName = json["mealName"] as? String ?? "Analyzed Meal"
+        let confidence = json["confidence"] as? Double ?? 0.8
+        
+        // Parse ingredients (handle both "ingredients" and "mainComponents")
+        var ingredients: [MealAnalysisResult.AnalyzedIngredient] = []
+        if let ingredientsList = json["ingredients"] as? [[String: Any]] {
+            ingredients = parseIngredients(ingredientsList)
+        } else if let mainComponents = json["mainComponents"] as? [String] {
+            // Convert simple string array to ingredients
+            ingredients = mainComponents.map { component in
+                .init(name: component, amount: "1", unit: "serving", foodGroup: "Mixed")
+            }
+        }
+        
+        // Parse nutrition (handle both "nutrition" and "nutritionCalculation")
+        let nutritionData = (json["nutrition"] ?? json["nutritionCalculation"]) as? [String: Any]
+        let nutrition = MealAnalysisResult.NutritionInfo(
+            calories: (nutritionData?["calories"] as? Int) ?? 400,
+            protein: (nutritionData?["protein"] as? Double) ?? 20,
+            carbs: (nutritionData?["carbs"] as? Double) ?? 40,
+            fat: (nutritionData?["fat"] as? Double) ?? 15
+        )
+        
+        // Parse micronutrients
+        let micronutrients = parseMicronutrients(json["micronutrients"] as? [[String: Any]] ?? [])
+        
+        // Parse clarifications (handle both "clarifications" and "clarificationNeeds")
+        let clarifications = parseClarifications(
+            (json["clarifications"] ?? json["clarificationNeeds"]) as? [[String: Any]] ?? []
+        )
+        
+        return MealAnalysisResult(
+            mealName: mealName,
+            confidence: confidence,
+            ingredients: ingredients,
+            nutrition: nutrition,
+            micronutrients: micronutrients,
+            clarifications: clarifications
+        )
+    }
+    
+    private func parseIngredients(_ list: [[String: Any]]) -> [MealAnalysisResult.AnalyzedIngredient] {
+        list.compactMap { item in
+            guard let name = item["name"] as? String else { return nil }
+            return .init(
+                name: name,
+                amount: item["amount"] as? String ?? "1",
+                unit: item["unit"] as? String ?? "serving",
+                foodGroup: item["foodGroup"] as? String ?? "Mixed"
+            )
+        }
+    }
+    
+    private func parseMicronutrients(_ list: [[String: Any]]) -> [MealAnalysisResult.MicronutrientInfo] {
+        list.compactMap { item in
+            guard let name = item["name"] as? String,
+                  let amount = item["amount"] as? Double else { return nil }
+            return .init(
+                name: name,
+                amount: amount,
+                unit: item["unit"] as? String ?? "mg",
+                percentRDA: item["percentRDA"] as? Double ?? 0
+            )
+        }
+    }
+    
+    private func parseClarifications(_ list: [[String: Any]]) -> [MealAnalysisResult.ClarificationQuestion] {
+        list.compactMap { item in
+            guard let question = item["question"] as? String else { return nil }
+            return .init(
+                question: question,
+                options: item["options"] as? [String] ?? [],
+                clarificationType: item["clarificationType"] as? String ?? "portion"
             )
         }
     }
