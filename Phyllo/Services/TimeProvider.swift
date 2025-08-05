@@ -10,7 +10,7 @@ import Foundation
 class TimeProvider: ObservableObject {
     static let shared = TimeProvider()
     
-    @Published private var simulatedTime: Date?
+    @Published var simulatedTime: Date?
     
     private init() {}
     

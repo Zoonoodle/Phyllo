@@ -84,9 +84,10 @@ struct TimelineView: View {
                     handleAutoScroll(proxy: proxy)
                 }
             }
-            .onChange(of: timeProvider.currentTime) { _, newTime in
-                if !isPreview {
-                    currentTime = newTime
+            // Only listen to simulated time changes from developer dashboard
+            .onReceive(timeProvider.$simulatedTime) { newSimulatedTime in
+                if newSimulatedTime != nil && !isPreview {
+                    currentTime = timeProvider.currentTime
                     handleAutoScroll(proxy: proxy)
                 }
             }
