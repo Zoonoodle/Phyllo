@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import PhotosUI
 
 struct ScanTabView: View {
     @Binding var showDeveloperDashboard: Bool
@@ -20,6 +21,7 @@ struct ScanTabView: View {
     @State private var capturedImage: UIImage?
     @State private var currentAnalyzingMeal: AnalyzingMeal?
     @State private var lastCompletedMeal: LoggedMeal?
+    @State private var showImagePicker = false
     @StateObject private var mockData = MockDataManager.shared
     @StateObject private var clarificationManager = ClarificationManager.shared
     @StateObject private var mealCaptureService = MealCaptureService.shared
@@ -73,9 +75,9 @@ struct ScanTabView: View {
                                     
                                     Spacer()
                                     
-                                    // History button on right
+                                    // Photo library button on right
                                     Button(action: {
-                                        // Show scan history
+                                        showImagePicker = true
                                     }) {
                                         Image(systemName: "photo.on.rectangle")
                                             .font(.system(size: 20, weight: .medium))
@@ -112,14 +114,46 @@ struct ScanTabView: View {
                         ScanModeSelector(selectedMode: $selectedMode)
                             .padding(.horizontal, 20)
                         
-                        // Capture button
-                        CaptureButton(
-                            mode: selectedMode,
-                            isAnimating: $captureAnimation,
-                            onCapture: {
-                                performCapture()
+                        // Capture button with photo library option
+                        HStack(spacing: 40) {
+                            // Photo library button (smaller)
+                            if selectedMode == .photo {
+                                Button(action: {
+                                    showImagePicker = true
+                                }) {
+                                    VStack(spacing: 8) {
+                                        Circle()
+                                            .fill(Color.white.opacity(0.1))
+                                            .frame(width: 50, height: 50)
+                                            .overlay(
+                                                Image(systemName: "photo.stack")
+                                                    .font(.system(size: 20, weight: .medium))
+                                                    .foregroundColor(.white.opacity(0.8))
+                                            )
+                                        Text("Library")
+                                            .font(.system(size: 12, weight: .medium))
+                                            .foregroundColor(.white.opacity(0.6))
+                                    }
+                                }
+                            } else {
+                                // Spacer to maintain layout
+                                Color.clear
+                                    .frame(width: 50, height: 50)
                             }
-                        )
+                            
+                            // Main capture button
+                            CaptureButton(
+                                mode: selectedMode,
+                                isAnimating: $captureAnimation,
+                                onCapture: {
+                                    performCapture()
+                                }
+                            )
+                            
+                            // Balance spacer
+                            Color.clear
+                                .frame(width: 50, height: 50)
+                        }
                         .padding(.bottom, 40)
                     }
                     .padding(.bottom, 30)
@@ -158,6 +192,15 @@ struct ScanTabView: View {
                         currentAnalyzingMeal = nil
                     }
                 }
+            }
+            .sheet(isPresented: $showImagePicker) {
+                ImagePicker(selectedImage: $capturedImage)
+                    .onDisappear {
+                        if capturedImage != nil {
+                            // Show voice input after selecting image
+                            showVoiceInput = true
+                        }
+                    }
             }
         }
         .preferredColorScheme(.dark)
