@@ -22,9 +22,12 @@ struct ScanTabView: View {
     @State private var currentAnalyzingMeal: AnalyzingMeal?
     @State private var lastCompletedMeal: LoggedMeal?
     @State private var showImagePicker = false
+    @State private var analysisResult: MealAnalysisResult?
     @StateObject private var mockData = MockDataManager.shared
     @StateObject private var clarificationManager = ClarificationManager.shared
     @StateObject private var mealCaptureService = MealCaptureService.shared
+    
+    private let dataProvider = DataSourceProvider.shared.provider
     
     enum ScanMode: String, CaseIterable {
         case photo = "Photo"
@@ -182,7 +185,33 @@ struct ScanTabView: View {
             .sheet(isPresented: $showResults) {
                 if let meal = lastCompletedMeal {
                     NavigationStack {
-                        FoodAnalysisView(meal: meal, isFromScan: true)
+                        FoodAnalysisView(
+                            meal: meal,
+                            isFromScan: true,
+                            onConfirm: {
+                                // Save the meal to the data provider
+                                Task {
+                                    do {
+                                        try await dataProvider.saveMeal(meal)
+                                        
+                                        // Navigate to schedule to see the meal
+                                        await MainActor.run {
+                                            withAnimation(.easeInOut(duration: 0.3)) {
+                                                selectedTab = 0
+                                            }
+                                            
+                                            // Trigger meal sliding animation
+                                            NotificationCenter.default.post(
+                                                name: .animateMealToWindow,
+                                                object: meal
+                                            )
+                                        }
+                                    } catch {
+                                        print("❌ Failed to save meal: \(error)")
+                                    }
+                                }
+                            }
+                        )
                     }
                     .presentationDetents([.large])
                     .presentationDragIndicator(.visible)
@@ -204,6 +233,54 @@ struct ScanTabView: View {
             }
         }
         .preferredColorScheme(.dark)
+        .onReceive(NotificationCenter.default.publisher(for: .mealAnalysisCompleted)) { notification in
+            if let analyzingMeal = notification.object as? AnalyzingMeal,
+               let result = notification.userInfo?["result"] as? MealAnalysisResult,
+               analyzingMeal.id == currentAnalyzingMeal?.id {
+                // Convert MealAnalysisResult to LoggedMeal for display
+                var loggedMeal = LoggedMeal(
+                    name: result.mealName,
+                    calories: result.nutrition.calories,
+                    protein: Int(result.nutrition.protein),
+                    carbs: Int(result.nutrition.carbs),
+                    fat: Int(result.nutrition.fat),
+                    timestamp: analyzingMeal.timestamp,
+                    windowId: analyzingMeal.windowId
+                )
+                
+                // Set ingredients
+                loggedMeal.ingredients = result.ingredients.map { ingredient in
+                    MealIngredient(
+                        name: ingredient.name,
+                        quantity: Double(ingredient.amount) ?? 1.0,
+                        unit: ingredient.unit,
+                        foodGroup: FoodGroup(rawValue: ingredient.foodGroup) ?? .other
+                    )
+                }
+                
+                // Set micronutrients
+                loggedMeal.micronutrients = Dictionary(uniqueKeysWithValues: 
+                    result.micronutrients.map { micro in
+                        (micro.name, micro.amount)
+                    }
+                )
+                
+                lastCompletedMeal = loggedMeal
+                analysisResult = result
+                
+                // Navigate back to scan tab and show results
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    selectedTab = 2 // Scan tab
+                }
+                
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    showResults = true
+                }
+                
+                // Clear the current analyzing meal
+                currentAnalyzingMeal = nil
+            }
+        }
     }
     
     private func performCapture() {
@@ -240,7 +317,6 @@ struct ScanTabView: View {
                     currentAnalyzingMeal = analyzingMeal
                     
                     // Navigate to timeline and scroll to analyzing meal
-                    showLoading = false
                     scrollToAnalyzingMeal = analyzingMeal
                     withAnimation(.easeInOut(duration: 0.3)) {
                         selectedTab = 0
@@ -256,25 +332,6 @@ struct ScanTabView: View {
         }
     }
     
-    private func completeMealLogging(analyzingMeal: AnalyzingMeal, result: LoggedMeal) {
-        // Complete the analyzing meal
-        mockData.completeAnalyzingMeal(analyzingMeal, with: result)
-        
-        // Clear all scan-related state
-        currentAnalyzingMeal = nil
-        lastCompletedMeal = nil
-        showResults = false
-        
-        // Trigger meal sliding animation
-        NotificationCenter.default.post(
-            name: .animateMealToWindow,
-            object: result
-        )
-        
-        // Note: The meal celebration nudge will be triggered automatically
-        // by NudgeManager observing todaysMeals changes
-        // User can tap "View Details" on the nudge to see meal in window detail
-    }
     
 }
 

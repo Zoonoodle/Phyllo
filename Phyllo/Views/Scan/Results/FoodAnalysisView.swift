@@ -22,6 +22,7 @@ struct FoodAnalysisView: View {
     
     let meal: LoggedMeal
     var isFromScan: Bool = false
+    var onConfirm: (() -> Void)? = nil
     
     var body: some View {
         NavigationStack {
@@ -302,6 +303,9 @@ struct FoodAnalysisView: View {
             
             // Confirm button or View in Timeline
             Button(action: {
+                if isFromScan {
+                    onConfirm?()
+                }
                 dismiss()
             }) {
                 HStack {

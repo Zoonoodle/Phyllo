@@ -39,7 +39,7 @@ class MealCaptureService: ObservableObject {
         }
         
         // Create analyzing meal
-        var analyzingMeal = AnalyzingMeal(
+        let analyzingMeal = AnalyzingMeal(
             timestamp: Date(),
             windowId: activeWindow?.id,
             imageData: image?.jpegData(compressionQuality: 0.8),
@@ -75,6 +75,15 @@ class MealCaptureService: ObservableObject {
                             id: analyzingMeal.id.uuidString,
                             result: result
                         )
+                        
+                        // Post notification with the completed meal
+                        await MainActor.run {
+                            NotificationCenter.default.post(
+                                name: .mealAnalysisCompleted,
+                                object: analyzingMeal,
+                                userInfo: ["result": result]
+                            )
+                        }
                     }
                     
                 } else if let barcode = barcode {
