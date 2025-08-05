@@ -22,6 +22,7 @@ struct ScanTabView: View {
     @State private var lastCompletedMeal: LoggedMeal?
     @StateObject private var mockData = MockDataManager.shared
     @StateObject private var clarificationManager = ClarificationManager.shared
+    @StateObject private var mealCaptureService = MealCaptureService.shared
     
     enum ScanMode: String, CaseIterable {
         case photo = "Photo"
@@ -184,61 +185,30 @@ struct ScanTabView: View {
     }
     
     private func simulateAIProcessing() {
-        // Start analyzing meal
-        let analyzingMeal = mockData.startAnalyzingMeal(
-            imageData: capturedImage?.pngData(),
-            voiceDescription: nil
-        )
-        currentAnalyzingMeal = analyzingMeal
-        
-        // Navigate to timeline and scroll to analyzing meal
-        showLoading = false
-        scrollToAnalyzingMeal = analyzingMeal
-        withAnimation(.easeInOut(duration: 0.3)) {
-            selectedTab = 0
-        }
-        
-        // Store the analyzing meal ID to ensure we can complete it even if view state changes
-        let analyzingMealId = analyzingMeal.id
-        
-        // Simulate AI processing time in background
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-            // Find the analyzing meal by ID in case our state was reset
-            guard let currentMeal = self.mockData.analyzingMeals.first(where: { $0.id == analyzingMealId }) else {
-                print("Warning: Analyzing meal with ID \(analyzingMealId) no longer found")
-                return
-            }
-            
-            // Convert to logged meal with the same timestamp to ensure proper window assignment
-            let result = LoggedMeal(
-                name: "Grilled Chicken Salad",
-                calories: 450,
-                protein: 35,
-                carbs: 25,
-                fat: 20,
-                timestamp: currentMeal.timestamp,
-                windowId: currentMeal.windowId
-            )
-            
-            // Store the result for later use
-            self.lastCompletedMeal = result
-            
-            // Determine if clarification is needed
-            let needsClarification = self.selectedMode == .voice || Bool.random()
-            
-            if needsClarification {
-                // Re-set currentAnalyzingMeal in case it was cleared
-                self.currentAnalyzingMeal = currentMeal
-                // Use global clarification manager
-                self.clarificationManager.presentClarification(for: currentMeal, with: result)
+        Task {
+            do {
+                // Start analyzing meal with real or mock AI
+                let analyzingMeal = try await mealCaptureService.startMealAnalysis(
+                    image: capturedImage,
+                    voiceTranscript: nil // TODO: Add voice transcript support
+                )
                 
-                // Clear scan tab state since clarification will handle completion
-                self.currentAnalyzingMeal = nil
-                self.lastCompletedMeal = nil
-                self.showResults = false
-            } else {
-                // Complete the meal without clarification
-                self.completeMealLogging(analyzingMeal: currentMeal, result: result)
+                await MainActor.run {
+                    currentAnalyzingMeal = analyzingMeal
+                    
+                    // Navigate to timeline and scroll to analyzing meal
+                    showLoading = false
+                    scrollToAnalyzingMeal = analyzingMeal
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        selectedTab = 0
+                    }
+                }
+            } catch {
+                print("❌ Failed to start meal analysis: \(error)")
+                await MainActor.run {
+                    showLoading = false
+                    // TODO: Show error alert
+                }
             }
         }
     }

@@ -1,0 +1,16 @@
+import Foundation
+
+// MARK: - Mock Firebase Config (No Firebase Dependencies)
+// TODO: Replace with real FirebaseConfig.swift when Firebase is configured
+
+class FirebaseConfig {
+    static let shared = FirebaseConfig()
+    
+    private init() {}
+    
+    func configure() {
+        print("⚠️ Firebase not configured - Using mock implementation")
+        print("⚠️ Using mock VertexAI service. See FIREBASE_SETUP_GUIDE.md for setup instructions")
+        // In a real implementation, this would configure Firebase services
+    }
+}

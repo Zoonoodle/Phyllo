@@ -1,0 +1,60 @@
+import Foundation
+import UIKit
+
+// MARK: - Meal Analysis Models
+// Shared models for AI meal analysis
+
+struct MealAnalysisRequest {
+    let image: UIImage
+    let voiceTranscript: String?
+    let userContext: UserNutritionContext
+    let mealWindow: MealWindow?
+}
+
+struct UserNutritionContext {
+    let primaryGoal: NutritionGoal
+    let dailyCalorieTarget: Int
+    let dailyProteinTarget: Int
+    let dailyCarbTarget: Int
+    let dailyFatTarget: Int
+    
+    var dailyMacros: String {
+        "\(dailyCalorieTarget) cal, \(dailyProteinTarget)g protein, \(dailyCarbTarget)g carbs, \(dailyFatTarget)g fat"
+    }
+}
+
+struct MealAnalysisResult: Codable {
+    let mealName: String
+    let confidence: Double
+    let ingredients: [AnalyzedIngredient]
+    let nutrition: NutritionInfo
+    let micronutrients: [MicronutrientInfo]
+    let clarifications: [ClarificationQuestion]
+    
+    struct AnalyzedIngredient: Codable {
+        let name: String
+        let amount: String
+        let unit: String
+        let foodGroup: String
+    }
+    
+    struct NutritionInfo: Codable {
+        let calories: Int
+        let protein: Double
+        let carbs: Double
+        let fat: Double
+    }
+    
+    struct MicronutrientInfo: Codable {
+        let name: String
+        let amount: Double
+        let unit: String
+        let percentRDA: Double
+    }
+    
+    struct ClarificationQuestion: Codable {
+        let question: String
+        let options: [String]
+        let clarificationType: String
+    }
+}

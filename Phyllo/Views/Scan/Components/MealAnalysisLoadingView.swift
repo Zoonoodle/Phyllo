@@ -13,6 +13,7 @@ struct MealAnalysisLoadingView: View {
     @State private var opacity: Double = 0.3
     @State private var progressValue: CGFloat = 0
     @State private var currentStatus = "Analyzing your meal..."
+    @StateObject private var captureService = MealCaptureService.shared
     
     let statuses = [
         "Analyzing your meal...",
@@ -122,9 +123,30 @@ struct MealAnalysisLoadingView: View {
             updateStatus()
         }
         .onAppear {
-            // Start progress animation
-            withAnimation(.linear(duration: 10)) {
-                progressValue = 0.9
+            // Use real progress if available, otherwise animate
+            if captureService.analysisProgress > 0 {
+                progressValue = CGFloat(captureService.analysisProgress)
+            } else {
+                // Fallback animation
+                withAnimation(.linear(duration: 10)) {
+                    progressValue = 0.9
+                }
+            }
+        }
+        .onChange(of: captureService.analysisProgress) { _, newValue in
+            withAnimation(.spring(response: 0.5)) {
+                progressValue = CGFloat(newValue)
+            }
+            
+            // Update status based on progress
+            if newValue < 0.25 {
+                currentStatus = statuses[0]
+            } else if newValue < 0.5 {
+                currentStatus = statuses[1]
+            } else if newValue < 0.75 {
+                currentStatus = statuses[2]
+            } else {
+                currentStatus = statuses[3]
             }
         }
     }

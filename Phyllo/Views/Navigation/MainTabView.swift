@@ -82,12 +82,22 @@ struct MainTabView: View {
         // Global clarification view that works from any tab
         .fullScreenCover(isPresented: $clarificationManager.showClarification) {
             if let analyzingMeal = clarificationManager.pendingAnalyzingMeal,
-               let mealResult = clarificationManager.pendingMealResult {
+               let analysisResult = clarificationManager.pendingAnalysisResult {
+                // Convert MealAnalysisResult to LoggedMeal for ClarificationQuestionsView
+                let tempMeal = LoggedMeal(
+                    name: analysisResult.mealName,
+                    calories: analysisResult.nutrition.calories,
+                    protein: Int(analysisResult.nutrition.protein),
+                    carbs: Int(analysisResult.nutrition.carbs),
+                    fat: Int(analysisResult.nutrition.fat),
+                    timestamp: analyzingMeal.timestamp
+                )
+                
                 ClarificationQuestionsView(
                     analyzingMeal: analyzingMeal,
-                    mealResult: mealResult,
+                    mealResult: tempMeal,
                     onComplete: { finalMeal in
-                        clarificationManager.completeClarification(with: finalMeal)
+                        clarificationManager.completeClarification()
                     }
                 )
             }
