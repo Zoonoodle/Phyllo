@@ -65,18 +65,43 @@ class FirebaseDataProvider: DataProvider {
     }
     
     func getAnalyzingMeals() async throws -> [AnalyzingMeal] {
+        // Get all analyzing meals (we'll filter by timestamp instead of status)
         let snapshot = try await userRef.collection("analyzingMeals")
-            .whereField("status", isEqualTo: "analyzing")
             .getDocuments()
         
-        return snapshot.documents.compactMap { doc in
+        // Only return analyzing meals from the last hour to avoid showing old ones
+        let oneHourAgo = Date().addingTimeInterval(-3600)
+        
+        let meals = snapshot.documents.compactMap { doc in
             AnalyzingMeal.fromFirestore(doc.data())
         }
+        
+        // Filter out old analyzing meals and clean them up
+        let (recent, old) = meals.reduce(into: (recent: [AnalyzingMeal](), old: [AnalyzingMeal]())) { result, meal in
+            if meal.timestamp > oneHourAgo {
+                result.recent.append(meal)
+            } else {
+                result.old.append(meal)
+            }
+        }
+        
+        // Clean up old analyzing meals in the background
+        if !old.isEmpty {
+            Task {
+                for meal in old {
+                    try? await userRef.collection("analyzingMeals").document(meal.id.uuidString).delete()
+                }
+            }
+        }
+        
+        return recent
     }
     
     func startAnalyzingMeal(_ meal: AnalyzingMeal) async throws {
         let analyzingRef = userRef.collection("analyzingMeals").document(meal.id.uuidString)
-        try await analyzingRef.setData(meal.toFirestore())
+        var data = meal.toFirestore()
+        data["status"] = "analyzing" // Add status field for future compatibility
+        try await analyzingRef.setData(data)
     }
     
     func completeAnalyzingMeal(id: String, result: MealAnalysisResult) async throws {
