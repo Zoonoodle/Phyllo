@@ -115,6 +115,11 @@ struct MealWindow: Identifiable {
         TimeProvider.shared.currentTime > endTime
     }
     
+    // Check if a timestamp falls within this window
+    func contains(timestamp: Date) -> Bool {
+        return timestamp >= startTime && timestamp <= endTime
+    }
+    
     // Check if window is "late but doable" - past but before the next window
     func isLateButDoable(nextWindow: MealWindow?) -> Bool {
         guard isPast else { return false }

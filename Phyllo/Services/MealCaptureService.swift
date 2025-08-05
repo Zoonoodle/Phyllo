@@ -32,9 +32,16 @@ class MealCaptureService: ObservableObject {
         barcode: String? = nil
     ) async throws -> AnalyzingMeal {
         
+        // Find the active window for this meal
+        let currentWindows = try await dataProvider.getWindows(for: Date())
+        let activeWindow = currentWindows.first { window in
+            window.contains(timestamp: Date())
+        }
+        
         // Create analyzing meal
-        let analyzingMeal = AnalyzingMeal(
+        var analyzingMeal = AnalyzingMeal(
             timestamp: Date(),
+            windowId: activeWindow?.id,
             imageData: image?.jpegData(compressionQuality: 0.8),
             voiceDescription: voiceTranscript
         )
@@ -201,13 +208,6 @@ class MealCaptureService: ObservableObject {
 }
 
 // MARK: - Helper Extensions
-
-extension MealWindow {
-    /// Check if a timestamp falls within this window
-    func contains(timestamp: Date) -> Bool {
-        return timestamp >= startTime && timestamp <= endTime
-    }
-}
 
 // MARK: - Notification Names
 

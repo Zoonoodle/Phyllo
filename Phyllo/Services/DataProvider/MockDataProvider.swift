@@ -50,26 +50,49 @@ class MockDataProvider: DataProvider {
     
     func startAnalyzingMeal(_ meal: AnalyzingMeal) async throws {
         await MainActor.run {
-            mockManager.startAnalyzingMeal(imageData: meal.imageData)
+            // Add the actual analyzing meal to mock manager
+            mockManager.analyzingMeals.append(meal)
         }
     }
     
     func completeAnalyzingMeal(id: String, result: MealAnalysisResult) async throws {
         await MainActor.run {
-            // Create meal from result
-            let meal = LoggedMeal(
+            // Find the analyzing meal first to get its timestamp and windowId
+            guard let analyzingMeal = mockManager.analyzingMeals.first(where: { $0.id.uuidString == id }) else {
+                print("❌ Analyzing meal not found: \(id)")
+                return
+            }
+            
+            // Create meal from result with original timestamp
+            var meal = LoggedMeal(
                 name: result.mealName,
                 calories: result.nutrition.calories,
                 protein: Int(result.nutrition.protein),
                 carbs: Int(result.nutrition.carbs),
                 fat: Int(result.nutrition.fat),
-                timestamp: Date()
+                timestamp: analyzingMeal.timestamp,
+                windowId: analyzingMeal.windowId
             )
             
-            // Complete the analyzing meal
-            if let analyzingMeal = mockManager.analyzingMeals.first(where: { $0.id.uuidString == id }) {
-                mockManager.completeAnalyzingMeal(analyzingMeal, with: meal)
+            // Add micronutrients
+            var micronutrients: [String: Double] = [:]
+            for micro in result.micronutrients {
+                micronutrients[micro.name] = micro.amount
             }
+            meal.micronutrients = micronutrients
+            
+            // Add ingredients
+            meal.ingredients = result.ingredients.map { ingredient in
+                MealIngredient(
+                    name: ingredient.name,
+                    quantity: Double(ingredient.amount) ?? 1.0,
+                    unit: ingredient.unit,
+                    foodGroup: FoodGroup(rawValue: ingredient.foodGroup) ?? .other
+                )
+            }
+            
+            // Complete the analyzing meal
+            mockManager.completeAnalyzingMeal(analyzingMeal, with: meal)
         }
     }
     

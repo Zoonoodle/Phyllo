@@ -10,7 +10,7 @@ import SwiftUI
 struct ScheduleView: View {
     @Binding var showDeveloperDashboard: Bool
     @Binding var scrollToAnalyzingMeal: AnalyzingMeal?
-    @StateObject private var mockData = MockDataManager.shared
+    @StateObject private var viewModel = ScheduleViewModel()
     @State private var selectedDate = Date()
     @State private var selectedWindow: MealWindow?
     @State private var showWindowDetail = false
@@ -43,7 +43,8 @@ struct ScheduleView: View {
                         selectedWindow: $selectedWindow,
                         showWindowDetail: $showWindowDetail,
                         animationNamespace: animationNamespace,
-                        scrollToAnalyzingMeal: $scrollToAnalyzingMeal
+                        scrollToAnalyzingMeal: $scrollToAnalyzingMeal,
+                        viewModel: viewModel
                     )
                     .opacity(showWindowDetail ? 0 : 1)
                 }
@@ -69,7 +70,7 @@ struct ScheduleView: View {
         .onReceive(NotificationCenter.default.publisher(for: .navigateToMealDetails)) { notification in
             if let meal = notification.object as? LoggedMeal {
                 // Find the window containing this meal
-                if let window = mockData.mealWindows.first(where: { window in
+                if let window = viewModel.mealWindows.first(where: { window in
                     meal.timestamp >= window.startTime && meal.timestamp <= window.endTime
                 }) {
                     // Navigate to window detail with specific meal selected

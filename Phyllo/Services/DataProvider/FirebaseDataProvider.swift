@@ -80,15 +80,40 @@ class FirebaseDataProvider: DataProvider {
     }
     
     func completeAnalyzingMeal(id: String, result: MealAnalysisResult) async throws {
-        // Create the final meal
-        let meal = LoggedMeal(
+        // First, get the analyzing meal to preserve its timestamp and windowId
+        let analyzingDoc = try await userRef.collection("analyzingMeals").document(id).getDocument()
+        guard let analyzingData = analyzingDoc.data(),
+              let analyzingMeal = AnalyzingMeal.fromFirestore(analyzingData) else {
+            throw NSError(domain: "FirebaseDataProvider", code: 404, userInfo: [NSLocalizedDescriptionKey: "Analyzing meal not found"])
+        }
+        
+        // Create the final meal with original timestamp and window
+        var meal = LoggedMeal(
             name: result.mealName,
             calories: result.nutrition.calories,
             protein: Int(result.nutrition.protein),
             carbs: Int(result.nutrition.carbs),
             fat: Int(result.nutrition.fat),
-            timestamp: Date()
+            timestamp: analyzingMeal.timestamp,
+            windowId: analyzingMeal.windowId
         )
+        
+        // Add micronutrients
+        var micronutrients: [String: Double] = [:]
+        for micro in result.micronutrients {
+            micronutrients[micro.name] = micro.amount
+        }
+        meal.micronutrients = micronutrients
+        
+        // Add ingredients
+        meal.ingredients = result.ingredients.map { ingredient in
+            MealIngredient(
+                name: ingredient.name,
+                quantity: Double(ingredient.amount) ?? 1.0,
+                unit: ingredient.unit,
+                foodGroup: FoodGroup(rawValue: ingredient.foodGroup) ?? .other
+            )
+        }
         
         // Save the meal
         try await saveMeal(meal)
@@ -370,31 +395,6 @@ extension ISO8601DateFormatter {
 }
 
 // MARK: - Firestore Extensions
-
-extension AnalyzingMeal {
-    func toFirestore() -> [String: Any] {
-        return [
-            "id": id.uuidString,
-            "timestamp": timestamp,
-            "imageData": imageData ?? Data(),
-            "status": "analyzing"
-        ]
-    }
-    
-    static func fromFirestore(_ data: [String: Any]) -> AnalyzingMeal? {
-        guard let idString = data["id"] as? String,
-              let id = UUID(uuidString: idString),
-              let timestamp = data["timestamp"] as? Timestamp else {
-            return nil
-        }
-        
-        return AnalyzingMeal(
-            timestamp: timestamp.dateValue(),
-            imageData: data["imageData"] as? Data,
-            voiceDescription: data["voiceDescription"] as? String
-        )
-    }
-}
 
 extension MorningCheckInData {
     func toFirestore() -> [String: Any] {

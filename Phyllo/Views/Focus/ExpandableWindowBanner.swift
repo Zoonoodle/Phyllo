@@ -68,10 +68,11 @@ struct ExpandableWindowBanner: View {
     @Binding var selectedWindow: MealWindow?
     @Binding var showWindowDetail: Bool
     let animationNamespace: Namespace.ID
+    @ObservedObject var viewModel: ScheduleViewModel
     
     // Add analyzing meals for this window - only if scanned within window time
     private var analyzingMealsInWindow: [AnalyzingMeal] {
-        mockData.analyzingMeals.filter { meal in
+        viewModel.analyzingMeals.filter { meal in
             // Must be assigned to this window AND scanned within window time
             meal.windowId == window.id &&
             meal.timestamp >= window.startTime &&
@@ -80,7 +81,6 @@ struct ExpandableWindowBanner: View {
     }
     
     @StateObject private var timeProvider = TimeProvider.shared
-    @StateObject private var mockData = MockDataManager.shared
     @State private var isExpanded = false
     @State private var pulseAnimation = false
     
@@ -198,7 +198,7 @@ struct ExpandableWindowBanner: View {
     }
     
     private var windowCaloriesRemaining: Int {
-        let consumed = mockData.caloriesConsumedInWindow(window)
+        let consumed = viewModel.caloriesConsumedInWindow(window)
         return max(0, window.effectiveCalories - consumed)
     }
     
@@ -237,7 +237,7 @@ struct ExpandableWindowBanner: View {
             
             if hasMeals {
                 // Window has meals - it's completed
-                let consumed = mockData.caloriesConsumedInWindow(window)
+                let consumed = viewModel.caloriesConsumedInWindow(window)
                 return .completed(
                     consumed: consumed,
                     target: window.effectiveCalories,
@@ -245,7 +245,7 @@ struct ExpandableWindowBanner: View {
                 )
             } else {
                 // No meals - check if it's late but doable
-                let nextWindow = mockData.mealWindows.first { 
+                let nextWindow = viewModel.mealWindows.first { 
                     $0.startTime > window.startTime && $0.id != window.id 
                 }
                 
@@ -548,7 +548,7 @@ struct ExpandableWindowBanner: View {
     
     @ViewBuilder
     private var progressRing: some View {
-        let consumed = mockData.caloriesConsumedInWindow(window)
+        let consumed = viewModel.caloriesConsumedInWindow(window)
         let progressValue = min(Double(consumed) / Double(window.effectiveCalories), 1.0)
         
         ZStack {
@@ -997,18 +997,20 @@ struct AnalyzingMealRowCompact: View {
     @Previewable @State var selectedWindow: MealWindow?
     @Previewable @State var showWindowDetail = false
     @Previewable @Namespace var animationNamespace
+    @Previewable @StateObject var viewModel = ScheduleViewModel()
     
     ZStack {
         Color.phylloBackground.ignoresSafeArea()
         
         VStack(spacing: 16) {
-            if let window = MockDataManager.shared.activeWindow {
+            if let window = viewModel.activeWindow {
                 ExpandableWindowBanner(
                     window: window,
-                    meals: MockDataManager.shared.mealsInWindow(window),
+                    meals: viewModel.mealsInWindow(window),
                     selectedWindow: $selectedWindow,
                     showWindowDetail: $showWindowDetail,
-                    animationNamespace: animationNamespace
+                    animationNamespace: animationNamespace,
+                    viewModel: viewModel
                 )
                 .padding(.horizontal)
             }

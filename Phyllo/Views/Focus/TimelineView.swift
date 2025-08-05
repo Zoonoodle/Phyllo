@@ -19,8 +19,8 @@ struct TimelineView: View {
     @Binding var showWindowDetail: Bool
     let animationNamespace: Namespace.ID
     @Binding var scrollToAnalyzingMeal: AnalyzingMeal?
+    @ObservedObject var viewModel: ScheduleViewModel
     
-    @StateObject private var mockData = MockDataManager.shared
     @StateObject private var timeProvider = TimeProvider.shared
     @State private var currentTime = Date()
     @Environment(\.isPreview) private var isPreview
@@ -53,14 +53,15 @@ struct TimelineView: View {
                         TimelineHourRow(
                             hour: hour,
                             currentTime: currentTime,
-                            windows: mockData.mealWindows,
+                            windows: viewModel.mealWindows,
                             meals: mealsForTimeRange(hour: hour),
                             analyzingMeals: analyzingMealsForTimeRange(hour: hour),
                             isLastHour: hour == hours.last,
                             selectedWindow: $selectedWindow,
                             showWindowDetail: $showWindowDetail,
                             animationNamespace: animationNamespace,
-                            scrollOffset: scrollOffset
+                            scrollOffset: scrollOffset,
+                            viewModel: viewModel
                         )
                         .padding(.horizontal, 24)
                     }
@@ -184,7 +185,7 @@ struct TimelineView: View {
         let calendar = Calendar.current
         
         // Check all meal windows for nearby start/end times
-        for window in mockData.mealWindows {
+        for window in viewModel.mealWindows {
             // Check window start
             let startDiff = abs(window.startTime.timeIntervalSince(currentTime))
             if startDiff <= snapThreshold {
@@ -212,7 +213,7 @@ struct TimelineView: View {
         let startOfHour = calendar.date(bySettingHour: hour, minute: 0, second: 0, of: timeProvider.currentTime)!
         let endOfHour = calendar.date(byAdding: .hour, value: 1, to: startOfHour)!
         
-        return mockData.todaysMeals.compactMap { meal in
+        return viewModel.todaysMeals.compactMap { meal in
             if meal.timestamp >= startOfHour && meal.timestamp < endOfHour {
                 let minutes = calendar.component(.minute, from: meal.timestamp)
                 let offset = CGFloat(minutes) / 60.0 // 0.0 to 1.0 representing position in hour
@@ -227,13 +228,13 @@ struct TimelineView: View {
         let startOfHour = calendar.date(bySettingHour: hour, minute: 0, second: 0, of: timeProvider.currentTime)!
         let endOfHour = calendar.date(byAdding: .hour, value: 1, to: startOfHour)!
         
-        return mockData.analyzingMeals.compactMap { meal in
+        return viewModel.analyzingMeals.compactMap { meal in
             if meal.timestamp >= startOfHour && meal.timestamp < endOfHour {
                 // Check if this meal should be shown as standalone
                 let shouldShowAsStandalone: Bool
                 
                 if let windowId = meal.windowId,
-                   let window = mockData.mealWindows.first(where: { $0.id == windowId }) {
+                   let window = viewModel.mealWindows.first(where: { $0.id == windowId }) {
                     // Has a window - only show as standalone if outside window time
                     shouldShowAsStandalone = meal.timestamp < window.startTime || meal.timestamp > window.endTime
                 } else {
@@ -252,7 +253,7 @@ struct TimelineView: View {
     }
     
     private func handleMealSlideAnimation(meal: LoggedMeal, proxy: ScrollViewProxy) {
-        guard let window = mockData.mealWindows.first(where: { window in
+        guard let window = viewModel.mealWindows.first(where: { window in
             meal.timestamp >= window.startTime && meal.timestamp <= window.endTime
         }) else {
             // Meal not in any window, trigger celebration without animation
@@ -352,7 +353,7 @@ struct TimelineHourRow: View {
     @Binding var showWindowDetail: Bool
     let animationNamespace: Namespace.ID
     let scrollOffset: CGFloat
-    @StateObject private var mockData = MockDataManager.shared
+    @ObservedObject var viewModel: ScheduleViewModel
     
     let baseHourHeight: CGFloat = 80
     
@@ -447,14 +448,15 @@ struct TimelineHourRow: View {
         let startMinute = calendar.component(.minute, from: window.startTime)
         // Use baseHourHeight for consistent positioning
         let windowOffset = CGFloat(startMinute) / 60.0 * baseHourHeight
-        let windowMeals = mockData.mealsInWindow(window)
+        let windowMeals = viewModel.mealsInWindow(window)
         
         ExpandableWindowBanner(
             window: window,
             meals: windowMeals,
             selectedWindow: $selectedWindow,
             showWindowDetail: $showWindowDetail,
-            animationNamespace: animationNamespace
+            animationNamespace: animationNamespace,
+            viewModel: viewModel
         )
         .offset(y: windowOffset)
         .allowsHitTesting(true)
@@ -517,7 +519,7 @@ struct TimelineHourRow: View {
         
         for item in meals {
             if let windowId = item.meal.windowId,
-               let window = mockData.mealWindows.first(where: { $0.id == windowId }) {
+               let window = viewModel.mealWindows.first(where: { $0.id == windowId }) {
                 let windowStartHour = Calendar.current.component(.hour, from: window.startTime)
                 
                 if windowStartHour == hour || !isMealStandalone(item.meal, window: window) {
@@ -1199,6 +1201,7 @@ struct MealRowWithWindowIndicator: View {
     @Previewable @State var showWindowDetail = false
     @Previewable @State var scrollToAnalyzingMeal: AnalyzingMeal?
     @Previewable @Namespace var animationNamespace
+    @Previewable @StateObject var viewModel = ScheduleViewModel()
     
     ZStack {
         Color.phylloBackground.ignoresSafeArea()
@@ -1207,7 +1210,8 @@ struct MealRowWithWindowIndicator: View {
             selectedWindow: $selectedWindow,
             showWindowDetail: $showWindowDetail,
             animationNamespace: animationNamespace,
-            scrollToAnalyzingMeal: $scrollToAnalyzingMeal
+            scrollToAnalyzingMeal: $scrollToAnalyzingMeal,
+            viewModel: viewModel
         )
     }
     .onAppear {
