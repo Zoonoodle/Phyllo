@@ -107,14 +107,17 @@ class FirebaseDataProvider: DataProvider {
     func getWindows(for date: Date) async throws -> [MealWindow] {
         let dateString = ISO8601DateFormatter.yyyyMMdd.string(from: date)
         
+        // Simplified query without ordering to avoid index requirement
         let snapshot = try await userRef.collection("windows")
             .whereField("dayDate", isEqualTo: dateString)
-            .order(by: "startTime")
             .getDocuments()
         
-        return snapshot.documents.compactMap { doc in
+        // Sort in memory instead
+        let windows = snapshot.documents.compactMap { doc in
             MealWindow.fromFirestore(doc.data())
         }
+        
+        return windows.sorted { $0.startTime < $1.startTime }
     }
     
     func updateWindow(_ window: MealWindow) async throws {
