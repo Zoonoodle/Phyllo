@@ -53,11 +53,22 @@ class MealCaptureService: ObservableObject {
                         analyzingMeal: analyzingMeal
                     )
                     
-                    // Complete the analysis
-                    try await dataProvider.completeAnalyzingMeal(
-                        id: analyzingMeal.id.uuidString,
-                        result: result
-                    )
+                    // Check if clarification is needed
+                    if !result.clarifications.isEmpty {
+                        // Present clarification questions
+                        await MainActor.run {
+                            ClarificationManager.shared.presentClarification(
+                                for: analyzingMeal,
+                                with: result
+                            )
+                        }
+                    } else {
+                        // No clarification needed, complete the analysis
+                        try await dataProvider.completeAnalyzingMeal(
+                            id: analyzingMeal.id.uuidString,
+                            result: result
+                        )
+                    }
                     
                 } else if let barcode = barcode {
                     // TODO: Implement barcode lookup
