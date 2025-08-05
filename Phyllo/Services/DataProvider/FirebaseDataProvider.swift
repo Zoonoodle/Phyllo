@@ -65,36 +65,28 @@ class FirebaseDataProvider: DataProvider {
     }
     
     func getAnalyzingMeals() async throws -> [AnalyzingMeal] {
-        // Get all analyzing meals (we'll filter by timestamp instead of status)
+        // Get all analyzing meals
         let snapshot = try await userRef.collection("analyzingMeals")
             .getDocuments()
         
-        // Only return analyzing meals from the last hour to avoid showing old ones
-        let oneHourAgo = Date().addingTimeInterval(-3600)
-        
-        let meals = snapshot.documents.compactMap { doc in
+        // DELETE ALL analyzing meals - we don't want any old test data
+        let allMeals = snapshot.documents.compactMap { doc in
             AnalyzingMeal.fromFirestore(doc.data())
         }
         
-        // Filter out old analyzing meals and clean them up
-        let (recent, old) = meals.reduce(into: (recent: [AnalyzingMeal](), old: [AnalyzingMeal]())) { result, meal in
-            if meal.timestamp > oneHourAgo {
-                result.recent.append(meal)
-            } else {
-                result.old.append(meal)
-            }
-        }
-        
-        // Clean up old analyzing meals in the background
-        if !old.isEmpty {
+        // Delete ALL analyzing meals in the background
+        if !allMeals.isEmpty {
+            print("🧹 Cleaning up \(allMeals.count) old analyzing meals")
             Task {
-                for meal in old {
+                for meal in allMeals {
                     try? await userRef.collection("analyzingMeals").document(meal.id.uuidString).delete()
                 }
+                print("✅ Cleaned up all analyzing meals")
             }
         }
         
-        return recent
+        // Return empty array - no analyzing meals should be shown on startup
+        return []
     }
     
     func startAnalyzingMeal(_ meal: AnalyzingMeal) async throws {
@@ -144,6 +136,11 @@ class FirebaseDataProvider: DataProvider {
         try await saveMeal(meal)
         
         // Delete from analyzing collection
+        try await userRef.collection("analyzingMeals").document(id).delete()
+    }
+    
+    func cancelAnalyzingMeal(id: String) async throws {
+        // Delete the analyzing meal
         try await userRef.collection("analyzingMeals").document(id).delete()
     }
     

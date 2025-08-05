@@ -97,9 +97,17 @@ class MealCaptureService: ObservableObject {
                 }
                 
             } catch {
-                self.currentError = error
+                await MainActor.run {
+                    self.currentError = error
+                }
                 print("❌ Meal analysis failed: \(error)")
-                // TODO: Remove analyzing meal on error
+                
+                // Remove the analyzing meal on error so it doesn't get stuck
+                do {
+                    try await dataProvider.cancelAnalyzingMeal(id: analyzingMeal.id.uuidString)
+                } catch {
+                    print("❌ Failed to remove analyzing meal after error: \(error)")
+                }
             }
         }
         

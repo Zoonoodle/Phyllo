@@ -13,6 +13,7 @@ protocol DataProvider {
     func getAnalyzingMeals() async throws -> [AnalyzingMeal]
     func startAnalyzingMeal(_ meal: AnalyzingMeal) async throws
     func completeAnalyzingMeal(id: String, result: MealAnalysisResult) async throws
+    func cancelAnalyzingMeal(id: String) async throws
     
     // MARK: - Window Operations
     func saveWindow(_ window: MealWindow) async throws

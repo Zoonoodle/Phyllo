@@ -96,6 +96,12 @@ class MockDataProvider: DataProvider {
         }
     }
     
+    func cancelAnalyzingMeal(id: String) async throws {
+        await MainActor.run {
+            mockManager.analyzingMeals.removeAll { $0.id.uuidString == id }
+        }
+    }
+    
     // MARK: - Window Operations
     
     func saveWindow(_ window: MealWindow) async throws {
