@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import FirebaseFirestore
 
 struct DeveloperDashboardView: View {
     @StateObject private var mockData = MockDataManager.shared
@@ -199,6 +200,7 @@ struct MockMealsTabView: View {
     @StateObject private var mockData = MockDataManager.shared
     @State private var showClearConfirmation = false
     @State private var isClearing = false
+    @State private var totalFirebaseMeals = 0
     
     private var dataProvider: DataProvider {
         DataSourceProvider.shared.provider
@@ -240,12 +242,12 @@ struct MockMealsTabView: View {
                 }
                 .disabled(isClearing)
                 .confirmationDialog("Clear All Meals", isPresented: $showClearConfirmation) {
-                    Button("Clear All Meals (Mock & Firebase)", role: .destructive) {
+                    Button("Clear ALL Meals from Firebase", role: .destructive) {
                         clearAllMeals()
                     }
                     Button("Cancel", role: .cancel) {}
                 } message: {
-                    Text("This will permanently delete all meals from both mock data and Firebase. This action cannot be undone.")
+                    Text("This will permanently delete ALL meals from Firebase (not just today's) and all mock data. This action cannot be undone.")
                 }
                 
                 Button(action: {
@@ -277,10 +279,40 @@ struct MockMealsTabView: View {
                 }
             }
             
+            // Firebase Stats
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Text("Firebase Database")
+                        .font(.headline)
+                        .foregroundColor(.white)
+                    
+                    Spacer()
+                    
+                    if totalFirebaseMeals > 0 {
+                        Text("\(totalFirebaseMeals) total meals")
+                            .font(.subheadline)
+                            .foregroundColor(.orange)
+                    }
+                    
+                    Button(action: fetchFirebaseStats) {
+                        Image(systemName: "arrow.clockwise")
+                            .font(.system(size: 14))
+                            .foregroundColor(.white.opacity(0.7))
+                    }
+                }
+                
+                Text("All meals across all dates in Firebase")
+                    .font(.caption)
+                    .foregroundColor(.white.opacity(0.5))
+            }
+            .padding()
+            .background(Color.phylloElevated)
+            .cornerRadius(16)
+            
             // Current Meals
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
-                    Text("Today's Meals")
+                    Text("Today's Mock Meals")
                         .font(.headline)
                         .foregroundColor(.white)
                     
@@ -355,6 +387,9 @@ struct MockMealsTabView: View {
             .background(Color.phylloElevated)
             .cornerRadius(16)
         }
+        .onAppear {
+            fetchFirebaseStats()
+        }
     }
     
     private func clearAllMeals() {
@@ -367,22 +402,56 @@ struct MockMealsTabView: View {
                     mockData.clearAllMeals()
                 }
                 
-                // Clear Firebase meals
-                let today = Date()
-                let meals = try await dataProvider.getMeals(for: today)
+                // Clear ALL Firebase meals, not just today's
+                // Query all meals without date filter
+                let snapshot = try await Firestore.firestore()
+                    .collection("users")
+                    .document("dev_user_001")
+                    .collection("meals")
+                    .getDocuments()
                 
-                for meal in meals {
-                    try await dataProvider.deleteMeal(id: meal.id.uuidString)
+                await MainActor.run {
+                    DebugLogger.shared.firebase("Found \(snapshot.documents.count) total meals in Firebase to delete")
+                }
+                
+                // Delete each meal
+                for doc in snapshot.documents {
+                    try await Firestore.firestore()
+                        .collection("users")
+                        .document("dev_user_001")
+                        .collection("meals")
+                        .document(doc.documentID)
+                        .delete()
                 }
                 
                 await MainActor.run {
                     isClearing = false
-                    DebugLogger.shared.success("Cleared all meals from mock data and Firebase")
+                    DebugLogger.shared.success("Cleared \(snapshot.documents.count) meals from Firebase and all mock data")
                 }
             } catch {
                 await MainActor.run {
                     isClearing = false
                     DebugLogger.shared.error("Failed to clear meals: \(error)")
+                }
+            }
+        }
+    }
+    
+    private func fetchFirebaseStats() {
+        Task {
+            do {
+                let snapshot = try await Firestore.firestore()
+                    .collection("users")
+                    .document("dev_user_001")
+                    .collection("meals")
+                    .getDocuments()
+                
+                await MainActor.run {
+                    totalFirebaseMeals = snapshot.documents.count
+                }
+            } catch {
+                await MainActor.run {
+                    DebugLogger.shared.error("Failed to fetch Firebase stats: \(error)")
                 }
             }
         }
