@@ -214,6 +214,20 @@ struct TimelineView: View {
         let endOfHour = calendar.date(byAdding: .hour, value: 1, to: startOfHour)!
         
         return viewModel.todaysMeals.compactMap { meal in
+            // Check if meal belongs to a window in this hour
+            if let windowId = meal.windowId,
+               let window = viewModel.mealWindows.first(where: { $0.id == windowId }) {
+                // If meal has a window, show it in the hour where the window starts
+                let windowStartHour = calendar.component(.hour, from: window.startTime)
+                if windowStartHour == hour {
+                    let minutes = calendar.component(.minute, from: meal.timestamp)
+                    let offset = CGFloat(minutes) / 60.0
+                    return (meal: meal, offset: offset)
+                }
+                return nil
+            }
+            
+            // Fallback: show meals without windows based on timestamp
             if meal.timestamp >= startOfHour && meal.timestamp < endOfHour {
                 let minutes = calendar.component(.minute, from: meal.timestamp)
                 let offset = CGFloat(minutes) / 60.0 // 0.0 to 1.0 representing position in hour
@@ -530,7 +544,7 @@ struct TimelineHourRow: View {
                     standalone.append(item)
                 }
             } else {
-                // No window assigned
+                // No window assigned or window not found
                 standalone.append(item)
             }
         }

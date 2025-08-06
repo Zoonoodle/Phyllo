@@ -9,7 +9,7 @@ import SwiftUI
 
 struct NutritionDashboardView: View {
     @Binding var showDeveloperDashboard: Bool
-    @ObservedObject private var mockData = MockDataManager.shared
+    @StateObject private var viewModel = NutritionDashboardViewModel()
     @StateObject private var insightsEngine = InsightsEngine.shared
     @StateObject private var checkInManager = CheckInManager.shared
     @StateObject private var timeProvider = TimeProvider.shared
@@ -333,9 +333,9 @@ struct NutritionDashboardView: View {
             // Streak Counter
             MetricCard(
                 title: "STREAK",
-                mainValue: "\(mockData.currentStreak) days",
+                mainValue: "\(viewModel.currentStreak) days",
                 subValue: "Personal best: 14",
-                progress: Double(mockData.currentStreak) / 14.0,
+                progress: Double(viewModel.currentStreak) / 14.0,
                 color: .orange,
                 icon: "flame.fill"
             )
@@ -465,7 +465,7 @@ struct NutritionDashboardView: View {
                     .frame(height: 12)
                 
                 // Active windows with enhanced styling
-                ForEach(mockData.mealWindows) { window in
+                ForEach(viewModel.mealWindows) { window in
                     if let position = windowPosition(for: window, in: geometry.size.width) {
                         RoundedRectangle(cornerRadius: 4)
                             .fill(windowColor(for: window))
@@ -585,7 +585,7 @@ struct NutritionDashboardView: View {
             
             // Summary metrics
             HStack(spacing: 20) {
-                SummaryMetric(label: "Meals", value: "\(mockData.todayMeals.count)", icon: "fork.knife")
+                SummaryMetric(label: "Meals", value: "\(viewModel.todaysMeals.count)", icon: "fork.knife")
                 SummaryMetric(label: "Windows Hit", value: "\(windowsHit)/\(totalWindows)", icon: "clock.fill")
                 SummaryMetric(label: "Calories", value: "\(totalCalories)", icon: "flame.fill")
                 SummaryMetric(label: "Score", value: "\(todayScore)", icon: "star.fill")
@@ -782,11 +782,11 @@ struct NutritionDashboardView: View {
         var totalScore: Double = 0
         var relevantWindows = 0
         
-        for window in mockData.mealWindows {
+        for window in viewModel.mealWindows {
             var windowScore: Double = 0
             
             // Check if any meal was logged for this specific window
-            if let meal = mockData.todayMeals.first(where: { $0.windowId == window.id }) {
+            if let meal = viewModel.todaysMeals.first(where: { $0.windowId == window.id }) {
                 // Calculate how close the meal was to the window timing
                 let mealTime = meal.timestamp
                 
@@ -878,14 +878,14 @@ struct NutritionDashboardView: View {
         var adherenceFactors: [Double] = []
         
         // 1. Meal frequency (40% weight)
-        let mealsLogged = mockData.todayMeals.count
-        let targetMeals = mockData.mealWindows.count
+        let mealsLogged = viewModel.todaysMeals.count
+        let targetMeals = viewModel.mealWindows.count
         let mealFrequencyScore = targetMeals > 0 ? min(Double(mealsLogged) / Double(targetMeals), 1.0) : 0
         adherenceFactors.append(mealFrequencyScore * 0.4)
         
         // 2. Window utilization (30% weight)
-        let windowsUsed = mockData.mealWindows.filter { window in
-            mockData.todayMeals.contains { meal in
+        let windowsUsed = viewModel.mealWindows.filter { window in
+            viewModel.todaysMeals.contains { meal in
                 let windowRange = window.startTime.addingTimeInterval(-3600)...window.endTime.addingTimeInterval(3600)
                 return windowRange.contains(meal.timestamp)
             }
@@ -902,10 +902,10 @@ struct NutritionDashboardView: View {
     }
     
     private func calculateConsistencyScore() -> Double {
-        guard !mockData.todayMeals.isEmpty else { return 0 }
+        guard !viewModel.todaysMeals.isEmpty else { return 0 }
         
         // Check meal spacing - ideal is 3-5 hours between meals
-        let sortedMeals = mockData.todayMeals.sorted { $0.timestamp < $1.timestamp }
+        let sortedMeals = viewModel.todaysMeals.sorted { $0.timestamp < $1.timestamp }
         var spacingScores: [Double] = []
         
         for i in 1..<sortedMeals.count {
@@ -935,7 +935,7 @@ struct NutritionDashboardView: View {
         var nutrientTotals: [String: Double] = [:]
         
         // Aggregate all micronutrients from today's meals
-        for meal in mockData.todayMeals {
+        for meal in viewModel.todaysMeals {
             for (nutrientName, amount) in meal.micronutrients {
                 nutrientTotals[nutrientName, default: 0] += amount
             }
@@ -962,11 +962,11 @@ struct NutritionDashboardView: View {
     }
     
     private var currentWindowStatus: (mainText: String, subText: String, progress: Double) {
-        guard let activeWindow = mockData.mealWindows.first(where: { window in
+        guard let activeWindow = viewModel.mealWindows.first(where: { window in
             let now = TimeProvider.shared.currentTime
             return now >= window.startTime && now <= window.endTime
         }) else {
-            if let nextWindow = mockData.mealWindows.first(where: { $0.startTime > TimeProvider.shared.currentTime }) {
+            if let nextWindow = viewModel.mealWindows.first(where: { $0.startTime > TimeProvider.shared.currentTime }) {
                 let timeUntil = nextWindow.startTime.timeIntervalSince(TimeProvider.shared.currentTime)
                 let hours = Int(timeUntil / 3600)
                 let minutes = Int((timeUntil.truncatingRemainder(dividingBy: 3600)) / 60)
@@ -987,15 +987,15 @@ struct NutritionDashboardView: View {
         let remaining = activeWindow.endTime.timeIntervalSince(TimeProvider.shared.currentTime)
         let minutes = Int(remaining / 60)
         
-        let calories = mockData.caloriesConsumedInWindow(activeWindow)
-        let caloriesRemaining = max(0, activeWindow.effectiveCalories - calories)
+        let calories = viewModel.caloriesConsumedInWindow(activeWindow)
+        let caloriesRemaining = max(0, activeWindow.targetCalories - calories)
         
         return (getMealType(for: activeWindow), "\(minutes)m left • \(caloriesRemaining) cal", progress)
     }
     
     private var fastingTime: String {
         // Calculate time since last meal
-        if let lastMeal = mockData.todayMeals.last {
+        if let lastMeal = viewModel.todaysMeals.last {
             let elapsed = TimeProvider.shared.currentTime.timeIntervalSince(lastMeal.timestamp)
             let hours = Int(elapsed / 3600)
             let minutes = Int((elapsed.truncatingRemainder(dividingBy: 3600)) / 60)
@@ -1010,7 +1010,7 @@ struct NutritionDashboardView: View {
     }
     
     private var fastingStatus: String {
-        if let lastMeal = mockData.todayMeals.last {
+        if let lastMeal = viewModel.todaysMeals.last {
             let elapsed = TimeProvider.shared.currentTime.timeIntervalSince(lastMeal.timestamp)
             let hours = elapsed / 3600
             
@@ -1023,7 +1023,7 @@ struct NutritionDashboardView: View {
     }
     
     private var fastingProgress: Double {
-        if let lastMeal = mockData.todayMeals.last {
+        if let lastMeal = viewModel.todaysMeals.last {
             let elapsed = TimeProvider.shared.currentTime.timeIntervalSince(lastMeal.timestamp)
             let targetFast = 16.0 * 3600 // 16 hour fast target
             return min(elapsed / targetFast, 1.0)
@@ -1032,14 +1032,14 @@ struct NutritionDashboardView: View {
     }
     
     private var nextWindowName: String {
-        if let window = mockData.mealWindows.first(where: { $0.startTime > TimeProvider.shared.currentTime }) {
+        if let window = viewModel.mealWindows.first(where: { $0.startTime > TimeProvider.shared.currentTime }) {
             return getMealType(for: window)
         }
         return "Day Complete"
     }
     
     private var nextWindowTime: String {
-        if let window = mockData.mealWindows.first(where: { $0.startTime > TimeProvider.shared.currentTime }) {
+        if let window = viewModel.mealWindows.first(where: { $0.startTime > TimeProvider.shared.currentTime }) {
             let formatter = DateFormatter()
             formatter.dateFormat = "h:mm a"
             return formatter.string(from: window.startTime)
@@ -1048,7 +1048,7 @@ struct NutritionDashboardView: View {
     }
     
     private var timeUntilNextWindow: String? {
-        if let window = mockData.mealWindows.first(where: { $0.startTime > TimeProvider.shared.currentTime }) {
+        if let window = viewModel.mealWindows.first(where: { $0.startTime > TimeProvider.shared.currentTime }) {
             let timeInterval = window.startTime.timeIntervalSince(TimeProvider.shared.currentTime)
             let hours = Int(timeInterval) / 3600
             let minutes = (Int(timeInterval) % 3600) / 60
@@ -1063,7 +1063,7 @@ struct NutritionDashboardView: View {
     }
     
     private var nextWindowDuration: String? {
-        if let window = mockData.mealWindows.first(where: { $0.startTime > TimeProvider.shared.currentTime }) {
+        if let window = viewModel.mealWindows.first(where: { $0.startTime > TimeProvider.shared.currentTime }) {
             let duration = window.endTime.timeIntervalSince(window.startTime)
             let hours = Int(duration) / 3600
             let minutes = (Int(duration) % 3600) / 60
@@ -1094,9 +1094,9 @@ struct NutritionDashboardView: View {
     
     private func windowColor(for window: MealWindow) -> Color {
         // Check if this is the next upcoming window
-        let isNextWindow = mockData.mealWindows.first(where: { $0.startTime > TimeProvider.shared.currentTime })?.id == window.id
+        let isNextWindow = viewModel.mealWindows.first(where: { $0.startTime > TimeProvider.shared.currentTime })?.id == window.id
         
-        if mockData.todayMeals.contains(where: { meal in
+        if viewModel.todaysMeals.contains(where: { meal in
             meal.windowId == window.id
         }) {
             return .phylloAccent // Completed - green
@@ -1110,7 +1110,7 @@ struct NutritionDashboardView: View {
     }
     
     private func windowBorderColor(for window: MealWindow) -> Color {
-        let isNextWindow = mockData.mealWindows.first(where: { $0.startTime > TimeProvider.shared.currentTime })?.id == window.id
+        let isNextWindow = viewModel.mealWindows.first(where: { $0.startTime > TimeProvider.shared.currentTime })?.id == window.id
         
         if isNextWindow {
             return Color(hex: "F4A460").opacity(0.5)
@@ -1148,48 +1148,48 @@ struct NutritionDashboardView: View {
     }
     
     private var windowsHit: Int {
-        mockData.mealWindows.filter { window in
-            mockData.todayMeals.contains { meal in
+        viewModel.mealWindows.filter { window in
+            viewModel.todaysMeals.contains { meal in
                 meal.timestamp >= window.startTime && meal.timestamp <= window.endTime
             }
         }.count
     }
     
     private var totalWindows: Int {
-        mockData.mealWindows.count
+        viewModel.mealWindows.count
     }
     
     private var totalCalories: Int {
-        mockData.todayMeals.reduce(0) { $0 + $1.calories }
+        viewModel.todaysMeals.reduce(0) { $0 + $1.calories }
     }
     
     private var totalProtein: Int {
-        mockData.todayMeals.reduce(0) { $0 + $1.protein }
+        viewModel.todaysMeals.reduce(0) { $0 + $1.protein }
     }
     
     private var totalFat: Int {
-        mockData.todayMeals.reduce(0) { $0 + $1.fat }
+        viewModel.todaysMeals.reduce(0) { $0 + $1.fat }
     }
     
     private var totalCarbs: Int {
-        mockData.todayMeals.reduce(0) { $0 + $1.carbs }
+        viewModel.todaysMeals.reduce(0) { $0 + $1.carbs }
     }
     
     // Daily targets based on user goals
     private var dailyCalorieTarget: Int {
-        mockData.mealWindows.reduce(0) { $0 + $1.effectiveCalories }
+        viewModel.dailyCalorieTarget
     }
     
     private var dailyProteinTarget: Int {
-        mockData.mealWindows.reduce(0) { $0 + $1.effectiveMacros.protein }
+        viewModel.dailyProteinTarget
     }
     
     private var dailyFatTarget: Int {
-        mockData.mealWindows.reduce(0) { $0 + $1.effectiveMacros.fat }
+        viewModel.dailyFatTarget
     }
     
     private var dailyCarbsTarget: Int {
-        mockData.mealWindows.reduce(0) { $0 + $1.effectiveMacros.carbs }
+        viewModel.dailyCarbTarget
     }
     
     private var dailyCalorieProgress: Double {
@@ -1573,7 +1573,7 @@ struct NutritionDashboardView: View {
         var nutrientTotals: [String: Double] = [:]
         
         // Aggregate all micronutrients from today's meals
-        for meal in mockData.todayMeals {
+        for meal in viewModel.todaysMeals {
             for (nutrientName, amount) in meal.micronutrients {
                 nutrientTotals[nutrientName, default: 0] += amount
             }
