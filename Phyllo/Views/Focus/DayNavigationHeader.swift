@@ -115,24 +115,28 @@ struct MacroSummaryBar: View {
     private var calorieProgress: Double {
         let consumed = Double(totalCalories)
         let target = Double(userProfile.dailyCalorieTarget)
+        guard target > 0 else { return 0 }
         return min(consumed / target, 1.0)
     }
     
     private var proteinProgress: Double {
         let consumed = Double(totalProtein)
         let target = Double(userProfile.dailyProteinTarget)
+        guard target > 0 else { return 0 }
         return min(consumed / target, 1.0)
     }
     
     private var fatProgress: Double {
         let consumed = Double(totalFat)
         let target = Double(userProfile.dailyFatTarget)
+        guard target > 0 else { return 0 }
         return min(consumed / target, 1.0)
     }
     
     private var carbProgress: Double {
         let consumed = Double(totalCarbs)
         let target = Double(userProfile.dailyCarbTarget)
+        guard target > 0 else { return 0 }
         return min(consumed / target, 1.0)
     }
     

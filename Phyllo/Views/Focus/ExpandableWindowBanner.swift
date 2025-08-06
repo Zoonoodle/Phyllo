@@ -194,6 +194,7 @@ struct ExpandableWindowBanner: View {
         guard case .active = windowStatus else { return 0 }
         let elapsed = timeProvider.currentTime.timeIntervalSince(window.startTime)
         let total = window.duration
+        guard total > 0 else { return 0 }
         return min(max(elapsed / total, 0), 1)
     }
     
@@ -549,7 +550,7 @@ struct ExpandableWindowBanner: View {
     @ViewBuilder
     private var progressRing: some View {
         let consumed = viewModel.caloriesConsumedInWindow(window)
-        let progressValue = min(Double(consumed) / Double(window.effectiveCalories), 1.0)
+        let progressValue = window.effectiveCalories > 0 ? min(Double(consumed) / Double(window.effectiveCalories), 1.0) : 0
         
         ZStack {
             Circle()
@@ -804,6 +805,7 @@ struct ExpandableWindowBanner: View {
     
     // Helper function to determine color based on consumption
     private func consumptionColor(consumed: Int, target: Int) -> Color {
+        guard target > 0 else { return .gray }
         let percentage = Double(consumed) / Double(target)
         
         if percentage < 0.8 {

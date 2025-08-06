@@ -29,7 +29,8 @@ struct MacroNutritionPage: View {
     }
     
     private var calorieProgress: Double {
-        Double(windowCaloriesConsumed) / Double(window.effectiveCalories)
+        guard window.effectiveCalories > 0 else { return 0 }
+        return Double(windowCaloriesConsumed) / Double(window.effectiveCalories)
     }
     
     var body: some View {
@@ -112,7 +113,8 @@ struct MacroProgressBar: View {
     let color: Color
     
     private var progress: Double {
-        Double(consumed) / Double(target)
+        guard target > 0 else { return 0 }
+        return Double(consumed) / Double(target)
     }
     
     var body: some View {
