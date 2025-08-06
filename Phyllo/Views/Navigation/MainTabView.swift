@@ -11,7 +11,9 @@ struct MainTabView: View {
     @State private var selectedTab = 0 {
         didSet {
             let tabName = getTabName(for: selectedTab)
-            DebugLogger.shared.navigation("Tab switched from \(getTabName(for: oldValue)) to \(tabName)")
+            Task { @MainActor in
+                DebugLogger.shared.navigation("Tab switched from \(getTabName(for: oldValue)) to \(tabName)")
+            }
         }
     }
     @State private var showDeveloperDashboard = false
@@ -68,9 +70,13 @@ struct MainTabView: View {
         }
         .ignoresSafeArea()
         .onReceive(NotificationCenter.default.publisher(for: .switchToTimelineWithScroll)) { notification in
-            DebugLogger.shared.notification("Received switchToTimelineWithScroll notification")
+            Task { @MainActor in
+                DebugLogger.shared.notification("Received switchToTimelineWithScroll notification")
+            }
             if let analyzingMeal = notification.object as? AnalyzingMeal {
-                DebugLogger.shared.navigation("Switching to timeline with analyzing meal: \(analyzingMeal.id)")
+                Task { @MainActor in
+                    DebugLogger.shared.navigation("Switching to timeline with analyzing meal: \(analyzingMeal.id)")
+                }
                 // Store the analyzing meal to scroll to
                 scrollToAnalyzingMeal = analyzingMeal
                 // Switch to timeline tab with animation
@@ -90,16 +96,19 @@ struct MainTabView: View {
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .showMealResults)) { notification in
-            DebugLogger.shared.notification("Received showMealResults notification")
+            Task { @MainActor in
+                DebugLogger.shared.notification("Received showMealResults notification")
+            }
             if let meal = notification.object as? LoggedMeal {
-                DebugLogger.shared.ui("Showing meal results for: \(meal.name) (\(meal.id))")
+                Task { @MainActor in
+                    DebugLogger.shared.ui("Showing meal results for: \(meal.name) (\(meal.id))")
+                }
                 resultMeal = meal
                 showMealResults = true
             }
         }
         // Global clarification view that works from any tab
         .fullScreenCover(isPresented: $clarificationManager.showClarification) {
-            DebugLogger.shared.ui("Presenting clarification questions sheet")
             if let analyzingMeal = clarificationManager.pendingAnalyzingMeal,
                let analysisResult = clarificationManager.pendingAnalysisResult {
                 // Convert MealAnalysisResult to LoggedMeal for ClarificationQuestionsView
@@ -144,7 +153,6 @@ struct MainTabView: View {
         }
         // Developer Dashboard sheet
         .sheet(isPresented: $showDeveloperDashboard) {
-            DebugLogger.shared.ui("Presenting Developer Dashboard")
             DeveloperDashboardView()
         }
     }

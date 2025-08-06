@@ -12,7 +12,7 @@ protocol DataProvider {
     func deleteMeal(id: String) async throws
     func getAnalyzingMeals() async throws -> [AnalyzingMeal]
     func startAnalyzingMeal(_ meal: AnalyzingMeal) async throws
-    func completeAnalyzingMeal(id: String, result: MealAnalysisResult) async throws
+    func completeAnalyzingMeal(id: String, result: MealAnalysisResult) async throws -> LoggedMeal
     func cancelAnalyzingMeal(id: String) async throws
     
     // MARK: - Window Operations
@@ -275,7 +275,9 @@ class DataSourceProvider {
         self._provider = provider
         
         let providerType = type(of: provider)
-        DebugLogger.shared.dataProvider("DataSourceProvider configured with: \(providerType)")
+        Task { @MainActor in
+            DebugLogger.shared.dataProvider("DataSourceProvider configured with: \(providerType)")
+        }
         
         // Clean up any stale data on startup
         Task {
@@ -286,12 +288,18 @@ class DataSourceProvider {
     /// Clean up stale data like old analyzing meals
     private func cleanupStaleData() async {
         do {
-            DebugLogger.shared.dataProvider("Starting stale data cleanup")
+            Task { @MainActor in
+                DebugLogger.shared.dataProvider("Starting stale data cleanup")
+            }
             // This will trigger cleanup of old analyzing meals in Firebase
             let analyzingMeals = try await provider.getAnalyzingMeals()
-            DebugLogger.shared.success("Stale data cleanup completed. Found \(analyzingMeals.count) analyzing meals")
+            Task { @MainActor in
+                DebugLogger.shared.success("Stale data cleanup completed. Found \(analyzingMeals.count) analyzing meals")
+            }
         } catch {
-            DebugLogger.shared.error("Failed to clean up stale data: \(error)")
+            Task { @MainActor in
+                DebugLogger.shared.error("Failed to clean up stale data: \(error)")
+            }
             print("⚠️ Failed to clean up stale data: \(error)")
         }
     }

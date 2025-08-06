@@ -160,7 +160,7 @@ class DebugLogger: ObservableObject {
     
     func logWindow(_ window: MealWindow, action: String) {
         let details = """
-        Window: \(window.name)
+        Window: \(window.purpose.rawValue)
         ID: \(window.id)
         Time: \(dateFormatter.string(from: window.startTime)) - \(dateFormatter.string(from: window.endTime))
         Purpose: \(window.purpose)

@@ -41,8 +41,10 @@ class VertexAIService: ObservableObject {
     // MARK: - Public Methods
     
     func analyzeMeal(_ request: MealAnalysisRequest) async throws -> MealAnalysisResult {
-        DebugLogger.shared.mealAnalysis("VertexAIService.analyzeMeal started")
-        let analysisStart = DebugLogger.shared.startTiming("AI Analysis")
+        Task { @MainActor in
+            DebugLogger.shared.mealAnalysis("VertexAIService.analyzeMeal started")
+        }
+        let analysisStart = Date()
         
         isAnalyzing = true
         analysisProgress = 0.0
@@ -50,16 +52,21 @@ class VertexAIService: ObservableObject {
         defer {
             isAnalyzing = false
             analysisProgress = 1.0
-            DebugLogger.shared.endTiming("AI Analysis", start: analysisStart)
         }
         
         // Compress image
-        DebugLogger.shared.mealAnalysis("Compressing image for analysis")
+        Task { @MainActor in
+            DebugLogger.shared.mealAnalysis("Compressing image for analysis")
+        }
         guard let imageData = compressImage(request.image) else {
-            DebugLogger.shared.error("Image compression failed")
+            Task { @MainActor in
+                DebugLogger.shared.error("Image compression failed")
+            }
             throw AnalysisError.imageCompressionFailed
         }
-        DebugLogger.shared.info("Image compressed to \(imageData.count / 1024)KB")
+        Task { @MainActor in
+            DebugLogger.shared.info("Image compressed to \(imageData.count / 1024)KB")
+        }
         
         analysisProgress = 0.2
         
@@ -69,12 +76,20 @@ class VertexAIService: ObservableObject {
         analysisProgress = 0.3
         
         // Call Firebase AI (Gemini)
-        DebugLogger.shared.mealAnalysis("Calling Gemini AI for analysis")
+        Task { @MainActor in
+            DebugLogger.shared.mealAnalysis("Calling Gemini AI for analysis")
+        }
         let result = try await callGeminiAI(prompt: prompt, imageData: imageData)
         
-        DebugLogger.shared.success("AI analysis completed: \(result.mealName) (confidence: \(result.confidence))")
+        Task { @MainActor in
+            DebugLogger.shared.success("AI analysis completed: \(result.mealName) (confidence: \(result.confidence))")
+        }
         analysisProgress = 1.0
         
+        Task { @MainActor in
+            let elapsed = Date().timeIntervalSince(analysisStart)
+            DebugLogger.shared.performance("⏱️ Completed AI Analysis in \(String(format: "%.3f", elapsed))s")
+        }
         return result
     }
     
@@ -185,7 +200,9 @@ class VertexAIService: ObservableObject {
         let imagePath = "temp_meal_images/\(UUID().uuidString).jpg"
         let imageRef = storage.reference().child(imagePath)
         
-        DebugLogger.shared.firebase("Uploading image to Firebase Storage: \(imagePath)")
+        Task { @MainActor in
+            DebugLogger.shared.firebase("Uploading image to Firebase Storage: \(imagePath)")
+        }
         
         let metadata = StorageMetadata()
         metadata.contentType = "image/jpeg"
@@ -194,7 +211,9 @@ class VertexAIService: ObservableObject {
         metadata.customMetadata = ["deleteAfter": String(Date().addingTimeInterval(86400).timeIntervalSince1970)]
         
         _ = try await imageRef.putDataAsync(imageData, metadata: metadata)
-        DebugLogger.shared.success("Image uploaded to Firebase Storage")
+        Task { @MainActor in
+            DebugLogger.shared.success("Image uploaded to Firebase Storage")
+        }
         
         analysisProgress = 0.5
         
@@ -205,21 +224,30 @@ class VertexAIService: ObservableObject {
         analysisProgress = 0.6
         
         // Generate content using Firebase AI (Gemini)
-        DebugLogger.shared.mealAnalysis("Sending request to Gemini AI")
-        let aiStart = DebugLogger.shared.startTiming("Gemini API Call")
+        Task { @MainActor in
+            DebugLogger.shared.mealAnalysis("Sending request to Gemini AI")
+        }
+        let aiStart = Date()
         
         let response = try await model.generateContent(imageContent, textContent)
         
-        DebugLogger.shared.endTiming("Gemini API Call", start: aiStart)
+        Task { @MainActor in
+            let elapsed = Date().timeIntervalSince(aiStart)
+            DebugLogger.shared.performance("⏱️ Completed Gemini API Call in \(String(format: "%.3f", elapsed))s")
+        }
         analysisProgress = 0.8
         
         // Parse the JSON response
         guard let text = response.text else {
-            DebugLogger.shared.error("No text in AI response")
+            Task { @MainActor in
+                DebugLogger.shared.error("No text in AI response")
+            }
             throw AnalysisError.invalidResponse
         }
         
-        DebugLogger.shared.info("AI Response received: \(text.count) characters")
+        Task { @MainActor in
+            DebugLogger.shared.info("AI Response received: \(text.count) characters")
+        }
         print("📝 AI Response: \(text)")
         
         // Try to extract JSON from the response
@@ -245,12 +273,16 @@ class VertexAIService: ObservableObject {
         
         do {
             let result = try JSONDecoder().decode(MealAnalysisResult.self, from: jsonData)
-            DebugLogger.shared.success("Successfully parsed meal analysis")
-            DebugLogger.shared.mealAnalysis("Detected: \(result.mealName) - \(result.nutrition.calories) cal")
+            Task { @MainActor in
+                DebugLogger.shared.success("Successfully parsed meal analysis")
+                DebugLogger.shared.mealAnalysis("Detected: \(result.mealName) - \(result.nutrition.calories) cal")
+            }
             return result
         } catch {
-            DebugLogger.shared.error("JSON parsing error: \(error)")
-            DebugLogger.shared.warning("Attempting to parse with flexible decoder...")
+            Task { @MainActor in
+                DebugLogger.shared.error("JSON parsing error: \(error)")
+                DebugLogger.shared.warning("Attempting to parse with flexible decoder...")
+            }
             
             // Try to parse with a more flexible approach
             if let json = try? JSONSerialization.jsonObject(with: jsonData) as? [String: Any] {
@@ -279,7 +311,9 @@ class VertexAIService: ObservableObject {
     // MARK: - Fallback Parser
     
     private func parseFallbackJSON(_ json: [String: Any]) -> MealAnalysisResult {
-        DebugLogger.shared.warning("Using fallback parser for AI response")
+        Task { @MainActor in
+            DebugLogger.shared.warning("Using fallback parser for AI response")
+        }
         print("🔄 Using fallback parser for AI response")
         
         // Extract basic fields

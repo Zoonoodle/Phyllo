@@ -24,7 +24,7 @@ struct ActiveWindowNudge: View {
                 // Switch to scan tab
                 if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
                    let window = windowScene.windows.first,
-                   let rootView = window.rootViewController?.view {
+                   let _ = window.rootViewController?.view {
                     // Find MainTabView and switch to scan tab
                     NotificationCenter.default.post(name: .switchToScanTab, object: nil)
                 }

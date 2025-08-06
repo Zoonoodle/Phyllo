@@ -22,16 +22,22 @@ class FirebaseDataProvider: DataProvider {
     // MARK: - Meal Operations
     
     func saveMeal(_ meal: LoggedMeal) async throws {
-        DebugLogger.shared.dataProvider("FirebaseDataProvider.saveMeal called")
-        DebugLogger.shared.logMeal(meal, action: "Attempting to save")
+        Task { @MainActor in
+            DebugLogger.shared.dataProvider("FirebaseDataProvider.saveMeal called")
+            DebugLogger.shared.logMeal(meal, action: "Attempting to save")
+        }
         
         let mealRef = userRef.collection("meals").document(meal.id.uuidString)
         let docPath = "users/\(currentUserId)/meals/\(meal.id.uuidString)"
-        DebugLogger.shared.firebase("Writing meal to Firestore: \(docPath)")
+        Task { @MainActor in
+            DebugLogger.shared.firebase("Writing meal to Firestore: \(docPath)")
+        }
         
         try await mealRef.setData(meal.toFirestore())
         
-        DebugLogger.shared.success("Meal saved to Firebase: \(meal.name)")
+        Task { @MainActor in
+            DebugLogger.shared.success("Meal saved to Firebase: \(meal.name)")
+        }
         
         // Update daily analytics
         await updateDailyAnalyticsForMeal(meal)
@@ -40,7 +46,9 @@ class FirebaseDataProvider: DataProvider {
     func getMeals(for date: Date) async throws -> [LoggedMeal] {
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd"
-        DebugLogger.shared.dataProvider("FirebaseDataProvider.getMeals for date: \(dateFormatter.string(from: date))")
+        Task { @MainActor in
+            DebugLogger.shared.dataProvider("FirebaseDataProvider.getMeals for date: \(dateFormatter.string(from: date))")
+        }
         
         let startOfDay = Calendar.current.startOfDay(for: date)
         let endOfDay = Calendar.current.date(byAdding: .day, value: 1, to: startOfDay)!
@@ -55,7 +63,9 @@ class FirebaseDataProvider: DataProvider {
             LoggedMeal.fromFirestore(doc.data())
         }
         
-        DebugLogger.shared.firebase("Retrieved \(meals.count) meals from Firebase")
+        Task { @MainActor in
+            DebugLogger.shared.firebase("Retrieved \(meals.count) meals from Firebase")
+        }
         return meals
     }
     
@@ -105,33 +115,45 @@ class FirebaseDataProvider: DataProvider {
     }
     
     func startAnalyzingMeal(_ meal: AnalyzingMeal) async throws {
-        DebugLogger.shared.dataProvider("FirebaseDataProvider.startAnalyzingMeal called")
-        DebugLogger.shared.logAnalyzingMeal(meal, action: "Starting analysis")
+        Task { @MainActor in
+            DebugLogger.shared.dataProvider("FirebaseDataProvider.startAnalyzingMeal called")
+            DebugLogger.shared.logAnalyzingMeal(meal, action: "Starting analysis")
+        }
         
         let analyzingRef = userRef.collection("analyzingMeals").document(meal.id.uuidString)
         let docPath = "users/\(currentUserId)/analyzingMeals/\(meal.id.uuidString)"
-        DebugLogger.shared.firebase("Writing analyzing meal to Firestore: \(docPath)")
+        Task { @MainActor in
+            DebugLogger.shared.firebase("Writing analyzing meal to Firestore: \(docPath)")
+        }
         
         var data = meal.toFirestore()
         data["status"] = "analyzing" // Add status field for future compatibility
         try await analyzingRef.setData(data)
         
-        DebugLogger.shared.success("Analyzing meal started in Firebase")
+        Task { @MainActor in
+            DebugLogger.shared.success("Analyzing meal started in Firebase")
+        }
     }
     
-    func completeAnalyzingMeal(id: String, result: MealAnalysisResult) async throws {
-        DebugLogger.shared.dataProvider("FirebaseDataProvider.completeAnalyzingMeal called")
-        DebugLogger.shared.mealAnalysis("Completing analysis for: \(result.mealName) (ID: \(id))")
+    func completeAnalyzingMeal(id: String, result: MealAnalysisResult) async throws -> LoggedMeal {
+        Task { @MainActor in
+            DebugLogger.shared.dataProvider("FirebaseDataProvider.completeAnalyzingMeal called")
+            DebugLogger.shared.mealAnalysis("Completing analysis for: \(result.mealName) (ID: \(id))")
+        }
         
         // First, get the analyzing meal to preserve its timestamp and windowId
         let analyzingDoc = try await userRef.collection("analyzingMeals").document(id).getDocument()
         guard let analyzingData = analyzingDoc.data(),
               let analyzingMeal = AnalyzingMeal.fromFirestore(analyzingData) else {
-            DebugLogger.shared.error("Analyzing meal not found: \(id)")
+            Task { @MainActor in
+                DebugLogger.shared.error("Analyzing meal not found: \(id)")
+            }
             throw NSError(domain: "FirebaseDataProvider", code: 404, userInfo: [NSLocalizedDescriptionKey: "Analyzing meal not found"])
         }
         
-        DebugLogger.shared.logAnalyzingMeal(analyzingMeal, action: "Found analyzing meal")
+        Task { @MainActor in
+            DebugLogger.shared.logAnalyzingMeal(analyzingMeal, action: "Found analyzing meal")
+        }
         
         // Create the final meal with original timestamp and window
         var meal = LoggedMeal(
@@ -162,14 +184,22 @@ class FirebaseDataProvider: DataProvider {
         }
         
         // Save the meal
-        DebugLogger.shared.dataProvider("Saving completed meal")
+        Task { @MainActor in
+            DebugLogger.shared.dataProvider("Saving completed meal")
+        }
         try await saveMeal(meal)
         
         // Delete from analyzing collection
-        DebugLogger.shared.firebase("Deleting analyzing meal from Firebase: \(id)")
+        Task { @MainActor in
+            DebugLogger.shared.firebase("Deleting analyzing meal from Firebase: \(id)")
+        }
         try await userRef.collection("analyzingMeals").document(id).delete()
         
-        DebugLogger.shared.success("Meal analysis completed and saved")
+        Task { @MainActor in
+            DebugLogger.shared.success("Meal analysis completed and saved")
+        }
+        
+        return meal
     }
     
     func cancelAnalyzingMeal(id: String) async throws {
@@ -279,11 +309,11 @@ class FirebaseDataProvider: DataProvider {
             .getDocuments()
         
         return snapshot.documents.compactMap { doc -> PostMealCheckIn? in
-            guard let data = doc.data() as? [String: Any],
-                  let id = data["id"] as? String,
+            let data = doc.data()
+            guard let _ = data["id"] as? String,
                   let mealId = data["mealId"] as? String,
                   let mealName = data["mealName"] as? String,
-                  let timestamp = data["timestamp"] as? Timestamp,
+                  let _ = data["timestamp"] as? Timestamp,
                   let energyLevel = data["energyLevel"] as? Int,
                   let fullnessLevel = data["fullnessLevel"] as? Int,
                   let moodFocus = data["moodFocus"] as? Int else { return nil }

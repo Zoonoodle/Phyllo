@@ -31,18 +31,26 @@ class MealCaptureService: ObservableObject {
         voiceTranscript: String? = nil,
         barcode: String? = nil
     ) async throws -> AnalyzingMeal {
-        DebugLogger.shared.mealAnalysis("Starting meal analysis - Image: \(image != nil), Voice: \(voiceTranscript != nil), Barcode: \(barcode != nil)")
+        Task { @MainActor in
+            DebugLogger.shared.mealAnalysis("Starting meal analysis - Image: \(image != nil), Voice: \(voiceTranscript != nil), Barcode: \(barcode != nil)")
+        }
         
         // Find the active window for this meal
-        DebugLogger.shared.dataProvider("Fetching current windows")
+        Task { @MainActor in
+            DebugLogger.shared.dataProvider("Fetching current windows")
+        }
         let currentWindows = try await dataProvider.getWindows(for: Date())
         let activeWindow = currentWindows.first { window in
             window.contains(timestamp: Date())
         }
         if let window = activeWindow {
-            DebugLogger.shared.logWindow(window, action: "Found active window")
+            Task { @MainActor in
+                DebugLogger.shared.logWindow(window, action: "Found active window")
+            }
         } else {
-            DebugLogger.shared.warning("No active window found for current time")
+            Task { @MainActor in
+                DebugLogger.shared.warning("No active window found for current time")
+            }
         }
         
         // Create analyzing meal
@@ -54,14 +62,18 @@ class MealCaptureService: ObservableObject {
         )
         
         // Start analyzing in data provider
-        DebugLogger.shared.dataProvider("Starting analyzing meal in data provider")
+        Task { @MainActor in
+            DebugLogger.shared.dataProvider("Starting analyzing meal in data provider")
+        }
         try await dataProvider.startAnalyzingMeal(analyzingMeal)
         
         // Perform analysis in background
         Task {
             do {
                 if let image = image {
-                    DebugLogger.shared.mealAnalysis("Processing image-based analysis")
+                    Task { @MainActor in
+                        DebugLogger.shared.mealAnalysis("Processing image-based analysis")
+                    }
                     // Use VertexAI for photo analysis
                     let result = try await analyzeWithAI(
                         image: image,
@@ -71,7 +83,9 @@ class MealCaptureService: ObservableObject {
                     
                     // Check if clarification is needed
                     if !result.clarifications.isEmpty {
-                        DebugLogger.shared.mealAnalysis("Clarification needed - \(result.clarifications.count) questions")
+                        Task { @MainActor in
+                            DebugLogger.shared.mealAnalysis("Clarification needed - \(result.clarifications.count) questions")
+                        }
                         // Present clarification questions
                         await MainActor.run {
                             ClarificationManager.shared.presentClarification(
@@ -80,22 +94,26 @@ class MealCaptureService: ObservableObject {
                             )
                         }
                     } else {
-                        DebugLogger.shared.mealAnalysis("No clarification needed - completing analysis")
+                        Task { @MainActor in
+                            DebugLogger.shared.mealAnalysis("No clarification needed - completing analysis")
+                        }
                         // No clarification needed, complete the analysis
-                        try await dataProvider.completeAnalyzingMeal(
+                        let savedMeal = try await dataProvider.completeAnalyzingMeal(
                             id: analyzingMeal.id.uuidString,
                             result: result
                         )
                         
-                        DebugLogger.shared.success("Meal analysis completed: \(result.mealName)")
+                        Task { @MainActor in
+                            DebugLogger.shared.success("Meal analysis completed: \(result.mealName)")
+                            DebugLogger.shared.notification("Posting mealAnalysisCompleted notification")
+                        }
                         
                         // Post notification with the completed meal
                         await MainActor.run {
-                            DebugLogger.shared.notification("Posting mealAnalysisCompleted notification")
                             NotificationCenter.default.post(
                                 name: .mealAnalysisCompleted,
                                 object: analyzingMeal,
-                                userInfo: ["result": result]
+                                userInfo: ["result": result, "savedMeal": savedMeal]
                             )
                         }
                     }
@@ -104,33 +122,57 @@ class MealCaptureService: ObservableObject {
                     // TODO: Implement barcode lookup
                     // For now, create a mock result
                     let mockResult = createMockBarcodeResult(barcode: barcode)
-                    try await dataProvider.completeAnalyzingMeal(
+                    let savedMeal = try await dataProvider.completeAnalyzingMeal(
                         id: analyzingMeal.id.uuidString,
                         result: mockResult
                     )
+                    
+                    // Post notification with the completed meal
+                    await MainActor.run {
+                        NotificationCenter.default.post(
+                            name: .mealAnalysisCompleted,
+                            object: analyzingMeal,
+                            userInfo: ["result": mockResult, "savedMeal": savedMeal]
+                        )
+                    }
                     
                 } else if let voiceTranscript = voiceTranscript {
                     // Voice-only analysis
                     // TODO: Implement voice-only analysis
                     let mockResult = createMockVoiceResult(transcript: voiceTranscript)
-                    try await dataProvider.completeAnalyzingMeal(
+                    let savedMeal = try await dataProvider.completeAnalyzingMeal(
                         id: analyzingMeal.id.uuidString,
                         result: mockResult
                     )
+                    
+                    // Post notification with the completed meal
+                    await MainActor.run {
+                        NotificationCenter.default.post(
+                            name: .mealAnalysisCompleted,
+                            object: analyzingMeal,
+                            userInfo: ["result": mockResult, "savedMeal": savedMeal]
+                        )
+                    }
                 }
                 
             } catch {
-                DebugLogger.shared.error("Meal analysis failed: \(error)")
+                Task { @MainActor in
+                    DebugLogger.shared.error("Meal analysis failed: \(error)")
+                }
                 await MainActor.run {
                     self.currentError = error
                 }
                 
                 // Remove the analyzing meal on error so it doesn't get stuck
                 do {
-                    DebugLogger.shared.dataProvider("Cancelling analyzing meal due to error")
+                    Task { @MainActor in
+                        DebugLogger.shared.dataProvider("Cancelling analyzing meal due to error")
+                    }
                     try await dataProvider.cancelAnalyzingMeal(id: analyzingMeal.id.uuidString)
                 } catch {
-                    DebugLogger.shared.error("Failed to remove analyzing meal after error: \(error)")
+                    Task { @MainActor in
+                        DebugLogger.shared.error("Failed to remove analyzing meal after error: \(error)")
+                    }
                 }
             }
         }
@@ -185,10 +227,19 @@ class MealCaptureService: ObservableObject {
         // TODO: Re-analyze with clarification answers
         // For now, just complete with original result
         
-        try await dataProvider.completeAnalyzingMeal(
+        let savedMeal = try await dataProvider.completeAnalyzingMeal(
             id: analyzingMeal.id.uuidString,
             result: originalResult
         )
+        
+        // Post notification with the completed meal
+        await MainActor.run {
+            NotificationCenter.default.post(
+                name: .mealAnalysisCompleted,
+                object: analyzingMeal,
+                userInfo: ["result": originalResult, "savedMeal": savedMeal]
+            )
+        }
     }
     
     // MARK: - Mock Results (Temporary)
