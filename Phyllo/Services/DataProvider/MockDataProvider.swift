@@ -55,12 +55,12 @@ class MockDataProvider: DataProvider {
         }
     }
     
-    func completeAnalyzingMeal(id: String, result: MealAnalysisResult) async throws {
-        await MainActor.run {
+    func completeAnalyzingMeal(id: String, result: MealAnalysisResult) async throws -> LoggedMeal {
+        return try await MainActor.run {
             // Find the analyzing meal first to get its timestamp and windowId
             guard let analyzingMeal = mockManager.analyzingMeals.first(where: { $0.id.uuidString == id }) else {
                 print("❌ Analyzing meal not found: \(id)")
-                return
+                throw NSError(domain: "MockDataProvider", code: 404, userInfo: [NSLocalizedDescriptionKey: "Analyzing meal not found"])
             }
             
             // Create meal from result with original timestamp
@@ -93,6 +93,8 @@ class MockDataProvider: DataProvider {
             
             // Complete the analyzing meal
             mockManager.completeAnalyzingMeal(analyzingMeal, with: meal)
+            
+            return meal
         }
     }
     
