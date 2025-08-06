@@ -215,9 +215,9 @@ extension MealWindow {
             return nil
         }
         
-        // MealWindow generates its own ID, so we can't restore the original ID from Firestore
-        // This is a limitation of the current design
+        // Create MealWindow with preserved ID from Firestore
         var window = MealWindow(
+            id: id,  // Use the original ID from Firestore
             startTime: startTime,
             endTime: endTime,
             targetCalories: targetCalories,

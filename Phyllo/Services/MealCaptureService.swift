@@ -44,6 +44,15 @@ class MealCaptureService: ObservableObject {
         let currentWindows = try await dataProvider.getWindows(for: currentDate)
         let now = currentDate
         
+        // Debug logging for window assignment
+        Task { @MainActor in
+            DebugLogger.shared.dataProvider("Finding window for meal at \(now)")
+            DebugLogger.shared.dataProvider("Available windows: \(currentWindows.count)")
+            for window in currentWindows {
+                DebugLogger.shared.dataProvider("Window \(window.id): \(window.startTime) - \(window.endTime), Purpose: \(window.purpose.rawValue)")
+            }
+        }
+        
         // First, try to find an active window
         var bestWindow = currentWindows.first { window in
             window.contains(timestamp: now)
@@ -79,6 +88,7 @@ class MealCaptureService: ObservableObject {
         if let window = bestWindow {
             Task { @MainActor in
                 DebugLogger.shared.logWindow(window, action: "Found best window for meal")
+                DebugLogger.shared.success("Assigned meal to window \(window.id) (\(window.purpose.rawValue) \(window.startTime) - \(window.endTime))")
             }
         } else {
             Task { @MainActor in
@@ -93,6 +103,10 @@ class MealCaptureService: ObservableObject {
             imageData: image?.jpegData(compressionQuality: 0.8),
             voiceDescription: voiceTranscript
         )
+        
+        Task { @MainActor in
+            DebugLogger.shared.mealAnalysis("Created AnalyzingMeal with ID: \(analyzingMeal.id), Window ID: \(bestWindow?.id.uuidString ?? "nil")")
+        }
         
         // Start analyzing in data provider
         Task { @MainActor in

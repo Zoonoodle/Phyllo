@@ -69,7 +69,7 @@ struct MacroTargets {
 }
 
 struct MealWindow: Identifiable {
-    let id = UUID()
+    let id: UUID
     let startTime: Date
     let endTime: Date
     let targetCalories: Int
@@ -147,6 +147,57 @@ struct MealWindow: Identifiable {
         let formatter = DateFormatter()
         formatter.timeStyle = .short
         return "\(formatter.string(from: startTime)) - \(formatter.string(from: endTime))"
+    }
+    
+    // MARK: - Initializers
+    
+    // Primary initializer with optional ID (for loading from Firestore)
+    init(
+        id: UUID? = nil,
+        startTime: Date,
+        endTime: Date,
+        targetCalories: Int,
+        targetMacros: MacroTargets,
+        purpose: WindowPurpose,
+        flexibility: WindowFlexibility,
+        dayDate: Date,
+        adjustedCalories: Int? = nil,
+        adjustedMacros: MacroTargets? = nil,
+        redistributionReason: WindowRedistributionManager.RedistributionReason? = nil
+    ) {
+        self.id = id ?? UUID()
+        self.startTime = startTime
+        self.endTime = endTime
+        self.targetCalories = targetCalories
+        self.targetMacros = targetMacros
+        self.purpose = purpose
+        self.flexibility = flexibility
+        self.dayDate = dayDate
+        self.adjustedCalories = adjustedCalories
+        self.adjustedMacros = adjustedMacros
+        self.redistributionReason = redistributionReason
+    }
+    
+    // Convenience initializer for new windows (generates ID)
+    init(
+        startTime: Date,
+        endTime: Date,
+        targetCalories: Int,
+        targetMacros: MacroTargets,
+        purpose: WindowPurpose,
+        flexibility: WindowFlexibility,
+        dayDate: Date
+    ) {
+        self.init(
+            id: nil,
+            startTime: startTime,
+            endTime: endTime,
+            targetCalories: targetCalories,
+            targetMacros: targetMacros,
+            purpose: purpose,
+            flexibility: flexibility,
+            dayDate: dayDate
+        )
     }
 }
 
