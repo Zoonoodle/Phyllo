@@ -39,6 +39,9 @@ struct DeveloperDashboardView: View {
                             DashboardTab(title: "Nudges", icon: "bell.badge", isSelected: selectedTab == 5) {
                                 selectedTab = 5
                             }
+                            DashboardTab(title: "Debug Logs", icon: "ladybug.fill", isSelected: selectedTab == 6) {
+                                selectedTab = 6
+                            }
                         }
                         .padding(.horizontal)
                     }
@@ -60,6 +63,8 @@ struct DeveloperDashboardView: View {
                                 DataViewerTabView()
                             case 5:
                                 NudgesDebugTabView()
+                            case 6:
+                                DebugLogView()
                             default:
                                 EmptyView()
                             }

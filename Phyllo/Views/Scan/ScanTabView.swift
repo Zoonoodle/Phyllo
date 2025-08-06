@@ -192,22 +192,30 @@ struct ScanTabView: View {
                                 // Save the meal to the data provider
                                 Task {
                                     do {
+                                        DebugLogger.shared.dataProvider("Saving meal: \(meal.name)")
+                                        let start = DebugLogger.shared.startTiming("Save Meal")
+                                        
                                         try await dataProvider.saveMeal(meal)
+                                        
+                                        DebugLogger.shared.endTiming("Save Meal", start: start)
+                                        DebugLogger.shared.success("Meal saved successfully")
                                         
                                         // Navigate to schedule to see the meal
                                         await MainActor.run {
+                                            DebugLogger.shared.navigation("Navigating to schedule to show saved meal")
                                             withAnimation(.easeInOut(duration: 0.3)) {
                                                 selectedTab = 0
                                             }
                                             
                                             // Trigger meal sliding animation
+                                            DebugLogger.shared.notification("Posting animateMealToWindow notification")
                                             NotificationCenter.default.post(
                                                 name: .animateMealToWindow,
                                                 object: meal
                                             )
                                         }
                                     } catch {
-                                        print("❌ Failed to save meal: \(error)")
+                                        DebugLogger.shared.error("Failed to save meal: \(error)")
                                     }
                                 }
                             }
@@ -234,9 +242,11 @@ struct ScanTabView: View {
         }
         .preferredColorScheme(.dark)
         .onReceive(NotificationCenter.default.publisher(for: .mealAnalysisCompleted)) { notification in
+            DebugLogger.shared.notification("Received mealAnalysisCompleted notification")
             if let analyzingMeal = notification.object as? AnalyzingMeal,
                let result = notification.userInfo?["result"] as? MealAnalysisResult,
                analyzingMeal.id == currentAnalyzingMeal?.id {
+                DebugLogger.shared.mealAnalysis("Analysis completed for meal: \(result.mealName)")
                 // Convert MealAnalysisResult to LoggedMeal for display
                 var loggedMeal = LoggedMeal(
                     name: result.mealName,
@@ -268,12 +278,16 @@ struct ScanTabView: View {
                 lastCompletedMeal = loggedMeal
                 analysisResult = result
                 
+                DebugLogger.shared.logMeal(loggedMeal, action: "Analysis completed")
+                
                 // Navigate back to scan tab and show results
+                DebugLogger.shared.navigation("Navigating back to scan tab to show results")
                 withAnimation(.easeInOut(duration: 0.3)) {
                     selectedTab = 2 // Scan tab
                 }
                 
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    DebugLogger.shared.ui("Showing meal results sheet")
                     showResults = true
                 }
                 
@@ -284,6 +298,7 @@ struct ScanTabView: View {
     }
     
     private func performCapture() {
+        DebugLogger.shared.ui("Capture button pressed - Mode: \(selectedMode.rawValue)")
         withAnimation(.spring(response: 0.3)) {
             captureAnimation = true
         }
@@ -293,12 +308,15 @@ struct ScanTabView: View {
             captureAnimation = false
             if selectedMode == .photo {
                 // For photo mode, show voice input overlay
+                DebugLogger.shared.ui("Showing voice input overlay")
                 showVoiceInput = true
             } else if selectedMode == .voice {
                 // For voice-only mode, start analyzing immediately
+                DebugLogger.shared.ui("Starting voice-only analysis")
                 simulateAIProcessing()
             } else {
                 // For barcode, start analyzing
+                DebugLogger.shared.ui("Starting barcode analysis")
                 simulateAIProcessing()
             }
         }
@@ -307,23 +325,30 @@ struct ScanTabView: View {
     private func simulateAIProcessing() {
         Task {
             do {
+                DebugLogger.shared.mealAnalysis("Starting meal analysis process")
+                let start = DebugLogger.shared.startTiming("Meal Analysis")
+                
                 // Start analyzing meal with real or mock AI
                 let analyzingMeal = try await mealCaptureService.startMealAnalysis(
                     image: capturedImage,
                     voiceTranscript: nil // TODO: Add voice transcript support
                 )
                 
+                DebugLogger.shared.logAnalyzingMeal(analyzingMeal, action: "Created")
+                DebugLogger.shared.endTiming("Meal Analysis", start: start)
+                
                 await MainActor.run {
                     currentAnalyzingMeal = analyzingMeal
                     
                     // Navigate to timeline and scroll to analyzing meal
+                    DebugLogger.shared.navigation("Navigating to timeline with analyzing meal")
                     scrollToAnalyzingMeal = analyzingMeal
                     withAnimation(.easeInOut(duration: 0.3)) {
                         selectedTab = 0
                     }
                 }
             } catch {
-                print("❌ Failed to start meal analysis: \(error)")
+                DebugLogger.shared.error("Failed to start meal analysis: \(error)")
                 await MainActor.run {
                     showLoading = false
                     // TODO: Show error alert

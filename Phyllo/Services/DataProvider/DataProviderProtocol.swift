@@ -274,6 +274,9 @@ class DataSourceProvider {
     func configure(with provider: DataProvider) {
         self._provider = provider
         
+        let providerType = type(of: provider)
+        DebugLogger.shared.dataProvider("DataSourceProvider configured with: \(providerType)")
+        
         // Clean up any stale data on startup
         Task {
             await cleanupStaleData()
@@ -283,9 +286,12 @@ class DataSourceProvider {
     /// Clean up stale data like old analyzing meals
     private func cleanupStaleData() async {
         do {
+            DebugLogger.shared.dataProvider("Starting stale data cleanup")
             // This will trigger cleanup of old analyzing meals in Firebase
-            _ = try await provider.getAnalyzingMeals()
+            let analyzingMeals = try await provider.getAnalyzingMeals()
+            DebugLogger.shared.success("Stale data cleanup completed. Found \(analyzingMeals.count) analyzing meals")
         } catch {
+            DebugLogger.shared.error("Failed to clean up stale data: \(error)")
             print("⚠️ Failed to clean up stale data: \(error)")
         }
     }

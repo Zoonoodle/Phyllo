@@ -15,6 +15,8 @@ class FirebaseConfig {
         // Check if GoogleService-Info.plist exists
         guard let path = Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist"),
               FileManager.default.fileExists(atPath: path) else {
+            DebugLogger.shared.warning("Firebase not configured - GoogleService-Info.plist not found")
+            DebugLogger.shared.warning("Using mock VertexAI service. See FIREBASE_SETUP_GUIDE.md for setup instructions")
             print("⚠️ Firebase not configured - GoogleService-Info.plist not found")
             print("⚠️ Using mock VertexAI service. See FIREBASE_SETUP_GUIDE.md for setup instructions")
             return
@@ -43,6 +45,9 @@ class FirebaseConfig {
         // Enable offline persistence
         Firestore.firestore().settings.isPersistenceEnabled = true
         
+        DebugLogger.shared.firebase("Firebase configured successfully")
+        DebugLogger.shared.info("App Check: \(AppCheck.appCheck().isTokenAutoRefreshEnabled ? "Enabled" : "Disabled")")
+        DebugLogger.shared.info("Firestore offline persistence: Enabled")
         print("✅ Firebase configured successfully")
     }
 }
