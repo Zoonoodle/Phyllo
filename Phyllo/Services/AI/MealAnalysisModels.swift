@@ -54,7 +54,17 @@ struct MealAnalysisResult: Codable {
     
     struct ClarificationQuestion: Codable {
         let question: String
-        let options: [String]
+        let options: [ClarificationOption]
         let clarificationType: String
+    }
+    
+    struct ClarificationOption: Codable {
+        let text: String
+        let calorieImpact: Int
+        let proteinImpact: Double?
+        let carbImpact: Double?
+        let fatImpact: Double?
+        let isRecommended: Bool?
+        let note: String?
     }
 }

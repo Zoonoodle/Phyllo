@@ -164,6 +164,7 @@ class VertexAIService: ObservableObject {
            - Only ask if confidence < 0.8 or critical info missing
            - Max 2 questions
            - Provide 3-4 multiple choice options per question
+           - Each option must include nutritional impact
         
         IMPORTANT: Return ONLY this exact JSON structure with these exact field names:
         {
@@ -182,7 +183,18 @@ class VertexAIService: ObservableObject {
           "micronutrients": [
             {"name": "Iron", "amount": 2.5, "unit": "mg", "percentRDA": 14.0}
           ],
-          "clarifications": []
+          "clarifications": [
+            {
+              "question": "What dressing was used?",
+              "clarificationType": "condiment",
+              "options": [
+                {"text": "No dressing", "calorieImpact": 0, "proteinImpact": 0, "carbImpact": 0, "fatImpact": 0, "isRecommended": false},
+                {"text": "Ranch dressing (2 tbsp)", "calorieImpact": 140, "proteinImpact": 1, "carbImpact": 2, "fatImpact": 14, "isRecommended": false},
+                {"text": "Vinaigrette (2 tbsp)", "calorieImpact": 70, "proteinImpact": 0, "carbImpact": 3, "fatImpact": 7, "isRecommended": true, "note": "Most common"},
+                {"text": "Caesar dressing (2 tbsp)", "calorieImpact": 160, "proteinImpact": 2, "carbImpact": 2, "fatImpact": 16, "isRecommended": false}
+              ]
+            }
+          ]
         }
         
         CRITICAL: Use exactly these field names:
@@ -386,9 +398,43 @@ class VertexAIService: ObservableObject {
     private func parseClarifications(_ list: [[String: Any]]) -> [MealAnalysisResult.ClarificationQuestion] {
         list.compactMap { item in
             guard let question = item["question"] as? String else { return nil }
+            
+            // Parse options - handle both string array and object array formats
+            let options: [MealAnalysisResult.ClarificationOption]
+            if let optionsArray = item["options"] as? [[String: Any]] {
+                // New format with detailed options
+                options = optionsArray.compactMap { opt in
+                    guard let text = opt["text"] as? String else { return nil }
+                    return .init(
+                        text: text,
+                        calorieImpact: (opt["calorieImpact"] as? Int) ?? 0,
+                        proteinImpact: opt["proteinImpact"] as? Double,
+                        carbImpact: opt["carbImpact"] as? Double,
+                        fatImpact: opt["fatImpact"] as? Double,
+                        isRecommended: opt["isRecommended"] as? Bool,
+                        note: opt["note"] as? String
+                    )
+                }
+            } else if let simpleOptions = item["options"] as? [String] {
+                // Old format with just strings
+                options = simpleOptions.map { text in
+                    .init(
+                        text: text,
+                        calorieImpact: 0,
+                        proteinImpact: nil,
+                        carbImpact: nil,
+                        fatImpact: nil,
+                        isRecommended: nil,
+                        note: nil
+                    )
+                }
+            } else {
+                options = []
+            }
+            
             return .init(
                 question: question,
-                options: item["options"] as? [String] ?? [],
+                options: options,
                 clarificationType: item["clarificationType"] as? String ?? "portion"
             )
         }

@@ -11,6 +11,8 @@ struct DayNavigationHeader: View {
     @Binding var selectedDate: Date
     @Binding var showDeveloperDashboard: Bool
     @StateObject private var mockData = MockDataManager.shared
+    let meals: [LoggedMeal]
+    let userProfile: UserProfile
     
     private var dateFormatter: DateFormatter {
         let formatter = DateFormatter()
@@ -60,7 +62,7 @@ struct DayNavigationHeader: View {
                 .padding(.horizontal, 24)
                 
                 // Macro bars (MacroFactors style)
-                MacroSummaryBar()
+                MacroSummaryBar(meals: meals, userProfile: userProfile)
                     .padding(.horizontal, 24)
             }
             .padding(.vertical, 6)
@@ -91,29 +93,47 @@ struct DayNavigationHeader: View {
 
 // Macro summary bar like MacroFactors
 struct MacroSummaryBar: View {
-    @StateObject private var mockData = MockDataManager.shared
+    let meals: [LoggedMeal]
+    let userProfile: UserProfile
+    
+    // Calculate totals from actual meals
+    private var totalCalories: Int {
+        meals.reduce(0) { $0 + $1.calories }
+    }
+    
+    private var totalProtein: Int {
+        meals.reduce(0) { $0 + $1.protein }
+    }
+    
+    private var totalFat: Int {
+        meals.reduce(0) { $0 + $1.fat }
+    }
+    
+    private var totalCarbs: Int {
+        meals.reduce(0) { $0 + $1.carbs }
+    }
     
     private var calorieProgress: Double {
-        let consumed = Double(mockData.todaysCaloriesConsumed)
-        let target = Double(mockData.userProfile.dailyCalorieTarget)
+        let consumed = Double(totalCalories)
+        let target = Double(userProfile.dailyCalorieTarget)
         return min(consumed / target, 1.0)
     }
     
     private var proteinProgress: Double {
-        let consumed = Double(mockData.todaysProteinConsumed)
-        let target = Double(mockData.userProfile.dailyProteinTarget)
+        let consumed = Double(totalProtein)
+        let target = Double(userProfile.dailyProteinTarget)
         return min(consumed / target, 1.0)
     }
     
     private var fatProgress: Double {
-        let consumed = Double(mockData.todaysFatConsumed)
-        let target = Double(mockData.userProfile.dailyFatTarget)
+        let consumed = Double(totalFat)
+        let target = Double(userProfile.dailyFatTarget)
         return min(consumed / target, 1.0)
     }
     
     private var carbProgress: Double {
-        let consumed = Double(mockData.todaysCarbsConsumed)
-        let target = Double(mockData.userProfile.dailyCarbTarget)
+        let consumed = Double(totalCarbs)
+        let target = Double(userProfile.dailyCarbTarget)
         return min(consumed / target, 1.0)
     }
     
@@ -122,8 +142,8 @@ struct MacroSummaryBar: View {
             // Calories
             MacroProgressItem(
                 sfSymbol: "flame.fill",
-                value: mockData.todaysCaloriesConsumed,
-                target: mockData.userProfile.dailyCalorieTarget,
+                value: totalCalories,
+                target: userProfile.dailyCalorieTarget,
                 progress: calorieProgress,
                 color: .phylloAccent
             )
@@ -131,8 +151,8 @@ struct MacroSummaryBar: View {
             // Protein
             MacroProgressItem(
                 label: "P",
-                value: mockData.todaysProteinConsumed,
-                target: mockData.userProfile.dailyProteinTarget,
+                value: totalProtein,
+                target: userProfile.dailyProteinTarget,
                 progress: proteinProgress,
                 color: .orange
             )
@@ -140,8 +160,8 @@ struct MacroSummaryBar: View {
             // Fat
             MacroProgressItem(
                 label: "F",
-                value: mockData.todaysFatConsumed,
-                target: mockData.userProfile.dailyFatTarget,
+                value: totalFat,
+                target: userProfile.dailyFatTarget,
                 progress: fatProgress,
                 color: .yellow
             )
@@ -149,8 +169,8 @@ struct MacroSummaryBar: View {
             // Carbs
             MacroProgressItem(
                 label: "C",
-                value: mockData.todaysCarbsConsumed,
-                target: mockData.userProfile.dailyCarbTarget,
+                value: totalCarbs,
+                target: userProfile.dailyCarbTarget,
                 progress: carbProgress,
                 color: .blue
             )
@@ -222,7 +242,9 @@ struct MacroProgressItem: View {
         VStack {
             DayNavigationHeader(
                 selectedDate: .constant(Date()),
-                showDeveloperDashboard: $showDeveloperDashboard
+                showDeveloperDashboard: $showDeveloperDashboard,
+                meals: [],
+                userProfile: UserProfile.mockProfile
             )
             .background(Color.phylloElevated)
             

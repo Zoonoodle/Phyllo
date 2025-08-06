@@ -310,13 +310,7 @@ class MealCaptureService: ObservableObject {
                 fat: 15
             ),
             micronutrients: [],
-            clarifications: [
-                .init(
-                    question: "What type of meal was this?",
-                    options: ["Breakfast", "Lunch", "Dinner", "Snack"],
-                    clarificationType: "meal_type"
-                )
-            ]
+            clarifications: []
         )
     }
 }

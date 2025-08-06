@@ -14,14 +14,40 @@ struct ClarificationQuestionsView: View {
     @State private var showResults = false
     @State private var isCompleted = false
     @StateObject private var mockData = MockDataManager.shared
+    @StateObject private var clarificationManager = ClarificationManager.shared
     
     var analyzingMeal: AnalyzingMeal?
     var mealResult: LoggedMeal?
+    var clarificationQuestions: [MealAnalysisResult.ClarificationQuestion]?
     var onComplete: ((LoggedMeal) -> Void)?
     
-    // Mock questions
-    let questions = [
-        ClarificationQuestion(
+    // Use AI-provided questions or fall back to mock questions
+    var questions: [ClarificationQuestion] {
+        if let aiQuestions = clarificationQuestions, !aiQuestions.isEmpty {
+            // Convert AI questions to view-compatible format
+            return aiQuestions.enumerated().map { index, aiQuestion in
+                ClarificationQuestion(
+                    id: index,
+                    question: aiQuestion.question,
+                    options: aiQuestion.options.map { aiOption in
+                        ClarificationOption(
+                            id: aiOption.text.lowercased().replacingOccurrences(of: " ", with: "_"),
+                            text: aiOption.text,
+                            icon: getIconForOption(aiOption.text),
+                            calorieImpact: aiOption.calorieImpact,
+                            proteinImpact: Int(aiOption.proteinImpact ?? 0),
+                            carbImpact: Int(aiOption.carbImpact ?? 0),
+                            fatImpact: Int(aiOption.fatImpact ?? 0),
+                            isRecommended: aiOption.isRecommended ?? false,
+                            note: aiOption.note
+                        )
+                    }
+                )
+            }
+        } else {
+            // Fall back to mock questions
+            return [
+                ClarificationQuestion(
             id: 0,
             question: "Was any sugar, syrup, or sweetener added?",
             options: [
@@ -102,11 +128,78 @@ struct ClarificationQuestionsView: View {
                     isRecommended: false
                 )
             ]
+        ),
+        ClarificationQuestion(
+            id: 1,
+            question: "What type of milk was used?",
+            options: [
+                ClarificationOption(
+                    id: "whole",
+                    text: "Whole milk",
+                    icon: "drop.circle",
+                    calorieImpact: 150,
+                    proteinImpact: 8,
+                    fatImpact: 8,
+                    isRecommended: false
+                ),
+                ClarificationOption(
+                    id: "2percent",
+                    text: "2% milk",
+                    icon: "drop.circle",
+                    calorieImpact: 120,
+                    proteinImpact: 8,
+                    fatImpact: 5,
+                    isRecommended: true,
+                    note: "Most common"
+                ),
+                ClarificationOption(
+                    id: "almond",
+                    text: "Almond milk",
+                    icon: "leaf.fill",
+                    calorieImpact: 40,
+                    proteinImpact: 1,
+                    fatImpact: 3,
+                    isRecommended: false
+                ),
+                ClarificationOption(
+                    id: "oat",
+                    text: "Oat milk",
+                    icon: "leaf.fill",
+                    calorieImpact: 120,
+                    proteinImpact: 3,
+                    carbImpact: 16,
+                    isRecommended: false
+                )
+            ]
         )
-    ]
+            ]
+        }
+    }
     
     var currentQuestion: ClarificationQuestion {
         questions[currentQuestionIndex]
+    }
+    
+    // Helper function to get icon based on option text
+    private func getIconForOption(_ text: String) -> String {
+        let lowercased = text.lowercased()
+        if lowercased.contains("no ") || lowercased.contains("none") || lowercased.contains("without") {
+            return "xmark.circle"
+        } else if lowercased.contains("milk") || lowercased.contains("cream") {
+            return "drop.circle"
+        } else if lowercased.contains("sugar") || lowercased.contains("syrup") || lowercased.contains("honey") {
+            return "drop.fill"
+        } else if lowercased.contains("sauce") || lowercased.contains("dressing") {
+            return "drop.triangle.fill"
+        } else if lowercased.contains("cheese") {
+            return "circle.fill"
+        } else if lowercased.contains("oil") || lowercased.contains("butter") {
+            return "drop.fill"
+        } else if lowercased.contains("vegetable") || lowercased.contains("plant") || lowercased.contains("almond") || lowercased.contains("oat") || lowercased.contains("soy") {
+            return "leaf.fill"
+        } else {
+            return "questionmark.circle"
+        }
     }
     
     var body: some View {
@@ -273,6 +366,9 @@ struct ClarificationQuestionsView: View {
     }
     
     private func completeClarification() {
+        // Store clarification answers in the manager
+        clarificationManager.clarificationAnswers = selectedOptions.mapValues { $0 }
+        
         // Use the passed meal result or create a new one
         let finalMeal = mealResult ?? createMockMeal()
         

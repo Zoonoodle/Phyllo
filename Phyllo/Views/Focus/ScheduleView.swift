@@ -32,7 +32,9 @@ struct ScheduleView: View {
                     // Day navigation header with integrated logo and settings
                     DayNavigationHeader(
                         selectedDate: $selectedDate,
-                        showDeveloperDashboard: $showDeveloperDashboard
+                        showDeveloperDashboard: $showDeveloperDashboard,
+                        meals: viewModel.meals,
+                        userProfile: viewModel.userProfile
                     )
                     .background(Color.phylloBackground)
                     .zIndex(2) // Keep header above timeline content

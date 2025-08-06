@@ -124,6 +124,7 @@ struct MainTabView: View {
                 ClarificationQuestionsView(
                     analyzingMeal: analyzingMeal,
                     mealResult: tempMeal,
+                    clarificationQuestions: analysisResult.clarifications,
                     onComplete: { finalMeal in
                         clarificationManager.completeClarification()
                     }
