@@ -59,6 +59,7 @@ struct ScheduleView: View {
             if showWindowDetail, let window = selectedWindow {
                 WindowDetailOverlay(
                     window: window,
+                    viewModel: viewModel,
                     showWindowDetail: $showWindowDetail,
                     selectedMealId: $selectedMealId,
                     animationNamespace: animationNamespace

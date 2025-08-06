@@ -73,15 +73,11 @@ struct ActiveWindowNudge_Previews: PreviewProvider {
             Color.phylloBackground.ignoresSafeArea()
             
             ActiveWindowNudge(
-                window: MockDataManager.shared.mealWindows[0],
+                window: MealWindow.mockWindows(for: .performanceFocus)[0],
                 timeRemaining: 45
             ) {
                 print("Dismissed")
             }
-        }
-        .onAppear {
-            MockDataManager.shared.completeMorningCheckIn()
-            MockDataManager.shared.simulateTime(hour: 12)
         }
     }
 }

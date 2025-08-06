@@ -31,7 +31,7 @@ struct WindowCalculationService {
                 profile: profile
             )
             
-        case .muscleBuild:
+        case .muscleGain:
             return generateMuscleGainWindows(
                 dayDate: dayDate,
                 wakeTime: wakeTime,
@@ -39,7 +39,7 @@ struct WindowCalculationService {
                 profile: profile
             )
             
-        case .improveEnergy:
+        case .performanceFocus:
             return generatePerformanceWindows(
                 dayDate: dayDate,
                 wakeTime: wakeTime,
@@ -49,6 +49,33 @@ struct WindowCalculationService {
             
         case .maintainWeight:
             return generateBalancedWindows(
+                dayDate: dayDate,
+                wakeTime: wakeTime,
+                lastMealTime: lastMealTime,
+                profile: profile
+            )
+            
+        case .betterSleep:
+            // Use performance windows with earlier last meal timing
+            return generatePerformanceWindows(
+                dayDate: dayDate,
+                wakeTime: wakeTime,
+                lastMealTime: lastMealTime,
+                profile: profile
+            )
+            
+        case .overallWellbeing:
+            // Use balanced approach for general wellbeing
+            return generateBalancedWindows(
+                dayDate: dayDate,
+                wakeTime: wakeTime,
+                lastMealTime: lastMealTime,
+                profile: profile
+            )
+            
+        case .athleticPerformance:
+            // Use muscle gain approach for athletic performance
+            return generateMuscleGainWindows(
                 dayDate: dayDate,
                 wakeTime: wakeTime,
                 lastMealTime: lastMealTime,

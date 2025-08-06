@@ -406,7 +406,7 @@ class FirebaseDataProvider: DataProvider {
                 height: 70, // inches
                 weight: 170, // lbs
                 activityLevel: .moderate,
-                primaryGoal: .improveEnergy,
+                primaryGoal: .performanceFocus,
                 dietaryPreferences: [],
                 dietaryRestrictions: [],
                 dailyCalorieTarget: 2400,

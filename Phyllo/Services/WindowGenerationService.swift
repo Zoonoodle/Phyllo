@@ -27,12 +27,24 @@ class WindowGenerationService {
         switch profile.primaryGoal {
         case .weightLoss:
             return generateWeightLossWindows(date: date, wakeTime: wakeTime, sleepTime: sleepTime, profile: profile)
-        case .muscleBuild:
+        case .muscleGain:
             return generateMuscleBuildWindows(date: date, wakeTime: wakeTime, sleepTime: sleepTime, profile: profile)
         case .maintainWeight:
             return generateMaintenanceWindows(date: date, wakeTime: wakeTime, sleepTime: sleepTime, profile: profile)
-        case .improveEnergy:
+        case .performanceFocus:
             return generateEnergyWindows(date: date, wakeTime: wakeTime, sleepTime: sleepTime, profile: profile)
+            
+        case .betterSleep:
+            // Use performance approach for better sleep
+            return generateEnergyWindows(date: date, wakeTime: wakeTime, sleepTime: sleepTime, profile: profile)
+            
+        case .overallWellbeing:
+            // Use balanced maintenance approach
+            return generateMaintenanceWindows(date: date, wakeTime: wakeTime, sleepTime: sleepTime, profile: profile)
+            
+        case .athleticPerformance:
+            // Use muscle building approach for athletic performance
+            return generateMuscleBuildWindows(date: date, wakeTime: wakeTime, sleepTime: sleepTime, profile: profile)
         }
     }
     

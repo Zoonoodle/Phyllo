@@ -81,15 +81,11 @@ struct MissedWindowNudge_Previews: PreviewProvider {
             Color.phylloBackground.ignoresSafeArea()
             
             MissedWindowNudge(
-                window: MockDataManager.shared.mealWindows[0],
+                window: MealWindow.mockWindows(for: .performanceFocus)[0],
                 onResponse: { ate in
                     print(ate ? "User ate" : "User skipped")
                 }
             )
-        }
-        .onAppear {
-            MockDataManager.shared.completeMorningCheckIn()
-            MockDataManager.shared.simulateTime(hour: 14)
         }
     }
 }

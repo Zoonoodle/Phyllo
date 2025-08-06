@@ -135,21 +135,7 @@ class MockDataManager: ObservableObject {
     
     // MARK: - Goal Management
     func setPrimaryGoal(_ goal: NutritionGoal) {
-        // Convert NutritionGoal to PrimaryGoal
-        let newPrimaryGoal: PrimaryGoal = {
-            switch goal {
-            case .weightLoss:
-                return .weightLoss
-            case .muscleGain:
-                return .muscleBuild
-            case .maintainWeight:
-                return .maintainWeight
-            case .performanceFocus, .betterSleep, .overallWellbeing, .athleticPerformance:
-                return .improveEnergy
-            }
-        }()
-        
-        userProfile.primaryGoal = newPrimaryGoal
+        userProfile.primaryGoal = goal
         
         // Regenerate windows with new goal
         let windowGenerator = WindowGenerationService.shared
@@ -651,17 +637,7 @@ class MockDataManager: ObservableObject {
     
     // Additional properties for Momentum tab
     var primaryGoal: NutritionGoal {
-        // Convert PrimaryGoal to NutritionGoal
-        switch userProfile.primaryGoal {
-        case .weightLoss:
-            return .weightLoss(targetPounds: 10, timeline: 8)
-        case .muscleBuild:
-            return .muscleGain(targetPounds: 5, timeline: 12)
-        case .maintainWeight:
-            return .maintainWeight
-        case .improveEnergy:
-            return .performanceFocus
-        }
+        return userProfile.primaryGoal
     }
     
     var mealsLoggedToday: [LoggedMeal] {

@@ -9,6 +9,7 @@ import SwiftUI
 
 struct WindowDetailOverlay: View {
     let window: MealWindow
+    @ObservedObject var viewModel: ScheduleViewModel
     @Binding var showWindowDetail: Bool
     @Binding var selectedMealId: String?
     let animationNamespace: Namespace.ID
@@ -94,7 +95,7 @@ struct WindowDetailOverlay: View {
                 ScrollView {
                     VStack(spacing: 24) {
                         // Scrollable nutrition header
-                        ScrollableNutritionHeader(window: window, currentPage: $currentPage)
+                        ScrollableNutritionHeader(window: window, currentPage: $currentPage, viewModel: viewModel)
                             .padding(.horizontal, 32)
                         
                         // Custom page indicator
@@ -109,7 +110,7 @@ struct WindowDetailOverlay: View {
                         .padding(.top, -8) // Reduce spacing between card and indicator
                         
                         // Logged foods section
-                        WindowFoodsList(window: window, selectedMealId: $selectedMealId)
+                        WindowFoodsList(window: window, selectedMealId: $selectedMealId, viewModel: viewModel)
                             .padding(.horizontal, 32)
                         
                         // Window purpose section
@@ -154,6 +155,7 @@ struct WindowDetailOverlay: View {
 #Preview {
     WindowDetailOverlay(
         window: MealWindow.mockWindows(for: .performanceFocus).first!,
+        viewModel: ScheduleViewModel(),
         showWindowDetail: .constant(true),
         selectedMealId: .constant(nil),
         animationNamespace: Namespace().wrappedValue

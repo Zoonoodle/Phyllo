@@ -152,11 +152,7 @@ struct WindowPurposeCard: View {
     ZStack {
         Color.phylloBackground.ignoresSafeArea()
         
-        WindowPurposeCard(window: MockDataManager.shared.mealWindows[0])
+        WindowPurposeCard(window: MealWindow.mockWindows(for: .performanceFocus)[0])
             .padding()
-    }
-    .onAppear {
-        MockDataManager.shared.completeMorningCheckIn()
-        MockDataManager.shared.simulateTime(hour: 12)
     }
 }
