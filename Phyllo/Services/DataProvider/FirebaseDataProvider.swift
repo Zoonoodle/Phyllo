@@ -215,16 +215,24 @@ class FirebaseDataProvider: DataProvider {
     }
     
     func getWindows(for date: Date) async throws -> [MealWindow] {
-        let dateString = ISO8601DateFormatter.yyyyMMdd.string(from: date)
+        // Use start and end of day to query windows
+        let calendar = Calendar.current
+        let startOfDay = calendar.startOfDay(for: date)
+        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
         
-        // Simplified query without ordering to avoid index requirement
+        // Query windows that start within this day
         let snapshot = try await userRef.collection("windows")
-            .whereField("dayDate", isEqualTo: dateString)
+            .whereField("startTime", isGreaterThanOrEqualTo: startOfDay)
+            .whereField("startTime", isLessThan: endOfDay)
             .getDocuments()
         
-        // Sort in memory instead
+        // Convert and sort windows
         let windows = snapshot.documents.compactMap { doc in
             MealWindow.fromFirestore(doc.data())
+        }
+        
+        Task { @MainActor in
+            DebugLogger.shared.firebase("Retrieved \(windows.count) windows from Firebase for date: \(date)")
         }
         
         return windows.sorted { $0.startTime < $1.startTime }
@@ -236,6 +244,10 @@ class FirebaseDataProvider: DataProvider {
     }
     
     func generateDailyWindows(for date: Date, profile: UserProfile, checkIn: MorningCheckInData?) async throws -> [MealWindow] {
+        Task { @MainActor in
+            DebugLogger.shared.dataProvider("Generating daily windows for date: \(date)")
+        }
+        
         // Use MealWindow's mock generation for now
         // TODO: Implement proper window generation service
         let windows = MealWindow.mockWindows(
@@ -244,9 +256,20 @@ class FirebaseDataProvider: DataProvider {
             userProfile: profile
         )
         
+        Task { @MainActor in
+            DebugLogger.shared.dataProvider("Generated \(windows.count) windows")
+        }
+        
         // Save all windows to Firestore
         for window in windows {
+            Task { @MainActor in
+                DebugLogger.shared.firebase("Saving window: \(window.name) (\(window.startTime) - \(window.endTime))")
+            }
             try await saveWindow(window)
+        }
+        
+        Task { @MainActor in
+            DebugLogger.shared.success("All \(windows.count) windows saved to Firebase")
         }
         
         return windows
@@ -341,9 +364,26 @@ class FirebaseDataProvider: DataProvider {
     // MARK: - User Profile Operations
     
     func getUserProfile() async throws -> UserProfile? {
+        Task { @MainActor in
+            DebugLogger.shared.dataProvider("Fetching user profile from Firebase")
+        }
+        
         let doc = try await userRef.collection("profile").document("current").getDocument()
-        guard let data = doc.data() else { return nil }
-        return UserProfile.fromFirestore(data)
+        
+        if let data = doc.data() {
+            Task { @MainActor in
+                DebugLogger.shared.success("User profile found in Firebase")
+            }
+            return UserProfile.fromFirestore(data)
+        } else {
+            Task { @MainActor in
+                DebugLogger.shared.warning("No user profile in Firebase, creating default profile")
+            }
+            // Create and save a default profile
+            let defaultProfile = UserProfile.mockProfile
+            try await saveUserProfile(defaultProfile)
+            return defaultProfile
+        }
     }
     
     func saveUserProfile(_ profile: UserProfile) async throws {

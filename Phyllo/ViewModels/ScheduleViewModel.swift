@@ -77,8 +77,19 @@ class ScheduleViewModel: ObservableObject {
             // Load meals
             todaysMeals = try await dataProvider.getMeals(for: today)
             
+            Task { @MainActor in
+                DebugLogger.shared.dataProvider("Loaded \(todaysMeals.count) meals for today")
+                for meal in todaysMeals {
+                    DebugLogger.shared.logMeal(meal, action: "Loaded from Firebase")
+                }
+            }
+            
             // Load windows
             mealWindows = try await dataProvider.getWindows(for: today)
+            
+            Task { @MainActor in
+                DebugLogger.shared.dataProvider("Loaded \(mealWindows.count) windows for today")
+            }
             
             // Load analyzing meals
             analyzingMeals = try await dataProvider.getAnalyzingMeals()
@@ -88,6 +99,9 @@ class ScheduleViewModel: ObservableObject {
             
             // Generate windows if needed
             if mealWindows.isEmpty {
+                Task { @MainActor in
+                    DebugLogger.shared.warning("No windows found for today, generating default windows")
+                }
                 await generateDailyWindows()
             }
             
@@ -135,17 +149,37 @@ class ScheduleViewModel: ObservableObject {
     
     /// Generate daily windows
     func generateDailyWindows() async {
+        Task { @MainActor in
+            DebugLogger.shared.dataProvider("Starting window generation")
+        }
+        
         do {
             let profile = try await dataProvider.getUserProfile() ?? UserProfile.mockProfile
+            
+            Task { @MainActor in
+                DebugLogger.shared.dataProvider("Using profile: \(profile.primaryGoal.rawValue)")
+            }
+            
             let windows = try await dataProvider.generateDailyWindows(
                 for: Date(),
                 profile: profile,
                 checkIn: morningCheckIn
             )
+            
+            Task { @MainActor in
+                DebugLogger.shared.success("Generated \(windows.count) windows")
+                for window in windows {
+                    DebugLogger.shared.logWindow(window, action: "Generated")
+                }
+            }
+            
             self.mealWindows = windows
         } catch {
             errorMessage = "Failed to generate windows: \(error.localizedDescription)"
             print("❌ Failed to generate windows: \(error)")
+            Task { @MainActor in
+                DebugLogger.shared.error("Window generation failed: \(error)")
+            }
         }
     }
     
