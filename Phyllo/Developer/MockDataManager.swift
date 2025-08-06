@@ -52,7 +52,7 @@ class MockDataManager: ObservableObject {
     static let shared = MockDataManager()
     
     // MARK: - Published Properties
-    @Published var userProfile: UserProfile = .mockProfile
+    @Published var userProfile: UserProfile = .defaultProfile
     @Published var userGoals: [NutritionGoal] = []
     @Published var mealWindows: [MealWindow] = []
     // Removed old MealEntry - using LoggedMeal instead
@@ -86,7 +86,13 @@ class MockDataManager: ObservableObject {
     // MARK: - Setup Methods
     func setupDefaultData() {
         userGoals = [.performanceFocus, .betterSleep]
-        generateMockWindows(for: userProfile.primaryGoal)
+        // Use WindowGenerationService instead of mock windows
+        let windowGenerator = WindowGenerationService.shared
+        mealWindows = windowGenerator.generateWindows(
+            for: Date(),
+            profile: userProfile,
+            checkIn: nil
+        )
         
         // Add some default meals for testing
         // addDefaultMealsForTesting() // Commented out to start with empty schedule
@@ -129,8 +135,29 @@ class MockDataManager: ObservableObject {
     
     // MARK: - Goal Management
     func setPrimaryGoal(_ goal: NutritionGoal) {
-        userProfile.primaryGoal = goal
-        generateMockWindows(for: goal)
+        // Convert NutritionGoal to PrimaryGoal
+        let newPrimaryGoal: PrimaryGoal = {
+            switch goal {
+            case .weightLoss:
+                return .weightLoss
+            case .muscleGain:
+                return .muscleBuild
+            case .maintainWeight:
+                return .maintainWeight
+            case .performanceFocus, .betterSleep, .overallWellbeing, .athleticPerformance:
+                return .improveEnergy
+            }
+        }()
+        
+        userProfile.primaryGoal = newPrimaryGoal
+        
+        // Regenerate windows with new goal
+        let windowGenerator = WindowGenerationService.shared
+        mealWindows = windowGenerator.generateWindows(
+            for: Date(),
+            profile: userProfile,
+            checkIn: morningCheckIn
+        )
     }
     
     func addSecondaryGoal(_ goal: NutritionGoal) {
@@ -145,7 +172,13 @@ class MockDataManager: ObservableObject {
     
     // MARK: - Window Generation
     func generateMockWindows(for goal: NutritionGoal) {
-        mealWindows = MealWindow.mockWindows(for: goal, checkIn: morningCheckIn, userProfile: userProfile)
+        // Convert to use WindowGenerationService
+        let windowGenerator = WindowGenerationService.shared
+        mealWindows = windowGenerator.generateWindows(
+            for: Date(),
+            profile: userProfile,
+            checkIn: morningCheckIn
+        )
     }
     
     // MARK: - Meal Management
@@ -219,7 +252,13 @@ class MockDataManager: ObservableObject {
         )
         
         showMorningCheckIn = false
-        generateMockWindows(for: userProfile.primaryGoal)
+        // Regenerate windows with current profile
+        let windowGenerator = WindowGenerationService.shared
+        mealWindows = windowGenerator.generateWindows(
+            for: Date(),
+            profile: userProfile,
+            checkIn: morningCheckIn
+        )
     }
     
     func resetMorningCheckIn() {
@@ -261,6 +300,8 @@ class MockDataManager: ObservableObject {
         userProfile.activityLevel = level
     }
     
+    // These methods are commented out as they use properties not in the new UserProfile structure
+    /*
     func updateWorkSchedule(_ schedule: WorkSchedule) {
         userProfile.workSchedule = schedule
     }
@@ -274,6 +315,7 @@ class MockDataManager: ObservableObject {
         userProfile.intermittentFastingPreference = `protocol`
         generateMockWindows(for: userProfile.primaryGoal)
     }
+    */
     
     // MARK: - Reset Functions
     func resetToDefaults() {
@@ -289,7 +331,13 @@ class MockDataManager: ObservableObject {
         todaysMeals.removeAll()
         morningCheckIn = nil
         showMorningCheckIn = true
-        generateMockWindows(for: userProfile.primaryGoal)
+        // Regenerate windows
+        let windowGenerator = WindowGenerationService.shared
+        mealWindows = windowGenerator.generateWindows(
+            for: Date(),
+            profile: userProfile,
+            checkIn: nil
+        )
         currentSimulatedTime = Date()
         TimeProvider.shared.resetToRealTime()
     }
@@ -603,7 +651,17 @@ class MockDataManager: ObservableObject {
     
     // Additional properties for Momentum tab
     var primaryGoal: NutritionGoal {
-        userProfile.primaryGoal
+        // Convert PrimaryGoal to NutritionGoal
+        switch userProfile.primaryGoal {
+        case .weightLoss:
+            return .weightLoss(targetPounds: 10, timeline: 8)
+        case .muscleBuild:
+            return .muscleGain(targetPounds: 5, timeline: 12)
+        case .maintainWeight:
+            return .maintainWeight
+        case .improveEnergy:
+            return .performanceFocus
+        }
     }
     
     var mealsLoggedToday: [LoggedMeal] {

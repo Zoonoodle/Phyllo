@@ -131,13 +131,13 @@ class WindowRedistributionManager {
                 // Prioritize protein preservation
                 adjustedProtein = max(adjustedProtein, window.targetMacros.protein * 80 / 100)
                 
-            case .muscleGain:
+            case .muscleBuild:
                 // Don't go too high on calories per window
                 adjustedCalories = min(adjustedCalories, window.targetCalories * 150 / 100)
                 // Keep protein high
                 adjustedProtein = max(adjustedProtein, window.targetMacros.protein)
                 
-            case .performanceFocus:
+            case .improveEnergy:
                 // Balance macros based on window purpose
                 if window.purpose == .preworkout {
                     adjustedCarbs = max(adjustedCarbs, window.targetMacros.carbs)

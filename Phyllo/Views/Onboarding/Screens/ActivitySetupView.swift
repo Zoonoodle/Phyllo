@@ -226,7 +226,7 @@ struct ActivityLevelCard: View {
         switch level {
         case .sedentary: return "figure.seated"
         case .lightlyActive: return "figure.walk"
-        case .moderatelyActive: return "figure.walk.motion"
+        case .moderate: return "figure.walk.motion"
         case .veryActive: return "figure.run"
         case .extremelyActive: return "figure.climbing"
         }
@@ -236,7 +236,7 @@ struct ActivityLevelCard: View {
         switch level {
         case .sedentary: return "Little to no exercise"
         case .lightlyActive: return "Exercise 1-3 days/week"
-        case .moderatelyActive: return "Exercise 3-5 days/week"
+        case .moderate: return "Exercise 3-5 days/week"
         case .veryActive: return "Exercise 6-7 days/week"
         case .extremelyActive: return "Athlete or very physical job"
         }
@@ -246,7 +246,7 @@ struct ActivityLevelCard: View {
         switch level {
         case .sedentary: return .gray
         case .lightlyActive: return .blue
-        case .moderatelyActive: return .green
+        case .moderate: return .green
         case .veryActive: return .orange
         case .extremelyActive: return .red
         }

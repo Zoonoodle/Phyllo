@@ -17,7 +17,7 @@ class ScheduleViewModel: ObservableObject {
     @Published var mealWindows: [MealWindow] = []
     @Published var analyzingMeals: [AnalyzingMeal] = []
     @Published var morningCheckIn: MorningCheckInData?
-    @Published var userProfile: UserProfile = UserProfile.mockProfile
+    @Published var userProfile: UserProfile = UserProfile.defaultProfile
     @Published var isLoading = false
     @Published var errorMessage: String?
     
@@ -166,7 +166,7 @@ class ScheduleViewModel: ObservableObject {
         }
         
         do {
-            let profile = try await dataProvider.getUserProfile() ?? UserProfile.mockProfile
+            let profile = try await dataProvider.getUserProfile() ?? UserProfile.defaultProfile
             self.userProfile = profile
             
             Task { @MainActor in

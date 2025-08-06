@@ -99,7 +99,7 @@ struct YourPlanChapter: View {
                 .animation(.spring(response: 0.8).delay(0.35), value: animateContent)
                 
                 // Goal-specific protocol
-                if mockData.userProfile.primaryGoal.id == "muscleGain" {
+                if mockData.userProfile.primaryGoal == .muscleBuild {
                     ScienceProtocolCard(
                         title: "Progressive Caloric Surplus",
                         icon: "chart.line.uptrend.xyaxis.circle.fill",

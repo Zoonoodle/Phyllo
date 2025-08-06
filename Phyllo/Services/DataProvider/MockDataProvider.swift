@@ -132,11 +132,12 @@ class MockDataProvider: DataProvider {
     
     func generateDailyWindows(for date: Date, profile: UserProfile, checkIn: MorningCheckInData?) async throws -> [MealWindow] {
         await MainActor.run {
-            // Generate windows based on profile and check-in
-            let windows = MealWindow.mockWindows(
-                for: profile.primaryGoal,
-                checkIn: checkIn ?? MorningCheckInData.mockData,
-                userProfile: profile
+            // Generate windows using the proper service
+            let windowGenerator = WindowGenerationService.shared
+            let windows = windowGenerator.generateWindows(
+                for: date,
+                profile: profile,
+                checkIn: checkIn
             )
             mockManager.mealWindows = windows
             return windows
@@ -147,11 +148,12 @@ class MockDataProvider: DataProvider {
         await MainActor.run {
             // Redistribute windows - this is a private method in MockDataManager
             // For now, we'll just regenerate them
-            let profile = UserProfile.mockProfile
-            let windows = MealWindow.mockWindows(
-                for: profile.primaryGoal,
-                checkIn: mockManager.morningCheckIn,
-                userProfile: profile
+            let profile = UserProfile.defaultProfile
+            let windowGenerator = WindowGenerationService.shared
+            let windows = windowGenerator.generateWindows(
+                for: date,
+                profile: profile,
+                checkIn: mockManager.morningCheckIn
             )
             mockManager.mealWindows = windows
         }
@@ -205,7 +207,7 @@ class MockDataProvider: DataProvider {
     
     func getUserProfile() async throws -> UserProfile? {
         await MainActor.run {
-            UserProfile.mockProfile
+            UserProfile.defaultProfile
         }
     }
     

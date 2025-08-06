@@ -265,12 +265,12 @@ class FirebaseDataProvider: DataProvider {
             DebugLogger.shared.dataProvider("Generating daily windows for date: \(date)")
         }
         
-        // Use MealWindow's mock generation for now
-        // TODO: Implement proper window generation service
-        let windows = MealWindow.mockWindows(
-            for: profile.primaryGoal,
-            checkIn: checkIn,
-            userProfile: profile
+        // Use proper window generation service
+        let windowGenerator = WindowGenerationService.shared
+        let windows = windowGenerator.generateWindows(
+            for: date,
+            profile: profile,
+            checkIn: checkIn
         )
         
         Task { @MainActor in
@@ -295,13 +295,14 @@ class FirebaseDataProvider: DataProvider {
     func redistributeWindows(for date: Date) async throws {
         let windows = try await getWindows(for: date)
         let meals = try await getMeals(for: date)
+        guard let profile = try await getUserProfile() else { return }
         
         // Use WindowRedistributionManager instance
         let redistributionManager = WindowRedistributionManager.shared
         let redistributed = redistributionManager.redistributeWindows(
             allWindows: windows,
             consumedMeals: meals,
-            userProfile: UserProfile.mockProfile, // TODO: Get actual profile
+            userProfile: profile,
             currentTime: Date()
         ).map { $0.originalWindow }
         
@@ -397,7 +398,24 @@ class FirebaseDataProvider: DataProvider {
                 DebugLogger.shared.warning("No user profile in Firebase, creating default profile")
             }
             // Create and save a default profile
-            let defaultProfile = UserProfile.mockProfile
+            let defaultProfile = UserProfile(
+                id: UUID(),
+                name: "User",
+                age: 30,
+                gender: .male,
+                height: 70, // inches
+                weight: 170, // lbs
+                activityLevel: .moderate,
+                primaryGoal: .improveEnergy,
+                dietaryPreferences: [],
+                dietaryRestrictions: [],
+                dailyCalorieTarget: 2400,
+                dailyProteinTarget: 110,
+                dailyCarbTarget: 270,
+                dailyFatTarget: 85,
+                preferredMealTimes: [],
+                micronutrientPriorities: ["Vitamin D", "Magnesium", "Omega-3"]
+            )
             try await saveUserProfile(defaultProfile)
             return defaultProfile
         }
@@ -577,16 +595,6 @@ extension MorningCheckInData {
     }
 }
 
-extension UserProfile {
-    func toFirestore() -> [String: Any] {
-        // TODO: Implement based on actual UserProfile structure
-        return [:]
-    }
-    
-    static func fromFirestore(_ data: [String: Any]) -> UserProfile? {
-        // TODO: Implement based on actual UserProfile structure
-        return UserProfile.mockProfile
-    }
-}
+// UserProfile extensions moved to UserProfile.swift
 
 // UserGoals extension removed - goals are part of UserProfile

@@ -16,7 +16,7 @@ class NutritionDashboardViewModel: ObservableObject {
     @Published var mealWindows: [MealWindow] = []
     @Published var morningCheckIn: MorningCheckInData?
     @Published var postMealCheckIns: [PostMealCheckIn] = []
-    @Published var userProfile: UserProfile = UserProfile.mockProfile
+    @Published var userProfile: UserProfile = UserProfile.defaultProfile
     @Published var isLoading = false
     @Published var errorMessage: String?
     

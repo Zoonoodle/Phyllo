@@ -95,7 +95,7 @@ struct OnboardingDemo: View {
         data.name = "Demo User"
         data.primaryGoal = .performanceFocus
         data.secondaryGoals = [.betterSleep]
-        data.activityLevel = .moderatelyActive
+        data.activityLevel = .moderate
         data.preferredMealCount = 4
         return data
     }

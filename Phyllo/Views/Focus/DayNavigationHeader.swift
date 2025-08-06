@@ -10,7 +10,6 @@ import SwiftUI
 struct DayNavigationHeader: View {
     @Binding var selectedDate: Date
     @Binding var showDeveloperDashboard: Bool
-    @StateObject private var mockData = MockDataManager.shared
     let meals: [LoggedMeal]
     let userProfile: UserProfile
     
@@ -225,6 +224,7 @@ struct MacroProgressItem: View {
                     RoundedRectangle(cornerRadius: 2)
                         .fill(color)
                         .frame(width: geometry.size.width * CGFloat(progress), height: 3)
+                        .animation(.easeInOut(duration: 0.3), value: progress)
                 }
             }
             .frame(height: 3)
@@ -244,7 +244,7 @@ struct MacroProgressItem: View {
                 selectedDate: .constant(Date()),
                 showDeveloperDashboard: $showDeveloperDashboard,
                 meals: [],
-                userProfile: UserProfile.mockProfile
+                userProfile: UserProfile.defaultProfile
             )
             .background(Color.phylloElevated)
             

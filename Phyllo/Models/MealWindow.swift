@@ -154,16 +154,14 @@ struct MealWindow: Identifiable {
         let calendar = Calendar.current
         let now = Date()
         let today = calendar.startOfDay(for: now)  // Ensure dayDate is start of day for consistent queries
-        let wakeTime = checkIn?.wakeTime ?? userProfile?.typicalWakeTime ?? calendar.date(bySettingHour: 7, minute: 0, second: 0, of: now)!
-        let sleepTime = userProfile?.typicalSleepTime ?? calendar.date(bySettingHour: 22, minute: 30, second: 0, of: now)!
+        let wakeTime = checkIn?.wakeTime ?? calendar.date(bySettingHour: 7, minute: 0, second: 0, of: now)!
+        let sleepTime = calendar.date(bySettingHour: 22, minute: 30, second: 0, of: now)!
         
         // Calculate ideal last meal time based on circadian rhythm (3 hours before sleep)
         let lastMealTime = calendar.date(byAdding: .hour, value: -3, to: sleepTime)!
         
         // Check if user has workouts scheduled
-        let todayWorkouts = userProfile?.exerciseSchedule.filter { 
-            $0.dayOfWeek == calendar.component(.weekday, from: today)
-        } ?? []
+        let todayWorkouts: [Any] = [] // Removed exerciseSchedule as it's not in new UserProfile
         
         switch goal {
         case .weightLoss:
@@ -232,7 +230,8 @@ struct MealWindow: Identifiable {
             ))
             
             // If workout scheduled, add pre/post workout windows
-            if let workout = todayWorkouts.first {
+            // Commented out - exerciseSchedule not available in new UserProfile
+            /*if let workout = todayWorkouts.first {
                 let workoutTime = workout.startTime
                 
                 // Pre-workout (1-2 hours before)
@@ -262,6 +261,7 @@ struct MealWindow: Identifiable {
                     adjustedMacros: nil,
                     redistributionReason: nil
                 ))
+            }*/
                 
                 // Add mid-afternoon and evening meals
                 windows.append(MealWindow(

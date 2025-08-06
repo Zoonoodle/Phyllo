@@ -15,8 +15,8 @@ struct WindowCalculationService {
         let dayDate = calendar.startOfDay(for: date)
         
         // Use morning check-in wake time or typical wake time
-        let wakeTime = morningCheckIn?.wakeTime ?? profile.typicalWakeTime(for: date)
-        let sleepTime = profile.typicalSleepTime(for: date)
+        let wakeTime = morningCheckIn?.wakeTime ?? Calendar.current.date(bySettingHour: 7, minute: 0, second: 0, of: date) ?? date(for: date)
+        let sleepTime = Calendar.current.date(bySettingHour: 22, minute: 0, second: 0, of: date) ?? date(for: date)
         
         // Calculate eating window (stop eating 3 hours before sleep)
         let lastMealTime = sleepTime.addingTimeInterval(-3 * 3600) // 3 hours before sleep
@@ -31,7 +31,7 @@ struct WindowCalculationService {
                 profile: profile
             )
             
-        case .muscleGain:
+        case .muscleBuild:
             return generateMuscleGainWindows(
                 dayDate: dayDate,
                 wakeTime: wakeTime,
@@ -39,7 +39,7 @@ struct WindowCalculationService {
                 profile: profile
             )
             
-        case .performanceFocus, .athleticPerformance:
+        case .improveEnergy:
             return generatePerformanceWindows(
                 dayDate: dayDate,
                 wakeTime: wakeTime,
@@ -47,15 +47,7 @@ struct WindowCalculationService {
                 profile: profile
             )
             
-        case .betterSleep:
-            return generateSleepOptimizedWindows(
-                dayDate: dayDate,
-                wakeTime: wakeTime,
-                lastMealTime: lastMealTime,
-                profile: profile
-            )
-            
-        case .maintainWeight, .overallWellbeing:
+        case .maintainWeight:
             return generateBalancedWindows(
                 dayDate: dayDate,
                 wakeTime: wakeTime,
@@ -135,7 +127,7 @@ struct WindowCalculationService {
         profile: UserProfile
     ) -> [MealWindow] {
         
-        let mealCount = profile.preferredMealCount
+        let mealCount = 4
         let dailyCalories = profile.calculateDailyCalories()
         let caloriesPerMeal = dailyCalories / mealCount
         
@@ -333,7 +325,7 @@ struct WindowCalculationService {
         profile: UserProfile
     ) -> [MealWindow] {
         
-        let mealCount = profile.preferredMealCount
+        let mealCount = 4
         let dailyCalories = profile.calculateDailyCalories()
         
         if mealCount == 3 {

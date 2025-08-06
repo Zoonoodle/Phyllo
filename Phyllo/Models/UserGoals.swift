@@ -144,15 +144,7 @@ enum NutritionGoal: Identifiable, Codable {
     }
 }
 
-// MARK: - User Profile
-
-enum ActivityLevel: String, CaseIterable {
-    case sedentary = "Sedentary"
-    case lightlyActive = "Lightly Active"
-    case moderatelyActive = "Moderately Active"
-    case veryActive = "Very Active"
-    case extremelyActive = "Extremely Active"
-}
+// MARK: - Supporting Types
 
 enum WorkSchedule: String, CaseIterable {
     case traditional = "9-5 Office"
@@ -175,89 +167,6 @@ enum FastingProtocol: String, CaseIterable {
     case twenty4 = "20:4"
     case omad = "OMAD"
     case custom = "Custom"
-}
-
-struct UserProfile {
-    // Goal Settings (from onboarding)
-    var primaryGoal: NutritionGoal
-    var secondaryGoals: [NutritionGoal]
-    var activityLevel: ActivityLevel
-    var workSchedule: WorkSchedule
-    var preferredMealCount: Int // 3-6 meals
-    var intermittentFastingPreference: FastingProtocol?
-    
-    // Baseline Settings
-    var typicalWakeTime: Date
-    var typicalSleepTime: Date
-    var exerciseSchedule: [ExerciseWindow]
-    
-    // Calculated Properties
-    var dailyCalorieTarget: Int {
-        // Mock calculation based on goals and activity
-        switch primaryGoal {
-        case .weightLoss: return 1800
-        case .muscleGain: return 2800
-        case .maintainWeight: return 2300
-        case .performanceFocus: return 2400
-        case .betterSleep: return 2200
-        case .overallWellbeing: return 2300
-        case .athleticPerformance: return 2600
-        }
-    }
-    
-    var dailyProteinTarget: Int {
-        // Mock calculation based on goals
-        switch primaryGoal {
-        case .weightLoss: return 120
-        case .muscleGain: return 160
-        case .maintainWeight: return 100
-        case .performanceFocus: return 110
-        case .betterSleep: return 90
-        case .overallWellbeing: return 100
-        case .athleticPerformance: return 140
-        }
-    }
-    
-    var dailyFatTarget: Int {
-        // Mock calculation based on goals
-        switch primaryGoal {
-        case .weightLoss: return 60
-        case .muscleGain: return 90
-        case .maintainWeight: return 80
-        case .performanceFocus: return 85
-        case .betterSleep: return 75
-        case .overallWellbeing: return 80
-        case .athleticPerformance: return 85
-        }
-    }
-    
-    var dailyCarbTarget: Int {
-        // Mock calculation based on goals
-        switch primaryGoal {
-        case .weightLoss: return 150
-        case .muscleGain: return 320
-        case .maintainWeight: return 250
-        case .performanceFocus: return 270
-        case .betterSleep: return 240
-        case .overallWellbeing: return 260
-        case .athleticPerformance: return 300
-        }
-    }
-    
-    // Default mock profile
-    static var mockProfile: UserProfile {
-        UserProfile(
-            primaryGoal: .performanceFocus,
-            secondaryGoals: [.betterSleep],
-            activityLevel: .moderatelyActive,
-            workSchedule: .traditional,
-            preferredMealCount: 4,
-            intermittentFastingPreference: .sixteen8,
-            typicalWakeTime: Calendar.current.date(bySettingHour: 6, minute: 30, second: 0, of: Date())!,
-            typicalSleepTime: Calendar.current.date(bySettingHour: 22, minute: 30, second: 0, of: Date())!,
-            exerciseSchedule: []
-        )
-    }
 }
 
 // MARK: - Morning Check-In Data

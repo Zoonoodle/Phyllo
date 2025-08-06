@@ -150,7 +150,7 @@ struct OnboardingData {
     var workSchedule: WorkSchedule?
     
     // Activity
-    var activityLevel: ActivityLevel = .moderatelyActive
+    var activityLevel: ActivityLevel = .moderate
     var workoutDays: Set<Int> = [] // 0 = Sunday, 6 = Saturday
     var preferredWorkoutTime: WorkoutTime?
     
@@ -186,13 +186,6 @@ struct OnboardingData {
 }
 
 // MARK: - Supporting Types
-
-enum Gender: String, CaseIterable {
-    case male = "Male"
-    case female = "Female"
-    case other = "Other"
-    case preferNotToSay = "Prefer not to say"
-}
 
 enum WorkoutTime: String, CaseIterable {
     case earlyMorning = "Early Morning (5-7 AM)"

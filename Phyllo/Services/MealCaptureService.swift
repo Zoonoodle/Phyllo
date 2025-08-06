@@ -221,7 +221,7 @@ class MealCaptureService: ObservableObject {
     ) async throws -> MealAnalysisResult {
         
         // Get current user context
-        let userProfile = try await dataProvider.getUserProfile() ?? UserProfile.mockProfile
+        let userProfile = try await dataProvider.getUserProfile() ?? UserProfile.defaultProfile
         
         // Find assigned window
         let windows = try await dataProvider.getWindows(for: analyzingMeal.timestamp)
@@ -230,8 +230,22 @@ class MealCaptureService: ObservableObject {
         }
         
         // Create context for AI
+        // Convert PrimaryGoal to NutritionGoal
+        let nutritionGoal: NutritionGoal = {
+            switch userProfile.primaryGoal {
+            case .weightLoss:
+                return .weightLoss(targetPounds: 10, timeline: 8)
+            case .muscleBuild:
+                return .muscleGain(targetPounds: 5, timeline: 12)
+            case .maintainWeight:
+                return .maintainWeight
+            case .improveEnergy:
+                return .performanceFocus
+            }
+        }()
+        
         let context = UserNutritionContext(
-            primaryGoal: userProfile.primaryGoal,
+            primaryGoal: nutritionGoal,
             dailyCalorieTarget: userProfile.dailyCalorieTarget,
             dailyProteinTarget: userProfile.dailyProteinTarget,
             dailyCarbTarget: userProfile.dailyCarbTarget,
