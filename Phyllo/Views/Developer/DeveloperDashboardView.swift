@@ -632,7 +632,8 @@ struct ProfileTabView: View {
             .background(Color.phylloElevated)
             .cornerRadius(16)
             
-            // Work Schedule
+            // Work Schedule - Commented out as these properties are removed from UserProfile
+            /*
             VStack(alignment: .leading, spacing: 12) {
                 Text("Work Schedule")
                     .font(.headline)
@@ -658,8 +659,10 @@ struct ProfileTabView: View {
             .padding()
             .background(Color.phylloElevated)
             .cornerRadius(16)
+            */
             
-            // Meal Preferences
+            // Meal Preferences - Commented out as these properties are removed from UserProfile
+            /*
             VStack(alignment: .leading, spacing: 12) {
                 Text("Preferred Meal Count")
                     .font(.headline)
@@ -725,6 +728,7 @@ struct ProfileTabView: View {
             .padding()
             .background(Color.phylloElevated)
             .cornerRadius(16)
+            */
         }
     }
 }
