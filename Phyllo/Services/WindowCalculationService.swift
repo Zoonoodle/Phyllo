@@ -15,8 +15,8 @@ struct WindowCalculationService {
         let dayDate = calendar.startOfDay(for: date)
         
         // Use morning check-in wake time or typical wake time
-        let wakeTime = morningCheckIn?.wakeTime ?? Calendar.current.date(bySettingHour: 7, minute: 0, second: 0, of: date) ?? date(for: date)
-        let sleepTime = Calendar.current.date(bySettingHour: 22, minute: 0, second: 0, of: date) ?? date(for: date)
+        let wakeTime = morningCheckIn?.wakeTime ?? Calendar.current.date(bySettingHour: 7, minute: 0, second: 0, of: date) ?? date
+        let sleepTime = Calendar.current.date(bySettingHour: 22, minute: 0, second: 0, of: date) ?? date
         
         // Calculate eating window (stop eating 3 hours before sleep)
         let lastMealTime = sleepTime.addingTimeInterval(-3 * 3600) // 3 hours before sleep
@@ -418,23 +418,21 @@ extension UserProfile {
     }
     
     func typicalWakeTime(for date: Date) -> Date {
-        // typicalWakeTime is already a Date, just adjust to the given date
+        // Use default wake time since typicalWakeTime was removed from UserProfile
         let calendar = Calendar.current
-        let wakeComponents = calendar.dateComponents([.hour, .minute], from: typicalWakeTime)
         
-        return calendar.date(bySettingHour: wakeComponents.hour ?? 7, 
-                           minute: wakeComponents.minute ?? 0, 
+        return calendar.date(bySettingHour: 7, 
+                           minute: 0, 
                            second: 0, 
                            of: date) ?? date
     }
     
     func typicalSleepTime(for date: Date) -> Date {
-        // typicalSleepTime is already a Date, just adjust to the given date
+        // Use default sleep time since typicalSleepTime was removed from UserProfile
         let calendar = Calendar.current
-        let sleepComponents = calendar.dateComponents([.hour, .minute], from: typicalSleepTime)
         
-        var sleepDate = calendar.date(bySettingHour: sleepComponents.hour ?? 23, 
-                                    minute: sleepComponents.minute ?? 0, 
+        var sleepDate = calendar.date(bySettingHour: 22, 
+                                    minute: 30, 
                                     second: 0, 
                                     of: date) ?? date
         

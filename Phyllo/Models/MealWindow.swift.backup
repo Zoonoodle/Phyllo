@@ -148,11 +148,7 @@ struct MealWindow: Identifiable {
         formatter.timeStyle = .short
         return "\(formatter.string(from: startTime)) - \(formatter.string(from: endTime))"
     }
-}
-
-// MARK: - Mock Data Generation
-
-extension MealWindow {
+    
     // Generate mock windows for different goals
     static func mockWindows(for goal: NutritionGoal, checkIn: MorningCheckInData? = nil, userProfile: UserProfile? = nil) -> [MealWindow] {
         let calendar = Calendar.current
@@ -532,4 +528,3 @@ extension MealWindow {
             ]
         }
     }
-}

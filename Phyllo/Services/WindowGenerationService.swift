@@ -21,7 +21,7 @@ class WindowGenerationService {
     ) -> [MealWindow] {
         let calendar = Calendar.current
         let wakeTime = checkIn?.wakeTime ?? calendar.date(bySettingHour: 7, minute: 0, second: 0, of: date)!
-        let sleepTime = checkIn?.targetSleepTime ?? calendar.date(bySettingHour: 22, minute: 0, second: 0, of: date)!
+        let sleepTime = calendar.date(bySettingHour: 22, minute: 30, second: 0, of: date)!
         
         // Generate windows based on primary goal
         switch profile.primaryGoal {
@@ -56,50 +56,56 @@ class WindowGenerationService {
         return [
             // Lunch (12pm-2pm) - 40% of daily intake
             MealWindow(
-                id: UUID(),
                 startTime: windowStart,
                 endTime: calendar.date(byAdding: .hour, value: 2, to: windowStart)!,
-                purpose: .sustainedEnergy,
                 targetCalories: Int(Double(totalCalories) * 0.4),
                 targetMacros: MacroTargets(
                     protein: Int(Double(totalProtein) * 0.4),
                     carbs: Int(Double(totalCarbs) * 0.4),
                     fat: Int(Double(totalFat) * 0.4)
                 ),
+                purpose: .sustainedEnergy,
                 flexibility: .moderate,
-                micronutrientFocus: ["Fiber", "Vitamin C", "Potassium"]
+                dayDate: calendar.startOfDay(for: date),
+                adjustedCalories: nil,
+                adjustedMacros: nil,
+                redistributionReason: nil
             ),
             
             // Snack (3pm-4pm) - 20% of daily intake
             MealWindow(
-                id: UUID(),
                 startTime: calendar.date(bySettingHour: 15, minute: 0, second: 0, of: date)!,
                 endTime: calendar.date(bySettingHour: 16, minute: 0, second: 0, of: date)!,
-                purpose: .focused,
                 targetCalories: Int(Double(totalCalories) * 0.2),
                 targetMacros: MacroTargets(
                     protein: Int(Double(totalProtein) * 0.2),
                     carbs: Int(Double(totalCarbs) * 0.2),
                     fat: Int(Double(totalFat) * 0.2)
                 ),
+                purpose: .focusBoost,
                 flexibility: .flexible,
-                micronutrientFocus: ["Magnesium", "Vitamin B6"]
+                dayDate: calendar.startOfDay(for: date),
+                adjustedCalories: nil,
+                adjustedMacros: nil,
+                redistributionReason: nil
             ),
             
             // Dinner (6pm-8pm) - 40% of daily intake
             MealWindow(
-                id: UUID(),
                 startTime: calendar.date(bySettingHour: 18, minute: 0, second: 0, of: date)!,
                 endTime: windowEnd,
-                purpose: .recovery,
                 targetCalories: Int(Double(totalCalories) * 0.4),
                 targetMacros: MacroTargets(
                     protein: Int(Double(totalProtein) * 0.4),
                     carbs: Int(Double(totalCarbs) * 0.4),
                     fat: Int(Double(totalFat) * 0.4)
                 ),
+                purpose: .recovery,
                 flexibility: .moderate,
-                micronutrientFocus: ["Zinc", "Magnesium", "Omega-3"]
+                dayDate: calendar.startOfDay(for: date),
+                adjustedCalories: nil,
+                adjustedMacros: nil,
+                redistributionReason: nil
             )
         ]
     }
@@ -123,82 +129,92 @@ class WindowGenerationService {
         return [
             // Breakfast - 20%
             MealWindow(
-                id: UUID(),
                 startTime: breakfast,
                 endTime: calendar.date(byAdding: .hour, value: 1, to: breakfast)!,
-                purpose: .sustainedEnergy,
                 targetCalories: Int(Double(totalCalories) * 0.2),
                 targetMacros: MacroTargets(
                     protein: Int(Double(totalProtein) * 0.2),
                     carbs: Int(Double(totalCarbs) * 0.25),
                     fat: Int(Double(totalFat) * 0.15)
                 ),
+                purpose: .sustainedEnergy,
                 flexibility: .moderate,
-                micronutrientFocus: ["Vitamin D", "Calcium", "Iron"]
+                dayDate: calendar.startOfDay(for: date),
+                adjustedCalories: nil,
+                adjustedMacros: nil,
+                redistributionReason: nil
             ),
             
             // Mid-morning snack - 15%
             MealWindow(
-                id: UUID(),
                 startTime: calendar.date(byAdding: .hour, value: 3, to: breakfast)!,
                 endTime: calendar.date(byAdding: .hour, value: 4, to: breakfast)!,
-                purpose: .preWorkout,
                 targetCalories: Int(Double(totalCalories) * 0.15),
                 targetMacros: MacroTargets(
                     protein: Int(Double(totalProtein) * 0.15),
                     carbs: Int(Double(totalCarbs) * 0.15),
                     fat: Int(Double(totalFat) * 0.1)
                 ),
+                purpose: .preworkout,
                 flexibility: .flexible,
-                micronutrientFocus: ["Potassium", "Sodium"]
+                dayDate: calendar.startOfDay(for: date),
+                adjustedCalories: nil,
+                adjustedMacros: nil,
+                redistributionReason: nil
             ),
             
             // Lunch - 25%
             MealWindow(
-                id: UUID(),
                 startTime: calendar.date(byAdding: .hour, value: 5, to: breakfast)!,
                 endTime: calendar.date(byAdding: .hour, value: 6, to: breakfast)!,
-                purpose: .postWorkout,
                 targetCalories: Int(Double(totalCalories) * 0.25),
                 targetMacros: MacroTargets(
                     protein: Int(Double(totalProtein) * 0.25),
                     carbs: Int(Double(totalCarbs) * 0.3),
                     fat: Int(Double(totalFat) * 0.2)
                 ),
+                purpose: .postworkout,
                 flexibility: .strict,
-                micronutrientFocus: ["Vitamin C", "Zinc", "Magnesium"]
+                dayDate: calendar.startOfDay(for: date),
+                adjustedCalories: nil,
+                adjustedMacros: nil,
+                redistributionReason: nil
             ),
             
             // Afternoon snack - 15%
             MealWindow(
-                id: UUID(),
                 startTime: calendar.date(byAdding: .hour, value: 8, to: breakfast)!,
                 endTime: calendar.date(byAdding: .hour, value: 9, to: breakfast)!,
-                purpose: .focused,
                 targetCalories: Int(Double(totalCalories) * 0.15),
                 targetMacros: MacroTargets(
                     protein: Int(Double(totalProtein) * 0.15),
                     carbs: Int(Double(totalCarbs) * 0.1),
                     fat: Int(Double(totalFat) * 0.2)
                 ),
+                purpose: .focusBoost,
                 flexibility: .flexible,
-                micronutrientFocus: ["Omega-3", "Vitamin E"]
+                dayDate: calendar.startOfDay(for: date),
+                adjustedCalories: nil,
+                adjustedMacros: nil,
+                redistributionReason: nil
             ),
             
             // Dinner - 25%
             MealWindow(
-                id: UUID(),
                 startTime: calendar.date(byAdding: .hour, value: 11, to: breakfast)!,
                 endTime: calendar.date(byAdding: .hour, value: 12, to: breakfast)!,
-                purpose: .recovery,
                 targetCalories: Int(Double(totalCalories) * 0.25),
                 targetMacros: MacroTargets(
                     protein: Int(Double(totalProtein) * 0.25),
                     carbs: Int(Double(totalCarbs) * 0.2),
                     fat: Int(Double(totalFat) * 0.35)
                 ),
+                purpose: .recovery,
                 flexibility: .moderate,
-                micronutrientFocus: ["Magnesium", "Zinc", "Vitamin B6"]
+                dayDate: calendar.startOfDay(for: date),
+                adjustedCalories: nil,
+                adjustedMacros: nil,
+                redistributionReason: nil
             )
         ]
     }
@@ -221,66 +237,74 @@ class WindowGenerationService {
         return [
             // Breakfast - 25%
             MealWindow(
-                id: UUID(),
                 startTime: breakfast,
                 endTime: calendar.date(byAdding: .hour, value: 1, to: breakfast)!,
-                purpose: .sustainedEnergy,
                 targetCalories: Int(Double(totalCalories) * 0.25),
                 targetMacros: MacroTargets(
                     protein: Int(Double(totalProtein) * 0.25),
                     carbs: Int(Double(totalCarbs) * 0.3),
                     fat: Int(Double(totalFat) * 0.2)
                 ),
+                purpose: .sustainedEnergy,
                 flexibility: .moderate,
-                micronutrientFocus: ["Fiber", "Vitamin C", "Folate"]
+                dayDate: calendar.startOfDay(for: date),
+                adjustedCalories: nil,
+                adjustedMacros: nil,
+                redistributionReason: nil
             ),
             
             // Lunch - 35%
             MealWindow(
-                id: UUID(),
                 startTime: calendar.date(byAdding: .hour, value: 5, to: breakfast)!,
                 endTime: calendar.date(byAdding: .hour, value: 6, to: breakfast)!,
-                purpose: .sustainedEnergy,
                 targetCalories: Int(Double(totalCalories) * 0.35),
                 targetMacros: MacroTargets(
                     protein: Int(Double(totalProtein) * 0.35),
                     carbs: Int(Double(totalCarbs) * 0.35),
                     fat: Int(Double(totalFat) * 0.35)
                 ),
+                purpose: .sustainedEnergy,
                 flexibility: .moderate,
-                micronutrientFocus: ["Iron", "Vitamin B12", "Potassium"]
+                dayDate: calendar.startOfDay(for: date),
+                adjustedCalories: nil,
+                adjustedMacros: nil,
+                redistributionReason: nil
             ),
             
             // Snack - 15%
             MealWindow(
-                id: UUID(),
                 startTime: calendar.date(byAdding: .hour, value: 8, to: breakfast)!,
                 endTime: calendar.date(byAdding: .hour, value: 9, to: breakfast)!,
-                purpose: .focused,
                 targetCalories: Int(Double(totalCalories) * 0.15),
                 targetMacros: MacroTargets(
                     protein: Int(Double(totalProtein) * 0.15),
                     carbs: Int(Double(totalCarbs) * 0.1),
                     fat: Int(Double(totalFat) * 0.2)
                 ),
+                purpose: .focusBoost,
                 flexibility: .flexible,
-                micronutrientFocus: ["Magnesium", "Vitamin E"]
+                dayDate: calendar.startOfDay(for: date),
+                adjustedCalories: nil,
+                adjustedMacros: nil,
+                redistributionReason: nil
             ),
             
             // Dinner - 25%
             MealWindow(
-                id: UUID(),
                 startTime: calendar.date(byAdding: .hour, value: 11, to: breakfast)!,
                 endTime: calendar.date(byAdding: .hour, value: 12, to: breakfast)!,
-                purpose: .recovery,
                 targetCalories: Int(Double(totalCalories) * 0.25),
                 targetMacros: MacroTargets(
                     protein: Int(Double(totalProtein) * 0.25),
                     carbs: Int(Double(totalCarbs) * 0.25),
                     fat: Int(Double(totalFat) * 0.25)
                 ),
+                purpose: .recovery,
                 flexibility: .moderate,
-                micronutrientFocus: ["Omega-3", "Zinc", "Calcium"]
+                dayDate: calendar.startOfDay(for: date),
+                adjustedCalories: nil,
+                adjustedMacros: nil,
+                redistributionReason: nil
             )
         ]
     }
@@ -303,82 +327,92 @@ class WindowGenerationService {
         return [
             // Early breakfast - 20%
             MealWindow(
-                id: UUID(),
                 startTime: breakfast,
                 endTime: calendar.date(byAdding: .hour, value: 1, to: breakfast)!,
-                purpose: .sustainedEnergy,
                 targetCalories: Int(Double(totalCalories) * 0.2),
                 targetMacros: MacroTargets(
                     protein: Int(Double(totalProtein) * 0.2),
                     carbs: Int(Double(totalCarbs) * 0.15),
                     fat: Int(Double(totalFat) * 0.25)
                 ),
+                purpose: .sustainedEnergy,
                 flexibility: .strict,
-                micronutrientFocus: ["B Vitamins", "Iron", "Vitamin D"]
+                dayDate: calendar.startOfDay(for: date),
+                adjustedCalories: nil,
+                adjustedMacros: nil,
+                redistributionReason: nil
             ),
             
             // Mid-morning - 20%
             MealWindow(
-                id: UUID(),
                 startTime: calendar.date(byAdding: .hour, value: 3, to: breakfast)!,
                 endTime: calendar.date(byAdding: .hour, value: 4, to: breakfast)!,
-                purpose: .focused,
                 targetCalories: Int(Double(totalCalories) * 0.2),
                 targetMacros: MacroTargets(
                     protein: Int(Double(totalProtein) * 0.2),
                     carbs: Int(Double(totalCarbs) * 0.2),
                     fat: Int(Double(totalFat) * 0.2)
                 ),
+                purpose: .focusBoost,
                 flexibility: .moderate,
-                micronutrientFocus: ["Magnesium", "Chromium"]
+                dayDate: calendar.startOfDay(for: date),
+                adjustedCalories: nil,
+                adjustedMacros: nil,
+                redistributionReason: nil
             ),
             
             // Lunch - 25%
             MealWindow(
-                id: UUID(),
                 startTime: calendar.date(byAdding: .hour, value: 5, to: breakfast)!,
                 endTime: calendar.date(byAdding: .hour, value: 6, to: breakfast)!,
-                purpose: .sustainedEnergy,
                 targetCalories: Int(Double(totalCalories) * 0.25),
                 targetMacros: MacroTargets(
                     protein: Int(Double(totalProtein) * 0.25),
                     carbs: Int(Double(totalCarbs) * 0.3),
                     fat: Int(Double(totalFat) * 0.2)
                 ),
+                purpose: .sustainedEnergy,
                 flexibility: .moderate,
-                micronutrientFocus: ["Fiber", "Potassium", "Vitamin C"]
+                dayDate: calendar.startOfDay(for: date),
+                adjustedCalories: nil,
+                adjustedMacros: nil,
+                redistributionReason: nil
             ),
             
             // Afternoon - 15%
             MealWindow(
-                id: UUID(),
                 startTime: calendar.date(byAdding: .hour, value: 8, to: breakfast)!,
                 endTime: calendar.date(byAdding: .hour, value: 9, to: breakfast)!,
-                purpose: .focused,
                 targetCalories: Int(Double(totalCalories) * 0.15),
                 targetMacros: MacroTargets(
                     protein: Int(Double(totalProtein) * 0.15),
                     carbs: Int(Double(totalCarbs) * 0.15),
                     fat: Int(Double(totalFat) * 0.15)
                 ),
+                purpose: .focusBoost,
                 flexibility: .flexible,
-                micronutrientFocus: ["L-Theanine", "Vitamin B6"]
+                dayDate: calendar.startOfDay(for: date),
+                adjustedCalories: nil,
+                adjustedMacros: nil,
+                redistributionReason: nil
             ),
             
             // Dinner - 20%
             MealWindow(
-                id: UUID(),
                 startTime: calendar.date(byAdding: .hour, value: 11, to: breakfast)!,
                 endTime: calendar.date(byAdding: .hour, value: 12, to: breakfast)!,
-                purpose: .recovery,
                 targetCalories: Int(Double(totalCalories) * 0.2),
                 targetMacros: MacroTargets(
                     protein: Int(Double(totalProtein) * 0.2),
                     carbs: Int(Double(totalCarbs) * 0.2),
                     fat: Int(Double(totalFat) * 0.2)
                 ),
+                purpose: .recovery,
                 flexibility: .moderate,
-                micronutrientFocus: ["Magnesium", "Tryptophan", "Calcium"]
+                dayDate: calendar.startOfDay(for: date),
+                adjustedCalories: nil,
+                adjustedMacros: nil,
+                redistributionReason: nil
             )
         ]
     }
