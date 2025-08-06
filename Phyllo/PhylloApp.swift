@@ -27,7 +27,6 @@ struct PhylloApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .environmentObject(mockDataManager)
                 .environmentObject(timeProvider)
                 .environmentObject(nudgeManager)
                 .environmentObject(clarificationManager)
