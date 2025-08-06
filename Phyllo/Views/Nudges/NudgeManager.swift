@@ -67,33 +67,12 @@ class NudgeManager: ObservableObject {
     }
     
     private func setupObservers() {
-        // Observe morning check-in status
-        MockDataManager.shared.$morningCheckIn
-            .sink { [weak self] checkIn in
-                guard let self = self else { return }
-                
-                // Only show morning nudge between 6 AM and 11 AM
-                let hour = Calendar.current.component(.hour, from: Date())
-                if checkIn == nil && hour >= 6 && hour < 11 {
-                    // Check if we haven't shown this nudge today
-                    let lastShown = UserDefaults.standard.object(forKey: "lastMorningNudgeDate") as? Date ?? Date.distantPast
-                    if !Calendar.current.isDateInToday(lastShown) {
-                        self.triggerNudge(.morningCheckIn)
-                        UserDefaults.standard.set(Date(), forKey: "lastMorningNudgeDate")
-                    }
-                }
-            }
-            .store(in: &cancellables)
-        
-        // Observe meal logging for celebrations
-        MockDataManager.shared.$todaysMeals
-            .dropFirst() // Ignore initial value
-            .sink { [weak self] meals in
-                guard let self = self, !meals.isEmpty else { return }
-                
-                // Check if a new meal was added
-                if let lastMeal = meals.last {
-                    self.triggerNudge(.mealLoggedCelebration(meal: lastMeal))
+        // Check for morning check-in status periodically
+        Timer.publish(every: 300, on: .main, in: .common) // Check every 5 minutes
+            .autoconnect()
+            .sink { [weak self] _ in
+                Task {
+                    await self?.checkMorningCheckInStatus()
                 }
             }
             .store(in: &cancellables)
@@ -102,47 +81,80 @@ class NudgeManager: ObservableObject {
         Timer.publish(every: 60, on: .main, in: .common)
             .autoconnect()
             .sink { [weak self] _ in
-                self?.checkWindowStatus()
+                Task {
+                    await self?.checkWindowStatus()
+                }
             }
             .store(in: &cancellables)
     }
     
-    private func checkWindowStatus() {
-        let windows = MockDataManager.shared.mealWindows
-        let meals = MockDataManager.shared.todaysMeals
-        let currentTime = MockDataManager.shared.currentSimulatedTime
-        
-        for window in windows {
-            // Check for active window reminder
-            if window.isActive {
-                let windowMeals = meals.filter { meal in
-                    meal.timestamp >= window.startTime && meal.timestamp <= window.endTime
+    private func checkMorningCheckInStatus() async {
+        do {
+            let today = Calendar.current.startOfDay(for: TimeProvider.shared.currentTime)
+            let checkIn = try await DataSourceProvider.shared.provider.getMorningCheckIn(for: today)
+            
+            // Only show morning nudge between 6 AM and 11 AM
+            let hour = Calendar.current.component(.hour, from: TimeProvider.shared.currentTime)
+            if checkIn == nil && hour >= 6 && hour < 11 {
+                // Check if we haven't shown this nudge today
+                let lastShown = UserDefaults.standard.object(forKey: "lastMorningNudgeDate") as? Date ?? Date.distantPast
+                if !Calendar.current.isDateInToday(lastShown) {
+                    await MainActor.run {
+                        self.triggerNudge(.morningCheckIn)
+                        UserDefaults.standard.set(Date(), forKey: "lastMorningNudgeDate")
+                    }
+                }
+            }
+        } catch {
+            print("Error checking morning check-in status: \(error)")
+        }
+    }
+    
+    private func checkWindowStatus() async {
+        do {
+            let today = Calendar.current.startOfDay(for: TimeProvider.shared.currentTime)
+            let windows = try await DataSourceProvider.shared.provider.getWindows(for: today)
+            let meals = try await DataSourceProvider.shared.provider.getMeals(for: today)
+            let currentTime = TimeProvider.shared.currentTime
+            
+            for window in windows {
+                // Check for active window reminder
+                if window.isActive {
+                    let windowMeals = meals.filter { meal in
+                        meal.timestamp >= window.startTime && meal.timestamp <= window.endTime
+                    }
+                    
+                    // If no meals logged and window has been active for 15+ minutes
+                    if windowMeals.isEmpty {
+                        let minutesActive = Int(currentTime.timeIntervalSince(window.startTime) / 60)
+                        if minutesActive >= 15 {
+                            let timeRemaining = Int(window.endTime.timeIntervalSince(currentTime) / 60)
+                            if timeRemaining > 0 && !hasShownNudgeRecently(for: "reminder_\(window.id)") {
+                                await MainActor.run {
+                                    self.triggerNudge(.activeWindowReminder(window: window, timeRemaining: timeRemaining))
+                                    self.markNudgeAsShown(for: "reminder_\(window.id)")
+                                }
+                            }
+                        }
+                    }
                 }
                 
-                // If no meals logged and window has been active for 15+ minutes
-                if windowMeals.isEmpty {
-                    let minutesActive = Int(currentTime.timeIntervalSince(window.startTime) / 60)
-                    if minutesActive >= 15 {
-                        let timeRemaining = Int(window.endTime.timeIntervalSince(currentTime) / 60)
-                        if timeRemaining > 0 && !hasShownNudgeRecently(for: "reminder_\(window.id)") {
-                            triggerNudge(.activeWindowReminder(window: window, timeRemaining: timeRemaining))
-                            markNudgeAsShown(for: "reminder_\(window.id)")
+                // Check for missed window
+                if window.isPast && window.endTime.timeIntervalSince(currentTime) > -300 { // Within 5 minutes of closing
+                    let windowMeals = meals.filter { meal in
+                        meal.timestamp >= window.startTime && meal.timestamp <= window.endTime
+                    }
+                    
+                    if windowMeals.isEmpty && !hasShownNudgeRecently(for: "missed_\(window.id)") {
+                        await MainActor.run {
+                            self.triggerNudge(.missedWindow(window: window))
+                            self.markNudgeAsShown(for: "missed_\(window.id)")
                         }
                     }
                 }
             }
-            
-            // Check for missed window
-            if window.isPast && window.endTime.timeIntervalSince(currentTime) > -300 { // Within 5 minutes of closing
-                let windowMeals = meals.filter { meal in
-                    meal.timestamp >= window.startTime && meal.timestamp <= window.endTime
-                }
-                
-                if windowMeals.isEmpty && !hasShownNudgeRecently(for: "missed_\(window.id)") {
-                    triggerNudge(.missedWindow(window: window))
-                    markNudgeAsShown(for: "missed_\(window.id)")
-                }
-            }
+        } catch {
+            print("Error checking window status: \(error)")
         }
     }
     

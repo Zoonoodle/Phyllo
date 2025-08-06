@@ -12,7 +12,6 @@ struct YourPlanChapter: View {
     @Binding var animateContent: Bool
     let scoreBreakdown: InsightsEngine.ScoreBreakdown?
     let micronutrientStatus: InsightsEngine.MicronutrientStatus?
-    @StateObject private var mockData = MockDataManager.shared
     @State private var selectedPhase = 0
     @State private var expandedProtocol: String? = nil
     
@@ -31,7 +30,7 @@ struct YourPlanChapter: View {
                         Image(systemName: "checkmark.circle.fill")
                             .font(.system(size: 16))
                             .foregroundColor(.phylloAccent)
-                        Text(mockData.userProfile.primaryGoal.displayName)
+                        Text("Muscle Building") // TODO: Get from actual user profile
                             .font(.system(size: 18, weight: .medium))
                             .foregroundColor(.white)
                     }
@@ -98,8 +97,8 @@ struct YourPlanChapter: View {
                 .offset(y: animateContent ? 0 : 20)
                 .animation(.spring(response: 0.8).delay(0.35), value: animateContent)
                 
-                // Goal-specific protocol
-                if mockData.userProfile.primaryGoal == .muscleBuild {
+                // Goal-specific protocol (muscle building)
+                if true { // TODO: Get from actual user profile
                     ScienceProtocolCard(
                         title: "Progressive Caloric Surplus",
                         icon: "chart.line.uptrend.xyaxis.circle.fill",

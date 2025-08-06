@@ -9,7 +9,6 @@ import SwiftUI
 
 @main
 struct PhylloApp: App {
-    @StateObject private var mockDataManager = MockDataManager.shared
     @StateObject private var timeProvider = TimeProvider.shared
     @StateObject private var nudgeManager = NudgeManager.shared
     @StateObject private var clarificationManager = ClarificationManager.shared

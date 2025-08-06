@@ -13,7 +13,6 @@ struct ClarificationQuestionsView: View {
     @State private var selectedOptions: [Int: String] = [:]
     @State private var showResults = false
     @State private var isCompleted = false
-    @StateObject private var mockData = MockDataManager.shared
     @StateObject private var clarificationManager = ClarificationManager.shared
     
     var analyzingMeal: AnalyzingMeal?
@@ -251,7 +250,8 @@ struct ClarificationQuestionsView: View {
         .onDisappear {
             // If the view is dismissed without completion, cancel the analyzing meal
             if !isCompleted, let analyzingMeal = analyzingMeal {
-                mockData.cancelAnalyzingMeal(analyzingMeal)
+                // TODO: Implement real meal cancellation logic
+                print("Cancelling analyzing meal: \(analyzingMeal.id)")
             }
         }
     }
@@ -386,7 +386,8 @@ struct ClarificationQuestionsView: View {
     
     private func createMockMeal() -> LoggedMeal {
         // Create a mock meal based on the selected options
-        let activeWindow = mockData.activeWindow
+        // TODO: Get actual active window from real data source
+        let activeWindow: MealWindow? = nil
         
         // Generate micronutrients based on window purpose
         var micronutrients: [String: Double] = [:]

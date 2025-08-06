@@ -9,8 +9,8 @@ import SwiftUI
 
 struct WindowDetailView: View {
     let window: MealWindow
+    @ObservedObject var viewModel: ScheduleViewModel
     @Environment(\.dismiss) private var dismiss
-    @StateObject private var mockData = MockDataManager.shared
     @State private var currentPage = 0
     
     var body: some View {
@@ -22,7 +22,7 @@ struct WindowDetailView: View {
                 ScrollView {
                     VStack(spacing: 24) {
                         // Scrollable nutrition header
-                        ScrollableNutritionHeader(window: window, currentPage: $currentPage)
+                        ScrollableNutritionHeader(window: window, currentPage: $currentPage, viewModel: viewModel)
                         
                         // Custom page indicator
                         HStack(spacing: 8) {
@@ -36,7 +36,7 @@ struct WindowDetailView: View {
                         .padding(.top, -8) // Reduce spacing between card and indicator
                         
                         // Logged foods section
-                        WindowFoodsList(window: window, selectedMealId: .constant(nil))
+                        WindowFoodsList(window: window, selectedMealId: .constant(nil), viewModel: viewModel)
                         
                         // Window purpose section
                         WindowPurposeCard(window: window)
@@ -103,9 +103,9 @@ struct WindowDetailView: View {
 }
 
 #Preview {
-    WindowDetailView(window: MockDataManager.shared.mealWindows[0])
-        .onAppear {
-            MockDataManager.shared.completeMorningCheckIn()
-            MockDataManager.shared.simulateTime(hour: 12)
-        }
+    @Previewable @StateObject var viewModel = ScheduleViewModel()
+    
+    if let window = viewModel.mealWindows.first {
+        WindowDetailView(window: window, viewModel: viewModel)
+    }
 }

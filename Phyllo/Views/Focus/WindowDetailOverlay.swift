@@ -153,13 +153,9 @@ struct WindowDetailOverlay: View {
 
 #Preview {
     WindowDetailOverlay(
-        window: MockDataManager.shared.mealWindows[0],
+        window: MealWindow.mockWindows(for: .performanceFocus).first!,
         showWindowDetail: .constant(true),
         selectedMealId: .constant(nil),
         animationNamespace: Namespace().wrappedValue
     )
-    .onAppear {
-        MockDataManager.shared.completeMorningCheckIn()
-        MockDataManager.shared.simulateTime(hour: 12)
-    }
 }

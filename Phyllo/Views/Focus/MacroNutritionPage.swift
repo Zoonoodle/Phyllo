@@ -9,23 +9,23 @@ import SwiftUI
 
 struct MacroNutritionPage: View {
     let window: MealWindow
-    @StateObject private var mockData = MockDataManager.shared
+    @ObservedObject var viewModel: ScheduleViewModel
     
     // Calculate consumed values for this window
     private var windowCaloriesConsumed: Int {
-        mockData.caloriesConsumedInWindow(window)
+        viewModel.caloriesConsumedInWindow(window)
     }
     
     private var windowProteinConsumed: Int {
-        mockData.proteinConsumedInWindow(window)
+        viewModel.proteinConsumedInWindow(window)
     }
     
     private var windowCarbsConsumed: Int {
-        mockData.carbsConsumedInWindow(window)
+        viewModel.carbsConsumedInWindow(window)
     }
     
     private var windowFatConsumed: Int {
-        mockData.fatConsumedInWindow(window)
+        viewModel.fatConsumedInWindow(window)
     }
     
     private var calorieProgress: Double {
@@ -149,15 +149,14 @@ struct MacroProgressBar: View {
 }
 
 #Preview {
+    @Previewable @StateObject var viewModel = ScheduleViewModel()
+    
     ZStack {
         Color.phylloBackground.ignoresSafeArea()
         
-        MacroNutritionPage(window: MockDataManager.shared.mealWindows[0])
-            .padding()
-    }
-    .onAppear {
-        MockDataManager.shared.completeMorningCheckIn()
-        MockDataManager.shared.simulateTime(hour: 12)
-        MockDataManager.shared.addMockMeal()
+        if let window = viewModel.mealWindows.first {
+            MacroNutritionPage(window: window, viewModel: viewModel)
+                .padding()
+        }
     }
 }

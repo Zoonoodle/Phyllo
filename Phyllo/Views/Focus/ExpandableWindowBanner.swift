@@ -1016,10 +1016,4 @@ struct AnalyzingMealRowCompact: View {
             }
         }
     }
-    .onAppear {
-        MockDataManager.shared.completeMorningCheckIn()
-        MockDataManager.shared.simulateTime(hour: 12)
-        MockDataManager.shared.addMockMeal()
-        MockDataManager.shared.addMockMeal()
-    }
 }

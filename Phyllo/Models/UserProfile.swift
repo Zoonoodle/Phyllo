@@ -26,22 +26,6 @@ enum ActivityLevel: String, CaseIterable, Codable {
     }
 }
 
-// MARK: - Primary Goal
-enum PrimaryGoal: String, CaseIterable, Codable {
-    case weightLoss = "weightLoss"
-    case muscleBuild = "muscleBuild"
-    case maintainWeight = "maintainWeight"
-    case improveEnergy = "improveEnergy"
-    
-    var displayName: String {
-        switch self {
-        case .weightLoss: return "Weight Loss"
-        case .muscleBuild: return "Build Muscle"
-        case .maintainWeight: return "Maintain Weight"
-        case .improveEnergy: return "Improve Energy"
-        }
-    }
-}
 
 // MARK: - User Profile
 struct UserProfile: Codable, Identifiable {
@@ -52,7 +36,7 @@ struct UserProfile: Codable, Identifiable {
     var height: Double // in inches
     var weight: Double // in pounds
     var activityLevel: ActivityLevel
-    var primaryGoal: PrimaryGoal
+    var primaryGoal: NutritionGoal
     var dietaryPreferences: [String]
     var dietaryRestrictions: [String]
     var dailyCalorieTarget: Int
@@ -63,6 +47,25 @@ struct UserProfile: Codable, Identifiable {
     var micronutrientPriorities: [String]
     
     // MARK: - Firestore Conversion
+    private func primaryGoalForFirestore() -> [String: Any] {
+        do {
+            let data = try JSONEncoder().encode(primaryGoal)
+            let dict = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+            return dict ?? [:]
+        } catch {
+            return [:]
+        }
+    }
+    
+    private static func nutritionGoalFromFirestore(_ data: [String: Any]) -> NutritionGoal? {
+        do {
+            let jsonData = try JSONSerialization.data(withJSONObject: data)
+            return try JSONDecoder().decode(NutritionGoal.self, from: jsonData)
+        } catch {
+            return nil
+        }
+    }
+    
     func toFirestore() -> [String: Any] {
         return [
             "id": id.uuidString,
@@ -72,7 +75,7 @@ struct UserProfile: Codable, Identifiable {
             "height": height,
             "weight": weight,
             "activityLevel": activityLevel.rawValue,
-            "primaryGoal": primaryGoal.rawValue,
+            "primaryGoal": primaryGoalForFirestore(),
             "dietaryPreferences": dietaryPreferences,
             "dietaryRestrictions": dietaryRestrictions,
             "dailyCalorieTarget": dailyCalorieTarget,
@@ -95,8 +98,8 @@ struct UserProfile: Codable, Identifiable {
               let weight = data["weight"] as? Double,
               let activityLevelString = data["activityLevel"] as? String,
               let activityLevel = ActivityLevel(rawValue: activityLevelString),
-              let primaryGoalString = data["primaryGoal"] as? String,
-              let primaryGoal = PrimaryGoal(rawValue: primaryGoalString),
+              let primaryGoalData = data["primaryGoal"] as? [String: Any],
+              let primaryGoal = nutritionGoalFromFirestore(primaryGoalData),
               let dailyCalorieTarget = data["dailyCalorieTarget"] as? Int,
               let dailyProteinTarget = data["dailyProteinTarget"] as? Int,
               let dailyCarbTarget = data["dailyCarbTarget"] as? Int,
@@ -139,7 +142,7 @@ struct UserProfile: Codable, Identifiable {
             height: 70, // 5'10"
             weight: 170,
             activityLevel: .moderate,
-            primaryGoal: .improveEnergy,
+            primaryGoal: .performanceFocus,
             dietaryPreferences: [],
             dietaryRestrictions: [],
             dailyCalorieTarget: 2400,

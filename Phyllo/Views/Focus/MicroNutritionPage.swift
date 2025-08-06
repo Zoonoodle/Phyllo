@@ -16,11 +16,13 @@ struct WindowMicronutrients {
 
 struct MicroNutritionPage: View {
     let window: MealWindow
-    @StateObject private var mockData = MockDataManager.shared
+    @ObservedObject var viewModel: ScheduleViewModel
     
-    // Get micronutrient data from MockDataManager
+    // Get micronutrient data - TODO: Implement real micronutrient tracking
     private var micronutrientData: [MicronutrientConsumption] {
-        mockData.getMicronutrientConsumption(for: window.purpose)
+        // For now, return empty data as real micronutrient tracking needs to be implemented
+        // This was previously using mock data from MockDataManager
+        []
     }
     
     var body: some View {
@@ -99,14 +101,14 @@ struct MicronutrientBar: View {
 }
 
 #Preview {
+    @Previewable @StateObject var viewModel = ScheduleViewModel()
+    
     ZStack {
         Color.phylloBackground.ignoresSafeArea()
         
-        MicroNutritionPage(window: MockDataManager.shared.mealWindows[0])
-            .padding()
-    }
-    .onAppear {
-        MockDataManager.shared.completeMorningCheckIn()
-        MockDataManager.shared.simulateTime(hour: 12)
+        if let window = viewModel.mealWindows.first {
+            MicroNutritionPage(window: window, viewModel: viewModel)
+                .padding()
+        }
     }
 }

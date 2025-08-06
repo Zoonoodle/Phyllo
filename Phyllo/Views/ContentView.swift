@@ -22,7 +22,6 @@ struct ContentView_Previews: PreviewProvider {
             .environment(\.isPreview, true)
             .onAppear {
                 // Initialize singletons for preview
-                _ = MockDataManager.shared
                 _ = NudgeManager.shared
                 _ = TimeProvider.shared
                 _ = ClarificationManager.shared

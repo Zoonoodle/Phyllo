@@ -23,7 +23,6 @@ struct ScanTabView: View {
     @State private var lastCompletedMeal: LoggedMeal?
     @State private var showImagePicker = false
     @State private var analysisResult: MealAnalysisResult?
-    @StateObject private var mockData = MockDataManager.shared
     @StateObject private var clarificationManager = ClarificationManager.shared
     @StateObject private var mealCaptureService = MealCaptureService.shared
     

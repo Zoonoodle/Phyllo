@@ -9,7 +9,7 @@ import SwiftUI
 
 struct NudgeContainer: View {
     @StateObject private var nudgeManager = NudgeManager.shared
-    @StateObject private var mockData = MockDataManager.shared
+    private let dataProvider = DataSourceProvider.shared.provider
     
     var body: some View {
         ZStack {
@@ -26,7 +26,7 @@ struct NudgeContainer: View {
                 case .morningCheckIn:
                     MorningCheckInNudge(
                         onCheckIn: {
-                            mockData.completeMorningCheckIn()
+                            // TODO: Implement morning check-in with real data provider
                             nudgeManager.dismissCurrentNudge()
                         },
                         onDismiss: {

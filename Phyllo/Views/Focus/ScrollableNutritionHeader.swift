@@ -10,13 +10,14 @@ import SwiftUI
 struct ScrollableNutritionHeader: View {
     let window: MealWindow
     @Binding var currentPage: Int
+    @ObservedObject var viewModel: ScheduleViewModel
     
     var body: some View {
         TabView(selection: $currentPage) {
-            MacroNutritionPage(window: window)
+            MacroNutritionPage(window: window, viewModel: viewModel)
                 .tag(0)
             
-            MicroNutritionPage(window: window)
+            MicroNutritionPage(window: window, viewModel: viewModel)
                 .tag(1)
         }
         .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
@@ -44,15 +45,18 @@ struct ScrollableNutritionHeader: View {
 
 #Preview {
     @Previewable @State var currentPage = 0
+    @Previewable @StateObject var viewModel = ScheduleViewModel()
     
     ZStack {
         Color.phylloBackground.ignoresSafeArea()
         
-        ScrollableNutritionHeader(window: MockDataManager.shared.mealWindows[0], currentPage: $currentPage)
+        if let window = viewModel.mealWindows.first {
+            ScrollableNutritionHeader(
+                window: window,
+                currentPage: $currentPage,
+                viewModel: viewModel
+            )
             .padding()
-    }
-    .onAppear {
-        MockDataManager.shared.completeMorningCheckIn()
-        MockDataManager.shared.simulateTime(hour: 12)
+        }
     }
 }

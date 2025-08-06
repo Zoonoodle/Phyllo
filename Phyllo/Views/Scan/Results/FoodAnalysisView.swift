@@ -18,7 +18,6 @@ struct FoodAnalysisView: View {
     @State private var showEditView = false
     @State private var confidenceAnimation = false
     @State private var selectedTab: FoodAnalysisTab = .nutrition
-    @StateObject private var mockData = MockDataManager.shared
     
     let meal: LoggedMeal
     var isFromScan: Bool = false
@@ -333,7 +332,7 @@ struct FoodAnalysisView: View {
                     .font(.system(size: 18, weight: .semibold))
                     .foregroundColor(.white)
                 Spacer()
-                Text("\(mockData.todaysMeals.count) meals logged")
+                Text("3 meals logged") // TODO: Get from real data source
                     .font(.system(size: 14))
                     .foregroundColor(.white.opacity(0.5))
             }
@@ -369,19 +368,19 @@ struct FoodAnalysisView: View {
                 VStack(alignment: .leading, spacing: 12) {
                     DailyMacroRow(
                         label: "Protein",
-                        consumed: mockData.todaysProteinConsumed,
+                        consumed: 85, // TODO: Get from real data source
                         target: userDailyProtein,
                         color: .blue
                     )
                     DailyMacroRow(
                         label: "Carbs",
-                        consumed: mockData.todaysCarbsConsumed,
+                        consumed: 180, // TODO: Get from real data source
                         target: userDailyCarbs,
                         color: .orange
                     )
                     DailyMacroRow(
                         label: "Fat",
-                        consumed: mockData.todaysFatConsumed,
+                        consumed: 45, // TODO: Get from real data source
                         target: userDailyFat,
                         color: .yellow
                     )
@@ -390,7 +389,7 @@ struct FoodAnalysisView: View {
             }
             
             // Remaining calories
-            Text("\(mockData.todaysCaloriesConsumed) / \(userDailyCalories) calories")
+            Text("1850 / \(userDailyCalories) calories") // TODO: Get from real data source
                 .font(.system(size: 14))
                 .foregroundColor(.white.opacity(0.7))
                 .frame(maxWidth: .infinity)
@@ -451,11 +450,13 @@ struct FoodAnalysisView: View {
     
     private var mealWindow: MealWindow? {
         guard let windowId = meal.windowId else { return nil }
-        return mockData.mealWindows.first { $0.id == windowId }
+        // TODO: Get from real data source
+        return nil
     }
     
     private var dailyProgress: Double {
-        Double(mockData.todaysCaloriesConsumed) / Double(userDailyCalories)
+        // TODO: Get from real data source
+        Double(1850) / Double(userDailyCalories)
     }
     
     private var userDailyCalories: Int {
@@ -494,8 +495,8 @@ struct FoodAnalysisView: View {
     }
     
     private func getWindowMicronutrients(for purpose: WindowPurpose) -> [MicronutrientConsumption] {
-        // Get micronutrients from MockDataManager for this window purpose
-        return mockData.getMicronutrientConsumption(for: purpose)
+        // TODO: Get micronutrients from real data source for this window purpose
+        return []
     }
     
     private func getMealContribution(for nutrientName: String) -> Double {

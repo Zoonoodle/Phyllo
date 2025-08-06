@@ -230,22 +230,8 @@ class MealCaptureService: ObservableObject {
         }
         
         // Create context for AI
-        // Convert PrimaryGoal to NutritionGoal
-        let nutritionGoal: NutritionGoal = {
-            switch userProfile.primaryGoal {
-            case .weightLoss:
-                return .weightLoss(targetPounds: 10, timeline: 8)
-            case .muscleBuild:
-                return .muscleGain(targetPounds: 5, timeline: 12)
-            case .maintainWeight:
-                return .maintainWeight
-            case .improveEnergy:
-                return .performanceFocus
-            }
-        }()
-        
         let context = UserNutritionContext(
-            primaryGoal: nutritionGoal,
+            primaryGoal: userProfile.primaryGoal,
             dailyCalorieTarget: userProfile.dailyCalorieTarget,
             dailyProteinTarget: userProfile.dailyProteinTarget,
             dailyCarbTarget: userProfile.dailyCarbTarget,

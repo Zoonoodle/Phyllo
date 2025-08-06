@@ -10,19 +10,16 @@ import SwiftUI
 struct WindowFoodsList: View {
     let window: MealWindow
     @Binding var selectedMealId: String?
-    @StateObject private var mockData = MockDataManager.shared
+    @ObservedObject var viewModel: ScheduleViewModel
     
     // Filter meals for this window
     private var windowMeals: [LoggedMeal] {
-        mockData.todaysMeals.filter { meal in
-            // Check if meal is assigned to this window
-            meal.windowId == window.id
-        }
+        viewModel.mealsInWindow(window)
     }
     
     // Check if there's an analyzing meal for this window
     private var analyzingMeal: AnalyzingMeal? {
-        mockData.analyzingMealInWindow(window)
+        viewModel.analyzingMealsInWindow(window).first
     }
     
     var body: some View {
@@ -276,16 +273,18 @@ struct IngredientChip: View {
 }
 
 #Preview {
+    @Previewable @StateObject var viewModel = ScheduleViewModel()
+    
     ZStack {
         Color.phylloBackground.ignoresSafeArea()
         
-        WindowFoodsList(window: MockDataManager.shared.mealWindows[0], selectedMealId: .constant(nil))
+        if let window = viewModel.mealWindows.first {
+            WindowFoodsList(
+                window: window,
+                selectedMealId: .constant(nil),
+                viewModel: viewModel
+            )
             .padding()
-    }
-    .onAppear {
-        MockDataManager.shared.completeMorningCheckIn()
-        MockDataManager.shared.simulateTime(hour: 12)
-        MockDataManager.shared.addMockMeal()
-        MockDataManager.shared.addMockMeal()
+        }
     }
 }
