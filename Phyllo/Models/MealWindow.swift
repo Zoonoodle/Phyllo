@@ -152,9 +152,10 @@ struct MealWindow: Identifiable {
     // Generate mock windows for different goals
     static func mockWindows(for goal: NutritionGoal, checkIn: MorningCheckInData? = nil, userProfile: UserProfile? = nil) -> [MealWindow] {
         let calendar = Calendar.current
-        let today = Date()
-        let wakeTime = checkIn?.wakeTime ?? userProfile?.typicalWakeTime ?? calendar.date(bySettingHour: 7, minute: 0, second: 0, of: today)!
-        let sleepTime = userProfile?.typicalSleepTime ?? calendar.date(bySettingHour: 22, minute: 30, second: 0, of: today)!
+        let now = Date()
+        let today = calendar.startOfDay(for: now)  // Ensure dayDate is start of day for consistent queries
+        let wakeTime = checkIn?.wakeTime ?? userProfile?.typicalWakeTime ?? calendar.date(bySettingHour: 7, minute: 0, second: 0, of: now)!
+        let sleepTime = userProfile?.typicalSleepTime ?? calendar.date(bySettingHour: 22, minute: 30, second: 0, of: now)!
         
         // Calculate ideal last meal time based on circadian rhythm (3 hours before sleep)
         let lastMealTime = calendar.date(byAdding: .hour, value: -3, to: sleepTime)!

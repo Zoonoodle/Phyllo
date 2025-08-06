@@ -35,28 +35,59 @@ class MealCaptureService: ObservableObject {
             DebugLogger.shared.mealAnalysis("Starting meal analysis - Image: \(image != nil), Voice: \(voiceTranscript != nil), Barcode: \(barcode != nil)")
         }
         
-        // Find the active window for this meal
+        // Find the best window for this meal
         Task { @MainActor in
             DebugLogger.shared.dataProvider("Fetching current windows")
         }
         let currentWindows = try await dataProvider.getWindows(for: Date())
-        let activeWindow = currentWindows.first { window in
-            window.contains(timestamp: Date())
+        let now = Date()
+        
+        // First, try to find an active window
+        var bestWindow = currentWindows.first { window in
+            window.contains(timestamp: now)
         }
-        if let window = activeWindow {
+        
+        // If no active window, find the nearest window
+        if bestWindow == nil {
+            // Find upcoming windows
+            let upcomingWindows = currentWindows.filter { $0.startTime > now }
+                .sorted { $0.startTime < $1.startTime }
+            
+            // Find past windows that are still "doable" (within 2 hours)
+            let recentPastWindows = currentWindows.filter { window in
+                window.endTime < now && 
+                now.timeIntervalSince(window.endTime) < 2 * 3600 // Within 2 hours
+            }.sorted { $0.endTime > $1.endTime } // Most recent first
+            
+            // Prefer the most recent past window if it's within 2 hours
+            if let recentWindow = recentPastWindows.first {
+                bestWindow = recentWindow
+                Task { @MainActor in
+                    DebugLogger.shared.warning("Using recent past window: \(recentWindow.purpose.rawValue) (ended \(Int(now.timeIntervalSince(recentWindow.endTime)/60)) minutes ago)")
+                }
+            } else if let nextWindow = upcomingWindows.first {
+                // Otherwise use the next upcoming window
+                bestWindow = nextWindow
+                Task { @MainActor in
+                    DebugLogger.shared.warning("Using upcoming window: \(nextWindow.purpose.rawValue) (starts in \(Int(nextWindow.startTime.timeIntervalSince(now)/60)) minutes)")
+                }
+            }
+        }
+        
+        if let window = bestWindow {
             Task { @MainActor in
-                DebugLogger.shared.logWindow(window, action: "Found active window")
+                DebugLogger.shared.logWindow(window, action: "Found best window for meal")
             }
         } else {
             Task { @MainActor in
-                DebugLogger.shared.warning("No active window found for current time")
+                DebugLogger.shared.warning("No suitable window found for meal - will save without window assignment")
             }
         }
         
         // Create analyzing meal
         let analyzingMeal = AnalyzingMeal(
             timestamp: Date(),
-            windowId: activeWindow?.id,
+            windowId: bestWindow?.id,
             imageData: image?.jpegData(compressionQuality: 0.8),
             voiceDescription: voiceTranscript
         )

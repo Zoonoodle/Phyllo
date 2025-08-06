@@ -1,5 +1,6 @@
 import Foundation
 import UIKit
+import FirebaseFirestore
 
 // MARK: - Data Provider Protocol
 /// Protocol defining all data operations for switching between Mock and Firebase implementations
@@ -123,8 +124,12 @@ extension LoggedMeal {
               let calories = data["calories"] as? Int,
               let protein = data["protein"] as? Int,
               let carbs = data["carbs"] as? Int,
-              let fat = data["fat"] as? Int,
-              let timestamp = data["timestamp"] as? Date else {
+              let fat = data["fat"] as? Int else {
+            return nil
+        }
+        
+        // Handle Firestore Timestamp conversion
+        guard let timestamp = (data["timestamp"] as? FirebaseFirestore.Timestamp)?.dateValue() ?? (data["timestamp"] as? Date) else {
             return nil
         }
         
@@ -191,8 +196,6 @@ extension MealWindow {
     static func fromFirestore(_ data: [String: Any]) -> MealWindow? {
         guard let idString = data["id"] as? String,
               let id = UUID(uuidString: idString),
-              let startTime = data["startTime"] as? Date,
-              let endTime = data["endTime"] as? Date,
               let targetCalories = data["targetCalories"] as? Int,
               let targetProtein = data["targetProtein"] as? Int,
               let targetCarbs = data["targetCarbs"] as? Int,
@@ -200,8 +203,15 @@ extension MealWindow {
               let purposeString = data["purpose"] as? String,
               let purpose = WindowPurpose(rawValue: purposeString),
               let flexibilityString = data["flexibility"] as? String,
-              let flexibility = WindowFlexibility(rawValue: flexibilityString),
-              let dayDate = data["dayDate"] as? Date else {
+              let flexibility = WindowFlexibility(rawValue: flexibilityString) else {
+            return nil
+        }
+        
+        // Handle Firestore Timestamp conversion
+        // Firestore returns Timestamp objects, not Date objects
+        guard let startTime = (data["startTime"] as? FirebaseFirestore.Timestamp)?.dateValue() ?? (data["startTime"] as? Date),
+              let endTime = (data["endTime"] as? FirebaseFirestore.Timestamp)?.dateValue() ?? (data["endTime"] as? Date),
+              let dayDate = (data["dayDate"] as? FirebaseFirestore.Timestamp)?.dateValue() ?? (data["dayDate"] as? Date) else {
             return nil
         }
         

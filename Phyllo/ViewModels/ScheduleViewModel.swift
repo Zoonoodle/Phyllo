@@ -157,7 +157,7 @@ class ScheduleViewModel: ObservableObject {
             let profile = try await dataProvider.getUserProfile() ?? UserProfile.mockProfile
             
             Task { @MainActor in
-                DebugLogger.shared.dataProvider("Using profile: \(profile.primaryGoal.rawValue)")
+                DebugLogger.shared.dataProvider("Using profile: \(profile.primaryGoal.displayName)")
             }
             
             let windows = try await dataProvider.generateDailyWindows(

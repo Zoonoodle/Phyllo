@@ -215,24 +215,41 @@ class FirebaseDataProvider: DataProvider {
     }
     
     func getWindows(for date: Date) async throws -> [MealWindow] {
-        // Use start and end of day to query windows
+        // Use start of day for querying by dayDate
         let calendar = Calendar.current
         let startOfDay = calendar.startOfDay(for: date)
-        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
         
-        // Query windows that start within this day
+        Task { @MainActor in
+            DebugLogger.shared.firebase("Querying windows for dayDate: \(startOfDay)")
+        }
+        
+        // Query windows by dayDate field (single field query, no index needed)
         let snapshot = try await userRef.collection("windows")
-            .whereField("startTime", isGreaterThanOrEqualTo: startOfDay)
-            .whereField("startTime", isLessThan: endOfDay)
+            .whereField("dayDate", isEqualTo: startOfDay)
             .getDocuments()
+        
+        Task { @MainActor in
+            DebugLogger.shared.firebase("Found \(snapshot.documents.count) documents in windows collection")
+            if snapshot.documents.count > 0 {
+                // Log first document for debugging
+                let firstDoc = snapshot.documents[0].data()
+                DebugLogger.shared.firebase("First document data: \(firstDoc)")
+            }
+        }
         
         // Convert and sort windows
         let windows = snapshot.documents.compactMap { doc in
-            MealWindow.fromFirestore(doc.data())
+            let window = MealWindow.fromFirestore(doc.data())
+            if window == nil {
+                Task { @MainActor in
+                    DebugLogger.shared.warning("Failed to parse window document: \(doc.data())")
+                }
+            }
+            return window
         }
         
         Task { @MainActor in
-            DebugLogger.shared.firebase("Retrieved \(windows.count) windows from Firebase for date: \(date)")
+            DebugLogger.shared.firebase("Successfully parsed \(windows.count) windows from Firebase for date: \(date)")
         }
         
         return windows.sorted { $0.startTime < $1.startTime }
@@ -263,7 +280,7 @@ class FirebaseDataProvider: DataProvider {
         // Save all windows to Firestore
         for window in windows {
             Task { @MainActor in
-                DebugLogger.shared.firebase("Saving window: \(window.name) (\(window.startTime) - \(window.endTime))")
+                DebugLogger.shared.firebase("Saving window: \(window.purpose.rawValue) (\(window.startTime) - \(window.endTime))")
             }
             try await saveWindow(window)
         }
@@ -463,14 +480,16 @@ class FirebaseDataProvider: DataProvider {
     }
     
     func observeWindows(for date: Date, onChange: @escaping ([MealWindow]) -> Void) -> ObservationToken {
-        let dateString = ISO8601DateFormatter.yyyyMMdd.string(from: date)
+        // Use start of day to match how we save dayDate
+        let calendar = Calendar.current
+        let startOfDay = calendar.startOfDay(for: date)
         
         let listener = userRef.collection("windows")
-            .whereField("dayDate", isEqualTo: dateString)
-            .order(by: "startTime")
+            .whereField("dayDate", isEqualTo: startOfDay)
             .addSnapshotListener { snapshot, error in
                 guard let documents = snapshot?.documents else { return }
                 let windows = documents.compactMap { MealWindow.fromFirestore($0.data()) }
+                    .sorted { $0.startTime < $1.startTime }  // Sort in memory instead of query
                 onChange(windows)
             }
         
