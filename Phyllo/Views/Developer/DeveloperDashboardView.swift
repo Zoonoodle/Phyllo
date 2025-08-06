@@ -10,6 +10,8 @@ import SwiftUI
 struct DeveloperDashboardView: View {
     @StateObject private var mockData = MockDataManager.shared
     @State private var selectedTab = 0
+    @State private var isClearing = false
+    @State private var showClearConfirmation = false
     @Environment(\.dismiss) var dismiss
     
     var body: some View {
@@ -195,6 +197,12 @@ struct GoalSelectionRow: View {
 // MARK: - Mock Meals Tab
 struct MockMealsTabView: View {
     @StateObject private var mockData = MockDataManager.shared
+    @State private var showClearConfirmation = false
+    @State private var isClearing = false
+    
+    private var dataProvider: DataProvider {
+        DataSourceProvider.shared.provider
+    }
     
     var body: some View {
         VStack(spacing: 20) {
@@ -212,14 +220,32 @@ struct MockMealsTabView: View {
                 }
                 
                 Button(action: {
-                    mockData.clearAllMeals()
+                    showClearConfirmation = true
                 }) {
-                    Label("Clear All Meals", systemImage: "trash.fill")
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.red.opacity(0.8))
-                        .foregroundColor(.white)
-                        .cornerRadius(12)
+                    HStack {
+                        if isClearing {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                .scaleEffect(0.8)
+                        } else {
+                            Image(systemName: "trash.fill")
+                        }
+                        Text("Clear All Meals")
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.red.opacity(isClearing ? 0.5 : 0.8))
+                    .foregroundColor(.white)
+                    .cornerRadius(12)
+                }
+                .disabled(isClearing)
+                .confirmationDialog("Clear All Meals", isPresented: $showClearConfirmation) {
+                    Button("Clear All Meals (Mock & Firebase)", role: .destructive) {
+                        clearAllMeals()
+                    }
+                    Button("Cancel", role: .cancel) {}
+                } message: {
+                    Text("This will permanently delete all meals from both mock data and Firebase. This action cannot be undone.")
                 }
                 
                 Button(action: {
@@ -328,6 +354,37 @@ struct MockMealsTabView: View {
             .padding()
             .background(Color.phylloElevated)
             .cornerRadius(16)
+        }
+    }
+    
+    private func clearAllMeals() {
+        isClearing = true
+        
+        Task {
+            do {
+                // Clear mock data
+                await MainActor.run {
+                    mockData.clearAllMeals()
+                }
+                
+                // Clear Firebase meals
+                let today = Date()
+                let meals = try await dataProvider.getMeals(for: today)
+                
+                for meal in meals {
+                    try await dataProvider.deleteMeal(id: meal.id.uuidString)
+                }
+                
+                await MainActor.run {
+                    isClearing = false
+                    DebugLogger.shared.success("Cleared all meals from mock data and Firebase")
+                }
+            } catch {
+                await MainActor.run {
+                    isClearing = false
+                    DebugLogger.shared.error("Failed to clear meals: \(error)")
+                }
+            }
         }
     }
     
