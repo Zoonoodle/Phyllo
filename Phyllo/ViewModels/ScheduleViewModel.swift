@@ -17,8 +17,14 @@ class ScheduleViewModel: ObservableObject {
     @Published var mealWindows: [MealWindow] = []
     @Published var analyzingMeals: [AnalyzingMeal] = []
     @Published var morningCheckIn: MorningCheckInData?
+    @Published var userProfile: UserProfile = UserProfile.mockProfile
     @Published var isLoading = false
     @Published var errorMessage: String?
+    
+    // Computed property for compatibility with DayNavigationHeader
+    var meals: [LoggedMeal] {
+        todaysMeals
+    }
     
     // MARK: - Dependencies
     private let dataProvider = DataSourceProvider.shared.provider
@@ -73,6 +79,11 @@ class ScheduleViewModel: ObservableObject {
         
         do {
             let today = Date()
+            
+            // Load user profile
+            if let profile = try await dataProvider.getUserProfile() {
+                self.userProfile = profile
+            }
             
             // Load meals
             todaysMeals = try await dataProvider.getMeals(for: today)
@@ -155,6 +166,7 @@ class ScheduleViewModel: ObservableObject {
         
         do {
             let profile = try await dataProvider.getUserProfile() ?? UserProfile.mockProfile
+            self.userProfile = profile
             
             Task { @MainActor in
                 DebugLogger.shared.dataProvider("Using profile: \(profile.primaryGoal.displayName)")

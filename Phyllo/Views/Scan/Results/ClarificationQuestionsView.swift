@@ -367,7 +367,9 @@ struct ClarificationQuestionsView: View {
     
     private func completeClarification() {
         // Store clarification answers in the manager
-        clarificationManager.clarificationAnswers = selectedOptions.mapValues { $0 }
+        clarificationManager.clarificationAnswers = Dictionary(
+            uniqueKeysWithValues: selectedOptions.map { (String($0.key), $0.value) }
+        )
         
         // Use the passed meal result or create a new one
         let finalMeal = mealResult ?? createMockMeal()
