@@ -14,6 +14,7 @@ class MealCaptureService: ObservableObject {
     
     private let dataProvider = DataSourceProvider.shared.provider
     private let vertexAI = VertexAIService.shared
+    private let timeProvider = TimeProvider.shared
     private var cancellables = Set<AnyCancellable>()
     
     private init() {
@@ -39,8 +40,9 @@ class MealCaptureService: ObservableObject {
         Task { @MainActor in
             DebugLogger.shared.dataProvider("Fetching current windows")
         }
-        let currentWindows = try await dataProvider.getWindows(for: Date())
-        let now = Date()
+        let currentDate = timeProvider.currentTime
+        let currentWindows = try await dataProvider.getWindows(for: currentDate)
+        let now = currentDate
         
         // First, try to find an active window
         var bestWindow = currentWindows.first { window in
@@ -86,7 +88,7 @@ class MealCaptureService: ObservableObject {
         
         // Create analyzing meal
         let analyzingMeal = AnalyzingMeal(
-            timestamp: Date(),
+            timestamp: now,
             windowId: bestWindow?.id,
             imageData: image?.jpegData(compressionQuality: 0.8),
             voiceDescription: voiceTranscript
@@ -222,7 +224,7 @@ class MealCaptureService: ObservableObject {
         let userProfile = try await dataProvider.getUserProfile() ?? UserProfile.mockProfile
         
         // Find assigned window
-        let windows = try await dataProvider.getWindows(for: Date())
+        let windows = try await dataProvider.getWindows(for: analyzingMeal.timestamp)
         let assignedWindow = windows.first { window in
             window.contains(timestamp: analyzingMeal.timestamp)
         }

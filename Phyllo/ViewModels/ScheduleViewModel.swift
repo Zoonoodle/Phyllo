@@ -28,6 +28,7 @@ class ScheduleViewModel: ObservableObject {
     
     // MARK: - Dependencies
     private let dataProvider = DataSourceProvider.shared.provider
+    private let timeProvider = TimeProvider.shared
     private var cancellables = Set<AnyCancellable>()
     private var observations: [ObservationToken] = []
     
@@ -46,7 +47,7 @@ class ScheduleViewModel: ObservableObject {
     
     // MARK: - Data Loading
     private func setupObservations() {
-        let today = Date()
+        let today = timeProvider.currentTime
         
         // Observe meals
         let mealsToken = dataProvider.observeMeals(for: today) { [weak self] meals in
@@ -78,7 +79,7 @@ class ScheduleViewModel: ObservableObject {
         defer { isLoading = false }
         
         do {
-            let today = Date()
+            let today = timeProvider.currentTime
             
             // Load user profile
             if let profile = try await dataProvider.getUserProfile() {

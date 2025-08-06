@@ -141,8 +141,11 @@ class VertexAIService: ObservableObject {
         
         1. MEAL IDENTIFICATION
            - Name: [concise meal name, max 4 words]
-           - Confidence: [0.0-1.0]
-           - Main Components: [list key ingredients]
+           - Confidence: [0.0-1.0] - BE CONSERVATIVE!
+             • 0.9-1.0: Only when ALL ingredients are clearly visible
+             • 0.7-0.85: Beverages, smoothies, mixed dishes, sauces
+             • 0.5-0.7: When major ingredients are uncertain
+           - Main Components: [list visible ingredients only]
         
         2. PORTION ESTIMATION
            - Use visual cues (plate size, utensils, hand comparison)
@@ -160,38 +163,60 @@ class VertexAIService: ObservableObject {
            - Focus on goal-relevant nutrients
            - Include vitamin/mineral name, amount, unit, and %RDA
            
-        5. CLARIFICATION NEEDS
-           - Only ask if confidence < 0.8 or critical info missing
-           - Max 2 questions
+        5. CLARIFICATION NEEDS (IMPORTANT - BE THOROUGH)
+           - Ask clarification questions for ANY of these scenarios:
+             • Protein shakes/smoothies (type of protein, milk, additives)
+             • Mixed dishes where ingredients aren't clearly visible
+             • Drinks that could have sugar/sweeteners
+             • Foods with variable preparation methods
+             • Portion sizes that are ambiguous
+           - Ask 3-5 questions for complex meals (this improves accuracy)
+           - Lower confidence (0.7-0.85) when ingredients are uncertain
            - Provide 3-4 multiple choice options per question
            - Each option must include nutritional impact
+           - Common clarifications needed:
+             • Protein powder type (whey, plant, casein)
+             • Milk type (whole, 2%, almond, oat, soy)
+             • Sweeteners (sugar, honey, artificial, none)
+             • Cooking methods (fried, grilled, baked)
+             • Hidden ingredients (oil, butter, sauces)
+        
+        CRITICAL: For protein shakes/smoothies ALWAYS ask about protein type and milk type!
         
         IMPORTANT: Return ONLY this exact JSON structure with these exact field names:
         {
           "mealName": "Name of meal",
-          "confidence": 0.9,
+          "confidence": 0.75,
           "ingredients": [
-            {"name": "Chicken breast", "amount": "4", "unit": "oz", "foodGroup": "Protein"},
-            {"name": "Lettuce", "amount": "2", "unit": "cups", "foodGroup": "Vegetable"}
+            {"name": "Protein shake base", "amount": "1", "unit": "serving", "foodGroup": "Beverage"}
           ],
           "nutrition": {
-            "calories": 350,
-            "protein": 32.5,
-            "carbs": 15.0,
-            "fat": 12.5
+            "calories": 300,
+            "protein": 30.0,
+            "carbs": 35.0,
+            "fat": 5.0
           },
           "micronutrients": [
-            {"name": "Iron", "amount": 2.5, "unit": "mg", "percentRDA": 14.0}
+            {"name": "Calcium", "amount": 250, "unit": "mg", "percentRDA": 25.0}
           ],
           "clarifications": [
             {
-              "question": "What dressing was used?",
-              "clarificationType": "condiment",
+              "question": "What type of protein powder was used?",
+              "clarificationType": "protein_type",
               "options": [
-                {"text": "No dressing", "calorieImpact": 0, "proteinImpact": 0, "carbImpact": 0, "fatImpact": 0, "isRecommended": false},
-                {"text": "Ranch dressing (2 tbsp)", "calorieImpact": 140, "proteinImpact": 1, "carbImpact": 2, "fatImpact": 14, "isRecommended": false},
-                {"text": "Vinaigrette (2 tbsp)", "calorieImpact": 70, "proteinImpact": 0, "carbImpact": 3, "fatImpact": 7, "isRecommended": true, "note": "Most common"},
-                {"text": "Caesar dressing (2 tbsp)", "calorieImpact": 160, "proteinImpact": 2, "carbImpact": 2, "fatImpact": 16, "isRecommended": false}
+                {"text": "Whey protein", "calorieImpact": 0, "proteinImpact": 0, "carbImpact": 0, "fatImpact": 0, "isRecommended": true, "note": "Most common"},
+                {"text": "Plant-based protein", "calorieImpact": 20, "proteinImpact": -5, "carbImpact": 3, "fatImpact": 2, "isRecommended": false},
+                {"text": "Casein protein", "calorieImpact": 10, "proteinImpact": 2, "carbImpact": -2, "fatImpact": 1, "isRecommended": false}
+              ]
+            },
+            {
+              "question": "What type of milk or liquid was used?",
+              "clarificationType": "liquid_base",
+              "options": [
+                {"text": "2% milk", "calorieImpact": 0, "proteinImpact": 0, "carbImpact": 0, "fatImpact": 0, "isRecommended": true, "note": "Assumed in base"},
+                {"text": "Whole milk", "calorieImpact": 30, "proteinImpact": 0, "carbImpact": 0, "fatImpact": 3, "isRecommended": false},
+                {"text": "Almond milk", "calorieImpact": -80, "proteinImpact": -7, "carbImpact": -10, "fatImpact": -2, "isRecommended": false},
+                {"text": "Water", "calorieImpact": -120, "proteinImpact": -8, "carbImpact": -12, "fatImpact": -5, "isRecommended": false}
               ]
             }
           ]
