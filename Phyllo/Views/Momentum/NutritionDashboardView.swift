@@ -1579,6 +1579,11 @@ struct NutritionDashboardView: View {
             }
         }
         
+        // Debug logging
+        if !nutrientTotals.isEmpty {
+            print("🔬 Micronutrient totals: \(nutrientTotals)")
+        }
+        
         // Select top 6 nutrients to display
         let displayNutrients = [
             ("Iron", Color.red),
