@@ -13,6 +13,7 @@ struct HexagonFlowerView: View {
     var showLabels: Bool = true // Option to show/hide labels
     var showPurposeText: Bool = true // Option to show/hide purpose text
     var userGoal: NutritionGoal? = nil // For showing goal-relevant badges
+    var nutritionContexts: [NutritionContext] = [] // Context for smart evaluation
     
     // Health impact petals with aggregated scores
     private var petalScores: [(petal: HealthImpactPetal, score: Double, isPrimaryForGoal: Bool)] {
@@ -23,13 +24,15 @@ struct HexagonFlowerView: View {
         for (name, percentage) in micronutrients {
             if let nutrientInfo = MicronutrientData.getNutrient(byName: name) {
                 if nutrientInfo.isAntiNutrient {
-                    // Calculate penalties for anti-nutrients
+                    // Calculate context-aware penalties for anti-nutrients
                     if let limit = nutrientInfo.dailyLimit, let severity = nutrientInfo.severity {
                         let consumed = percentage * limit // percentage is actually amount/RDA
-                        let penalty = MicronutrientData.calculateAntiNutrientPenalty(
+                        let penalty = MicronutrientData.calculateContextAwarePenalty(
+                            nutrientName: name,
                             consumed: consumed,
                             limit: limit,
-                            severity: severity
+                            severity: severity,
+                            contexts: nutritionContexts
                         )
                         
                         // Apply penalty to relevant petals

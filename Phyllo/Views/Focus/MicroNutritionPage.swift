@@ -106,7 +106,8 @@ struct MicroNutritionPage: View {
             VStack {
                 HexagonFlowerView(
                     micronutrients: micronutrientData,
-                    userGoal: viewModel.userProfile.primaryGoal
+                    userGoal: viewModel.userProfile.primaryGoal,
+                    nutritionContexts: getCurrentContexts()
                 )
             }
             .frame(height: 180) // Match the height of calorie ring
@@ -145,6 +146,46 @@ struct MicroNutritionPage: View {
         case .maintainWeight, .overallWellbeing:
             return false // All petals equally important
         }
+    }
+    
+    // Determine current nutrition contexts based on window and time
+    private func getCurrentContexts() -> [NutritionContext] {
+        var contexts: [NutritionContext] = []
+        let now = TimeProvider.shared.currentTime
+        let calendar = Calendar.current
+        let hour = calendar.component(.hour, from: now)
+        
+        // Morning context (6 AM - 10 AM)
+        if hour >= 6 && hour < 10 {
+            contexts.append(.morning)
+        }
+        
+        // Check window purpose for workout context
+        switch window.purpose {
+        case .preWorkout:
+            // Assume workout is coming soon, so post-workout context doesn't apply yet
+            break
+        case .postWorkout:
+            // Calculate time since window start (approximating workout time)
+            let timeElapsed = now.timeIntervalSince(window.startTime)
+            contexts.append(.postWorkout(intensity: .moderate, timeElapsed: timeElapsed))
+        default:
+            break
+        }
+        
+        // Pre-sleep context (after 8 PM)
+        if hour >= 20 {
+            let sleepTime = calendar.date(bySettingHour: 23, minute: 0, second: 0, of: now) ?? now
+            let hoursUntilSleep = sleepTime.timeIntervalSince(now) / 3600
+            contexts.append(.preSleep(hoursUntilSleep: max(0, hoursUntilSleep)))
+        }
+        
+        // Check if fasting window
+        if window.purpose == .breakingFast {
+            contexts.append(.fasting)
+        }
+        
+        return contexts
     }
 }
 

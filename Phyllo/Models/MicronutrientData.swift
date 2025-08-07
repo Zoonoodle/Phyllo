@@ -17,6 +17,23 @@ enum NutrientType {
     case antiNutrient
 }
 
+// MARK: - Context Types
+
+enum NutritionContext {
+    case postWorkout(intensity: WorkoutIntensity, timeElapsed: TimeInterval)
+    case preSleep(hoursUntilSleep: TimeInterval)
+    case morning
+    case fasting
+    case stressed
+    case illness
+    
+    enum WorkoutIntensity {
+        case light
+        case moderate
+        case intense
+    }
+}
+
 // MARK: - Health Impact Categories
 
 enum HealthImpactPetal: String, CaseIterable {
@@ -487,6 +504,129 @@ struct MicronutrientData: Identifiable {
         }
         
         return min(penalty, 30) // Cap at 30%
+    }
+    
+    // Context-aware penalty calculation
+    static func calculateContextAwarePenalty(
+        nutrientName: String,
+        consumed: Double,
+        limit: Double,
+        severity: MicronutrientInfo.AntiNutrientSeverity,
+        contexts: [NutritionContext]
+    ) -> Double {
+        // Get base penalty
+        var penalty = calculateAntiNutrientPenalty(consumed: consumed, limit: limit, severity: severity)
+        
+        // Apply context-based adjustments
+        for context in contexts {
+            penalty = adjustPenaltyForContext(
+                nutrientName: nutrientName,
+                basePenalty: penalty,
+                context: context
+            )
+        }
+        
+        return max(0, penalty) // Never go negative
+    }
+    
+    // Adjust penalty based on context
+    private static func adjustPenaltyForContext(
+        nutrientName: String,
+        basePenalty: Double,
+        context: NutritionContext
+    ) -> Double {
+        let normalizedName = nutrientName.lowercased()
+        
+        switch context {
+        case .postWorkout(let intensity, let timeElapsed):
+            // Reduce sodium penalty post-workout (electrolyte replenishment)
+            if normalizedName.contains("sodium") || normalizedName.contains("salt") {
+                let reductionFactor: Double
+                switch intensity {
+                case .light:
+                    reductionFactor = 0.8 // 20% reduction
+                case .moderate:
+                    reductionFactor = 0.6 // 40% reduction
+                case .intense:
+                    reductionFactor = 0.4 // 60% reduction
+                }
+                
+                // Reduction effect diminishes over time (4 hour window)
+                let timeFactor = max(0, 1 - (timeElapsed / (4 * 3600)))
+                return basePenalty * (1 - ((1 - reductionFactor) * timeFactor))
+            }
+            
+            // Slight sugar tolerance increase post-workout (glycogen replenishment)
+            if normalizedName.contains("sugar") && timeElapsed < 3600 { // Within 1 hour
+                return basePenalty * 0.7 // 30% reduction
+            }
+            
+        case .preSleep(let hoursUntilSleep):
+            // Increase caffeine penalty before sleep
+            if normalizedName.contains("caffeine") {
+                if hoursUntilSleep < 6 {
+                    // Exponentially worse as bedtime approaches
+                    let multiplier = 2.0 - (hoursUntilSleep / 6.0)
+                    return basePenalty * multiplier
+                }
+            }
+            
+            // Sugar before bed is worse (affects sleep quality)
+            if normalizedName.contains("sugar") && hoursUntilSleep < 3 {
+                return basePenalty * 1.3 // 30% increase
+            }
+            
+        case .morning:
+            // Caffeine is more acceptable in morning
+            if normalizedName.contains("caffeine") {
+                return basePenalty * 0.5 // 50% reduction
+            }
+            
+        case .fasting:
+            // All penalties slightly increased during fasting
+            return basePenalty * 1.2 // 20% increase
+            
+        case .stressed:
+            // Caffeine penalty increased when stressed
+            if normalizedName.contains("caffeine") {
+                return basePenalty * 1.4 // 40% increase
+            }
+            
+        case .illness:
+            // Reduce penalties slightly as body needs nutrients
+            return basePenalty * 0.8 // 20% reduction
+        }
+        
+        return basePenalty
+    }
+    
+    // Get context-aware recommendations
+    static func getContextRecommendations(for contexts: [NutritionContext]) -> [String] {
+        var recommendations: [String] = []
+        
+        for context in contexts {
+            switch context {
+            case .postWorkout(let intensity, _):
+                if intensity == .intense {
+                    recommendations.append("Consider electrolyte replenishment - sodium needs are elevated")
+                    recommendations.append("Protein intake within 30 minutes optimizes recovery")
+                }
+            case .preSleep(let hours):
+                if hours < 3 {
+                    recommendations.append("Avoid caffeine and limit sugar for better sleep quality")
+                }
+            case .morning:
+                recommendations.append("Great time for caffeine and B-vitamins for energy")
+            case .fasting:
+                recommendations.append("Focus on nutrient-dense foods when breaking fast")
+            case .stressed:
+                recommendations.append("Prioritize magnesium and B-vitamins for stress management")
+            case .illness:
+                recommendations.append("Increase vitamin C and zinc intake for immune support")
+            }
+        }
+        
+        return recommendations
     }
     
     // Legacy support - convert to old format
