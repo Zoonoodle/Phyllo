@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Foundation
 
 // Fixed micronutrient mappings by window purpose
 struct WindowMicronutrients {
@@ -162,10 +163,10 @@ struct MicroNutritionPage: View {
         
         // Check window purpose for workout context
         switch window.purpose {
-        case .preWorkout:
+        case .preworkout:
             // Assume workout is coming soon, so post-workout context doesn't apply yet
             break
-        case .postWorkout:
+        case .postworkout:
             // Calculate time since window start (approximating workout time)
             let timeElapsed = now.timeIntervalSince(window.startTime)
             contexts.append(.postWorkout(intensity: .moderate, timeElapsed: timeElapsed))
@@ -180,8 +181,8 @@ struct MicroNutritionPage: View {
             contexts.append(.preSleep(hoursUntilSleep: max(0, hoursUntilSleep)))
         }
         
-        // Check if fasting window
-        if window.purpose == .breakingFast {
+        // Check if this is a morning/metabolic boost window (often breaking fast)
+        if window.purpose == .metabolicBoost && hour < 10 {
             contexts.append(.fasting)
         }
         

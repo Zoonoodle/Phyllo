@@ -446,41 +446,58 @@ class MockDataManager: ObservableObject {
             }
         }
         
-        // Select nutrients to display based on window purpose
-        let nutrientsForPurpose: [MicronutrientInfo]
+        // Select nutrient names to display based on window purpose
+        let nutrientNamesForPurpose: [String]
         switch purpose {
         case .sustainedEnergy:
-            nutrientsForPurpose = [.b12, .iron, .magnesium]
+            nutrientNamesForPurpose = ["B12", "Iron", "Magnesium"]
         case .focusBoost:
-            nutrientsForPurpose = [.omega3, .b6, .vitaminD]
+            nutrientNamesForPurpose = ["Omega-3", "B6", "Vitamin D"]
         case .recovery:
-            nutrientsForPurpose = [.vitaminC, .zinc, .potassium]
+            nutrientNamesForPurpose = ["Vitamin C", "Zinc", "Potassium"]
         case .preworkout:
-            nutrientsForPurpose = [.bComplex, .caffeine, .lArginine]
+            nutrientNamesForPurpose = ["B1 Thiamine", "Caffeine", "L-Arginine"]
         case .postworkout:
-            nutrientsForPurpose = [.protein, .leucine, .magnesium]
+            nutrientNamesForPurpose = ["Protein", "Leucine", "Magnesium"]
         case .metabolicBoost:
-            nutrientsForPurpose = [.greenTea, .chromium, .lCarnitine]
+            nutrientNamesForPurpose = ["Green Tea", "Chromium", "L-Carnitine"]
         case .sleepOptimization:
-            nutrientsForPurpose = [.magnesium, .tryptophan, .b6]
+            nutrientNamesForPurpose = ["Magnesium", "Tryptophan", "B6"]
         }
         
         // Create MicronutrientConsumption objects with actual data
-        return nutrientsForPurpose.compactMap { info in
-            // Find matching nutrient in totals (handle different naming conventions)
-            let matchingKey = nutrientTotals.keys.first { key in
-                key.lowercased().contains(info.name.lowercased()) ||
-                (info.name == "B12" && key.contains("B12")) ||
-                (info.name == "B6" && key.contains("B6")) ||
-                (info.name == "Vitamin D" && key == "Vitamin D") ||
-                (info.name == "Vitamin C" && key == "Vitamin C") ||
-                (info.name == "Omega-3" && key.contains("Omega-3"))
+        var consumptions: [MicronutrientConsumption] = []
+        
+        for nutrientName in nutrientNamesForPurpose {
+            // Get the nutrient info from the database
+            if let nutrientInfo = MicronutrientData.getNutrient(byName: nutrientName) {
+                // Find matching nutrient in totals (handle different naming conventions)
+                let matchingKey = nutrientTotals.keys.first { key in
+                    key.lowercased().contains(nutrientName.lowercased()) ||
+                    (nutrientName == "B12" && key.contains("B12")) ||
+                    (nutrientName == "B6" && key.contains("B6")) ||
+                    (nutrientName == "Vitamin D" && key == "Vitamin D") ||
+                    (nutrientName == "Vitamin C" && key == "Vitamin C") ||
+                    (nutrientName == "Omega-3" && key.contains("Omega-3"))
+                }
+                
+                let consumed = matchingKey.flatMap { nutrientTotals[$0] } ?? 0
+                
+                // Convert MicronutrientInfo to old Micronutrient type
+                // Use the first health impact petal's icon, or a default
+                let icon = nutrientInfo.healthImpacts.first?.icon ?? "💊"
+                let micronutrient = Micronutrient(
+                    name: nutrientInfo.name,
+                    rda: nutrientInfo.averageRDA,
+                    unit: nutrientInfo.unit,
+                    icon: icon
+                )
+                
+                consumptions.append(MicronutrientConsumption(info: micronutrient, consumed: consumed))
             }
-            
-            let consumed = matchingKey.flatMap { nutrientTotals[$0] } ?? 0
-            
-            return MicronutrientConsumption(info: info, consumed: consumed)
         }
+        
+        return consumptions
     }
     
     // Generate micronutrient data for a meal based on window purpose

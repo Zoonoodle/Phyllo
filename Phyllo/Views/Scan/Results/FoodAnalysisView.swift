@@ -638,7 +638,7 @@ struct WindowMicronutrientRow: View {
                 Spacer()
                 
                 // Meal contribution
-                Text("+\(String(format: "%.1f", mealContribution))\(micronutrient.info.unit.rawValue)")
+                Text("+\(String(format: "%.1f", mealContribution))\(micronutrient.info.unit)")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(Color.phylloAccent)
             }
