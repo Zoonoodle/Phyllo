@@ -106,7 +106,8 @@ extension LoggedMeal {
             "carbs": carbs,
             "fat": fat,
             "timestamp": timestamp,
-            "micronutrients": micronutrients
+            "micronutrients": micronutrients,
+            "appliedClarifications": appliedClarifications
         ]
         
         if let windowId = windowId {
@@ -159,6 +160,11 @@ extension LoggedMeal {
         // Parse image data
         if let imageData = data["imageData"] as? Data {
             meal.imageData = imageData
+        }
+        
+        // Parse applied clarifications
+        if let clar = data["appliedClarifications"] as? [String: String] {
+            meal.appliedClarifications = clar
         }
         
         // TODO: Parse ingredients from data["ingredients"]

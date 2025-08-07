@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UserNotifications
 
 @main
 struct PhylloApp: App {
@@ -15,6 +16,7 @@ struct PhylloApp: App {
     @StateObject private var checkInManager = CheckInManager.shared
     @StateObject private var vertexAIService = VertexAIService.shared
     @StateObject private var mealCaptureService = MealCaptureService.shared
+    @StateObject private var notificationManager = NotificationManager.shared
     
     init() {
         // Configure Firebase on app launch
@@ -22,6 +24,9 @@ struct PhylloApp: App {
         
         // Configure data provider based on Firebase availability
         configureDataProvider()
+        
+        // Configure notifications
+        configureNotifications()
     }
     
     var body: some Scene {
@@ -33,6 +38,7 @@ struct PhylloApp: App {
                 .environmentObject(checkInManager)
                 .environmentObject(vertexAIService)
                 .environmentObject(mealCaptureService)
+                .environmentObject(notificationManager)
         }
     }
     
@@ -52,5 +58,65 @@ struct PhylloApp: App {
             DataSourceProvider.shared.configure(with: FirebaseDataProvider())
             print("🔥 Using Firebase Data Provider")
         }
+    }
+    
+    private func configureNotifications() {
+        // Configure notification categories and actions
+        let logMealAction = UNNotificationAction(
+            identifier: NotificationAction.logMeal.rawValue,
+            title: "Log Meal",
+            options: [.foreground]
+        )
+        
+        let remindLaterAction = UNNotificationAction(
+            identifier: NotificationAction.remindLater.rawValue,
+            title: "Remind in 15min",
+            options: []
+        )
+        
+        let viewDetailsAction = UNNotificationAction(
+            identifier: NotificationAction.viewDetails.rawValue,
+            title: "View Details",
+            options: [.foreground]
+        )
+        
+        let dismissAction = UNNotificationAction(
+            identifier: NotificationAction.dismiss.rawValue,
+            title: "Dismiss",
+            options: [.destructive]
+        )
+        
+        // Window reminder category
+        let windowCategory = UNNotificationCategory(
+            identifier: NotificationCategory.windowReminder.rawValue,
+            actions: [logMealAction, remindLaterAction, dismissAction],
+            intentIdentifiers: [],
+            options: []
+        )
+        
+        // Check-in reminder category
+        let checkInCategory = UNNotificationCategory(
+            identifier: NotificationCategory.checkInReminder.rawValue,
+            actions: [viewDetailsAction, remindLaterAction],
+            intentIdentifiers: [],
+            options: []
+        )
+        
+        // Missed window category
+        let missedCategory = UNNotificationCategory(
+            identifier: NotificationCategory.missedWindow.rawValue,
+            actions: [logMealAction, dismissAction],
+            intentIdentifiers: [],
+            options: []
+        )
+        
+        // Register categories
+        UNUserNotificationCenter.current().setNotificationCategories([
+            windowCategory,
+            checkInCategory,
+            missedCategory
+        ])
+        
+        print("📱 Notification categories configured")
     }
 }

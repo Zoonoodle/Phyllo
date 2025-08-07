@@ -90,28 +90,16 @@ class FirebaseDataProvider: DataProvider {
     }
     
     func getAnalyzingMeals() async throws -> [AnalyzingMeal] {
-        // Get all analyzing meals
+        // Fetch active analyzing meals (do not auto-delete; we want the banner to show)
         let snapshot = try await userRef.collection("analyzingMeals")
+            .whereField("status", isEqualTo: "analyzing")
             .getDocuments()
         
-        // DELETE ALL analyzing meals - we don't want any old test data
-        let allMeals = snapshot.documents.compactMap { doc in
-            AnalyzingMeal.fromFirestore(doc.data())
+        let meals = snapshot.documents.compactMap { AnalyzingMeal.fromFirestore($0.data()) }
+        Task { @MainActor in
+            DebugLogger.shared.dataProvider("Loaded \(meals.count) analyzing meals")
         }
-        
-        // Delete ALL analyzing meals in the background
-        if !allMeals.isEmpty {
-            print("🧹 Cleaning up \(allMeals.count) old analyzing meals")
-            Task {
-                for meal in allMeals {
-                    try? await userRef.collection("analyzingMeals").document(meal.id.uuidString).delete()
-                }
-                print("✅ Cleaned up all analyzing meals")
-            }
-        }
-        
-        // Return empty array - no analyzing meals should be shown on startup
-        return []
+        return meals
     }
     
     func startAnalyzingMeal(_ meal: AnalyzingMeal) async throws {
@@ -187,7 +175,7 @@ class FirebaseDataProvider: DataProvider {
             )
         }
         
-        // Save the meal
+        // Save the meal (includes appliedClarifications if set via update later)
         Task { @MainActor in
             DebugLogger.shared.dataProvider("Saving completed meal")
         }
@@ -232,28 +220,32 @@ class FirebaseDataProvider: DataProvider {
             .whereField("dayDate", isEqualTo: startOfDay)
             .getDocuments()
         
-        Task { @MainActor in
-            DebugLogger.shared.firebase("Found \(snapshot.documents.count) documents in windows collection")
-            if snapshot.documents.count > 0 {
-                // Log first document for debugging
-                let firstDoc = snapshot.documents[0].data()
-                DebugLogger.shared.firebase("First document data: \(firstDoc)")
+        // Avoid capturing Firestore snapshot (non-Sendable) across actor boundaries
+        let docCount = snapshot.documents.count
+        let firstDocDescription: String? = docCount > 0 ? String(describing: snapshot.documents[0].data()) : nil
+        await MainActor.run {
+            DebugLogger.shared.firebase("Found \(docCount) documents in windows collection")
+            if let firstDocDescription {
+                DebugLogger.shared.firebase("First document data: \(firstDocDescription)")
             }
         }
         
         // Convert and sort windows
-        let windows = snapshot.documents.compactMap { doc in
-            let window = MealWindow.fromFirestore(doc.data())
+        let windows = snapshot.documents.compactMap { doc -> MealWindow? in
+            let data = doc.data()
+            let window = MealWindow.fromFirestore(data)
             if window == nil {
+                let bad = String(describing: data)
                 Task { @MainActor in
-                    DebugLogger.shared.warning("Failed to parse window document: \(doc.data())")
+                    DebugLogger.shared.warning("Failed to parse window document: \(bad)")
                 }
             }
             return window
         }
         
-        Task { @MainActor in
-            DebugLogger.shared.firebase("Successfully parsed \(windows.count) windows from Firebase for date: \(date)")
+        let parsedCount = windows.count
+        await MainActor.run {
+            DebugLogger.shared.firebase("Successfully parsed \(parsedCount) windows from Firebase for date: \(date)")
         }
         
         return windows.sorted { $0.startTime < $1.startTime }
@@ -550,15 +542,7 @@ class FirebaseDataProvider: DataProvider {
     }
 }
 
-// MARK: - Date Formatter Extension
-
-extension ISO8601DateFormatter {
-    static let yyyyMMdd: ISO8601DateFormatter = {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withFullDate, .withDashSeparatorInDate]
-        return formatter
-    }()
-}
+// Removed duplicate ISO8601DateFormatter.yyyyMMdd extension (defined in NotificationManager)
 
 // MARK: - Firestore Extensions
 

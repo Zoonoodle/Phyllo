@@ -45,6 +45,9 @@ struct DeveloperDashboardView: View {
                             DashboardTab(title: "Debug Logs", icon: "ladybug.fill", isSelected: selectedTab == 6) {
                                 selectedTab = 6
                             }
+                            DashboardTab(title: "Notifications", icon: "bell.circle", isSelected: selectedTab == 7) {
+                                selectedTab = 7
+                            }
                         }
                         .padding(.horizontal)
                     }
@@ -68,6 +71,8 @@ struct DeveloperDashboardView: View {
                                 NudgesDebugTabView()
                             case 6:
                                 DebugLogView()
+                            case 7:
+                                NotificationsDebugTabView()
                             default:
                                 EmptyView()
                             }
@@ -1011,6 +1016,406 @@ struct NudgesDebugTabView: View {
     }
 }
 
+// MARK: - Notifications Debug Tab
+struct NotificationsDebugTabView: View {
+    @EnvironmentObject private var notificationManager: NotificationManager
+    @StateObject private var mockData = MockDataManager.shared
+    @State private var showingPermissionAlert = false
+    @State private var testNotificationDelay: Double = 5
+    
+    var body: some View {
+        VStack(spacing: 20) {
+            // Notification Status
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Notification Status")
+                    .font(.headline)
+                    .foregroundColor(.white)
+                
+                VStack(spacing: 8) {
+                    HStack {
+                        Text("Authorization")
+                            .font(.system(size: 14))
+                            .foregroundColor(.white.opacity(0.7))
+                        Spacer()
+                        Text(authorizationStatusText)
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(authorizationStatusColor)
+                    }
+                    
+                    HStack {
+                        Text("Pending Notifications")
+                            .font(.system(size: 14))
+                            .foregroundColor(.white.opacity(0.7))
+                        Spacer()
+                        Text("\(notificationManager.pendingNotificationCount)")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.white)
+                    }
+                }
+            }
+            .padding()
+            .background(Color.phylloElevated)
+            .cornerRadius(16)
+            
+            // Test Notifications
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Test Notifications")
+                    .font(.headline)
+                    .foregroundColor(.white)
+                
+                // Delay Slider
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Text("Delay")
+                            .font(.system(size: 14))
+                            .foregroundColor(.white.opacity(0.7))
+                        Spacer()
+                        Text("\(Int(testNotificationDelay))s")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.white)
+                    }
+                    
+                    Slider(value: $testNotificationDelay, in: 1...60, step: 1)
+                        .tint(.phylloAccent)
+                }
+                .padding(.bottom, 8)
+                
+                VStack(spacing: 12) {
+                    // Window Starting Soon
+                    Button(action: testWindowStartingSoon) {
+                        Label("Window Starting Soon", systemImage: "clock.badge.exclamationmark")
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.blue)
+                            .foregroundColor(.white)
+                            .cornerRadius(12)
+                    }
+                    
+                    // Active Window Reminder
+                    Button(action: testActiveWindowReminder) {
+                        Label("Active Window Reminder", systemImage: "fork.knife.circle.fill")
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.green)
+                            .foregroundColor(.white)
+                            .cornerRadius(12)
+                    }
+                    
+                    // Window Ending Alert
+                    Button(action: testWindowEndingAlert) {
+                        Label("Window Ending Alert", systemImage: "exclamationmark.triangle")
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.orange)
+                            .foregroundColor(.white)
+                            .cornerRadius(12)
+                    }
+                    
+                    // Missed Window
+                    Button(action: testMissedWindow) {
+                        Label("Missed Window", systemImage: "xmark.circle.fill")
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.red)
+                            .foregroundColor(.white)
+                            .cornerRadius(12)
+                    }
+                    
+                    // Morning Check-in
+                    Button(action: testMorningCheckIn) {
+                        Label("Morning Check-In", systemImage: "sunrise.fill")
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.purple)
+                            .foregroundColor(.white)
+                            .cornerRadius(12)
+                    }
+                    
+                    // Post-Meal Check-in
+                    Button(action: testPostMealCheckIn) {
+                        Label("Post-Meal Check-In", systemImage: "checkmark.bubble")
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.teal)
+                            .foregroundColor(.white)
+                            .cornerRadius(12)
+                    }
+                }
+            }
+            .padding()
+            .background(Color.phylloElevated)
+            .cornerRadius(16)
+            
+            // Actions
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Actions")
+                    .font(.headline)
+                    .foregroundColor(.white)
+                
+                VStack(spacing: 12) {
+                    Button(action: requestPermission) {
+                        Label("Request Permission", systemImage: "bell.badge")
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.phylloAccent)
+                            .foregroundColor(.black)
+                            .cornerRadius(12)
+                    }
+                    .disabled(notificationManager.isAuthorized)
+                    
+                    Button(action: clearAllNotifications) {
+                        Label("Clear All Notifications", systemImage: "trash")
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.phylloSurface)
+                            .foregroundColor(.white)
+                            .cornerRadius(12)
+                    }
+                    
+                    Button(action: refreshNotificationStatus) {
+                        Label("Refresh Status", systemImage: "arrow.clockwise")
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.phylloSurface)
+                            .foregroundColor(.white)
+                            .cornerRadius(12)
+                    }
+                }
+            }
+            .padding()
+            .background(Color.phylloElevated)
+            .cornerRadius(16)
+        }
+        .onAppear {
+            Task {
+                await notificationManager.checkAuthorizationStatus()
+                await notificationManager.getPendingNotificationCount()
+            }
+        }
+        .alert("Notifications Disabled", isPresented: $showingPermissionAlert) {
+            Button("Cancel", role: .cancel) { }
+            Button("Open Settings") {
+                if let url = URL(string: UIApplication.openSettingsURLString) {
+                    UIApplication.shared.open(url)
+                }
+            }
+        } message: {
+            Text("Please enable notifications in Settings to test notification features.")
+        }
+    }
+    
+    // MARK: - Computed Properties
+    
+    private var authorizationStatusText: String {
+        switch notificationManager.authorizationStatus {
+        case .notDetermined:
+            return "Not Determined"
+        case .denied:
+            return "Denied"
+        case .authorized:
+            return "Authorized"
+        case .provisional:
+            return "Provisional"
+        case .ephemeral:
+            return "Ephemeral"
+        @unknown default:
+            return "Unknown"
+        }
+    }
+    
+    private var authorizationStatusColor: Color {
+        switch notificationManager.authorizationStatus {
+        case .authorized, .provisional:
+            return .green
+        case .denied:
+            return .red
+        case .notDetermined:
+            return .orange
+        default:
+            return .white.opacity(0.7)
+        }
+    }
+    
+    // MARK: - Test Actions
+    
+    private func testWindowStartingSoon() {
+        guard notificationManager.isAuthorized else {
+            showingPermissionAlert = true
+            return
+        }
+        
+        // Create a test window that starts soon
+        let testWindow = MealWindow(
+            startTime: Date().addingTimeInterval(testNotificationDelay + 900), // 15 minutes after delay
+            endTime: Date().addingTimeInterval(testNotificationDelay + 4500), // 75 minutes after delay
+            targetCalories: 600,
+            targetMacros: MacroTargets(protein: 40, carbs: 60, fat: 20),
+            purpose: .sustainedEnergy,
+            flexibility: .moderate,
+            dayDate: Date()
+        )
+        
+        Task {
+            await notificationManager.scheduleTestNotification(
+                type: .windowStartingSoon(window: testWindow),
+                delay: testNotificationDelay
+            )
+            
+            DebugLogger.shared.notification("Scheduled test notification: Window Starting Soon (\(Int(testNotificationDelay))s delay)")
+        }
+    }
+    
+    private func testActiveWindowReminder() {
+        guard notificationManager.isAuthorized else {
+            showingPermissionAlert = true
+            return
+        }
+        
+        // Use current active window or create test
+        let testWindow = mockData.activeWindow ?? MealWindow(
+            startTime: Date().addingTimeInterval(-1800), // Started 30 minutes ago
+            endTime: Date().addingTimeInterval(1800), // Ends in 30 minutes
+            targetCalories: 600,
+            targetMacros: MacroTargets(protein: 40, carbs: 60, fat: 20),
+            purpose: .sustainedEnergy,
+            flexibility: .flexible,
+            dayDate: Date()
+        )
+        
+        Task {
+            await notificationManager.scheduleTestNotification(
+                type: .activeWindowReminder(window: testWindow, timeRemaining: 30),
+                delay: testNotificationDelay
+            )
+            
+            DebugLogger.shared.notification("Scheduled test notification: Active Window Reminder (\(Int(testNotificationDelay))s delay)")
+        }
+    }
+    
+    private func testWindowEndingAlert() {
+        guard notificationManager.isAuthorized else {
+            showingPermissionAlert = true
+            return
+        }
+        
+        let testWindow = MealWindow(
+            startTime: Date().addingTimeInterval(-3600), // Started 1 hour ago
+            endTime: Date().addingTimeInterval(testNotificationDelay + 900), // Ends 15 minutes after delay
+            targetCalories: 600,
+            targetMacros: MacroTargets(protein: 40, carbs: 60, fat: 20),
+            purpose: .sustainedEnergy,
+            flexibility: .moderate,
+            dayDate: Date()
+        )
+        
+        Task {
+            await notificationManager.scheduleTestNotification(
+                type: .windowEndingAlert(window: testWindow),
+                delay: testNotificationDelay
+            )
+            
+            DebugLogger.shared.notification("Scheduled test notification: Window Ending Alert (\(Int(testNotificationDelay))s delay)")
+        }
+    }
+    
+    private func testMissedWindow() {
+        guard notificationManager.isAuthorized else {
+            showingPermissionAlert = true
+            return
+        }
+        
+        let testWindow = MealWindow(
+            startTime: Date().addingTimeInterval(-7200), // Started 2 hours ago
+            endTime: Date().addingTimeInterval(-1800), // Ended 30 minutes ago
+            targetCalories: 400,
+            targetMacros: MacroTargets(protein: 30, carbs: 40, fat: 15),
+            purpose: .metabolicBoost,
+            flexibility: .strict,
+            dayDate: Date()
+        )
+        
+        Task {
+            await notificationManager.scheduleTestNotification(
+                type: .missedWindow(window: testWindow),
+                delay: testNotificationDelay
+            )
+            
+            DebugLogger.shared.notification("Scheduled test notification: Missed Window (\(Int(testNotificationDelay))s delay)")
+        }
+    }
+    
+    private func testMorningCheckIn() {
+        guard notificationManager.isAuthorized else {
+            showingPermissionAlert = true
+            return
+        }
+        
+        Task {
+            await notificationManager.scheduleTestNotification(
+                type: .morningCheckIn,
+                delay: testNotificationDelay
+            )
+            
+            DebugLogger.shared.notification("Scheduled test notification: Morning Check-In (\(Int(testNotificationDelay))s delay)")
+        }
+    }
+    
+    private func testPostMealCheckIn() {
+        guard notificationManager.isAuthorized else {
+            showingPermissionAlert = true
+            return
+        }
+        
+        // Create a test meal
+        let testMeal = LoggedMeal(
+            name: "Test Lunch",
+            calories: 550,
+            protein: 35,
+            carbs: 55,
+            fat: 18,
+            timestamp: Date().addingTimeInterval(-1800) // 30 minutes ago
+        )
+        
+        Task {
+            await notificationManager.scheduleTestNotification(
+                type: .postMealCheckIn(meal: testMeal),
+                delay: testNotificationDelay
+            )
+            
+            DebugLogger.shared.notification("Scheduled test notification: Post-Meal Check-In (\(Int(testNotificationDelay))s delay)")
+        }
+    }
+    
+    // MARK: - Actions
+    
+    private func requestPermission() {
+        Task {
+            let granted = await notificationManager.requestAuthorization()
+            if !granted {
+                showingPermissionAlert = true
+            }
+            await notificationManager.getPendingNotificationCount()
+        }
+    }
+    
+    private func clearAllNotifications() {
+        Task {
+            await notificationManager.clearAllNotifications()
+            await notificationManager.getPendingNotificationCount()
+            DebugLogger.shared.notification("Cleared all notifications")
+        }
+    }
+    
+    private func refreshNotificationStatus() {
+        Task {
+            await notificationManager.checkAuthorizationStatus()
+            await notificationManager.getPendingNotificationCount()
+            DebugLogger.shared.notification("Refreshed notification status")
+        }
+    }
+}
+
 #Preview {
     DeveloperDashboardView()
+        .environmentObject(NotificationManager.shared)
 }

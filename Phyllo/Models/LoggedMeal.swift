@@ -73,6 +73,9 @@ struct LoggedMeal: Identifiable {
     // Image data for the meal
     var imageData: Data? = nil
     
+    // Clarifications applied to adjust nutrition (key: clarificationType, value: option text)
+    var appliedClarifications: [String: String] = [:]
+    
     // Computed properties
     var emoji: String {
         // Simple emoji selection based on meal name

@@ -34,8 +34,7 @@ struct TimelineView: View {
     // Auto-scroll state
     @State private var lastScrolledHour: Int?
     @State private var userIsScrolling = false
-    @State private var scrollDebounceTimer: Timer?
-    @State private var scrollOffset: CGFloat = 0
+    @State private var scrollEndWorkItem: DispatchWorkItem?
     
     // Timer to update current time marker with smooth movement (every 10 seconds for performance)
     var timer: Publishers.Autoconnect<Timer.TimerPublisher> {
@@ -47,95 +46,91 @@ struct TimelineView: View {
     
     var body: some View {
         ScrollViewReader { proxy in
-            ScrollView(.vertical, showsIndicators: false) {
-                VStack(spacing: 0) {
-                    ForEach(hours, id: \.self) { hour in
-                        TimelineHourRow(
-                            hour: hour,
-                            currentTime: currentTime,
-                            windows: viewModel.mealWindows,
-                            meals: mealsForTimeRange(hour: hour),
-                            analyzingMeals: analyzingMealsForTimeRange(hour: hour),
-                            isLastHour: hour == hours.last,
-                            selectedWindow: $selectedWindow,
-                            showWindowDetail: $showWindowDetail,
-                            animationNamespace: animationNamespace,
-                            scrollOffset: scrollOffset,
-                            viewModel: viewModel
-                        )
-                        .padding(.horizontal, 24)
-                    }
-                    
-                    // Extra padding at bottom to prevent clipping
-                    Color.clear
-                        .frame(height: 100)
-                }
-                .frame(maxWidth: .infinity)
-            }
-            .onAppear {
-                currentTime = timeProvider.currentTime
-                // Scroll to current hour on appear
-                withAnimation {
-                    proxy.scrollTo(currentHour, anchor: .center)
-                }
-            }
-            .onReceive(timer) { _ in
-                if !isPreview {
-                    currentTime = timeProvider.currentTime
-                    handleAutoScroll(proxy: proxy)
-                }
-            }
-            // Only listen to simulated time changes from developer dashboard
-            .onReceive(timeProvider.$simulatedTime) { newSimulatedTime in
-                if newSimulatedTime != nil && !isPreview {
-                    currentTime = timeProvider.currentTime
-                    handleAutoScroll(proxy: proxy)
-                }
-            }
-            .onScrollGeometryChange(for: ScrollViewOffsetData.self) { geometry in
-                ScrollViewOffsetData(
-                    offset: geometry.contentOffset.y,
-                    isScrolling: geometry.contentOffset.y != geometry.contentInsets.top
-                )
-            } action: { _, data in
-                scrollOffset = data.offset
-                if data.isScrolling {
-                    userIsScrolling = true
-                    scrollDebounceTimer?.invalidate()
-                    scrollDebounceTimer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: false) { _ in
-                        userIsScrolling = false
-                    }
-                }
-            }
-            .onChange(of: scrollToAnalyzingMeal) { _, analyzingMeal in
-                if let meal = analyzingMeal {
-                    // Calculate which hour the meal is in
-                    let targetHour = Calendar.current.component(.hour, from: meal.timestamp)
-                    
-                    // Scroll to that hour with animation
-                    withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
-                        proxy.scrollTo(targetHour, anchor: .center)
-                    }
-                    
-                    // Clear the binding after scrolling
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-                        scrollToAnalyzingMeal = nil
-                    }
-                }
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .animateMealToWindow)) { notification in
-                if let meal = notification.object as? LoggedMeal {
-                    handleMealSlideAnimation(meal: meal, proxy: proxy)
-                }
-            }
+            buildTimeline(proxy: proxy)
         }
         .overlay(alignment: .topLeading) {
-            // Animated meal overlay
             if showMealAnimation, let meal = animatingMeal {
                 MealRow(meal: meal)
                     .padding(.horizontal, 24)
                     .position(showMealAnimation ? animationEndPosition : animationStartPosition)
                     .animation(.spring(response: 0.8, dampingFraction: 0.8, blendDuration: 0), value: showMealAnimation)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func buildTimeline(proxy: ScrollViewProxy) -> some View {
+        ScrollView(.vertical, showsIndicators: false) {
+            LazyVStack(spacing: 0) {
+                ForEach(hours, id: \.self) { hour in
+                    TimelineHourRow(
+                        hour: hour,
+                        currentTime: currentTime,
+                        windows: viewModel.mealWindows,
+                        meals: mealsForTimeRange(hour: hour),
+                        analyzingMeals: analyzingMealsForTimeRange(hour: hour),
+                        isLastHour: hour == hours.last,
+                        selectedWindow: $selectedWindow,
+                        showWindowDetail: $showWindowDetail,
+                        animationNamespace: animationNamespace,
+                        viewModel: viewModel
+                    )
+                    .padding(.horizontal, 24)
+                }
+                
+                Color.clear
+                    .frame(height: 100)
+            }
+            .frame(maxWidth: .infinity)
+        }
+        .onAppear {
+            currentTime = timeProvider.currentTime
+            withAnimation {
+                proxy.scrollTo(currentHour, anchor: .center)
+            }
+        }
+        .onReceive(timer) { _ in
+            if !isPreview {
+                currentTime = timeProvider.currentTime
+                handleAutoScroll(proxy: proxy)
+            }
+        }
+        .onReceive(timeProvider.$simulatedTime) { newSimulatedTime in
+            if newSimulatedTime != nil && !isPreview {
+                currentTime = timeProvider.currentTime
+                handleAutoScroll(proxy: proxy)
+            }
+        }
+        .onScrollGeometryChange(for: ScrollViewOffsetData.self) { geometry in
+            ScrollViewOffsetData(
+                offset: geometry.contentOffset.y,
+                isScrolling: geometry.contentOffset.y != geometry.contentInsets.top
+            )
+        } action: { _, data in
+            if data.isScrolling {
+                userIsScrolling = true
+                scrollEndWorkItem?.cancel()
+                let work = DispatchWorkItem {
+                    userIsScrolling = false
+                }
+                scrollEndWorkItem = work
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0, execute: work)
+            }
+        }
+        .onChange(of: scrollToAnalyzingMeal) { _, analyzingMeal in
+            if let meal = analyzingMeal {
+                let targetHour = Calendar.current.component(.hour, from: meal.timestamp)
+                withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                    proxy.scrollTo(targetHour, anchor: .center)
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                    scrollToAnalyzingMeal = nil
+                }
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .animateMealToWindow)) { notification in
+            if let meal = notification.object as? LoggedMeal {
+                handleMealSlideAnimation(meal: meal, proxy: proxy)
             }
         }
     }
@@ -375,7 +370,6 @@ struct TimelineHourRow: View {
     @Binding var selectedWindow: MealWindow?
     @Binding var showWindowDetail: Bool
     let animationNamespace: Namespace.ID
-    let scrollOffset: CGFloat
     @ObservedObject var viewModel: ScheduleViewModel
     
     let baseHourHeight: CGFloat = 80
@@ -407,7 +401,7 @@ struct TimelineHourRow: View {
     var body: some View {
         HStack(alignment: .top, spacing: 16) {
             // Hour label
-            TimeLabel(hour: hour)
+            TimeLabel(hour: hour, isCurrent: isCurrentHour)
                 .frame(width: 60)
             
             // Main content area
@@ -438,12 +432,11 @@ struct TimelineHourRow: View {
             // Current time indicator with context awareness
             if isCurrentHour {
                 let currentWindowInfo = getCurrentWindowInfo()
-                CurrentTimeMarker(
-                    currentTime: currentTime,
-                    isInsideWindow: currentWindowInfo.isInside,
-                    windowPurpose: currentWindowInfo.purpose,
-                    scrollOffset: scrollOffset
-                )
+                    CurrentTimeMarker(
+                        currentTime: currentTime,
+                        isInsideWindow: currentWindowInfo.isInside,
+                        windowPurpose: currentWindowInfo.purpose
+                    )
                 .offset(y: getCurrentMinuteOffset())
                 .animation(.linear(duration: 10), value: getCurrentMinuteOffset()) // Smooth movement between updates
                 .zIndex(4) // Higher z-index to appear above everything
@@ -669,6 +662,7 @@ struct TimelineHourRow: View {
 // Cylindrical hour label like MacroFactors
 struct TimeLabel: View {
     let hour: Int
+    var isCurrent: Bool = false
     
     var timeString: String {
         if hour == 12 {
@@ -682,14 +676,20 @@ struct TimeLabel: View {
     
     var body: some View {
         Text(timeString)
-            .font(.system(size: 13, weight: .medium, design: .monospaced))
-            .foregroundColor(.white.opacity(0.5))
+            .font(.system(size: 13, weight: .semibold, design: .monospaced))
+            .monospacedDigit()
+            .foregroundColor(isCurrent ? .white : .white.opacity(0.55))
             .frame(width: 50)
             .padding(.vertical, 4)
             .background(
                 Capsule()
-                    .fill(Color.white.opacity(0.05))
+                    .fill(isCurrent ? Color.white.opacity(0.08) : Color.white.opacity(0.05))
             )
+            .overlay(
+                Capsule()
+                    .stroke(isCurrent ? Color.phylloAccent.opacity(0.35) : Color.white.opacity(0.08), lineWidth: 1)
+            )
+            .shadow(color: isCurrent ? Color.phylloAccent.opacity(0.15) : .clear, radius: 4, x: 0, y: 2)
     }
 }
 
@@ -703,6 +703,7 @@ struct MealRow: View {
             // Time
             Text(timeFormatter.string(from: meal.timestamp))
                 .font(.system(size: 11))
+                .monospacedDigit()
                 .foregroundColor(.white.opacity(0.5))
                 .frame(width: 35)
             
@@ -720,15 +721,19 @@ struct MealRow: View {
                 HStack(spacing: 6) {
                     Text("\(meal.calories) 🔥")
                         .font(.system(size: 11))
+                        .monospacedDigit()
                         .foregroundColor(.white.opacity(0.6))
                     Text("\(meal.protein)P")
                         .font(.system(size: 11))
+                        .monospacedDigit()
                         .foregroundColor(.orange.opacity(0.7))
                     Text("\(meal.fat)F")
                         .font(.system(size: 11))
+                        .monospacedDigit()
                         .foregroundColor(.yellow.opacity(0.7))
                     Text("\(meal.carbs)C")
                         .font(.system(size: 11))
+                        .monospacedDigit()
                         .foregroundColor(.blue.opacity(0.7))
                 }
             }
@@ -785,16 +790,13 @@ struct CurrentTimeMarker: View {
     let currentTime: Date
     let isInsideWindow: Bool
     let windowPurpose: WindowPurpose?
-    let scrollOffset: CGFloat
-    
     @State private var pulseAnimation = false
     
     // Initialize with default values for backward compatibility
-    init(currentTime: Date = Date(), isInsideWindow: Bool = false, windowPurpose: WindowPurpose? = nil, scrollOffset: CGFloat = 0) {
+    init(currentTime: Date = Date(), isInsideWindow: Bool = false, windowPurpose: WindowPurpose? = nil) {
         self.currentTime = currentTime
         self.isInsideWindow = isInsideWindow
         self.windowPurpose = windowPurpose
-        self.scrollOffset = scrollOffset
     }
     
     private var timeFormatter: DateFormatter {
@@ -851,12 +853,7 @@ struct CurrentTimeMarker: View {
                 isInsideWindow: isInsideWindow
             )
         }
-        .rotation3DEffect(
-            .degrees(Double(scrollOffset * 0.02)), // Subtle 3D rotation
-            axis: (x: 1, y: 0, z: 0),
-            anchor: .center,
-            perspective: 1.0
-        )
+        // Keep marker flat for better scroll performance
         .onAppear {
             pulseAnimation = true
         }
@@ -879,9 +876,39 @@ struct TimeFloat: View {
             
             Text(time)
                 .font(.system(size: 11, weight: .semibold, design: .rounded))
+                .monospacedDigit()
                 .foregroundColor(.white)
         }
         .padding(.leading, 8)
+    }
+}
+
+// Small floating action that jumps the scroll back to the current hour
+struct JumpToNowButton: View {
+    let action: () -> Void
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Image(systemName: "location.north.line.fill")
+                    .font(.system(size: 12, weight: .bold))
+                Text("Now")
+                    .font(.system(size: 12, weight: .semibold))
+            }
+            .foregroundColor(.white)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(
+                Capsule()
+                    .fill(Color.white.opacity(0.08))
+                    .overlay(
+                        Capsule()
+                            .stroke(Color.white.opacity(0.15), lineWidth: 1)
+                    )
+            )
+            .shadow(color: Color.black.opacity(0.25), radius: 6, x: 0, y: 3)
+        }
+        .buttonStyle(.plain)
+        .transition(.move(edge: .trailing).combined(with: .opacity))
     }
 }
 
@@ -981,6 +1008,7 @@ struct GroupedMealsRow: View {
                 // Time range
                 Text(timeRange)
                     .font(.system(size: 11))
+                    .monospacedDigit()
                     .foregroundColor(.white.opacity(0.5))
                     .frame(width: 50)
                 
@@ -1007,6 +1035,7 @@ struct GroupedMealsRow: View {
                     
                     Text("\(totalCalories) cal total")
                         .font(.system(size: 11))
+                        .monospacedDigit()
                         .foregroundColor(.white.opacity(0.6))
                 }
                 

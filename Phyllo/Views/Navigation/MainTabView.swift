@@ -95,6 +95,26 @@ struct MainTabView: View {
                 selectedTab = 0
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: .navigateToTab)) { notification in
+            if let userInfo = notification.userInfo,
+               let tab = userInfo["tab"] as? String {
+                Task { @MainActor in
+                    DebugLogger.shared.notification("Navigating to tab: \(tab)")
+                }
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    switch tab {
+                    case "schedule":
+                        selectedTab = 0
+                    case "momentum":
+                        selectedTab = 1
+                    case "scan":
+                        selectedTab = 2
+                    default:
+                        break
+                    }
+                }
+            }
+        }
         .onReceive(NotificationCenter.default.publisher(for: .showMealResults)) { notification in
             Task { @MainActor in
                 DebugLogger.shared.notification("Received showMealResults notification")

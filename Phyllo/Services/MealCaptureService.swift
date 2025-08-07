@@ -15,6 +15,7 @@ class MealCaptureService: ObservableObject {
     private let dataProvider = DataSourceProvider.shared.provider
     private let vertexAI = VertexAIService.shared
     private let timeProvider = TimeProvider.shared
+    private let notificationManager = NotificationManager.shared
     private var cancellables = Set<AnyCancellable>()
     
     private init() {
@@ -49,34 +50,44 @@ class MealCaptureService: ObservableObject {
             DebugLogger.shared.dataProvider("Finding window for meal at \(now) - \(currentWindows.count) windows available")
         }
         
-        // First, try to find an active window
-        var bestWindow = currentWindows.first { window in
-            window.contains(timestamp: now)
-        }
+        // 1) If any active window, use it
+        var bestWindow = currentWindows.first { $0.contains(timestamp: now) }
         
-        // If no active window, find the nearest window
+        // 2) Otherwise, choose the nearest window by absolute time distance
         if bestWindow == nil {
-            // Find upcoming windows
-            let upcomingWindows = currentWindows.filter { $0.startTime > now }
-                .sorted { $0.startTime < $1.startTime }
+            var nearest: MealWindow?
+            var nearestDistance = TimeInterval.greatestFiniteMagnitude
             
-            // Find past windows that are still "doable" (within 2 hours)
-            let recentPastWindows = currentWindows.filter { window in
-                window.endTime < now && 
-                now.timeIntervalSince(window.endTime) < 2 * 3600 // Within 2 hours
-            }.sorted { $0.endTime > $1.endTime } // Most recent first
-            
-            // Prefer the most recent past window if it's within 2 hours
-            if let recentWindow = recentPastWindows.first {
-                bestWindow = recentWindow
-                Task { @MainActor in
-                    DebugLogger.shared.warning("Using recent past window: \(recentWindow.purpose.rawValue) (ended \(Int(now.timeIntervalSince(recentWindow.endTime)/60)) minutes ago)")
+            for window in currentWindows {
+                let distance: TimeInterval
+                if now < window.startTime {
+                    distance = window.startTime.timeIntervalSince(now)
+                } else if now > window.endTime {
+                    distance = now.timeIntervalSince(window.endTime)
+                } else {
+                    distance = 0
                 }
-            } else if let nextWindow = upcomingWindows.first {
-                // Otherwise use the next upcoming window
-                bestWindow = nextWindow
+                if distance < nearestDistance {
+                    nearestDistance = distance
+                    nearest = window
+                }
+            }
+            
+            // 3) Nudge toward upcoming window if it's within the window's flexibility buffer
+            if let upcoming = currentWindows
+                .filter({ now < $0.startTime })
+                .sorted(by: { $0.startTime < $1.startTime })
+                .first,
+               now >= upcoming.startTime.addingTimeInterval(-upcoming.flexibility.timeBuffer) {
+                bestWindow = upcoming
                 Task { @MainActor in
-                    DebugLogger.shared.warning("Using upcoming window: \(nextWindow.purpose.rawValue) (starts in \(Int(nextWindow.startTime.timeIntervalSince(now)/60)) minutes)")
+                    DebugLogger.shared.success("Assigning to upcoming window within flexibility buffer: \(upcoming.purpose.rawValue) (starts in \(Int(upcoming.startTime.timeIntervalSince(now)/60))m)")
+                }
+            } else if let nearest {
+                bestWindow = nearest
+                Task { @MainActor in
+                    let mins = Int(nearestDistance/60)
+                    DebugLogger.shared.warning("Assigning to nearest window by distance: \(nearest.purpose.rawValue) (\(mins)m away)")
                 }
             }
         }
@@ -150,6 +161,9 @@ class MealCaptureService: ObservableObject {
                             DebugLogger.shared.success("Meal analysis completed: \(result.mealName)")
                             DebugLogger.shared.notification("Posting mealAnalysisCompleted notification")
                         }
+                        
+                        // Schedule post-meal check-in reminder
+                        await notificationManager.schedulePostMealCheckIn(for: savedMeal)
                         
                         // Post notification with the completed meal
                         await MainActor.run {
@@ -266,21 +280,78 @@ class MealCaptureService: ObservableObject {
         originalResult: MealAnalysisResult,
         clarificationAnswers: [String: String]
     ) async throws {
-        
-        // TODO: Re-analyze with clarification answers
-        // For now, just complete with original result
-        
-        let savedMeal = try await dataProvider.completeAnalyzingMeal(
-            id: analyzingMeal.id.uuidString,
-            result: originalResult
+        // Compute adjusted nutrition based on clarification answers.
+        // Keys are currently stored as question indices in string form. We'll map them back to options.
+        var calorieDelta = 0
+        var proteinDelta: Double = 0
+        var carbDelta: Double = 0
+        var fatDelta: Double = 0
+
+        var appliedClarifications: [String: String] = [:] // clarificationType -> option text
+
+        for (key, selectedOptionId) in clarificationAnswers {
+            guard let questionIndex = Int(key),
+                  originalResult.clarifications.indices.contains(questionIndex) else { continue }
+            let question = originalResult.clarifications[questionIndex]
+            // Match by exact text or case-insensitive ID fallback
+            let matched = question.options.first { opt in
+                let normalized = opt.text.lowercased().replacingOccurrences(of: " ", with: "_")
+                return opt.text == selectedOptionId || normalized == selectedOptionId.lowercased()
+            }
+            if let opt = matched {
+                calorieDelta += opt.calorieImpact
+                proteinDelta += opt.proteinImpact ?? 0
+                carbDelta += opt.carbImpact ?? 0
+                fatDelta += opt.fatImpact ?? 0
+                appliedClarifications[question.clarificationType] = opt.text
+            }
+        }
+
+        // Apply deltas
+        let adjustedCalories = max(0, originalResult.nutrition.calories + calorieDelta)
+        let adjustedProtein = max(0, originalResult.nutrition.protein + proteinDelta)
+        let adjustedCarbs = max(0, originalResult.nutrition.carbs + carbDelta)
+        let adjustedFat = max(0, originalResult.nutrition.fat + fatDelta)
+
+        // Build adjusted result to flow through existing save path
+        let adjustedResult = MealAnalysisResult(
+            mealName: originalResult.mealName,
+            confidence: originalResult.confidence,
+            ingredients: originalResult.ingredients,
+            nutrition: .init(
+                calories: adjustedCalories,
+                protein: adjustedProtein,
+                carbs: adjustedCarbs,
+                fat: adjustedFat
+            ),
+            micronutrients: originalResult.micronutrients,
+            clarifications: originalResult.clarifications
         )
+
+        Task { @MainActor in
+            DebugLogger.shared.mealAnalysis("Applied clarification deltas -> cal: \(calorieDelta), P: \(proteinDelta), C: \(carbDelta), F: \(fatDelta)")
+            DebugLogger.shared.mealAnalysis("Adjusted totals -> \(adjustedCalories) cal, \(String(format: "%.1f", adjustedProtein))P, \(String(format: "%.1f", adjustedCarbs))C, \(String(format: "%.1f", adjustedFat))F")
+        }
+
+        // Save with adjusted result
+        var savedMeal = try await dataProvider.completeAnalyzingMeal(
+            id: analyzingMeal.id.uuidString,
+            result: adjustedResult
+        )
+
+        // Persist applied clarifications on the saved meal and update record
+        savedMeal.appliedClarifications = appliedClarifications
+        try? await dataProvider.updateMeal(savedMeal)
+        
+        // Schedule post-meal check-in reminder
+        await notificationManager.schedulePostMealCheckIn(for: savedMeal)
         
         // Post notification with the completed meal
         await MainActor.run {
             NotificationCenter.default.post(
                 name: .mealAnalysisCompleted,
                 object: analyzingMeal,
-                userInfo: ["result": originalResult, "savedMeal": savedMeal]
+                userInfo: ["result": adjustedResult, "savedMeal": savedMeal]
             )
         }
     }

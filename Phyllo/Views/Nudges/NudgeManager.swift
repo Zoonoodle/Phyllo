@@ -17,6 +17,11 @@ class NudgeManager: ObservableObject {
     
     private var cancellables = Set<AnyCancellable>()
     
+    // Computed property for NotificationManager coordination
+    var hasActiveNudge: Bool {
+        activeNudge != nil
+    }
+    
     enum NudgeType: Identifiable {
         case morningCheckIn
         case firstTimeTutorial(page: Int)

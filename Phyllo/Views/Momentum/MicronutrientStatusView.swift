@@ -50,11 +50,12 @@ struct MicronutrientStatusView: View {
             // Hexagon Flower Visualization
             HexagonFlowerView(
                 micronutrients: micronutrientData,
-                size: 200,
+                size: 220,
                 showLabels: false,
                 showPurposeText: false
             )
             .frame(height: 200)
+            .padding(.top, 4)
             
             // Nutrient Cards Grid
             VStack(spacing: 16) {

@@ -73,10 +73,12 @@ struct ExpandableWindowBanner: View {
     // Add analyzing meals for this window - only if scanned within window time
     private var analyzingMealsInWindow: [AnalyzingMeal] {
         viewModel.analyzingMeals.filter { meal in
-            // Must be assigned to this window AND scanned within window time
-            meal.windowId == window.id &&
-            meal.timestamp >= window.startTime &&
-            meal.timestamp <= window.endTime
+            // Prefer assigned window
+            if meal.windowId == window.id { return true }
+            // Fallback: if within flexibility buffer before start or during window, show it
+            let beforeStart = meal.timestamp >= window.startTime.addingTimeInterval(-window.flexibility.timeBuffer) && meal.timestamp < window.startTime
+            let during = meal.timestamp >= window.startTime && meal.timestamp <= window.endTime
+            return beforeStart || during
         }
     }
     
@@ -351,6 +353,7 @@ struct ExpandableWindowBanner: View {
                 }
             }
             .background(windowBackground)
+            .shadow(color: Color.black.opacity(0.35), radius: 12, x: 0, y: 8)
             .clipShape(RoundedRectangle(cornerRadius: { if case .active = windowStatus { return 16 } else { return 12 } }()))
             .overlay(
                 RoundedRectangle(cornerRadius: { if case .active = windowStatus { return 16 } else { return 12 } }())
@@ -413,6 +416,7 @@ struct ExpandableWindowBanner: View {
                             .font(.system(size: 11))
                         Text("\(formatTime(remaining)) left")
                             .font(.system(size: 12, weight: .medium))
+                            .monospacedDigit()
                     }
                 }
                 .foregroundColor(window.timeRemaining ?? 0 < 1800 ? .orange : .white.opacity(0.9))
@@ -424,8 +428,10 @@ struct ExpandableWindowBanner: View {
                             .font(.system(size: 11))
                         if hoursLate < 1 {
                             Text("\(Int(hoursLate * 60))m late • still doable")
+                                .monospacedDigit()
                         } else {
                             Text("\(Int(hoursLate))h late • still doable")
+                                .monospacedDigit()
                         }
                     }
                     .font(.system(size: 12, weight: .medium))
@@ -436,12 +442,14 @@ struct ExpandableWindowBanner: View {
                 if !timeUntilWindow.isEmpty {
                     Text(timeUntilWindow)
                         .font(.system(size: 12))
+                        .monospacedDigit()
                         .foregroundColor(.orange.opacity(0.8))
                 }
                 
             case .upcoming:
                 Text(timeUntilWindow)
                     .font(.system(size: 12))
+                    .monospacedDigit()
                     .foregroundColor(getTimeTextColor())
             }
         }
@@ -456,12 +464,14 @@ struct ExpandableWindowBanner: View {
                 HStack(spacing: 4) {
                     Text("\(consumed)")
                         .font(.system(size: consumed >= 1000 ? 13 : 14, weight: .semibold))
+                        .monospacedDigit()
                         .foregroundColor(consumptionColor(consumed: consumed, target: target))
                     Text("/")
                         .font(.system(size: 12))
                         .foregroundColor(.white.opacity(0.5))
                     Text("\(target) cal")
                         .font(.system(size: 12))
+                        .monospacedDigit()
                         .foregroundColor(.white.opacity(0.7))
                 }
                 .lineLimit(1)
@@ -481,6 +491,7 @@ struct ExpandableWindowBanner: View {
             case .missed(let redistribution):
                 Text("\(window.effectiveCalories) cal")
                     .font(.system(size: 14, weight: .semibold))
+                    .monospacedDigit()
                     .foregroundColor(.orange.opacity(0.8))
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
@@ -498,6 +509,7 @@ struct ExpandableWindowBanner: View {
             case .lateButDoable:
                 Text("\(window.effectiveCalories) cal")
                     .font(.system(size: 14, weight: .semibold))
+                    .monospacedDigit()
                     .foregroundColor(.white.opacity(0.9))
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
@@ -508,6 +520,7 @@ struct ExpandableWindowBanner: View {
             case .active:
                 Text("\(windowCaloriesRemaining) cal")
                     .font(.system(size: windowCaloriesRemaining >= 1000 ? 14 : 16, weight: .semibold))
+                    .monospacedDigit()
                     .foregroundColor(.white)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
@@ -520,6 +533,7 @@ struct ExpandableWindowBanner: View {
             case .upcoming:
                 Text("\(window.effectiveCalories) cal")
                     .font(.system(size: window.effectiveCalories >= 1000 ? 12 : 14, weight: .semibold))
+                    .monospacedDigit()
                     .foregroundColor(.white.opacity(0.9))
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
@@ -572,6 +586,7 @@ struct ExpandableWindowBanner: View {
             Text("\(Int(progressValue * 100))%")
                 .font(.system(size: 12, weight: .bold))
                 .foregroundColor(.white)
+                .monospacedDigit()
         }
     }
     
@@ -859,6 +874,7 @@ struct MealRowCompact: View {
             // Time
             Text(timeFormatter.string(from: meal.timestamp))
                 .font(.system(size: 11))
+                .monospacedDigit()
                 .foregroundColor(.white.opacity(0.5))
                 .frame(width: 35)
             
@@ -876,6 +892,7 @@ struct MealRowCompact: View {
                 HStack(spacing: 4) {
                     Text("\(meal.calories) cal")
                         .font(.system(size: 11))
+                        .monospacedDigit()
                         .foregroundColor(.white.opacity(0.6))
                         .lineLimit(1)
                     
@@ -885,14 +902,17 @@ struct MealRowCompact: View {
                     
                     Text("\(meal.protein)P")
                         .font(.system(size: 11))
+                        .monospacedDigit()
                         .foregroundColor(.orange.opacity(0.7))
                     
                     Text("\(meal.fat)F")
                         .font(.system(size: 11))
+                        .monospacedDigit()
                         .foregroundColor(.yellow.opacity(0.7))
                     
                     Text("\(meal.carbs)C")
                         .font(.system(size: 11))
+                        .monospacedDigit()
                         .foregroundColor(.blue.opacity(0.7))
                 }
                 .lineLimit(1)
@@ -928,6 +948,7 @@ struct AnalyzingMealRowCompact: View {
             // Time
             Text(timeFormatter.string(from: meal.timestamp))
                 .font(.system(size: 11))
+                .monospacedDigit()
                 .foregroundColor(.white.opacity(0.5))
                 .frame(width: 35)
             

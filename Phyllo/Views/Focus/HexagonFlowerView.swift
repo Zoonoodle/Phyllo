@@ -17,6 +17,18 @@ struct HexagonFlowerView: View {
     
     @State private var selectedPetal: HealthImpactPetal? = nil
     @State private var showPetalDetail = false
+    @State private var animatedPetalScores: [HealthImpactPetal: Double] = [:]
+    @State private var previousMicronutrientMap: [String: Double] = [:]
+    @State private var burstingPetals: Set<HealthImpactPetal> = []
+
+    // Equatable snapshot for change detection
+    private struct MicronutrientSnapshotItem: Equatable {
+        let name: String
+        let pct: Double
+    }
+    private var micronutrientSnapshot: [MicronutrientSnapshotItem] {
+        micronutrients.map { MicronutrientSnapshotItem(name: $0.name, pct: $0.percentage) }
+    }
     
     // Health impact petals with aggregated scores
     private var petalScores: [(petal: HealthImpactPetal, score: Double, isPrimaryForGoal: Bool)] {
@@ -138,10 +150,11 @@ struct HexagonFlowerView: View {
                     rotation: petal.rotation,
                     petalName: petal.petalName,
                     icon: petal.icon,
-                    score: petal.score,
+                    score: animatedPetalScores[petalScores[index].petal] ?? petal.score,
                     isPrimaryForGoal: petal.isPrimaryForGoal,
                     size: size,
-                    showPurposeText: false // Don't show text to reduce clutter
+                    showPurposeText: false, // Don't show text to reduce clutter
+                    shouldBurst: burstingPetals.contains(petalScores[index].petal)
                 )
                 .onTapGesture {
                     selectedPetal = petalScores[index].petal
@@ -161,6 +174,19 @@ struct HexagonFlowerView: View {
                         .strokeBorder(Color.white.opacity(0.1), lineWidth: 1)
                 )
                 .overlay(
+                    Circle()
+                        .trim(from: 0, to: CGFloat(min(Double(overallScore) / 100.0, 1.0)))
+                        .stroke(
+                            AngularGradient(
+                                gradient: Gradient(colors: [.phylloAccent, .phylloAccent.opacity(0.4), .white.opacity(0.2)]),
+                                center: .center
+                            ),
+                            style: StrokeStyle(lineWidth: 3, lineCap: .round)
+                        )
+                        .rotationEffect(.degrees(-90))
+                        .shadow(color: Color.phylloAccent.opacity(0.25), radius: 3)
+                )
+                .overlay(
                     VStack(spacing: 2) {
                         Text("\(overallScore)%")
                             .font(.system(size: size * 0.13, weight: .bold))
@@ -174,6 +200,33 @@ struct HexagonFlowerView: View {
                 .zIndex(1)
         }
         .frame(width: size, height: size)
+        .onAppear {
+            let target = Dictionary(uniqueKeysWithValues: petalScores.map { ($0.petal, $0.score) })
+            // Start collapsed then spring to scores
+            animatedPetalScores = target.mapValues { _ in 0 }
+            withAnimation(.spring(response: 0.8, dampingFraction: 0.9)) {
+                animatedPetalScores = target
+            }
+            previousMicronutrientMap = Dictionary(uniqueKeysWithValues: micronutrients.map { ($0.name, $0.percentage) })
+        }
+        .onChange(of: micronutrientSnapshot) { _, newSnapshot in
+            // Smoothly animate score changes
+            let target = Dictionary(uniqueKeysWithValues: petalScores.map { ($0.petal, $0.score) })
+            withAnimation(.easeInOut(duration: 0.8)) {
+                animatedPetalScores = target
+            }
+            // Trigger bursts for petals influenced by increased micronutrients
+            let newMap = Dictionary(uniqueKeysWithValues: newSnapshot.map { ($0.name, $0.pct) })
+            for (name, newPct) in newMap {
+                let oldPct = previousMicronutrientMap[name] ?? 0
+                if newPct > oldPct + 0.01, let info = MicronutrientData.getNutrient(byName: name) {
+                    for petal in info.healthImpacts {
+                        triggerBurst(on: petal)
+                    }
+                }
+            }
+            previousMicronutrientMap = newMap
+        }
         .sheet(isPresented: $showPetalDetail) {
             if let petal = selectedPetal {
                 PetalDetailView(
@@ -183,6 +236,13 @@ struct HexagonFlowerView: View {
                 .presentationDetents([.medium])
                 .presentationBackground(Color.phylloBackground)
             }
+        }
+    }
+
+    private func triggerBurst(on petal: HealthImpactPetal) {
+        burstingPetals.insert(petal)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+            burstingPetals.remove(petal)
         }
     }
     
@@ -212,6 +272,7 @@ struct HealthImpactPetalView: View {
     let isPrimaryForGoal: Bool
     var size: CGFloat = 180 // Parent size
     var showPurposeText: Bool = true
+    var shouldBurst: Bool = false
     
     // Calculate opacity based on score - similar to ring effect
     private var fillOpacity: Double {
@@ -240,6 +301,19 @@ struct HealthImpactPetalView: View {
             .overlay(
                 // Health impact icon and name inside petal
                 ZStack {
+                    // Particle burst when a related micronutrient increases
+                    if shouldBurst {
+                        ForEach(0..<6, id: \.self) { i in
+                            Circle()
+                                .fill(color.opacity(0.7))
+                                .frame(width: size * 0.03, height: size * 0.03)
+                                .offset(x: size * 0.18)
+                                .rotationEffect(.degrees(Double(i) * 60))
+                                .scaleEffect(shouldBurst ? 1.0 : 0.1)
+                                .opacity(shouldBurst ? 0 : 1)
+                                .animation(.easeOut(duration: 1.0), value: shouldBurst)
+                        }
+                    }
                     VStack(spacing: 2) {
                         if !icon.isEmpty {
                             Image(systemName: icon)

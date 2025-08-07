@@ -29,6 +29,7 @@ class ScheduleViewModel: ObservableObject {
     // MARK: - Dependencies
     private let dataProvider = DataSourceProvider.shared.provider
     private let timeProvider = TimeProvider.shared
+    private let notificationManager = NotificationManager.shared
     private var cancellables = Set<AnyCancellable>()
     private var observations: [ObservationToken] = []
     
@@ -61,6 +62,8 @@ class ScheduleViewModel: ObservableObject {
         let windowsToken = dataProvider.observeWindows(for: today) { [weak self] windows in
             Task { @MainActor in
                 self?.mealWindows = windows
+                // Schedule notifications when windows change
+                await self?.notificationManager.scheduleWindowNotifications(for: windows)
             }
         }
         observations.append(windowsToken)
@@ -187,6 +190,12 @@ class ScheduleViewModel: ObservableObject {
             }
             
             self.mealWindows = windows
+            
+            // Schedule notifications for the new windows
+            Task {
+                await notificationManager.scheduleWindowNotifications(for: windows)
+                await notificationManager.scheduleMorningCheckInReminder(for: Date().addingTimeInterval(86400)) // Tomorrow
+            }
         } catch {
             errorMessage = "Failed to generate windows: \(error.localizedDescription)"
             print("❌ Failed to generate windows: \(error)")
