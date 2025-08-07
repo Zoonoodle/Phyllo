@@ -12,128 +12,107 @@ struct HexagonFlowerView: View {
     var size: CGFloat = 180 // Default size, can be customized
     var showLabels: Bool = true // Option to show/hide labels
     var showPurposeText: Bool = true // Option to show/hide purpose text
+    var userGoal: NutritionGoal? = nil // For showing goal-relevant badges
     
-    // Overall score is average of all micronutrients
-    private var overallScore: Int {
-        guard !micronutrients.isEmpty else { return 0 }
-        let average = micronutrients.reduce(0) { $0 + $1.percentage } / Double(micronutrients.count)
-        return Int(average * 100)
-    }
-    
-    // Calculate total petals based on new formula
-    // Always 1 petal, >90% = 2 petals
-    private var totalPetals: Int {
-        micronutrients.reduce(0) { total, nutrient in
-            if nutrient.percentage >= 0.9 {
-                return total + 2
-            } else {
-                return total + 1
-            }
-        }
-    }
-    
-    // Create petal data with colors based on which nutrient they represent
-    private var petalData: [(color: Color, rotation: Double, nutrientName: String, icon: String, percentage: Double)] {
-        var petals: [(color: Color, rotation: Double, nutrientName: String, icon: String, percentage: Double)] = []
-        var petalIndex = 0
+    // Health impact petals with aggregated scores
+    private var petalScores: [(petal: HealthImpactPetal, score: Double, isPrimaryForGoal: Bool)] {
+        var scores: [HealthImpactPetal: (totalScore: Double, count: Int)] = [:]
+        var antiNutrientPenalties: [HealthImpactPetal: Double] = [:]
         
-        // Map nutrient names to SF Symbol names
-        let nutrientIcons: [String: String] = [
-            "Iron": "drop.fill",
-            "Vitamin D": "sun.max.fill",
-            "Vit D": "sun.max.fill",
-            "Calcium": "circle.hexagongrid.fill",
-            "B12": "bolt.fill",
-            "Folate": "leaf.fill",
-            "Zinc": "shield.fill"
-        ]
-        
-        for (index, nutrient) in micronutrients.enumerated() {
-            // Use specific color for each nutrient position (not based on percentage)
-            let nutrientColors = [
-                Color.red,      // Iron
-                Color.orange,   // Vitamin D
-                Color.blue,     // Calcium
-                Color.purple,   // B12
-                Color.green,    // Folate
-                Color.pink      // Zinc
-            ]
-            let color = index < nutrientColors.count ? nutrientColors[index] : Color.phylloAccent
-            
-            // Always create at least one petal, two if >= 90%
-            let petalCount = nutrient.percentage >= 0.9 ? 2 : 1
-            let icon = nutrientIcons[nutrient.name] ?? "💊"
-            
-            for i in 0..<petalCount {
-                if petalIndex < 6 { // Max 6 petals
-                    let rotation = Double(petalIndex) * 60
-                    // Only add name to first petal of each nutrient
-                    let name = i == 0 ? nutrient.name : ""
-                    petals.append((color: color, rotation: rotation, nutrientName: name, icon: icon, percentage: nutrient.percentage))
-                    petalIndex += 1
+        // Process regular nutrients
+        for (name, percentage) in micronutrients {
+            if let nutrientInfo = MicronutrientData.getNutrient(byName: name) {
+                if nutrientInfo.isAntiNutrient {
+                    // Calculate penalties for anti-nutrients
+                    if let limit = nutrientInfo.dailyLimit, let severity = nutrientInfo.severity {
+                        let consumed = percentage * limit // percentage is actually amount/RDA
+                        let penalty = MicronutrientData.calculateAntiNutrientPenalty(
+                            consumed: consumed,
+                            limit: limit,
+                            severity: severity
+                        )
+                        
+                        // Apply penalty to relevant petals
+                        for petal in nutrientInfo.healthImpacts {
+                            antiNutrientPenalties[petal, default: 0] += penalty
+                        }
+                    }
+                } else {
+                    // Add positive contribution
+                    for petal in nutrientInfo.healthImpacts {
+                        scores[petal, default: (0, 0)].totalScore += percentage
+                        scores[petal, default: (0, 0)].count += 1
+                    }
                 }
             }
         }
         
-        return petals
-    }
-    
-    // Create labels for petals showing which nutrient each represents
-    private var petalLabels: [(name: String, rotation: Double)] {
-        var labels: [(name: String, rotation: Double)] = []
-        var petalIndex = 0
+        // Calculate final scores with penalties
+        var petalResults: [(petal: HealthImpactPetal, score: Double, isPrimaryForGoal: Bool)] = []
         
-        for nutrient in micronutrients {
-            // Always create at least one petal, two if >= 90%
-            let petalCount = nutrient.percentage >= 0.9 ? 2 : 1
+        for petal in HealthImpactPetal.allCases {
+            let (totalScore, count) = scores[petal] ?? (0, 0)
+            let averageScore = count > 0 ? totalScore / Double(count) : 0
+            let penalty = antiNutrientPenalties[petal] ?? 0
+            let finalScore = max(0, averageScore - (penalty / 100)) // Convert penalty percentage to decimal
             
-            // Add label for first petal of each nutrient
-            if petalIndex < 6 {
-                let rotation = Double(petalIndex) * 60
-                labels.append((name: nutrient.name, rotation: rotation))
-                petalIndex += petalCount
-            }
+            let isPrimary = isGoalRelevantPetal(petal, for: userGoal)
+            petalResults.append((petal: petal, score: finalScore, isPrimaryForGoal: isPrimary))
         }
         
-        return labels
+        // Sort by display order
+        return petalResults.sorted { $0.petal.displayOrder < $1.petal.displayOrder }
     }
     
-    // Get purpose text for each petal based on current window
-    private func purposeForPetal(at index: Int) -> String {
-        // Map specific micronutrients to their benefits
-        let micronutrientToPurpose: [String: String] = [
-            "B12": "Energy",
-            "Iron": "Energy", 
-            "Magnesium": "Recovery",
-            "Omega-3": "Focus",
-            "B6": "Focus",
-            "Vitamin D": "Strength",
-            "Vitamin C": "Recovery",
-            "Zinc": "Recovery",
-            "Potassium": "Recovery",
-            "B-Complex": "Energy",
-            "Caffeine": "Focus",
-            "L-Arginine": "Strength",
-            "Protein": "Strength",
-            "Leucine": "Strength",
-            "Green Tea": "Energy",
-            "Chromium": "Energy",
-            "L-Carnitine": "Energy",
-            "Tryptophan": "Sleep"
-        ]
-        
-        // Find which nutrient this petal belongs to
-        var petalIndex = 0
-        for nutrient in micronutrients {
-            // Always create at least one petal, two if >= 90%
-            let petalCount = nutrient.percentage >= 0.9 ? 2 : 1
-            if index >= petalIndex && index < petalIndex + petalCount {
-                return micronutrientToPurpose[nutrient.name] ?? "Health"
-            }
-            petalIndex += petalCount
-        }
-        return "Health"
+    // Overall score is average of all petal scores
+    private var overallScore: Int {
+        guard !petalScores.isEmpty else { return 0 }
+        let average = petalScores.reduce(0) { $0 + $1.score } / Double(petalScores.count)
+        return Int(average * 100)
     }
+    
+    // Helper function to determine if a petal is relevant to user's goal
+    private func isGoalRelevantPetal(_ petal: HealthImpactPetal, for goal: NutritionGoal?) -> Bool {
+        guard let goal = goal else { return false }
+        
+        switch goal {
+        case .muscleGain:
+            return petal == .strength || petal == .energy
+        case .weightLoss:
+            return petal == .energy || petal == .heart
+        case .performanceFocus:
+            return petal == .energy || petal == .focus
+        case .athleticPerformance:
+            return petal == .energy || petal == .heart || petal == .antioxidant
+        case .betterSleep:
+            return petal == .focus || petal == .antioxidant
+        case .maintainWeight, .overallWellbeing:
+            return false // All petals equally important
+        }
+    }
+    
+    // Create petal data for health impact categories
+    private var petalData: [(color: Color, rotation: Double, petalName: String, icon: String, score: Double, isPrimaryForGoal: Bool)] {
+        return petalScores.enumerated().map { index, petalInfo in
+            let rotation = Double(index) * 60 // 6 petals at 60-degree intervals
+            return (
+                color: petalInfo.petal.color,
+                rotation: rotation,
+                petalName: petalInfo.petal.rawValue,
+                icon: petalInfo.petal.icon,
+                score: petalInfo.score,
+                isPrimaryForGoal: petalInfo.isPrimaryForGoal
+            )
+        }
+    }
+    
+    // Create labels for health impact petals
+    private var petalLabels: [(name: String, rotation: Double)] {
+        return petalScores.enumerated().map { index, petalInfo in
+            (name: petalInfo.petal.rawValue, rotation: Double(index) * 60)
+        }
+    }
+    
     
     private func colorForPercentage(_ percentage: Double) -> Color {
         switch percentage {
@@ -148,13 +127,13 @@ struct HexagonFlowerView: View {
         ZStack {
             // Hexagon petals (draw before circle for proper layering)
             ForEach(Array(petalData.enumerated()), id: \.offset) { index, petal in
-                HexagonPetal(
+                HealthImpactPetalView(
                     color: petal.color,
                     rotation: petal.rotation,
-                    purposeText: purposeForPetal(at: index),
-                    nutrientName: petal.nutrientName,
+                    petalName: petal.petalName,
                     icon: petal.icon,
-                    percentage: petal.percentage,
+                    score: petal.score,
+                    isPrimaryForGoal: petal.isPrimaryForGoal,
                     size: size,
                     showPurposeText: showPurposeText
                 )
@@ -199,28 +178,28 @@ struct HexagonFlowerView: View {
     }
 }
 
-struct HexagonPetal: View {
+struct HealthImpactPetalView: View {
     let color: Color
     let rotation: Double
-    let purposeText: String
-    var nutrientName: String = ""
-    var icon: String = ""
-    var percentage: Double = 1.0
+    let petalName: String
+    let icon: String
+    let score: Double
+    let isPrimaryForGoal: Bool
     var size: CGFloat = 180 // Parent size
     var showPurposeText: Bool = true
     
-    // Calculate opacity based on percentage - similar to ring effect
+    // Calculate opacity based on score - similar to ring effect
     private var fillOpacity: Double {
         // Start very transparent (0.05) and gradually increase to 0.3 at 100%
         let minOpacity = 0.05
         let maxOpacity = 0.3
-        return minOpacity + (maxOpacity - minOpacity) * percentage
+        return minOpacity + (maxOpacity - minOpacity) * score
     }
     
     private var strokeOpacity: Double {
         // Stroke starts invisible and becomes fully visible at 50%
-        if percentage < 0.5 {
-            return percentage * 2 // 0-0.5 maps to 0-1 opacity
+        if score < 0.5 {
+            return score * 2 // 0-0.5 maps to 0-1 opacity
         } else {
             return 1.0
         }
@@ -234,22 +213,45 @@ struct HexagonPetal: View {
                     .stroke(color.opacity(strokeOpacity), lineWidth: 2)
             )
             .overlay(
-                // Nutrient icon and name inside petal
-                VStack(spacing: 2) {
-                    if !icon.isEmpty {
-                        Image(systemName: icon)
-                            .font(.system(size: size * 0.07, weight: .medium))
-                            .foregroundColor(.white.opacity(percentage > 0.3 ? 1.0 : percentage * 3))
-                            .rotationEffect(.degrees(-rotation)) // Counter-rotate to keep upright
+                // Health impact icon and name inside petal
+                ZStack {
+                    VStack(spacing: 2) {
+                        if !icon.isEmpty {
+                            Image(systemName: icon)
+                                .font(.system(size: size * 0.08, weight: .medium))
+                                .foregroundColor(.white.opacity(score > 0.3 ? 1.0 : score * 3))
+                                .rotationEffect(.degrees(-rotation)) // Counter-rotate to keep upright
+                        }
+                        
+                        if showPurposeText && score > 0.3 {
+                            Text(petalName)
+                                .font(.system(size: size * 0.045, weight: .medium))
+                                .foregroundColor(.white.opacity(score > 0.5 ? 1.0 : score * 2))
+                                .lineLimit(2)
+                                .multilineTextAlignment(.center)
+                                .minimumScaleFactor(0.5)
+                                .rotationEffect(.degrees(-rotation)) // Counter-rotate to keep upright
+                        }
                     }
                     
-                    if !nutrientName.isEmpty && showPurposeText && percentage > 0.3 {
-                        Text(nutrientName)
-                            .font(.system(size: size * 0.04, weight: .medium))
-                            .foregroundColor(.white.opacity(percentage > 0.5 ? 1.0 : percentage * 2))
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.5)
-                            .rotationEffect(.degrees(-rotation)) // Counter-rotate to keep upright
+                    // Goal relevance badge (top-right corner)
+                    if isPrimaryForGoal {
+                        VStack {
+                            HStack {
+                                Spacer()
+                                Image(systemName: "target")
+                                    .font(.system(size: size * 0.05, weight: .bold))
+                                    .foregroundColor(.white)
+                                    .background(
+                                        Circle()
+                                            .fill(Color.phylloAccent)
+                                            .frame(width: size * 0.08, height: size * 0.08)
+                                    )
+                                    .rotationEffect(.degrees(-rotation)) // Counter-rotate to keep upright
+                            }
+                            Spacer()
+                        }
+                        .padding(size * 0.02)
                     }
                 }
             )
@@ -388,29 +390,38 @@ struct ArrowShape: Shape {
         Color.phylloBackground.ignoresSafeArea()
         
         VStack(spacing: 30) {
-            Text("Transparency Gradient Effect")
+            Text("Health Impact Petal System")
                 .font(.title2)
                 .foregroundColor(.white)
             
-            // Original percentages
-            HexagonFlowerView(micronutrients: [
-                ("B12", 0.82),
-                ("Iron", 0.91),
-                ("Magnesium", 0.78),
-                ("Vitamin D", 0.65),
-                ("Omega-3", 0.45),
-                ("Zinc", 0.88)
-            ])
+            // Good nutrition with muscle building goal
+            HexagonFlowerView(
+                micronutrients: [
+                    ("Vitamin B12", 0.82),
+                    ("Iron", 0.91),
+                    ("Magnesium", 0.78),
+                    ("Vitamin D", 0.65),
+                    ("Omega-3", 0.45),
+                    ("Zinc", 0.88),
+                    ("Calcium", 0.72),
+                    ("Vitamin C", 0.85),
+                    ("Protein", 0.92)
+                ],
+                userGoal: .muscleGain(targetPounds: 10, timeline: 12)
+            )
             
-            // Low percentages to show transparency effect
-            HexagonFlowerView(micronutrients: [
-                ("B12", 0.10),
-                ("Iron", 0.25),
-                ("Magnesium", 0.35),
-                ("Vitamin D", 0.50),
-                ("Omega-3", 0.75),
-                ("Zinc", 0.95)
-            ])
+            // Poor nutrition with anti-nutrients
+            HexagonFlowerView(
+                micronutrients: [
+                    ("Vitamin B12", 0.10),
+                    ("Iron", 0.25),
+                    ("Sodium", 1.8), // Anti-nutrient above limit
+                    ("Added Sugar", 1.5), // Anti-nutrient above limit
+                    ("Vitamin D", 0.15),
+                    ("Omega-3", 0.20)
+                ],
+                userGoal: .performanceFocus
+            )
         }
     }
 }

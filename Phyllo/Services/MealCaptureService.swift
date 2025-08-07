@@ -46,11 +46,7 @@ class MealCaptureService: ObservableObject {
         
         // Debug logging for window assignment
         Task { @MainActor in
-            DebugLogger.shared.dataProvider("Finding window for meal at \(now)")
-            DebugLogger.shared.dataProvider("Available windows: \(currentWindows.count)")
-            for window in currentWindows {
-                DebugLogger.shared.dataProvider("Window \(window.id): \(window.startTime) - \(window.endTime), Purpose: \(window.purpose.rawValue)")
-            }
+            DebugLogger.shared.dataProvider("Finding window for meal at \(now) - \(currentWindows.count) windows available")
         }
         
         // First, try to find an active window

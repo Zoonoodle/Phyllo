@@ -213,14 +213,7 @@ struct TimelineView: View {
         let startOfHour = calendar.date(bySettingHour: hour, minute: 0, second: 0, of: timeProvider.currentTime)!
         let endOfHour = calendar.date(byAdding: .hour, value: 1, to: startOfHour)!
         
-        // Debug logging for meal lookup
-        if hour >= 15 && hour <= 17 { // Log around the problematic time
-            DebugLogger.shared.dataProvider("TimelineView: Checking meals for hour \(hour)")
-            DebugLogger.shared.dataProvider("Available windows: \(viewModel.mealWindows.count)")
-            for window in viewModel.mealWindows {
-                DebugLogger.shared.dataProvider("Window \(window.id): \(window.startTime) - \(window.endTime)")
-            }
-        }
+        // Debug logging for meal lookup - removed verbose window details
         
         return viewModel.todaysMeals.compactMap { meal in
             // Check if meal belongs to a window in this hour
@@ -229,9 +222,6 @@ struct TimelineView: View {
                 // If meal has a window, show it in the hour where the window starts
                 let windowStartHour = calendar.component(.hour, from: window.startTime)
                 
-                if hour >= 15 && hour <= 17 {
-                    DebugLogger.shared.dataProvider("Meal \(meal.name) has window ID \(windowId), window starts at hour \(windowStartHour)")
-                }
                 
                 if windowStartHour == hour {
                     let minutes = calendar.component(.minute, from: meal.timestamp)
@@ -241,9 +231,7 @@ struct TimelineView: View {
                 return nil
             } else if let windowId = meal.windowId {
                 // Meal has window ID but window not found
-                if hour >= 15 && hour <= 17 {
-                    DebugLogger.shared.warning("Meal \(meal.name) has window ID \(windowId) but window NOT FOUND in viewModel.mealWindows")
-                }
+                DebugLogger.shared.warning("Meal \(meal.name) has window ID \(windowId) but window NOT FOUND in viewModel.mealWindows")
             }
             
             // Fallback: show meals without windows based on timestamp
@@ -251,9 +239,6 @@ struct TimelineView: View {
                 let minutes = calendar.component(.minute, from: meal.timestamp)
                 let offset = CGFloat(minutes) / 60.0 // 0.0 to 1.0 representing position in hour
                 
-                if hour >= 15 && hour <= 17 {
-                    DebugLogger.shared.dataProvider("Showing meal \(meal.name) as standalone at timestamp \(meal.timestamp)")
-                }
                 
                 return (meal: meal, offset: offset)
             }
