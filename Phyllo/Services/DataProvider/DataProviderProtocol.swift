@@ -113,6 +113,10 @@ extension LoggedMeal {
             data["windowId"] = windowId.uuidString
         }
         
+        if let imageData = imageData {
+            data["imageData"] = imageData
+        }
+        
         return data
     }
     
@@ -147,7 +151,17 @@ extension LoggedMeal {
             meal.windowId = windowId
         }
         
-        // TODO: Parse micronutrients from data["micronutrients"]
+        // Parse micronutrients
+        if let micronutrients = data["micronutrients"] as? [String: Double] {
+            meal.micronutrients = micronutrients
+        }
+        
+        // Parse image data
+        if let imageData = data["imageData"] as? Data {
+            meal.imageData = imageData
+        }
+        
+        // TODO: Parse ingredients from data["ingredients"]
         
         return meal
     }

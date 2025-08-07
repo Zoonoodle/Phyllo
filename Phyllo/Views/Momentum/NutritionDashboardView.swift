@@ -1592,11 +1592,20 @@ struct NutritionDashboardView: View {
         return displayNutrients.compactMap { nutrientPair in
             let (displayName, color) = nutrientPair
             
-            // Find the matching nutrient in our data
+            // Find the matching nutrient in our data with more flexible matching
             let matchingKey = nutrientTotals.keys.first { key in
-                key.contains(displayName) || 
-                (displayName == "Vitamin D" && key == "Vitamin D") ||
-                (displayName == "B12" && key.contains("B12"))
+                let normalizedKey = key.lowercased().replacingOccurrences(of: " ", with: "")
+                let normalizedDisplay = displayName.lowercased().replacingOccurrences(of: " ", with: "")
+                
+                // Check various matching patterns
+                return normalizedKey.contains(normalizedDisplay) ||
+                       normalizedDisplay.contains(normalizedKey) ||
+                       (displayName == "Vitamin D" && (key == "Vitamin D" || key == "Vit D" || key.lowercased().contains("vitamin d"))) ||
+                       (displayName == "B12" && (key.contains("B12") || key.contains("B-12") || key.lowercased().contains("vitamin b12"))) ||
+                       (displayName == "Iron" && (key == "Iron" || key.lowercased() == "fe")) ||
+                       (displayName == "Calcium" && (key == "Calcium" || key.lowercased() == "ca")) ||
+                       (displayName == "Zinc" && (key == "Zinc" || key.lowercased() == "zn")) ||
+                       (displayName == "Folate" && (key == "Folate" || key.contains("Folic") || key.contains("B9")))
             }
             
             guard let key = matchingKey,

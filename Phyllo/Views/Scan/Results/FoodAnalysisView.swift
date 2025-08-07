@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 enum FoodAnalysisTab: String, CaseIterable {
     case nutrition = "Nutrition"
@@ -154,13 +155,25 @@ struct FoodAnalysisView: View {
             .fill(Color.phylloElevated)
             .frame(height: 200)
             .overlay(
-                VStack {
-                    Image(systemName: "photo.fill")
-                        .font(.system(size: 60))
-                        .foregroundColor(.white.opacity(0.2))
-                    Text("Food image preview")
-                        .font(.caption)
-                        .foregroundColor(.white.opacity(0.3))
+                Group {
+                    if let imageData = meal.imageData,
+                       let uiImage = UIImage(data: imageData) {
+                        Image(uiImage: uiImage)
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .frame(height: 200)
+                            .clipped()
+                            .cornerRadius(20)
+                    } else {
+                        VStack {
+                            Image(systemName: "photo.fill")
+                                .font(.system(size: 60))
+                                .foregroundColor(.white.opacity(0.2))
+                            Text("Food image preview")
+                                .font(.caption)
+                                .foregroundColor(.white.opacity(0.3))
+                        }
+                    }
                 }
             )
             .overlay(

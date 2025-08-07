@@ -70,6 +70,9 @@ struct LoggedMeal: Identifiable {
     // Ingredients that make up this meal
     var ingredients: [MealIngredient] = []
     
+    // Image data for the meal
+    var imageData: Data? = nil
+    
     // Computed properties
     var emoji: String {
         // Simple emoji selection based on meal name

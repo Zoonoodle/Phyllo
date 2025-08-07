@@ -173,6 +173,10 @@ class FirebaseDataProvider: DataProvider {
         }
         meal.micronutrients = micronutrients
         
+        Task { @MainActor in
+            DebugLogger.shared.dataProvider("Adding micronutrients to meal: \(micronutrients)")
+        }
+        
         // Add ingredients
         meal.ingredients = result.ingredients.map { ingredient in
             MealIngredient(

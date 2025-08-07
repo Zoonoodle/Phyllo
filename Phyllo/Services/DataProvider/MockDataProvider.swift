@@ -83,13 +83,32 @@ class MockDataProvider: DataProvider {
             
             // Add ingredients
             meal.ingredients = result.ingredients.map { ingredient in
-                MealIngredient(
+                // Extract numeric quantity from amount string (e.g., "2.5" from "2.5 cups")
+                let quantity: Double = {
+                    let scanner = Scanner(string: ingredient.amount)
+                    var value: Double = 0
+                    if scanner.scanDouble(&value) {
+                        return value
+                    }
+                    // If amount is just the number without unit, try parsing directly
+                    return Double(ingredient.amount) ?? 1.0
+                }()
+                
+                // Match food group case-insensitively
+                let foodGroup = FoodGroup.allCases.first { 
+                    $0.rawValue.lowercased() == ingredient.foodGroup.lowercased() 
+                } ?? .other
+                
+                return MealIngredient(
                     name: ingredient.name,
-                    quantity: Double(ingredient.amount) ?? 1.0,
+                    quantity: quantity,
                     unit: ingredient.unit,
-                    foodGroup: FoodGroup(rawValue: ingredient.foodGroup) ?? .other
+                    foodGroup: foodGroup
                 )
             }
+            
+            // Add image data from analyzing meal
+            meal.imageData = analyzingMeal.imageData
             
             // Complete the analyzing meal
             mockManager.completeAnalyzingMeal(analyzingMeal, with: meal)
