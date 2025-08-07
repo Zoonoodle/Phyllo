@@ -276,17 +276,41 @@ struct FoodAnalysisView: View {
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundColor(.white)
             
-            VStack(spacing: 12) {
-                NutritionRow(label: "Dietary Fiber", value: "8g", color: .green)
-                NutritionRow(label: "Sugars", value: "3g", color: .pink)
-                NutritionRow(label: "Sodium", value: "320mg", color: .cyan)
-                NutritionRow(label: "Cholesterol", value: "85mg", color: .orange)
+            if meal.micronutrients.isEmpty {
+                // Show default micronutrients when none are available
+                VStack(spacing: 12) {
+                    NutritionRow(label: "Dietary Fiber", value: "8g", color: .green)
+                    NutritionRow(label: "Sugars", value: "3g", color: .pink)
+                    NutritionRow(label: "Sodium", value: "320mg", color: .cyan)
+                    NutritionRow(label: "Cholesterol", value: "85mg", color: .orange)
+                }
+                .padding(16)
+                .background(
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(Color.phylloElevated)
+                )
+            } else {
+                // Show actual micronutrients from the meal
+                ScrollView {
+                    VStack(spacing: 12) {
+                        ForEach(Array(meal.micronutrients.sorted(by: { $0.key < $1.key })), id: \.key) { nutrient, amount in
+                            MicronutrientDetailRow(
+                                name: nutrient,
+                                amount: amount,
+                                unit: getMicronutrientUnit(for: nutrient),
+                                dailyTarget: getMicronutrientDailyTarget(for: nutrient),
+                                color: getMicronutrientColor(for: nutrient)
+                            )
+                        }
+                    }
+                    .padding(16)
+                    .background(
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(Color.phylloElevated)
+                    )
+                }
+                .frame(maxHeight: 400)
             }
-            .padding(16)
-            .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(Color.phylloElevated)
-            )
         }
     }
     
@@ -528,6 +552,92 @@ struct FoodAnalysisView: View {
         case .sleepOptimization: return "Sleep Optimization"
         }
     }
+    
+    private func getMicronutrientUnit(for nutrient: String) -> String {
+        // Common micronutrient units
+        let units: [String: String] = [
+            "Vitamin A": "μg",
+            "Vitamin C": "mg",
+            "Vitamin D": "μg",
+            "Vitamin E": "mg",
+            "Vitamin K": "μg",
+            "Thiamin (B1)": "mg",
+            "Riboflavin (B2)": "mg",
+            "Niacin (B3)": "mg",
+            "Vitamin B6": "mg",
+            "Folate": "μg",
+            "Vitamin B12": "μg",
+            "Calcium": "mg",
+            "Iron": "mg",
+            "Magnesium": "mg",
+            "Phosphorus": "mg",
+            "Potassium": "mg",
+            "Sodium": "mg",
+            "Zinc": "mg",
+            "Copper": "mg",
+            "Manganese": "mg",
+            "Selenium": "μg",
+            "Dietary Fiber": "g",
+            "Sugars": "g",
+            "Cholesterol": "mg"
+        ]
+        return units[nutrient] ?? "mg"
+    }
+    
+    private func getMicronutrientDailyTarget(for nutrient: String) -> Double {
+        // Standard daily targets (RDA)
+        let targets: [String: Double] = [
+            "Vitamin A": 900,
+            "Vitamin C": 90,
+            "Vitamin D": 20,
+            "Vitamin E": 15,
+            "Vitamin K": 120,
+            "Thiamin (B1)": 1.2,
+            "Riboflavin (B2)": 1.3,
+            "Niacin (B3)": 16,
+            "Vitamin B6": 1.7,
+            "Folate": 400,
+            "Vitamin B12": 2.4,
+            "Calcium": 1000,
+            "Iron": 8,
+            "Magnesium": 420,
+            "Phosphorus": 700,
+            "Potassium": 3400,
+            "Sodium": 2300,
+            "Zinc": 11,
+            "Copper": 0.9,
+            "Manganese": 2.3,
+            "Selenium": 55,
+            "Dietary Fiber": 28,
+            "Sugars": 50,
+            "Cholesterol": 300
+        ]
+        return targets[nutrient] ?? 100
+    }
+    
+    private func getMicronutrientColor(for nutrient: String) -> Color {
+        // Color coding for different types of nutrients
+        if nutrient.contains("Vitamin") {
+            switch nutrient {
+            case let n where n.contains("A"): return .orange
+            case let n where n.contains("B"): return .blue
+            case let n where n.contains("C"): return .yellow
+            case let n where n.contains("D"): return .purple
+            case let n where n.contains("E"): return .green
+            case let n where n.contains("K"): return .teal
+            default: return .cyan
+            }
+        } else {
+            switch nutrient {
+            case "Calcium", "Iron", "Magnesium", "Zinc": return .pink
+            case "Dietary Fiber": return .green
+            case "Sugars": return .red
+            case "Cholesterol": return .orange
+            case "Sodium", "Potassium": return .cyan
+            default: return .gray
+            }
+        }
+    }
 }
 
 struct DailyMacroRow: View {
@@ -695,9 +805,21 @@ extension FoodAnalysisView {
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundColor(.white)
             
-            VStack(spacing: 12) {
-                ForEach(meal.ingredients) { ingredient in
-                    FoodIngredientRow(ingredient: ingredient)
+            if meal.ingredients.isEmpty {
+                Text("No ingredient details available")
+                    .font(.system(size: 15))
+                    .foregroundColor(.white.opacity(0.5))
+                    .padding(.vertical, 40)
+                    .frame(maxWidth: .infinity)
+                    .background(
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(Color.phylloElevated)
+                    )
+            } else {
+                VStack(spacing: 12) {
+                    ForEach(meal.ingredients) { ingredient in
+                        FoodIngredientRow(ingredient: ingredient)
+                    }
                 }
             }
         }
@@ -705,14 +827,16 @@ extension FoodAnalysisView {
     
     private var ingredientNutritionBreakdown: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Nutrition by Ingredient")
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundColor(.white)
-            
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 12) {
-                    ForEach(meal.ingredients.filter { $0.calories != nil }) { ingredient in
-                        IngredientNutritionCard(ingredient: ingredient)
+            if !meal.ingredients.filter({ $0.calories != nil }).isEmpty {
+                Text("Nutrition by Ingredient")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(.white)
+                
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 12) {
+                        ForEach(meal.ingredients.filter { $0.calories != nil }) { ingredient in
+                            IngredientNutritionCard(ingredient: ingredient)
+                        }
                     }
                 }
             }
@@ -881,30 +1005,139 @@ struct InsightRow: View {
     }
 }
 
+struct MicronutrientDetailRow: View {
+    let name: String
+    let amount: Double
+    let unit: String
+    let dailyTarget: Double
+    let color: Color
+    
+    private var percentage: Double {
+        amount / dailyTarget
+    }
+    
+    private var percentageText: String {
+        "\(Int(percentage * 100))%"
+    }
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Circle()
+                    .fill(color.opacity(0.3))
+                    .frame(width: 8, height: 8)
+                
+                Text(name)
+                    .font(.system(size: 15))
+                    .foregroundColor(.white.opacity(0.7))
+                
+                Spacer()
+                
+                Text(String(format: "%.1f%@", amount, unit))
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundColor(.white)
+            }
+            
+            // Progress bar
+            GeometryReader { geometry in
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(Color.white.opacity(0.1))
+                        .frame(height: 4)
+                    
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(color)
+                        .frame(width: geometry.size.width * min(percentage, 1), height: 4)
+                }
+            }
+            .frame(height: 4)
+            
+            HStack {
+                Text(percentageText)
+                    .font(.system(size: 12))
+                    .foregroundColor(color)
+                
+                Spacer()
+                
+                Text("of \(Int(dailyTarget))\(unit) daily")
+                    .font(.system(size: 12))
+                    .foregroundColor(.white.opacity(0.5))
+            }
+        }
+    }
+}
+
 #Preview("From Timeline") {
-    FoodAnalysisView(
-        meal: LoggedMeal(
-            name: "Grilled Chicken Salad",
-            calories: 420,
-            protein: 35,
-            carbs: 12,
-            fat: 28,
-            timestamp: Date()
-        ),
+    var meal = LoggedMeal(
+        name: "Grilled Chicken Salad",
+        calories: 420,
+        protein: 35,
+        carbs: 12,
+        fat: 28,
+        timestamp: Date()
+    )
+    
+    // Add ingredients
+    meal.ingredients = [
+        MealIngredient(name: "Grilled Chicken", quantity: 4, unit: "oz", foodGroup: .protein, calories: 180, protein: 35.0, carbs: 0.0, fat: 4.0),
+        MealIngredient(name: "Mixed Greens", quantity: 2, unit: "cups", foodGroup: .vegetable, calories: 20, protein: 2.0, carbs: 4.0, fat: 0.0),
+        MealIngredient(name: "Cherry Tomatoes", quantity: 0.5, unit: "cup", foodGroup: .vegetable, calories: 15, protein: 1.0, carbs: 3.0, fat: 0.0),
+        MealIngredient(name: "Ranch Dressing", quantity: 2, unit: "tbsp", foodGroup: .sauce, calories: 140, protein: 0.0, carbs: 2.0, fat: 15.0)
+    ]
+    
+    // Add micronutrients
+    meal.micronutrients = [
+        "Vitamin C": 45.2,
+        "Vitamin A": 850,
+        "Iron": 3.5,
+        "Calcium": 120,
+        "Dietary Fiber": 8,
+        "Potassium": 980,
+        "Vitamin B12": 1.2,
+        "Folate": 125,
+        "Magnesium": 85
+    ]
+    
+    return FoodAnalysisView(
+        meal: meal,
         isFromScan: false
     )
 }
 
 #Preview("From Scan") {
-    FoodAnalysisView(
-        meal: LoggedMeal(
-            name: "Grilled Chicken Salad",
-            calories: 420,
-            protein: 35,
-            carbs: 12,
-            fat: 28,
-            timestamp: Date()
-        ),
+    var meal = LoggedMeal(
+        name: "Pasta with Sausage Sauce",
+        calories: 750,
+        protein: 35,
+        carbs: 85,
+        fat: 30,
+        timestamp: Date()
+    )
+    
+    // Add ingredients
+    meal.ingredients = [
+        MealIngredient(name: "Pasta", quantity: 2, unit: "cups", foodGroup: .grain, calories: 400, protein: 14.0, carbs: 80.0, fat: 2.0),
+        MealIngredient(name: "Italian Sausage", quantity: 4, unit: "oz", foodGroup: .protein, calories: 250, protein: 18.0, carbs: 2.0, fat: 20.0),
+        MealIngredient(name: "Tomato Sauce", quantity: 0.5, unit: "cup", foodGroup: .sauce, calories: 60, protein: 2.0, carbs: 8.0, fat: 2.0),
+        MealIngredient(name: "Parmesan Cheese", quantity: 2, unit: "tbsp", foodGroup: .dairy, calories: 40, protein: 3.0, carbs: 1.0, fat: 3.0)
+    ]
+    
+    // Add micronutrients
+    meal.micronutrients = [
+        "Dietary Fiber": 8,
+        "Sugars": 3,
+        "Sodium": 320,
+        "Cholesterol": 85,
+        "Vitamin C": 12,
+        "Iron": 4.2,
+        "Calcium": 180,
+        "Potassium": 650,
+        "Vitamin B6": 0.8,
+        "Zinc": 3.5
+    ]
+    
+    return FoodAnalysisView(
+        meal: meal,
         isFromScan: true
     )
 }
