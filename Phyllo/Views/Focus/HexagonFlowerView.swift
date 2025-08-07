@@ -15,6 +15,9 @@ struct HexagonFlowerView: View {
     var userGoal: NutritionGoal? = nil // For showing goal-relevant badges
     var nutritionContexts: [NutritionContext] = [] // Context for smart evaluation
     
+    @State private var selectedPetal: HealthImpactPetal? = nil
+    @State private var showPetalDetail = false
+    
     // Health impact petals with aggregated scores
     private var petalScores: [(petal: HealthImpactPetal, score: Double, isPrimaryForGoal: Bool)] {
         var scores: [HealthImpactPetal: (totalScore: Double, count: Int)] = [:]
@@ -138,28 +141,21 @@ struct HexagonFlowerView: View {
                     score: petal.score,
                     isPrimaryForGoal: petal.isPrimaryForGoal,
                     size: size,
-                    showPurposeText: showPurposeText
+                    showPurposeText: false // Don't show text to reduce clutter
                 )
-                .zIndex(0)
-            }
-            
-            // Petal labels with arrows
-            if showLabels {
-                ForEach(Array(petalLabels.enumerated()), id: \.offset) { index, label in
-                    PetalLabel(
-                        text: label.name,
-                        rotation: label.rotation,
-                        offset: size * 0.55,  // Scale with size
-                        size: size
-                    )
-                    .zIndex(2)
+                .onTapGesture {
+                    selectedPetal = petalScores[index].petal
+                    showPetalDetail = true
                 }
+                .zIndex(selectedPetal == petalScores[index].petal ? 2 : 0)
+                .scaleEffect(selectedPetal == petalScores[index].petal ? 1.1 : 1.0)
+                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: selectedPetal)
             }
             
-            // Center circle with overall score (enlarged)
+            // Center circle with overall score
             Circle()
                 .fill(Color.phylloBackground)
-                .frame(width: size * 0.55, height: size * 0.55) // Scale with size
+                .frame(width: size * 0.45, height: size * 0.45) // Slightly smaller to give more room to petals
                 .overlay(
                     Circle()
                         .strokeBorder(Color.white.opacity(0.1), lineWidth: 1)
@@ -167,17 +163,43 @@ struct HexagonFlowerView: View {
                 .overlay(
                     VStack(spacing: 2) {
                         Text("\(overallScore)%")
-                            .font(.system(size: size * 0.15, weight: .bold))
+                            .font(.system(size: size * 0.13, weight: .bold))
                             .foregroundColor(.white)
                         
                         Text("Micros")
-                            .font(.system(size: size * 0.08))
+                            .font(.system(size: size * 0.07))
                             .foregroundColor(.white.opacity(0.5))
                     }
                 )
                 .zIndex(1)
         }
         .frame(width: size, height: size)
+        .sheet(isPresented: $showPetalDetail) {
+            if let petal = selectedPetal {
+                PetalDetailView(
+                    petal: petal,
+                    micronutrients: getDetailedNutrientsForPetal(petal)
+                )
+                .presentationDetents([.medium])
+                .presentationBackground(Color.phylloBackground)
+            }
+        }
+    }
+    
+    // Get the specific micronutrients that contribute to a health impact petal
+    private func getDetailedNutrientsForPetal(_ petal: HealthImpactPetal) -> [(name: String, amount: Double, percentage: Double)] {
+        var nutrients: [(name: String, amount: Double, percentage: Double)] = []
+        
+        for (name, percentage) in micronutrients {
+            if let nutrientInfo = MicronutrientData.getNutrient(byName: name) {
+                if nutrientInfo.healthImpacts.contains(petal) {
+                    let amount = percentage * nutrientInfo.averageRDA
+                    nutrients.append((name: name, amount: amount, percentage: percentage))
+                }
+            }
+        }
+        
+        return nutrients.sorted { $0.percentage > $1.percentage }
     }
 }
 
@@ -259,10 +281,125 @@ struct HealthImpactPetalView: View {
                 }
             )
             .frame(width: size * 0.33, height: size * 0.4)
-            .scaleEffect(0.9) // Larger scale
-            .offset(x: size * 0.3) // Scale offset with size
+            .scaleEffect(0.85) // Slightly smaller to allow more spacing
+            .offset(x: size * 0.35) // Increased offset to space out petals more
             .rotationEffect(.degrees(rotation))
             .animation(.spring(response: 0.6, dampingFraction: 0.8), value: rotation)
+    }
+}
+
+struct PetalDetailView: View {
+    let petal: HealthImpactPetal
+    let micronutrients: [(name: String, amount: Double, percentage: Double)]
+    @Environment(\.dismiss) private var dismiss
+    
+    var body: some View {
+        VStack(spacing: 24) {
+            // Header
+            HStack {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 12) {
+                        Image(systemName: petal.icon)
+                            .font(.system(size: 24, weight: .medium))
+                            .foregroundColor(petal.color)
+                        
+                        Text(petal.rawValue)
+                            .font(.system(size: 24, weight: .semibold))
+                            .foregroundColor(.white)
+                    }
+                    
+                    Text("Contributing Micronutrients")
+                        .font(.system(size: 14))
+                        .foregroundColor(.white.opacity(0.6))
+                }
+                
+                Spacer()
+                
+                Button(action: { dismiss() }) {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 24))
+                        .foregroundColor(.white.opacity(0.3))
+                }
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 20)
+            
+            // Micronutrients list
+            ScrollView {
+                VStack(spacing: 16) {
+                    if micronutrients.isEmpty {
+                        Text("No micronutrients tracked for this health impact")
+                            .font(.system(size: 15))
+                            .foregroundColor(.white.opacity(0.5))
+                            .padding(.vertical, 40)
+                    } else {
+                        ForEach(micronutrients, id: \.name) { nutrient in
+                            PetalMicronutrientRow(
+                                name: nutrient.name,
+                                amount: nutrient.amount,
+                                percentage: nutrient.percentage,
+                                color: petal.color
+                            )
+                        }
+                    }
+                }
+                .padding(.horizontal, 20)
+            }
+        }
+        .background(Color.phylloBackground)
+    }
+}
+
+struct PetalMicronutrientRow: View {
+    let name: String
+    let amount: Double
+    let percentage: Double
+    let color: Color
+    
+    private var unit: String {
+        if let info = MicronutrientData.getNutrient(byName: name) {
+            return info.unit
+        }
+        return "mg"
+    }
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text(name)
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(.white)
+                
+                Spacer()
+                
+                Text(String(format: "%.1f%@", amount, unit))
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundColor(color)
+            }
+            
+            // Progress bar
+            GeometryReader { geometry in
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(Color.white.opacity(0.1))
+                        .frame(height: 6)
+                    
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(color)
+                        .frame(width: geometry.size.width * min(percentage, 1), height: 6)
+                }
+            }
+            .frame(height: 6)
+            
+            Text("\(Int(percentage * 100))% of daily target")
+                .font(.system(size: 13))
+                .foregroundColor(.white.opacity(0.5))
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.phylloElevated)
+        )
     }
 }
 

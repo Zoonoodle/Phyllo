@@ -48,7 +48,7 @@ struct MicroNutritionPage: View {
         return results.sorted { $0.name < $1.name }
     }
     
-    // Get health impact petal scores
+    // Get health impact petal scores (needed for HexagonFlowerView)
     private var petalScores: [(petal: HealthImpactPetal, score: Double)] {
         var scores: [HealthImpactPetal: (totalScore: Double, count: Int)] = [:]
         var antiNutrientPenalties: [HealthImpactPetal: Double] = [:]
@@ -92,6 +92,36 @@ struct MicroNutritionPage: View {
         return petalResults.sorted { $0.petal.displayOrder < $1.petal.displayOrder }
     }
     
+    // Get top micronutrients with their petal associations
+    private var topMicronutrients: [(name: String, consumed: Double, percentage: Double, unit: String, petalColor: Color)] {
+        var nutrients: [(name: String, consumed: Double, percentage: Double, unit: String, petalColor: Color)] = []
+        
+        for (name, percentage) in micronutrientData {
+            if let nutrientInfo = MicronutrientData.getNutrient(byName: name) {
+                // Skip anti-nutrients in the bar display
+                if nutrientInfo.isAntiNutrient {
+                    continue
+                }
+                
+                let consumed = percentage * nutrientInfo.averageRDA
+                
+                // Get the primary petal color for this nutrient
+                let petalColor = nutrientInfo.healthImpacts.first?.color ?? .gray
+                
+                nutrients.append((
+                    name: name,
+                    consumed: consumed,
+                    percentage: percentage,
+                    unit: nutrientInfo.unit,
+                    petalColor: petalColor
+                ))
+            }
+        }
+        
+        // Sort by percentage and take top 6-8 nutrients
+        return Array(nutrients.sorted { $0.percentage > $1.percentage }.prefix(8))
+    }
+    
     var body: some View {
         VStack(spacing: 24) {
             // Title
@@ -113,17 +143,21 @@ struct MicroNutritionPage: View {
             }
             .frame(height: 180) // Match the height of calorie ring
             
-            // Health impact petal bars
-            HStack(spacing: 12) {
-                ForEach(petalScores, id: \.petal) { petalScore in
-                    HealthImpactBar(
-                        petal: petalScore.petal,
-                        score: petalScore.score,
-                        isPrimaryForGoal: isGoalRelevantPetal(petalScore.petal, for: viewModel.userProfile.primaryGoal)
-                    )
+            // Micronutrient bars - show top micronutrients from meals
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 12) {
+                    ForEach(topMicronutrients, id: \.name) { nutrient in
+                        MicronutrientBarWithPetal(
+                            name: nutrient.name,
+                            consumed: nutrient.consumed,
+                            percentage: nutrient.percentage,
+                            unit: nutrient.unit,
+                            petalColor: nutrient.petalColor
+                        )
+                    }
                 }
+                .padding(.horizontal, 16)
             }
-            .padding(.horizontal, 16)
         }
         .padding(.top, 40) // Match macro page top padding
         .padding(.bottom, 34) // Match macro page bottom padding
@@ -235,41 +269,30 @@ struct MicronutrientBar: View {
     }
 }
 
-struct HealthImpactBar: View {
-    let petal: HealthImpactPetal
-    let score: Double
-    let isPrimaryForGoal: Bool
+struct MicronutrientBarWithPetal: View {
+    let name: String
+    let consumed: Double
+    let percentage: Double
+    let unit: String
+    let petalColor: Color
     
-    private var color: Color {
-        petal.color
-    }
-    
-    private var displayPercentage: Int {
-        Int(score * 100)
+    private var progressColor: Color {
+        switch percentage {
+        case 0..<0.5: return .red
+        case 0.5..<0.7: return .orange
+        case 0.7..<0.9: return .yellow
+        default: return Color.phylloAccent
+        }
     }
     
     var body: some View {
         VStack(spacing: 8) {
-            // Health impact icon and name at top
-            VStack(spacing: 4) {
-                Image(systemName: petal.icon)
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(color)
-                
-                Text(petal.rawValue)
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(.white.opacity(0.7))
-                    .lineLimit(2)
-                    .multilineTextAlignment(.center)
-                    .minimumScaleFactor(0.8)
-                
-                // Goal relevance indicator
-                if isPrimaryForGoal {
-                    Image(systemName: "target")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundColor(.phylloAccent)
-                }
-            }
+            // Micronutrient name at top
+            Text(name)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundColor(.white.opacity(0.8))
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
             
             // Progress bar in middle
             GeometryReader { geometry in
@@ -281,19 +304,25 @@ struct HealthImpactBar: View {
                     
                     // Progress
                     RoundedRectangle(cornerRadius: 3)
-                        .fill(color)
-                        .frame(width: geometry.size.width * CGFloat(min(score, 1)), height: 5)
-                        .animation(.spring(response: 0.6, dampingFraction: 0.8), value: score)
+                        .fill(progressColor)
+                        .frame(width: geometry.size.width * CGFloat(min(percentage, 1)), height: 5)
+                        .animation(.spring(response: 0.6, dampingFraction: 0.8), value: percentage)
                 }
             }
             .frame(height: 5)
             
-            // Score percentage on bottom
-            Text("\(displayPercentage)%")
-                .font(.system(size: 14, weight: .medium))
-                .foregroundColor(color.opacity(0.8))
+            // Amount and percentage on bottom
+            VStack(spacing: 2) {
+                Text(String(format: "%.1f%@", consumed, unit))
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(petalColor)
+                
+                Text("\(Int(percentage * 100))%")
+                    .font(.system(size: 11))
+                    .foregroundColor(.white.opacity(0.5))
+            }
         }
-        .frame(maxWidth: .infinity)
+        .frame(width: 65)
     }
 }
 
