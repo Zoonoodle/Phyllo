@@ -10,89 +10,75 @@ import SwiftUI
 
 struct MicronutrientStatusView: View {
     let status: InsightsEngine.MicronutrientStatus
-    @State private var selectedNutrient: InsightsEngine.MicronutrientStatus.NutrientStatus?
-    @State private var showAllNutrients = false
+    @State private var expandedNutrients: Set<String> = []
+    
+    // Convert to micronutrient data format for HexagonFlowerView
+    private var micronutrientData: [(name: String, percentage: Double)] {
+        status.nutrients.map { nutrientStatus in
+            (name: nutrientStatus.nutrient.name, percentage: nutrientStatus.percentageOfRDA / 100)
+        }
+    }
+    
+    // Get overall score for center display
+    private var overallScore: Int {
+        let average = status.nutrients.reduce(0) { $0 + $1.percentageOfRDA } / Double(status.nutrients.count)
+        return Int(average)
+    }
+    
+    // Get top nutrients for display below hexagon
+    private var displayNutrients: [InsightsEngine.MicronutrientStatus.NutrientStatus] {
+        // Prioritize deficient nutrients, then show others
+        let deficient = status.nutrients.filter { $0.status == .deficient || $0.status == .low }
+        let adequate = status.nutrients.filter { $0.status == .adequate || $0.status == .high }
+        
+        let combined = deficient + adequate
+        return Array(combined.prefix(6))
+    }
     
     var body: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 24) {
             // Header
             HStack {
-                Label("Micronutrient Status", systemImage: "leaf.fill")
-                    .font(.system(size: 18, weight: .semibold))
+                Text("Nutrient Status")
+                    .font(.system(size: 20, weight: .semibold))
                     .foregroundColor(.white)
                 
                 Spacer()
-                
-                Button(action: { showAllNutrients.toggle() }) {
-                    Text(showAllNutrients ? "Show Less" : "View All")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(.phylloAccent)
-                }
             }
+            .padding(.horizontal, 20)
             
-            // Top Deficiencies Alert
-            if !status.topDeficiencies.isEmpty {
-                DeficiencyAlertCard(deficiencies: status.topDeficiencies)
-            }
-            
-            // Summary Grid
-            if !showAllNutrients {
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                    // Show top deficiencies and top supplied
-                    ForEach(status.topDeficiencies.prefix(2), id: \.nutrient.id) { nutrientStatus in
-                        MicronutrientCard(
-                            status: nutrientStatus,
-                            isSelected: selectedNutrient?.nutrient.id == nutrientStatus.nutrient.id,
-                            onTap: {
-                                withAnimation(.spring(response: 0.3)) {
-                                    selectedNutrient = selectedNutrient?.nutrient.id == nutrientStatus.nutrient.id ? nil : nutrientStatus
-                                }
-                            }
-                        )
-                    }
-                    
-                    ForEach(status.wellSupplied.prefix(2), id: \.nutrient.id) { nutrientStatus in
-                        MicronutrientCard(
-                            status: nutrientStatus,
-                            isSelected: selectedNutrient?.nutrient.id == nutrientStatus.nutrient.id,
-                            onTap: {
-                                withAnimation(.spring(response: 0.3)) {
-                                    selectedNutrient = selectedNutrient?.nutrient.id == nutrientStatus.nutrient.id ? nil : nutrientStatus
-                                }
-                            }
-                        )
-                    }
-                }
-            } else {
-                // Show all nutrients
-                AllNutrientsGrid(
-                    nutrients: status.nutrients,
-                    selectedNutrient: $selectedNutrient
-                )
-            }
-            
-            // Selected Nutrient Detail
-            if let selected = selectedNutrient {
-                NutrientDetailCard(nutrientStatus: selected)
-                    .transition(.asymmetric(
-                        insertion: .scale.combined(with: .opacity),
-                        removal: .scale.combined(with: .opacity)
-                    ))
-            }
-        }
-        .padding(20)
-        .background(
-            LinearGradient(
-                colors: [Color.white.opacity(0.06), Color.white.opacity(0.02)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
+            // Hexagon Flower Visualization
+            HexagonFlowerView(
+                micronutrients: micronutrientData,
+                size: 200,
+                showLabels: false,
+                showPurposeText: false
             )
-        )
+            .frame(height: 200)
+            
+            // Nutrient Cards Grid
+            VStack(spacing: 16) {
+                ForEach(Array(displayNutrients.enumerated()), id: \.element.nutrient.id) { index, nutrientStatus in
+                    MicronutrientRow(
+                        nutrientStatus: nutrientStatus,
+                        isExpanded: expandedNutrients.contains(nutrientStatus.nutrient.id.uuidString),
+                        onTap: {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                if expandedNutrients.contains(nutrientStatus.nutrient.id.uuidString) {
+                                    expandedNutrients.remove(nutrientStatus.nutrient.id.uuidString)
+                                } else {
+                                    expandedNutrients.insert(nutrientStatus.nutrient.id.uuidString)
+                                }
+                            }
+                        }
+                    )
+                }
+            }
+            .padding(.horizontal, 20)
+        }
+        .padding(.vertical, 20)
+        .background(Color.phylloBackground)
         .cornerRadius(20)
-        .overlay(
-            RoundedRectangle(cornerRadius: 20)
-                .stroke(Color.white.opacity(0.08), lineWidth: 1)
-        )
     }
 }
 
@@ -129,74 +115,177 @@ struct DeficiencyAlertCard: View {
     }
 }
 
-// MARK: - Micronutrient Card
+// MARK: - Micronutrient Row
 
-struct MicronutrientCard: View {
-    let status: InsightsEngine.MicronutrientStatus.NutrientStatus
-    let isSelected: Bool
+struct MicronutrientRow: View {
+    let nutrientStatus: InsightsEngine.MicronutrientStatus.NutrientStatus
+    let isExpanded: Bool
     let onTap: () -> Void
     
-    var body: some View {
-        VStack(spacing: 8) {
-            // Icon and percentage
-            ZStack {
-                Circle()
-                    .stroke(Color.white.opacity(0.1), lineWidth: 2)
-                    .frame(width: 60, height: 60)
-                
-                Circle()
-                    .trim(from: 0, to: min(1, status.percentageOfRDA / 100))
-                    .stroke(status.status.color, lineWidth: 4)
-                    .frame(width: 60, height: 60)
-                    .rotationEffect(.degrees(-90))
-                
-                Text("\(Int(status.percentageOfRDA))%")
-                    .font(.system(size: 16, weight: .bold, design: .rounded))
-                    .foregroundColor(status.status.color)
-            }
-            
-            // Nutrient name
-            Text(status.nutrient.name)
-                .font(.system(size: 14, weight: .medium))
-                .foregroundColor(.white)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
-            
-            // Status indicator
-            HStack(spacing: 4) {
-                Image(systemName: status.status.icon)
-                    .font(.system(size: 10))
-                Text(statusLabel(for: status.status))
-                    .font(.system(size: 10))
-            }
-            .foregroundColor(status.status.color)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(Color.white.opacity(0.05))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16)
-                        .stroke(
-                            isSelected ? status.status.color : Color.white.opacity(0.08),
-                            lineWidth: isSelected ? 2 : 1
-                        )
-                )
-        )
-        .scaleEffect(isSelected ? 1.02 : 1.0)
-        .onTapGesture(perform: onTap)
+    // Get icon emoji based on nutrient name
+    private var nutrientIcon: String {
+        let icons: [String: String] = [
+            "Iron": "💧",
+            "Vitamin D": "☀️",
+            "Calcium": "🦴",
+            "B12": "⚡",
+            "Folate": "🍃",
+            "Zinc": "🛡️",
+            "Vitamin C": "🍊",
+            "Magnesium": "💪",
+            "Vitamin A": "👁️",
+            "Omega-3": "🐟",
+            "Potassium": "🍌",
+            "Vitamin E": "✨"
+        ]
+        return icons[nutrientStatus.nutrient.name] ?? "💊"
     }
     
-    private func statusLabel(for status: InsightsEngine.MicronutrientStatus.NutrientStatus.Status) -> String {
-        switch status {
-        case .deficient: return "Deficient"
-        case .low: return "Low"
-        case .adequate: return "Good"
-        case .high: return "High"
+    // Get petal color based on health impact
+    private var petalColor: Color {
+        // Map nutrients to their primary health impact petal colors
+        if let nutrientInfo = MicronutrientData.getNutrient(byName: nutrientStatus.nutrient.name) {
+            return nutrientInfo.healthImpacts.first?.color ?? .gray
         }
+        return .gray
+    }
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            // Main row
+            HStack(spacing: 16) {
+                // Icon
+                Text(nutrientIcon)
+                    .font(.system(size: 24))
+                
+                // Name and percentage
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(nutrientStatus.nutrient.name)
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundColor(.white)
+                    
+                    // Progress bar
+                    GeometryReader { geometry in
+                        ZStack(alignment: .leading) {
+                            RoundedRectangle(cornerRadius: 3)
+                                .fill(Color.white.opacity(0.1))
+                                .frame(height: 6)
+                            
+                            RoundedRectangle(cornerRadius: 3)
+                                .fill(nutrientStatus.status.color)
+                                .frame(width: geometry.size.width * min(1, nutrientStatus.percentageOfRDA / 100), height: 6)
+                        }
+                    }
+                    .frame(height: 6)
+                }
+                
+                Spacer()
+                
+                // Percentage and chevron
+                HStack(spacing: 8) {
+                    Text("\(Int(nutrientStatus.percentageOfRDA))%")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(nutrientStatus.status.color)
+                    
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.white.opacity(0.5))
+                        .rotationEffect(.degrees(isExpanded ? 180 : 0))
+                }
+            }
+            .padding(16)
+            .background(
+                Group {
+                    if isExpanded {
+                        UnevenRoundedRectangle(
+                            topLeadingRadius: 16,
+                            bottomLeadingRadius: 0,
+                            bottomTrailingRadius: 0,
+                            topTrailingRadius: 16
+                        )
+                        .fill(Color.white.opacity(0.03))
+                    } else {
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(Color.white.opacity(0.03))
+                    }
+                }
+            )
+            .onTapGesture(perform: onTap)
+            
+            // Expanded detail
+            if isExpanded {
+                VStack(alignment: .leading, spacing: 12) {
+                    // Consumed vs RDA
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Consumed")
+                                .font(.system(size: 12))
+                                .foregroundColor(.white.opacity(0.5))
+                            Text("\(String(format: "%.1f", nutrientStatus.consumed))\(nutrientStatus.nutrient.unit)")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(.white)
+                        }
+                        
+                        Spacer()
+                        
+                        VStack(alignment: .trailing, spacing: 2) {
+                            Text("Daily Goal")
+                                .font(.system(size: 12))
+                                .foregroundColor(.white.opacity(0.5))
+                            Text("\(String(format: "%.1f", nutrientStatus.nutrient.rda))\(nutrientStatus.nutrient.unit)")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(.white.opacity(0.7))
+                        }
+                    }
+                    
+                    // Food sources for deficient nutrients
+                    if nutrientStatus.status == .deficient || nutrientStatus.status == .low {
+                        let foodSources = InsightsEngine.shared.getFoodsRichIn(nutrient: nutrientStatus.nutrient.name)
+                        
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Good sources:")
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundColor(.white.opacity(0.7))
+                            
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 8) {
+                                    ForEach(foodSources, id: \.self) { food in
+                                        Text(food)
+                                            .font(.system(size: 12))
+                                            .foregroundColor(.white)
+                                            .padding(.horizontal, 12)
+                                            .padding(.vertical, 6)
+                                            .background(petalColor.opacity(0.2))
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: 8)
+                                                    .stroke(petalColor.opacity(0.3), lineWidth: 1)
+                                            )
+                                            .cornerRadius(8)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                .padding(16)
+                .background(
+                    UnevenRoundedRectangle(
+                        topLeadingRadius: 0,
+                        bottomLeadingRadius: 16,
+                        bottomTrailingRadius: 16,
+                        topTrailingRadius: 0
+                    )
+                    .fill(Color.white.opacity(0.02))
+                )
+            }
+        }
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+        )
     }
 }
+
 
 // MARK: - All Nutrients Grid
 
