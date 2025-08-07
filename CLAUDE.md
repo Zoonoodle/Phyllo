@@ -18,9 +18,12 @@ Phyllo is a nutrition tracking app built around **meal windows** - smart eating 
 1. **Timeline-Based Schedule View** - Visual meal window management
 2. **Comprehensive Check-In System** - Morning and post-meal tracking
 3. **Smart Nudge System** - Proactive coaching and reminders
-4. **Basic Meal Scanning** - Photo, voice, and barcode modes
-5. **Momentum Analytics** - Progress tracking and insights
+4. **Advanced Meal Analysis** - Photo capture with detailed nutrition breakdown
+5. **Momentum Analytics** - Progress tracking and insights with PhylloScore
 6. **Developer Dashboard** - Mock data management for testing
+7. **Micronutrient Intelligence** - 18+ tracked micronutrients with smart evaluation
+8. **Ingredient Tracking** - Full ingredient breakdown with food group categorization
+9. **Health Impact Petals** - Visual micronutrient health impact system
 
 ---
 
@@ -104,7 +107,12 @@ chore: Update dependencies
   2. Optional voice description
   3. AI analysis with loading state
   4. Clarification questions (if needed)
-  5. Final meal details
+  5. Comprehensive meal analysis with:
+     - Macronutrient breakdown
+     - Ingredient list with food groups
+     - Micronutrient details with progress bars
+     - Window-specific insights
+     - Health impact visualization
 
 ---
 
@@ -166,10 +174,79 @@ enum NudgeType {
 
 Developer dashboard allows:
 - Time simulation (jump to any time of day)
-- Instant meal generation
+- Instant meal generation with ingredients and micronutrients
 - Goal switching
 - Window redistribution testing
 - Check-in completion
+- Micronutrient data generation based on meal type
+
+### **Micronutrient Tracking System**
+
+**Core Features**:
+- 18+ micronutrients tracked with RDA values
+- Window-aware evaluation (e.g., iron for energy windows, magnesium for sleep)
+- Health impact scoring (0-10 scale)
+- Visual petal system showing nutrient impacts on:
+  - Energy levels
+  - Sleep quality
+  - Focus & cognition
+  - Recovery
+  - Immune function
+
+**Implementation**:
+```swift
+struct MicronutrientInfo {
+    let name: String
+    let dailyTarget: Double
+    let unit: String // mg, μg, g
+    let healthImpacts: [HealthCategory: Double] // 0-10 scale
+    let icon: String // SF Symbol
+}
+```
+
+### **Ingredient Tracking**
+
+**Food Group System**:
+- 8 food groups with color coding
+- Ingredient-level nutrition data
+- Visual chips in meal analysis
+- Nutrition breakdown by ingredient
+
+**Implementation**:
+```swift
+struct MealIngredient {
+    let name: String
+    let quantity: Double
+    let unit: String
+    let foodGroup: FoodGroup
+    // Optional nutrition per ingredient
+    var calories: Int?
+    var protein: Double?
+    var carbs: Double?
+    var fat: Double?
+}
+```
+
+### **Meal Analysis View**
+
+**Three-Tab Interface**:
+1. **Nutrition Tab**:
+   - Calorie and macro overview
+   - Scrollable micronutrient list with progress bars
+   - Daily progress tracking
+   - Color-coded by nutrient type
+
+2. **Ingredients Tab**:
+   - Color-coded ingredient chips
+   - Horizontal scroll of nutrition cards
+   - Food group categorization
+   - Portion sizes and units
+
+3. **Insights Tab**:
+   - Window-specific micronutrient focus
+   - AI-generated meal insights
+   - Health impact visualization
+   - Contextual recommendations
 
 ---
 
@@ -209,9 +286,13 @@ Developer dashboard allows:
 
 1. **UserGoals**: Primary/secondary goals, activity level, fasting protocols
 2. **MealWindow**: Time periods with nutrition targets and purposes
-3. **LoggedMeal**: Simple meal with macros and timestamp
+3. **LoggedMeal**: Comprehensive meal with macros, micronutrients, ingredients, and image data
+   - Includes ingredient breakdown with food groups
+   - Tracks 18+ micronutrients per meal
+   - Stores meal photo for visual reference
+   - Links to meal window for context-aware analysis
 4. **CheckInData**: Morning and post-meal check-ins
-5. **MicronutrientData**: 18 tracked micronutrients with RDA values
+5. **MicronutrientData**: 18+ tracked micronutrients with RDA values and health impact ratings
 
 ### **Computed Properties**
 - Window status (active/upcoming/past)
@@ -251,46 +332,59 @@ Developer dashboard allows:
 ### **Implementation Status**
 - ✅ Core navigation and UI
 - ✅ Timeline-based meal windows
-- ✅ Basic meal logging flow
-- ✅ Nudge system
-- ✅ Check-in system
-- ✅ Mock data for testing
+- ✅ Advanced meal analysis with ingredients
+- ✅ Nudge system with contextual coaching
+- ✅ Check-in system (morning & post-meal)
+- ✅ Mock data with comprehensive meal generation
+- ✅ Micronutrient tracking with health impacts
+- ✅ Ingredient-level nutrition breakdown
+- ✅ Health impact petal visualizations
+- ✅ Window-aware micronutrient evaluation
 - ⏳ Firebase backend
-- ⏳ Real AI integration
+- ⏳ Real AI integration (using mock responses)
 - ⏳ Social features
-- ⏳ Advanced analytics
+- ⏳ Apple Health integration
 
 ### **Known Issues**
 - Mock data only (no persistence)
 - Simulated AI responses
-- Limited micronutrient data
-- No real photo analysis
+- No real photo analysis (using placeholder images)
 - Basic goal calculations
+- Limited to pre-defined meal types in mock data
 
 ---
 
 ## 🛠️ **Development Priorities**
 
+### **Recently Completed** ✅
+1. Comprehensive micronutrient tracking
+2. Ingredient-level nutrition breakdown
+3. Health impact petal visualization
+4. Window-aware nutrient evaluation
+5. Enhanced meal analysis with 3-tab interface
+
 ### **Immediate Next Steps**
 1. Firebase authentication setup
-2. Real Gemini API integration
+2. Real Gemini API integration for photo analysis
 3. Persist user data to Firestore
-4. Implement actual photo analysis
-5. Add push notifications
+4. Implement actual camera capture (currently placeholder)
+5. Connect mock data to real Firebase backend
 
 ### **Phase 2 Features**
 1. Apple Health integration
-2. Barcode scanning with database
+2. Barcode scanning with OpenFoodFacts database
 3. Social leaderboards with real users
-4. Weekly progress reports
-5. Food favorites and quick-add
+4. Weekly micronutrient reports
+5. Food favorites and meal templates
+6. Export nutrition data functionality
 
 ### **Phase 3 Polish**
-1. Onboarding flow
-2. Premium features
-3. Apple Watch app
-4. Widget support
-5. Shortcuts integration
+1. Advanced onboarding flow
+2. Premium tier with advanced insights
+3. Apple Watch companion app
+4. Home Screen widgets
+5. Siri Shortcuts integration
+6. Restaurant menu scanning
 
 ---
 
@@ -352,6 +446,18 @@ open Phyllo.xcodeproj
 3. Add to `CheckInManager`
 4. Test flow end-to-end
 
+**Add new micronutrient:**
+1. Update `micronutrientDatabase` in DataProvider
+2. Add to `MicronutrientInfo` with health impacts
+3. Update mock data generation
+4. Add color and unit in FoodAnalysisView helpers
+
+**Modify ingredient tracking:**
+1. Update `MealIngredient` model if needed
+2. Add new food groups to `FoodGroup` enum
+3. Update ingredient generation in MockDataManager
+4. Test display in meal analysis view
+
 ---
 
 ## 🎯 **Definition of Done**
@@ -405,4 +511,4 @@ Phyllo/
 
 ---
 
-*This document reflects the current implementation as of January 2025. Features described in "not yet implemented" are planned but not built.*
+*This document reflects the current implementation as of August 2025. Features described in "not yet implemented" are planned but not built.*
