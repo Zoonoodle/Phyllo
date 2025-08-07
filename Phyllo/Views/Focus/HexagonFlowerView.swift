@@ -15,6 +15,7 @@ struct HexagonFlowerView: View {
     
     // Overall score is average of all micronutrients
     private var overallScore: Int {
+        guard !micronutrients.isEmpty else { return 0 }
         let average = micronutrients.reduce(0) { $0 + $1.percentage } / Double(micronutrients.count)
         return Int(average * 100)
     }
