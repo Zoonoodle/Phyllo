@@ -13,6 +13,18 @@ class WindowGenerationService {
     
     private init() {}
     
+    // Phase 1: central purpose→duration mapping
+    private func purposeDuration(_ purpose: WindowPurpose) -> TimeInterval {
+        switch purpose {
+        case .sustainedEnergy, .recovery:
+            return 120 * 60 // 120 min
+        case .metabolicBoost, .sleepOptimization:
+            return 105 * 60 // 105 min
+        case .focusBoost, .preworkout, .postworkout:
+            return 60 * 60 // 60 min
+        }
+    }
+    
     /// Generate meal windows for a specific date based on user profile and check-in data
     func generateWindows(
         for date: Date,
@@ -20,8 +32,23 @@ class WindowGenerationService {
         checkIn: MorningCheckInData?
     ) -> [MealWindow] {
         let calendar = Calendar.current
+        // Derive wake and sleep ranges from morning check-in when available.
         let wakeTime = checkIn?.wakeTime ?? calendar.date(bySettingHour: 7, minute: 0, second: 0, of: date)!
-        let sleepTime = calendar.date(bySettingHour: 22, minute: 30, second: 0, of: date)!
+        // Heuristic: earlier dinner if short sleep or low energy; later dinner allowed with high energy
+        let defaultSleep = calendar.date(bySettingHour: 22, minute: 30, second: 0, of: date)!
+        let sleepTime = defaultSleep
+        
+        // Phase 1 foundation: centralize purpose→duration mapping and guardrail end times
+        func purposeDuration(_ purpose: WindowPurpose) -> TimeInterval {
+            switch purpose {
+            case .sustainedEnergy, .recovery:
+                return 120 * 60 // 120 min
+            case .metabolicBoost, .sleepOptimization:
+                return 105 * 60 // 105 min
+            case .focusBoost, .preworkout, .postworkout:
+                return 60 * 60 // 60 min
+            }
+        }
         
         // Generate windows based on primary goal
         switch profile.primaryGoal {
@@ -69,7 +96,7 @@ class WindowGenerationService {
             // Lunch (12pm-2pm) - 40% of daily intake
             MealWindow(
                 startTime: windowStart,
-                endTime: calendar.date(byAdding: .hour, value: 2, to: windowStart)!,
+                endTime: min(windowStart.addingTimeInterval(purposeDuration(.sustainedEnergy)), calendar.date(byAdding: .minute, value: -90, to: sleepTime)!),
                 targetCalories: Int(Double(totalCalories) * 0.4),
                 targetMacros: MacroTargets(
                     protein: Int(Double(totalProtein) * 0.4),
@@ -87,7 +114,7 @@ class WindowGenerationService {
             // Snack (3pm-4pm) - 20% of daily intake
             MealWindow(
                 startTime: calendar.date(bySettingHour: 15, minute: 0, second: 0, of: date)!,
-                endTime: calendar.date(bySettingHour: 16, minute: 0, second: 0, of: date)!,
+                endTime: min(calendar.date(bySettingHour: 15, minute: 0, second: 0, of: date)!.addingTimeInterval(purposeDuration(.focusBoost)), calendar.date(byAdding: .minute, value: -90, to: sleepTime)!),
                 targetCalories: Int(Double(totalCalories) * 0.2),
                 targetMacros: MacroTargets(
                     protein: Int(Double(totalProtein) * 0.2),
@@ -105,7 +132,7 @@ class WindowGenerationService {
             // Dinner (6pm-8pm) - 40% of daily intake
             MealWindow(
                 startTime: calendar.date(bySettingHour: 18, minute: 0, second: 0, of: date)!,
-                endTime: windowEnd,
+                endTime: min(calendar.date(bySettingHour: 18, minute: 0, second: 0, of: date)!.addingTimeInterval(purposeDuration(.recovery)), windowEnd),
                 targetCalories: Int(Double(totalCalories) * 0.4),
                 targetMacros: MacroTargets(
                     protein: Int(Double(totalProtein) * 0.4),
@@ -142,7 +169,7 @@ class WindowGenerationService {
             // Breakfast - 20%
             MealWindow(
                 startTime: breakfast,
-                endTime: calendar.date(byAdding: .hour, value: 1, to: breakfast)!,
+                endTime: min(breakfast.addingTimeInterval(purposeDuration(.sustainedEnergy)), calendar.date(byAdding: .minute, value: -90, to: sleepTime)!),
                 targetCalories: Int(Double(totalCalories) * 0.2),
                 targetMacros: MacroTargets(
                     protein: Int(Double(totalProtein) * 0.2),
@@ -160,7 +187,7 @@ class WindowGenerationService {
             // Mid-morning snack - 15%
             MealWindow(
                 startTime: calendar.date(byAdding: .hour, value: 3, to: breakfast)!,
-                endTime: calendar.date(byAdding: .hour, value: 4, to: breakfast)!,
+                endTime: min(calendar.date(byAdding: .hour, value: 3, to: breakfast)!.addingTimeInterval(purposeDuration(.preworkout)), calendar.date(byAdding: .minute, value: -90, to: sleepTime)!),
                 targetCalories: Int(Double(totalCalories) * 0.15),
                 targetMacros: MacroTargets(
                     protein: Int(Double(totalProtein) * 0.15),
@@ -178,7 +205,7 @@ class WindowGenerationService {
             // Lunch - 25%
             MealWindow(
                 startTime: calendar.date(byAdding: .hour, value: 5, to: breakfast)!,
-                endTime: calendar.date(byAdding: .hour, value: 6, to: breakfast)!,
+                endTime: min(calendar.date(byAdding: .hour, value: 5, to: breakfast)!.addingTimeInterval(purposeDuration(.postworkout)), calendar.date(byAdding: .minute, value: -90, to: sleepTime)!),
                 targetCalories: Int(Double(totalCalories) * 0.25),
                 targetMacros: MacroTargets(
                     protein: Int(Double(totalProtein) * 0.25),
@@ -196,7 +223,7 @@ class WindowGenerationService {
             // Afternoon snack - 15%
             MealWindow(
                 startTime: calendar.date(byAdding: .hour, value: 8, to: breakfast)!,
-                endTime: calendar.date(byAdding: .hour, value: 9, to: breakfast)!,
+                endTime: min(calendar.date(byAdding: .hour, value: 8, to: breakfast)!.addingTimeInterval(purposeDuration(.focusBoost)), calendar.date(byAdding: .minute, value: -90, to: sleepTime)!),
                 targetCalories: Int(Double(totalCalories) * 0.15),
                 targetMacros: MacroTargets(
                     protein: Int(Double(totalProtein) * 0.15),
@@ -214,7 +241,7 @@ class WindowGenerationService {
             // Dinner - 25%
             MealWindow(
                 startTime: calendar.date(byAdding: .hour, value: 11, to: breakfast)!,
-                endTime: calendar.date(byAdding: .hour, value: 12, to: breakfast)!,
+                endTime: min(calendar.date(byAdding: .hour, value: 11, to: breakfast)!.addingTimeInterval(purposeDuration(.recovery)), calendar.date(byAdding: .minute, value: -90, to: sleepTime)!),
                 targetCalories: Int(Double(totalCalories) * 0.25),
                 targetMacros: MacroTargets(
                     protein: Int(Double(totalProtein) * 0.25),
@@ -250,7 +277,7 @@ class WindowGenerationService {
             // Breakfast - 25%
             MealWindow(
                 startTime: breakfast,
-                endTime: calendar.date(byAdding: .hour, value: 1, to: breakfast)!,
+                endTime: min(breakfast.addingTimeInterval(purposeDuration(.sustainedEnergy)), calendar.date(byAdding: .minute, value: -90, to: sleepTime)!),
                 targetCalories: Int(Double(totalCalories) * 0.25),
                 targetMacros: MacroTargets(
                     protein: Int(Double(totalProtein) * 0.25),
@@ -268,7 +295,7 @@ class WindowGenerationService {
             // Lunch - 35%
             MealWindow(
                 startTime: calendar.date(byAdding: .hour, value: 5, to: breakfast)!,
-                endTime: calendar.date(byAdding: .hour, value: 6, to: breakfast)!,
+                endTime: min(calendar.date(byAdding: .hour, value: 5, to: breakfast)!.addingTimeInterval(purposeDuration(.sustainedEnergy)), calendar.date(byAdding: .minute, value: -90, to: sleepTime)!),
                 targetCalories: Int(Double(totalCalories) * 0.35),
                 targetMacros: MacroTargets(
                     protein: Int(Double(totalProtein) * 0.35),
@@ -286,7 +313,7 @@ class WindowGenerationService {
             // Snack - 15%
             MealWindow(
                 startTime: calendar.date(byAdding: .hour, value: 8, to: breakfast)!,
-                endTime: calendar.date(byAdding: .hour, value: 9, to: breakfast)!,
+                endTime: min(calendar.date(byAdding: .hour, value: 8, to: breakfast)!.addingTimeInterval(purposeDuration(.focusBoost)), calendar.date(byAdding: .minute, value: -90, to: sleepTime)!),
                 targetCalories: Int(Double(totalCalories) * 0.15),
                 targetMacros: MacroTargets(
                     protein: Int(Double(totalProtein) * 0.15),
@@ -304,7 +331,7 @@ class WindowGenerationService {
             // Dinner - 25%
             MealWindow(
                 startTime: calendar.date(byAdding: .hour, value: 11, to: breakfast)!,
-                endTime: calendar.date(byAdding: .hour, value: 12, to: breakfast)!,
+                endTime: min(calendar.date(byAdding: .hour, value: 11, to: breakfast)!.addingTimeInterval(purposeDuration(.recovery)), calendar.date(byAdding: .minute, value: -90, to: sleepTime)!),
                 targetCalories: Int(Double(totalCalories) * 0.25),
                 targetMacros: MacroTargets(
                     protein: Int(Double(totalProtein) * 0.25),
@@ -340,7 +367,7 @@ class WindowGenerationService {
             // Early breakfast - 20%
             MealWindow(
                 startTime: breakfast,
-                endTime: calendar.date(byAdding: .hour, value: 1, to: breakfast)!,
+                endTime: min(breakfast.addingTimeInterval(purposeDuration(.sustainedEnergy)), calendar.date(byAdding: .minute, value: -90, to: sleepTime)!),
                 targetCalories: Int(Double(totalCalories) * 0.2),
                 targetMacros: MacroTargets(
                     protein: Int(Double(totalProtein) * 0.2),
@@ -358,7 +385,7 @@ class WindowGenerationService {
             // Mid-morning - 20%
             MealWindow(
                 startTime: calendar.date(byAdding: .hour, value: 3, to: breakfast)!,
-                endTime: calendar.date(byAdding: .hour, value: 4, to: breakfast)!,
+                endTime: min(calendar.date(byAdding: .hour, value: 3, to: breakfast)!.addingTimeInterval(purposeDuration(.focusBoost)), calendar.date(byAdding: .minute, value: -90, to: sleepTime)!),
                 targetCalories: Int(Double(totalCalories) * 0.2),
                 targetMacros: MacroTargets(
                     protein: Int(Double(totalProtein) * 0.2),
@@ -376,7 +403,7 @@ class WindowGenerationService {
             // Lunch - 25%
             MealWindow(
                 startTime: calendar.date(byAdding: .hour, value: 5, to: breakfast)!,
-                endTime: calendar.date(byAdding: .hour, value: 6, to: breakfast)!,
+                endTime: min(calendar.date(byAdding: .hour, value: 5, to: breakfast)!.addingTimeInterval(purposeDuration(.sustainedEnergy)), calendar.date(byAdding: .minute, value: -90, to: sleepTime)!),
                 targetCalories: Int(Double(totalCalories) * 0.25),
                 targetMacros: MacroTargets(
                     protein: Int(Double(totalProtein) * 0.25),
@@ -394,7 +421,7 @@ class WindowGenerationService {
             // Afternoon - 15%
             MealWindow(
                 startTime: calendar.date(byAdding: .hour, value: 8, to: breakfast)!,
-                endTime: calendar.date(byAdding: .hour, value: 9, to: breakfast)!,
+                endTime: min(calendar.date(byAdding: .hour, value: 8, to: breakfast)!.addingTimeInterval(purposeDuration(.focusBoost)), calendar.date(byAdding: .minute, value: -90, to: sleepTime)!),
                 targetCalories: Int(Double(totalCalories) * 0.15),
                 targetMacros: MacroTargets(
                     protein: Int(Double(totalProtein) * 0.15),
@@ -412,7 +439,7 @@ class WindowGenerationService {
             // Dinner - 20%
             MealWindow(
                 startTime: calendar.date(byAdding: .hour, value: 11, to: breakfast)!,
-                endTime: calendar.date(byAdding: .hour, value: 12, to: breakfast)!,
+                endTime: min(calendar.date(byAdding: .hour, value: 11, to: breakfast)!.addingTimeInterval(purposeDuration(.recovery)), calendar.date(byAdding: .minute, value: -90, to: sleepTime)!),
                 targetCalories: Int(Double(totalCalories) * 0.2),
                 targetMacros: MacroTargets(
                     protein: Int(Double(totalProtein) * 0.2),
