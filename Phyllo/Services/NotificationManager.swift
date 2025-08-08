@@ -34,7 +34,7 @@ class NotificationManager: NSObject, ObservableObject {
     func requestAuthorization() async -> Bool {
         do {
             let granted = try await notificationCenter.requestAuthorization(
-                options: [.alert, .sound, .badge, .providesAppNotificationSettings]
+                options: [.alert, .sound, .badge, .provisional, .providesAppNotificationSettings]
             )
             
             await MainActor.run {
@@ -60,6 +60,32 @@ class NotificationManager: NSObject, ObservableObject {
         self.authorizationStatus = settings.authorizationStatus
         self.isAuthorized = settings.authorizationStatus == .authorized || settings.authorizationStatus == .provisional
         DebugLogger.shared.notification("Current notification status: \(settings.authorizationStatus.rawValue)")
+    }
+    
+    /// Request full authorization if currently provisional
+    func requestFullAuthorization() async -> Bool {
+        // Only request if currently provisional
+        guard authorizationStatus == .provisional else {
+            return authorizationStatus == .authorized
+        }
+        
+        // Request without provisional flag to prompt for full authorization
+        do {
+            let granted = try await notificationCenter.requestAuthorization(
+                options: [.alert, .sound, .badge, .providesAppNotificationSettings]
+            )
+            
+            await MainActor.run {
+                self.isAuthorized = granted
+                self.authorizationStatus = granted ? .authorized : .denied
+                DebugLogger.shared.notification("Full authorization request: \(granted ? "granted" : "denied")")
+            }
+            
+            return granted
+        } catch {
+            DebugLogger.shared.error("Failed to request full authorization: \(error)")
+            return false
+        }
     }
     
     /// Schedule notifications for meal windows

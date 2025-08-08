@@ -10,6 +10,8 @@ import UserNotifications
 
 @main
 struct PhylloApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    
     @StateObject private var timeProvider = TimeProvider.shared
     @StateObject private var nudgeManager = NudgeManager.shared
     @StateObject private var clarificationManager = ClarificationManager.shared

@@ -68,23 +68,73 @@ struct NotificationSettingsView: View {
                     .fill(Color.phylloElevated)
             )
             
-            if !notificationManager.isAuthorized {
-                Button(action: requestPermission) {
-                    HStack {
-                        Image(systemName: "bell.badge")
-                            .font(.system(size: 18))
-                        Text("Enable Notifications")
-                            .font(.system(size: 16, weight: .semibold))
+            if notificationManager.authorizationStatus == .provisional {
+                // Show upgrade button for provisional
+                VStack(spacing: 12) {
+                    Button(action: upgradeToFullNotifications) {
+                        HStack {
+                            Image(systemName: "bell.circle.fill")
+                                .font(.system(size: 18))
+                            Text("Enable Full Notifications")
+                                .font(.system(size: 16, weight: .semibold))
+                        }
+                        .foregroundColor(.black)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color.phylloAccent)
+                        )
                     }
-                    .foregroundColor(.black)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(Color.white)
-                    )
+                    
+                    Text("You're receiving quiet notifications. Enable full notifications for sounds and banners.")
+                        .font(.caption)
+                        .foregroundColor(.white.opacity(0.6))
+                        .multilineTextAlignment(.center)
                 }
-                .disabled(isRequestingPermission)
+            } else if !notificationManager.isAuthorized {
+                if notificationManager.authorizationStatus == .denied {
+                    // Show settings button when denied
+                    Button(action: openSettings) {
+                        HStack {
+                            Image(systemName: "gear")
+                                .font(.system(size: 18))
+                            Text("Open Settings")
+                                .font(.system(size: 16, weight: .semibold))
+                        }
+                        .foregroundColor(.black)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color.phylloAccent)
+                        )
+                    }
+                    
+                    Text("To enable notifications, go to Settings > Notifications > Phyllo and turn on Allow Notifications.")
+                        .font(.caption)
+                        .foregroundColor(.white.opacity(0.6))
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal)
+                } else {
+                    // Show enable button when not determined
+                    Button(action: requestPermission) {
+                        HStack {
+                            Image(systemName: "bell.badge")
+                                .font(.system(size: 18))
+                            Text("Enable Notifications")
+                                .font(.system(size: 16, weight: .semibold))
+                        }
+                        .foregroundColor(.black)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color.white)
+                        )
+                    }
+                    .disabled(isRequestingPermission)
+                }
             }
         }
     }
@@ -98,7 +148,7 @@ struct NotificationSettingsView: View {
         case .authorized:
             return "You'll receive meal window reminders and coaching tips"
         case .provisional:
-            return "Provisional access granted"
+            return "You're receiving quiet notifications. Upgrade for full experience."
         case .ephemeral:
             return "Temporary access for this session"
         @unknown default:
@@ -261,8 +311,29 @@ struct NotificationSettingsView: View {
                 if let windows = try? await DataSourceProvider.shared.provider.getWindows(for: Date()) {
                     await notificationManager.scheduleWindowNotifications(for: windows)
                 }
-            } else if notificationManager.authorizationStatus == .denied {
-                alertMessage = "Please enable notifications in Settings to receive meal window reminders and coaching tips."
+            } else {
+                // Check the current status after request
+                await notificationManager.checkAuthorizationStatus()
+                
+                if notificationManager.authorizationStatus == .denied {
+                    alertMessage = "Notifications have been disabled. To enable them, please go to Settings > Notifications > Phyllo."
+                    showingAlert = true
+                }
+            }
+        }
+    }
+    
+    private func openSettings() {
+        if let url = URL(string: UIApplication.openSettingsURLString) {
+            UIApplication.shared.open(url)
+        }
+    }
+    
+    private func upgradeToFullNotifications() {
+        Task {
+            let granted = await notificationManager.requestFullAuthorization()
+            if !granted {
+                alertMessage = "Please enable full notifications in Settings to get sounds and banners for your meal reminders."
                 showingAlert = true
             }
         }
