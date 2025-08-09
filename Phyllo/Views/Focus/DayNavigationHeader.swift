@@ -25,13 +25,6 @@ struct DayNavigationHeader: View {
                 // Logo, Title, and Settings in one row
                 ZStack {
                     HStack {
-                        // Phyllo logo
-                        Image("Image")
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(height: 35) // 28 * 1.25 = 35
-                            .offset(y: -3) // Move up slightly
-                        
                         Spacer()
                         
                         // Settings button
