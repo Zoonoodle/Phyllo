@@ -175,7 +175,7 @@ struct YourPlanChapter: View {
                 
                 // Micronutrient Status
                 if let microStatus = micronutrientStatus {
-                    MicronutrientHighlights(status: microStatus)
+                    MicronutrientStatusView(status: microStatus)
                         .opacity(animateContent ? 1 : 0)
                         .offset(y: animateContent ? 0 : 20)
                         .animation(.spring(response: 0.8).delay(0.65), value: animateContent)
