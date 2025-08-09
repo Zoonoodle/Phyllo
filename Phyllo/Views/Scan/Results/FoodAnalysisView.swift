@@ -290,26 +290,42 @@ struct FoodAnalysisView: View {
                         .fill(Color.phylloElevated)
                 )
             } else {
-                // Show actual micronutrients from the meal
-                ScrollView {
-                    VStack(spacing: 12) {
-                        ForEach(Array(meal.micronutrients.sorted(by: { $0.key < $1.key })), id: \.key) { nutrient, amount in
-                            MicronutrientDetailRow(
-                                name: nutrient,
-                                amount: amount,
-                                unit: getMicronutrientUnit(for: nutrient),
-                                dailyTarget: getMicronutrientDailyTarget(for: nutrient),
-                                color: getMicronutrientColor(for: nutrient)
-                            )
-                        }
-                    }
-                    .padding(16)
-                    .background(
-                        RoundedRectangle(cornerRadius: 16)
-                            .fill(Color.phylloElevated)
-                    )
+                // Separate good nutrients and anti-nutrients
+                let goodNutrients = meal.micronutrients.compactMap { (name, amount) -> (name: String, consumed: Double, info: MicronutrientInfo)? in
+                    guard let info = MicronutrientData.getNutrient(byName: name),
+                          !info.isAntiNutrient else { return nil }
+                    return (name: name, consumed: amount, info: info)
                 }
-                .frame(maxHeight: 400)
+                
+                let antiNutrients = meal.micronutrients.compactMap { (name, amount) -> (name: String, consumed: Double, info: MicronutrientInfo)? in
+                    guard let info = MicronutrientData.getNutrient(byName: name),
+                          info.isAntiNutrient else { return nil }
+                    return (name: name, consumed: amount, info: info)
+                }
+                
+                VStack(spacing: 16) {
+                    // Show warnings first if any
+                    AntiNutrientWarningCard(antiNutrients: antiNutrients)
+                    
+                    // Show good nutrients with guidance
+                    ScrollView {
+                        VStack(spacing: 8) {
+                            ForEach(goodNutrients.sorted(by: { $0.consumed > $1.consumed }).prefix(8), id: \.name) { nutrient in
+                                MicronutrientGuidanceView(
+                                    name: nutrient.name,
+                                    consumed: nutrient.consumed,
+                                    nutrientInfo: nutrient.info
+                                )
+                            }
+                        }
+                        .padding(16)
+                        .background(
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(Color.phylloElevated)
+                        )
+                    }
+                    .frame(maxHeight: 400)
+                }
             }
         }
     }

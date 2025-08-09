@@ -78,6 +78,15 @@ enum HealthImpactPetal: String, CaseIterable {
     }
 }
 
+// MARK: - Guidance Types
+
+enum NutrientGuidanceLevel {
+    case needsMore      // User should increase intake
+    case adequate       // User has adequate intake
+    case excessive      // User is consuming too much (for anti-nutrients)
+    case critical       // Critical warning (very high anti-nutrient)
+}
+
 // MARK: - Micronutrient Model
 
 struct MicronutrientInfo: Identifiable {
@@ -91,6 +100,7 @@ struct MicronutrientInfo: Identifiable {
     let isAntiNutrient: Bool
     let dailyLimit: Double? // For anti-nutrients
     let severity: AntiNutrientSeverity?
+    let guidanceThreshold: Double? // Percentage of RDA to show "needs more" guidance (e.g., 0.5 = 50%)
     
     var averageRDA: Double {
         (rdaMale + rdaFemale) / 2
@@ -103,6 +113,32 @@ struct MicronutrientInfo: Identifiable {
         case high
         case medium
         case low
+    }
+    
+    // Get guidance level based on consumption
+    func getGuidanceLevel(consumed: Double) -> NutrientGuidanceLevel {
+        if isAntiNutrient {
+            guard let limit = dailyLimit else { return .adequate }
+            let percentage = consumed / limit
+            
+            if percentage < 0.8 {
+                return .adequate
+            } else if percentage < 1.2 {
+                return .excessive
+            } else {
+                return .critical
+            }
+        } else {
+            // For good nutrients, use guidance threshold
+            let threshold = guidanceThreshold ?? 0.5
+            let percentage = consumed / averageRDA
+            
+            if percentage < threshold {
+                return .needsMore
+            } else {
+                return .adequate
+            }
+        }
     }
 }
 
@@ -129,6 +165,7 @@ struct MicronutrientData: Identifiable {
             isAntiNutrient: false,
             dailyLimit: nil,
             severity: nil,
+            guidanceThreshold: 0.4, // Show guidance if below 40% RDA
             alternateNames: ["Thiamine", "B1", "Thiamin"]
         ),
         MicronutrientInfo(
@@ -141,6 +178,7 @@ struct MicronutrientData: Identifiable {
             isAntiNutrient: false,
             dailyLimit: nil,
             severity: nil,
+            guidanceThreshold: 0.4,
             alternateNames: ["Riboflavin", "B2"]
         ),
         MicronutrientInfo(
@@ -153,6 +191,7 @@ struct MicronutrientData: Identifiable {
             isAntiNutrient: false,
             dailyLimit: nil,
             severity: nil,
+            guidanceThreshold: 0.4,
             alternateNames: ["Niacin", "B3", "Nicotinic acid"]
         ),
         MicronutrientInfo(
@@ -165,6 +204,7 @@ struct MicronutrientData: Identifiable {
             isAntiNutrient: false,
             dailyLimit: nil,
             severity: nil,
+            guidanceThreshold: 0.4,
             alternateNames: ["Pyridoxine", "B6"]
         ),
         MicronutrientInfo(
@@ -177,6 +217,7 @@ struct MicronutrientData: Identifiable {
             isAntiNutrient: false,
             dailyLimit: nil,
             severity: nil,
+            guidanceThreshold: 0.4,
             alternateNames: ["Cobalamin", "B12", "B-12"]
         ),
         MicronutrientInfo(
@@ -189,6 +230,7 @@ struct MicronutrientData: Identifiable {
             isAntiNutrient: false,
             dailyLimit: nil,
             severity: nil,
+            guidanceThreshold: 0.4,
             alternateNames: ["Folic Acid", "B9", "Vitamin B9"]
         ),
         
@@ -203,6 +245,7 @@ struct MicronutrientData: Identifiable {
             isAntiNutrient: false,
             dailyLimit: nil,
             severity: nil,
+            guidanceThreshold: 0.5,
             alternateNames: ["Retinol", "Beta-carotene", "Vit A"]
         ),
         MicronutrientInfo(
@@ -215,6 +258,7 @@ struct MicronutrientData: Identifiable {
             isAntiNutrient: false,
             dailyLimit: nil,
             severity: nil,
+            guidanceThreshold: 0.5,
             alternateNames: ["Ascorbic acid", "Vit C"]
         ),
         MicronutrientInfo(
@@ -227,6 +271,7 @@ struct MicronutrientData: Identifiable {
             isAntiNutrient: false,
             dailyLimit: nil,
             severity: nil,
+            guidanceThreshold: 0.6,
             alternateNames: ["Vit D", "Cholecalciferol", "D3"]
         ),
         MicronutrientInfo(
@@ -239,6 +284,7 @@ struct MicronutrientData: Identifiable {
             isAntiNutrient: false,
             dailyLimit: nil,
             severity: nil,
+            guidanceThreshold: 0.5,
             alternateNames: ["Tocopherol", "Vit E"]
         ),
         MicronutrientInfo(
@@ -251,6 +297,7 @@ struct MicronutrientData: Identifiable {
             isAntiNutrient: false,
             dailyLimit: nil,
             severity: nil,
+            guidanceThreshold: 0.4,
             alternateNames: ["Vit K", "Phylloquinone"]
         )
     ]
@@ -267,6 +314,7 @@ struct MicronutrientData: Identifiable {
             isAntiNutrient: false,
             dailyLimit: nil,
             severity: nil,
+            guidanceThreshold: 0.5,
             alternateNames: ["Ca"]
         ),
         MicronutrientInfo(
@@ -279,6 +327,7 @@ struct MicronutrientData: Identifiable {
             isAntiNutrient: false,
             dailyLimit: nil,
             severity: nil,
+            guidanceThreshold: 0.6,
             alternateNames: ["Fe"]
         ),
         MicronutrientInfo(
@@ -291,6 +340,7 @@ struct MicronutrientData: Identifiable {
             isAntiNutrient: false,
             dailyLimit: nil,
             severity: nil,
+            guidanceThreshold: 0.5,
             alternateNames: ["Mg"]
         ),
         MicronutrientInfo(
@@ -303,6 +353,7 @@ struct MicronutrientData: Identifiable {
             isAntiNutrient: false,
             dailyLimit: nil,
             severity: nil,
+            guidanceThreshold: 0.4,
             alternateNames: ["P"]
         ),
         MicronutrientInfo(
@@ -315,6 +366,7 @@ struct MicronutrientData: Identifiable {
             isAntiNutrient: false,
             dailyLimit: nil,
             severity: nil,
+            guidanceThreshold: 0.5,
             alternateNames: ["K"]
         ),
         MicronutrientInfo(
@@ -327,6 +379,7 @@ struct MicronutrientData: Identifiable {
             isAntiNutrient: false,
             dailyLimit: nil,
             severity: nil,
+            guidanceThreshold: 0.5,
             alternateNames: ["Zn"]
         ),
         MicronutrientInfo(
@@ -339,6 +392,7 @@ struct MicronutrientData: Identifiable {
             isAntiNutrient: false,
             dailyLimit: nil,
             severity: nil,
+            guidanceThreshold: 0.4,
             alternateNames: ["Se"]
         )
     ]
@@ -355,6 +409,7 @@ struct MicronutrientData: Identifiable {
             isAntiNutrient: false,
             dailyLimit: nil,
             severity: nil,
+            guidanceThreshold: 0.5,
             alternateNames: ["DHA", "EPA", "ALA", "Omega-3 fatty acids"]
         ),
         MicronutrientInfo(
@@ -367,6 +422,7 @@ struct MicronutrientData: Identifiable {
             isAntiNutrient: false,
             dailyLimit: nil,
             severity: nil,
+            guidanceThreshold: 0.5,
             alternateNames: ["Dietary fiber"]
         )
     ]
@@ -383,6 +439,7 @@ struct MicronutrientData: Identifiable {
             isAntiNutrient: true,
             dailyLimit: 2300,
             severity: .medium,
+            guidanceThreshold: nil,
             alternateNames: ["Na", "Salt"]
         ),
         MicronutrientInfo(
@@ -395,6 +452,7 @@ struct MicronutrientData: Identifiable {
             isAntiNutrient: true,
             dailyLimit: 36, // Male limit, female is 25g
             severity: .high,
+            guidanceThreshold: nil,
             alternateNames: ["Sugar", "Added sugars"]
         ),
         MicronutrientInfo(
@@ -407,6 +465,7 @@ struct MicronutrientData: Identifiable {
             isAntiNutrient: true,
             dailyLimit: 20,
             severity: .medium,
+            guidanceThreshold: nil,
             alternateNames: ["Sat fat", "Saturated fatty acids"]
         ),
         MicronutrientInfo(
@@ -419,6 +478,7 @@ struct MicronutrientData: Identifiable {
             isAntiNutrient: true,
             dailyLimit: 0,
             severity: .high,
+            guidanceThreshold: nil,
             alternateNames: ["Trans fatty acids", "Trans fats"]
         ),
         MicronutrientInfo(
@@ -431,6 +491,7 @@ struct MicronutrientData: Identifiable {
             isAntiNutrient: true,
             dailyLimit: 400,
             severity: .low,
+            guidanceThreshold: nil,
             alternateNames: []
         ),
         MicronutrientInfo(
@@ -443,6 +504,7 @@ struct MicronutrientData: Identifiable {
             isAntiNutrient: true,
             dailyLimit: 300,
             severity: .low,
+            guidanceThreshold: nil,
             alternateNames: []
         )
     ]

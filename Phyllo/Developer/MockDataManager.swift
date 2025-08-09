@@ -525,6 +525,12 @@ class MockDataManager: ObservableObject {
         micronutrients["Omega-3"] = Double.random(in: 0.3...0.8) // g
         micronutrients["Fiber"] = Double.random(in: 5...10) // g
         
+        // Add anti-nutrients based on meal type
+        micronutrients["Sodium"] = Double.random(in: 300...800) // mg - typical meal range
+        micronutrients["Added Sugar"] = Double.random(in: 2...8) // g - lower for most meals
+        micronutrients["Saturated Fat"] = Double.random(in: 2...6) // g
+        micronutrients["Cholesterol"] = Double.random(in: 20...80) // mg
+        
         // Boost certain nutrients based on window purpose
         switch purpose {
         case .sustainedEnergy:
@@ -566,9 +572,22 @@ class MockDataManager: ObservableObject {
         // Add some variation based on meal name
         if mealName.lowercased().contains("salad") {
             micronutrients["Vitamin C"] = (micronutrients["Vitamin C"] ?? 0) + Double.random(in: 10...20)
+            micronutrients["Sodium"] = micronutrients["Sodium"]! * 0.7 // Salads typically lower sodium
         }
         if mealName.lowercased().contains("chicken") || mealName.lowercased().contains("salmon") {
             micronutrients["Protein"] = (micronutrients["Protein"] ?? 0) + Double.random(in: 5...10)
+            micronutrients["Cholesterol"] = micronutrients["Cholesterol"]! * 1.5 // Animal proteins have more cholesterol
+        }
+        if mealName.lowercased().contains("burger") || mealName.lowercased().contains("pizza") {
+            micronutrients["Sodium"] = micronutrients["Sodium"]! * 1.8 // Fast foods higher in sodium
+            micronutrients["Saturated Fat"] = micronutrients["Saturated Fat"]! * 2.0
+            micronutrients["Trans Fat"] = Double.random(in: 0.5...2.0) // Add trans fats for processed foods
+        }
+        if mealName.lowercased().contains("smoothie") || mealName.lowercased().contains("parfait") {
+            micronutrients["Added Sugar"] = micronutrients["Added Sugar"]! * 2.0 // Sweet items have more sugar
+        }
+        if mealName.lowercased().contains("pasta") || mealName.lowercased().contains("sandwich") {
+            micronutrients["Sodium"] = micronutrients["Sodium"]! * 1.3 // Processed carbs often have more sodium
         }
         
         return micronutrients

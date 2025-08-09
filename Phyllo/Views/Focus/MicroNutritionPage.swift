@@ -143,20 +143,44 @@ struct MicroNutritionPage: View {
             }
             .frame(height: 180) // Match the height of calorie ring
             
-            // Micronutrient bars - show top micronutrients from meals
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 12) {
-                    ForEach(topMicronutrients, id: \.name) { nutrient in
-                        MicronutrientBarWithPetal(
-                            name: nutrient.name,
-                            consumed: nutrient.consumed,
-                            percentage: nutrient.percentage,
-                            unit: nutrient.unit,
-                            petalColor: nutrient.petalColor
-                        )
-                    }
-                }
+            // Separate good nutrients and anti-nutrients
+            let goodNutrients = micronutrientData.compactMap { nutrient -> (name: String, consumed: Double, info: MicronutrientInfo)? in
+                guard let info = MicronutrientData.getNutrient(byName: nutrient.name),
+                      !info.isAntiNutrient else { return nil }
+                let consumed = nutrient.percentage * info.averageRDA
+                return (name: nutrient.name, consumed: consumed, info: info)
+            }
+            
+            let antiNutrients = micronutrientData.compactMap { nutrient -> (name: String, consumed: Double, info: MicronutrientInfo)? in
+                guard let info = MicronutrientData.getNutrient(byName: nutrient.name),
+                      info.isAntiNutrient else { return nil }
+                let consumed = nutrient.percentage * (info.dailyLimit ?? info.averageRDA)
+                return (name: nutrient.name, consumed: consumed, info: info)
+            }
+            
+            // Show anti-nutrient warnings if needed
+            AntiNutrientWarningCard(antiNutrients: antiNutrients)
                 .padding(.horizontal, 16)
+            
+            // Good nutrients with guidance
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Micronutrients")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 16)
+                
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 12) {
+                        ForEach(goodNutrients.prefix(8), id: \.name) { nutrient in
+                            MicronutrientGuidanceCompact(
+                                name: nutrient.name,
+                                consumed: nutrient.consumed,
+                                nutrientInfo: nutrient.info
+                            )
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                }
             }
         }
         .padding(.top, 40) // Match macro page top padding
