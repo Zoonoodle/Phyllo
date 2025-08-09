@@ -7,6 +7,47 @@
 
 import SwiftUI
 
+// Compact macro remaining indicator for window display
+struct WindowMacroIndicator: View {
+    let value: Double // 0.0 to 1.0
+    let total: Int
+    let label: String
+    let color: Color
+    
+    private var remaining: Int {
+        let consumed = Int(Double(total) * value)
+        return max(0, total - consumed)
+    }
+    
+    var body: some View {
+        VStack(spacing: 4) {
+            Text("\(remaining)g")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundColor(color)
+                .monospacedDigit()
+            
+            GeometryReader { geometry in
+                ZStack(alignment: .leading) {
+                    Rectangle()
+                        .fill(Color.white.opacity(0.1))
+                        .frame(height: 4)
+                    
+                    Rectangle()
+                        .fill(color)
+                        .frame(width: geometry.size.width * min(value, 1.0), height: 4)
+                }
+                .clipShape(Capsule())
+            }
+            .frame(height: 4)
+            
+            Text(label)
+                .font(.system(size: 10, weight: .medium))
+                .foregroundColor(.white.opacity(0.5))
+        }
+        .frame(maxWidth: .infinity)
+    }
+}
+
 // Animated switcher between macros and window purpose
 struct AnimatedInfoSwitcher: View {
     let window: MealWindow
@@ -350,6 +391,15 @@ struct ExpandableWindowBanner: View {
         VStack(spacing: 0) {
             windowBannerContent
             
+            // Show additional content for larger windows when empty
+            if meals.isEmpty && analyzingMealsInWindow.isEmpty {
+                if let height = bannerHeight, height > 100 {
+                    windowInsightsSection
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                }
+            }
+            
             // Add spacer to expand content for longer windows
             if let height = bannerHeight, height > 80 {
                 Spacer(minLength: 0)
@@ -678,6 +728,163 @@ struct ExpandableWindowBanner: View {
                 }
             }
             .foregroundColor(.yellow)
+        }
+    }
+    
+    @ViewBuilder
+    private var windowInsightsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            // Divider
+            Rectangle()
+                .fill(Color.white.opacity(0.1))
+                .frame(height: 1)
+            
+            VStack(alignment: .leading, spacing: 8) {
+                // Window purpose insight
+                HStack(spacing: 6) {
+                    Image(systemName: window.purpose.icon)
+                        .font(.system(size: 12))
+                        .foregroundColor(window.purpose.color)
+                    
+                    Text(getPurposeInsight())
+                        .font(.system(size: 12))
+                        .foregroundColor(.white.opacity(0.7))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                
+                // Show remaining macros for active windows
+                if case .active = windowStatus, let height = bannerHeight, height > 140 {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Remaining in window:")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(.white.opacity(0.5))
+                        
+                        HStack(spacing: 16) {
+                            WindowMacroIndicator(
+                                value: Double(meals.reduce(0) { $0 + $1.protein }) / Double(window.effectiveMacros.protein),
+                                total: window.effectiveMacros.protein,
+                                label: "P",
+                                color: .orange
+                            )
+                            WindowMacroIndicator(
+                                value: Double(meals.reduce(0) { $0 + $1.fat }) / Double(window.effectiveMacros.fat),
+                                total: window.effectiveMacros.fat,
+                                label: "F",
+                                color: .yellow
+                            )
+                            WindowMacroIndicator(
+                                value: Double(meals.reduce(0) { $0 + $1.carbs }) / Double(window.effectiveMacros.carbs),
+                                total: window.effectiveMacros.carbs,
+                                label: "C",
+                                color: .blue
+                            )
+                        }
+                    }
+                }
+                
+                // Meal suggestions based on remaining macros
+                if case .active = windowStatus {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Suggested meals:")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(.white.opacity(0.5))
+                        
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 8) {
+                                ForEach(getMealSuggestions().prefix(3), id: \.self) { suggestion in
+                                    HStack(spacing: 4) {
+                                        Image(systemName: getSuggestionIcon(suggestion))
+                                            .font(.system(size: 10))
+                                        Text(suggestion)
+                                            .font(.system(size: 11))
+                                    }
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 4)
+                                    .background(Color.white.opacity(0.1))
+                                    .clipShape(Capsule())
+                                    .foregroundColor(.white.opacity(0.8))
+                                }
+                            }
+                        }
+                    }
+                    .transition(.opacity.combined(with: .scale(scale: 0.95)))
+                }
+                
+                // Timing reminder for upcoming windows
+                if case .upcoming = windowStatus, isStartingSoon {
+                    HStack(spacing: 6) {
+                        Image(systemName: "bell.fill")
+                            .font(.system(size: 11))
+                            .foregroundColor(.yellow)
+                        Text("Prepare your meal soon")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(.yellow)
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Color.yellow.opacity(0.15))
+                    .clipShape(Capsule())
+                }
+            }
+        }
+        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: windowStatus)
+    }
+    
+    private func getPurposeInsight() -> String {
+        switch window.purpose {
+        case .recovery:
+            return "Focus on protein and nutrient-dense foods for optimal recovery"
+        case .sustainedEnergy:
+            return "Include complex carbs and healthy fats for lasting energy"
+        case .focusBoost:
+            return "Light meal with brain-boosting nutrients"
+        case .metabolicBoost:
+            return "Balanced meal to support metabolism"
+        case .preworkout:
+            return "Energizing carbs and moderate protein"
+        case .postworkout:
+            return "High protein within 30 minutes for muscle recovery"
+        case .sleepOptimization:
+            return "Light, easy-to-digest foods to promote better sleep"
+        }
+    }
+    
+    private func getMealSuggestions() -> [String] {
+        // Return meal suggestions based on window purpose
+        switch window.purpose {
+        case .recovery:
+            return ["Grilled Chicken", "Greek Yogurt", "Quinoa Bowl"]
+        case .sustainedEnergy:
+            return ["Oatmeal", "Avocado Toast", "Brown Rice"]
+        case .focusBoost:
+            return ["Berries", "Nuts", "Green Tea"]
+        case .metabolicBoost:
+            return ["Lean Protein", "Vegetables", "Whole Grains"]
+        case .preworkout:
+            return ["Banana", "Energy Bar", "Smoothie"]
+        case .postworkout:
+            return ["Protein Shake", "Tuna Wrap", "Eggs"]
+        case .sleepOptimization:
+            return ["Cottage Cheese", "Almonds", "Herbal Tea"]
+        }
+    }
+    
+    private func getSuggestionIcon(_ suggestion: String) -> String {
+        switch suggestion.lowercased() {
+        case let s where s.contains("chicken") || s.contains("tuna") || s.contains("protein"):
+            return "fish.fill"
+        case let s where s.contains("yogurt") || s.contains("cottage cheese") || s.contains("shake"):
+            return "cup.and.saucer.fill"
+        case let s where s.contains("rice") || s.contains("quinoa") || s.contains("oatmeal"):
+            return "leaf.fill"
+        case let s where s.contains("berries") || s.contains("banana"):
+            return "carrot.fill"
+        case let s where s.contains("nuts") || s.contains("almonds"):
+            return "circle.hexagongrid.fill"
+        case let s where s.contains("tea"):
+            return "mug.fill"
+        default:
+            return "fork.knife"
         }
     }
     
