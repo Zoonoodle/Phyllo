@@ -175,6 +175,9 @@ class FirebaseDataProvider: DataProvider {
             )
         }
         
+        // Attach captured image from analyzing doc if present (we store size only; image lives client-side). If client provided one during capture,
+        // it should already be on the AnalyzingMeal instance passed to the service; saving is handled by update after completion.
+        
         // Save the meal (includes appliedClarifications if set via update later)
         Task { @MainActor in
             DebugLogger.shared.dataProvider("Saving completed meal")
@@ -272,7 +275,23 @@ class FirebaseDataProvider: DataProvider {
         Task { @MainActor in
             DebugLogger.shared.dataProvider("Generated \(windows.count) windows")
         }
-        
+        // Phase 1 follow-up: clear existing windows for the day before saving new ones
+        let calendar = Calendar.current
+        let startOfDay = calendar.startOfDay(for: date)
+        let existing = try await userRef.collection("windows")
+            .whereField("dayDate", isEqualTo: startOfDay)
+            .getDocuments()
+        if !existing.documents.isEmpty {
+            let batch = db.batch()
+            for doc in existing.documents {
+                batch.deleteDocument(doc.reference)
+            }
+            try await batch.commit()
+            Task { @MainActor in
+                DebugLogger.shared.firebase("Deleted \(existing.documents.count) existing windows for dayDate: \(startOfDay)")
+            }
+        }
+
         // Save all windows to Firestore
         for window in windows {
             Task { @MainActor in
@@ -313,14 +332,32 @@ class FirebaseDataProvider: DataProvider {
     func saveMorningCheckIn(_ checkIn: MorningCheckInData) async throws {
         let dateString = ISO8601DateFormatter.yyyyMMdd.string(from: checkIn.date)
         let checkInRef = userRef.collection("checkIns").document("morning").collection("data").document(dateString)
-        try await checkInRef.setData(checkIn.toFirestore())
+        try await checkInRef.setData([
+            "id": checkIn.id.uuidString,
+            "date": checkIn.date,
+            "wakeTime": checkIn.wakeTime,
+            "sleepQuality": checkIn.sleepQuality,
+            "sleepDuration": checkIn.sleepDuration,
+            "energyLevel": checkIn.energyLevel,
+            "plannedActivities": checkIn.plannedActivities,
+            "hungerLevel": checkIn.hungerLevel
+        ])
     }
     
     func getMorningCheckIn(for date: Date) async throws -> MorningCheckInData? {
         let dateString = ISO8601DateFormatter.yyyyMMdd.string(from: date)
         let doc = try await userRef.collection("checkIns").document("morning").collection("data").document(dateString).getDocument()
         guard let data = doc.data() else { return nil }
-        return MorningCheckInData.fromFirestore(data)
+        // Map Firestore fields back to model
+        let id = (data["id"] as? String).flatMap(UUID.init(uuidString:)) ?? UUID()
+        let dateVal = (data["date"] as? Timestamp)?.dateValue() ?? date
+        let wake = (data["wakeTime"] as? Timestamp)?.dateValue() ?? Calendar.current.date(bySettingHour: 7, minute: 0, second: 0, of: dateVal)!
+        let sleepQuality = data["sleepQuality"] as? Int ?? 7
+        let sleepDuration = data["sleepDuration"] as? TimeInterval ?? 7.5 * 3600
+        let energyLevel = data["energyLevel"] as? Int ?? 3
+        let planned = data["plannedActivities"] as? [String] ?? []
+        let hunger = data["hungerLevel"] as? Int ?? 3
+        return MorningCheckInData(id: id, date: dateVal, wakeTime: wake, sleepQuality: sleepQuality, sleepDuration: sleepDuration, energyLevel: energyLevel, plannedActivities: planned, hungerLevel: hunger)
     }
     
     func savePostMealCheckIn(_ checkIn: PostMealCheckIn) async throws {

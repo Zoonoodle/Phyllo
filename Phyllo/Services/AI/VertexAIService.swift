@@ -163,23 +163,16 @@ class VertexAIService: ObservableObject {
            - Focus on goal-relevant nutrients
            - Include vitamin/mineral name, amount, unit, and %RDA
            
-        5. CLARIFICATION NEEDS (IMPORTANT - BE THOROUGH)
-           - Ask clarification questions for ANY of these scenarios:
-             • Protein shakes/smoothies (type of protein, milk, additives)
-             • Mixed dishes where ingredients aren't clearly visible
-             • Drinks that could have sugar/sweeteners
-             • Foods with variable preparation methods
-             • Portion sizes that are ambiguous
-           - Ask 3-5 questions for complex meals (this improves accuracy)
-           - Lower confidence (0.7-0.85) when ingredients are uncertain
-           - Provide 3-4 multiple choice options per question
-           - Each option must include nutritional impact
-           - Common clarifications needed:
-             • Protein powder type (whey, plant, casein)
-             • Milk type (whole, 2%, almond, oat, soy)
-             • Sweeteners (sugar, honey, artificial, none)
-             • Cooking methods (fried, grilled, baked)
-             • Hidden ingredients (oil, butter, sauces)
+        5. CLARIFICATION NEEDS (IMPORTANT - BE PRACTICAL)
+            - Ask 2-4 targeted questions MAX that materially change calories/macros
+            - Prefer everyday, realistic knobs a user can recall:
+              • Cook fats (oil/butter amount), dressings/sauces amount
+              • Milk/base type for drinks; sweeteners added
+              • Cooking method (fried vs grilled vs baked)
+              • Portion tweaks (small/medium/large)
+            - Each option MUST include calorieImpact and optional proteinImpact/carbImpact/fatImpact
+            - Keep text short, neutral, and non-judgmental
+            - Example option texts: "No oil", "1 tsp olive oil", "1 tbsp butter", "Spices only"
         
         CRITICAL: For protein shakes/smoothies ALWAYS ask about protein type and milk type!
         

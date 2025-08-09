@@ -50,7 +50,7 @@ class WindowGenerationService {
             }
         }
         
-        // Generate windows based on primary goal
+        // Phase 2 adjustments hooks would live here (post-meal/morning signals) — for now generation returns base windows; redistribution happens later
         switch profile.primaryGoal {
         case .weightLoss:
             return generateWeightLossWindows(date: date, wakeTime: wakeTime, sleepTime: sleepTime, profile: profile)

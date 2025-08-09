@@ -172,7 +172,7 @@ enum FastingProtocol: String, CaseIterable {
 // MARK: - Morning Check-In Data
 
 struct MorningCheckInData: Identifiable {
-    let id = UUID()
+    let id: UUID
     let date: Date
     let wakeTime: Date
     let sleepQuality: Int // 1-10
@@ -180,6 +180,17 @@ struct MorningCheckInData: Identifiable {
     let energyLevel: Int // 1-5
     let plannedActivities: [String]
     let hungerLevel: Int // 1-5
+    
+    init(id: UUID = UUID(), date: Date, wakeTime: Date, sleepQuality: Int, sleepDuration: TimeInterval, energyLevel: Int, plannedActivities: [String], hungerLevel: Int) {
+        self.id = id
+        self.date = date
+        self.wakeTime = wakeTime
+        self.sleepQuality = sleepQuality
+        self.sleepDuration = sleepDuration
+        self.energyLevel = energyLevel
+        self.plannedActivities = plannedActivities
+        self.hungerLevel = hungerLevel
+    }
     
     static var mockData: MorningCheckInData {
         MorningCheckInData(

@@ -156,6 +156,9 @@ class ScheduleViewModel: ObservableObject {
             // Generate windows based on check-in
             await generateDailyWindows()
             
+            // Optional redistribution after generation using current meals
+            await redistributeWindows()
+            
         } catch {
             errorMessage = "Failed to save check-in: \(error.localizedDescription)"
             print("❌ Failed to save morning check-in: \(error)")

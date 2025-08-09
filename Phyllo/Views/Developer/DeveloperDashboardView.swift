@@ -48,6 +48,12 @@ struct DeveloperDashboardView: View {
                             DashboardTab(title: "Notifications", icon: "bell.circle", isSelected: selectedTab == 7) {
                                 selectedTab = 7
                             }
+                            DashboardTab(title: "Windows Editor", icon: "calendar.badge.plus", isSelected: selectedTab == 8) {
+                                selectedTab = 8
+                            }
+                            DashboardTab(title: "Windows Ops", icon: "arrow.triangle.2.circlepath", isSelected: selectedTab == 9) {
+                                selectedTab = 9
+                            }
                         }
                         .padding(.horizontal)
                     }
@@ -73,6 +79,10 @@ struct DeveloperDashboardView: View {
                                 DebugLogView()
                             case 7:
                                 NotificationsDebugTabView()
+                            case 8:
+                                WindowsEditorTabView()
+                            case 9:
+                                WindowsOpsTabView()
                             default:
                                 EmptyView()
                             }
@@ -823,6 +833,160 @@ struct DataViewerTabView: View {
                     .background(Color.red.opacity(0.8))
                     .foregroundColor(.white)
                     .cornerRadius(12)
+            }
+        }
+    }
+}
+
+// MARK: - Windows Editor Tab
+struct WindowsEditorTabView: View {
+    @StateObject private var mockData = MockDataManager.shared
+    @State private var selection: UUID?
+    @State private var editingStart: Date = Date()
+    @State private var editingEnd: Date = Date().addingTimeInterval(3600)
+    @State private var isSaving = false
+
+    private var provider: DataProvider { DataSourceProvider.shared.provider }
+
+    var body: some View {
+        VStack(spacing: 16) {
+            if mockData.mealWindows.isEmpty {
+                Text("No windows today. Generate first from Time Control or Goals tab.")
+                    .foregroundColor(.white.opacity(0.6))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            } else {
+                ForEach(mockData.mealWindows) { window in
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Image(systemName: window.purpose.icon)
+                                .foregroundColor(window.purpose.color)
+                            Text(window.purpose.rawValue)
+                                .font(.system(size: 15, weight: .medium))
+                                .foregroundColor(.white)
+                            Spacer()
+                            Text(window.formattedTimeRange)
+                                .font(.caption)
+                                .foregroundColor(.white.opacity(0.6))
+                        }
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            selection = window.id
+                            editingStart = window.startTime
+                            editingEnd = window.endTime
+                        }
+
+                        if selection == window.id {
+                            VStack(alignment: .leading, spacing: 8) {
+                                DatePicker("Start", selection: $editingStart, displayedComponents: .hourAndMinute)
+                                    .labelsHidden()
+                                    .tint(.phylloAccent)
+                                DatePicker("End", selection: $editingEnd, displayedComponents: .hourAndMinute)
+                                    .labelsHidden()
+                                    .tint(.phylloAccent)
+                                Button(action: { Task { await save(window: window) } }) {
+                                    HStack {
+                                        if isSaving { ProgressView().tint(.black) }
+                                        Text(isSaving ? "Saving..." : "Save Window")
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                    .padding()
+                                    .background(Color.phylloAccent)
+                                    .foregroundColor(.black)
+                                    .cornerRadius(12)
+                                }
+                                .disabled(isSaving || editingEnd <= editingStart)
+                            }
+                            .padding(.top, 8)
+                        }
+                    }
+                    .padding()
+                    .background(Color.phylloSurface)
+                    .cornerRadius(12)
+                }
+            }
+        }
+    }
+
+    private func save(window: MealWindow) async {
+        guard editingEnd > editingStart else { return }
+        await MainActor.run { isSaving = true }
+        let updated = MealWindow(
+            id: window.id,
+            startTime: editingStart,
+            endTime: editingEnd,
+            targetCalories: window.targetCalories,
+            targetMacros: window.targetMacros,
+            purpose: window.purpose,
+            flexibility: window.flexibility,
+            dayDate: window.dayDate,
+            adjustedCalories: window.adjustedCalories,
+            adjustedMacros: window.adjustedMacros,
+            redistributionReason: window.redistributionReason
+        )
+        do {
+            try await provider.updateWindow(updated)
+            await MainActor.run {
+                isSaving = false
+                selection = nil
+                // Update the mock cache to reflect immediately
+                if let idx = mockData.mealWindows.firstIndex(where: { $0.id == window.id }) {
+                    mockData.mealWindows[idx] = updated
+                }
+            }
+        } catch {
+            await MainActor.run { isSaving = false }
+        }
+    }
+}
+
+// MARK: - Windows Ops Tab (Regenerate Today)
+struct WindowsOpsTabView: View {
+    @State private var isWorking = false
+    @State private var message: String?
+    private var provider: DataProvider { DataSourceProvider.shared.provider }
+    
+    var body: some View {
+        VStack(spacing: 16) {
+            Button(action: { Task { await regenerateToday() } }) {
+                HStack {
+                    if isWorking { ProgressView().tint(.black) }
+                    Text(isWorking ? "Regenerating…" : "Regenerate Today's Windows")
+                }
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(Color.phylloAccent)
+                .foregroundColor(.black)
+                .cornerRadius(12)
+            }
+            .disabled(isWorking)
+            
+            if let message {
+                Text(message)
+                    .font(.footnote)
+                    .foregroundColor(.white.opacity(0.7))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+        .padding()
+        .background(Color.phylloElevated)
+        .cornerRadius(16)
+    }
+    
+    private func regenerateToday() async {
+        await MainActor.run { isWorking = true; message = nil }
+        do {
+            let profile = try await provider.getUserProfile() ?? UserProfile.defaultProfile
+            let today = Date()
+            let checkIn = try await provider.getMorningCheckIn(for: today)
+            let windows = try await provider.generateDailyWindows(for: today, profile: profile, checkIn: checkIn)
+            await MainActor.run {
+                isWorking = false
+                message = "Generated \(windows.count) windows for today"
+            }
+        } catch {
+            await MainActor.run {
+                isWorking = false
+                message = "Failed: \(error.localizedDescription)"
             }
         }
     }

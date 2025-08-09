@@ -14,6 +14,53 @@ struct ScrollViewOffsetData: Equatable {
     let isScrolling: Bool
 }
 
+// MARK: - Static Windows Render Layer (non-draggable)
+private struct WindowsRenderLayer: View {
+    let windows: [MealWindow]
+    let hours: [Int]
+    let baseHourHeight: CGFloat
+    let animationNamespace: Namespace.ID
+    @ObservedObject var viewModel: ScheduleViewModel
+    @Binding var selectedWindow: MealWindow?
+    @Binding var showWindowDetail: Bool
+
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            ForEach(windows, id: \.id) { window in
+                let yTop = yPosition(for: window.startTime)
+                let yBottom = yPosition(for: window.endTime)
+                // Ensure minimum visual height but keep proportional to real duration
+                let height = max(yBottom - yTop, baseHourHeight * 0.6)
+                ExpandableWindowBanner(
+                    window: window,
+                    meals: viewModel.mealsInWindow(window),
+                    selectedWindow: $selectedWindow,
+                    showWindowDetail: $showWindowDetail,
+                    animationNamespace: animationNamespace,
+                    viewModel: viewModel,
+                    bannerHeight: height
+                )
+                .offset(y: yTop)
+            }
+        }
+    }
+
+    private func yPosition(for date: Date) -> CGFloat {
+        let calendar = Calendar.current
+        guard let firstHour = hours.first else { return 0 }
+        // Anchor the vertical scale to the same day as the date passed in, at the first timeline hour
+        let anchor = calendar.date(
+            bySettingHour: firstHour,
+            minute: 0,
+            second: 0,
+            of: date
+        ) ?? date
+        let interval = date.timeIntervalSince(anchor)
+        // Scale seconds to points using exact hour height
+        let pointsPerSecond = baseHourHeight / 3600.0
+        return CGFloat(interval) * pointsPerSecond
+    }
+}
 struct TimelineView: View {
     @Binding var selectedWindow: MealWindow?
     @Binding var showWindowDetail: Bool
@@ -30,6 +77,11 @@ struct TimelineView: View {
     @State private var animationStartPosition: CGPoint = .zero
     @State private var animationEndPosition: CGPoint = .zero
     @State private var showMealAnimation = false
+
+    // Drag state for window interaction
+    @State private var draggingWindowId: UUID?
+    @State private var dragAccumulatedOffset: CGFloat = 0
+    @State private var initialWindowTimes: (start: Date, end: Date)?
     
     // Auto-scroll state
     @State private var lastScrolledHour: Int?
@@ -43,6 +95,8 @@ struct TimelineView: View {
     
     // Define timeline hours (7 AM to 10 PM)
     let hours = Array(7...22)
+    // Base height for one hour on the vertical timeline
+    private let baseHourHeight: CGFloat = 88 // slightly taller for clearer proportional mapping
     
     var body: some View {
         ScrollViewReader { proxy in
@@ -61,27 +115,50 @@ struct TimelineView: View {
     @ViewBuilder
     private func buildTimeline(proxy: ScrollViewProxy) -> some View {
         ScrollView(.vertical, showsIndicators: false) {
-            LazyVStack(spacing: 0) {
-                ForEach(hours, id: \.self) { hour in
-                    TimelineHourRow(
-                        hour: hour,
-                        currentTime: currentTime,
-                        windows: viewModel.mealWindows,
-                        meals: mealsForTimeRange(hour: hour),
-                        analyzingMeals: analyzingMealsForTimeRange(hour: hour),
-                        isLastHour: hour == hours.last,
-                        selectedWindow: $selectedWindow,
-                        showWindowDetail: $showWindowDetail,
-                        animationNamespace: animationNamespace,
-                        viewModel: viewModel
-                    )
-                    .padding(.horizontal, 24)
+            ZStack(alignment: .topLeading) {
+                // Background hour grid
+                LazyVStack(spacing: 0) {
+                    ForEach(hours, id: \.self) { hour in
+                        TimelineHourRow(
+                            hour: hour,
+                            currentTime: currentTime,
+                            windows: viewModel.mealWindows,
+                            meals: mealsForTimeRange(hour: hour),
+                            analyzingMeals: analyzingMealsForTimeRange(hour: hour),
+                            isLastHour: hour == hours.last,
+                            selectedWindow: $selectedWindow,
+                            showWindowDetail: $showWindowDetail,
+                            animationNamespace: animationNamespace,
+                            viewModel: viewModel
+                        )
+                        .padding(.horizontal, 24)
+                        .frame(height: baseHourHeight)
+                    }
+                    Color.clear.frame(height: 100)
                 }
-                
-                Color.clear
-                    .frame(height: 100)
+                .frame(maxWidth: .infinity)
+
+                // Windows overlay layer (non-draggable) so banners can span multiple hours
+                WindowsRenderLayer(
+                    windows: viewModel.mealWindows,
+                    hours: hours,
+                    baseHourHeight: baseHourHeight,
+                    animationNamespace: animationNamespace,
+                    viewModel: viewModel,
+                    selectedWindow: $selectedWindow,
+                    showWindowDetail: $showWindowDetail
+                )
+                // Align with the start of the timeline content (leave gutter for time labels)
+                .padding(EdgeInsets(top: 0, leading: 24 + 60 + 16, bottom: 0, trailing: 24))
+                .frame(
+                    maxWidth: .infinity,
+                    maxHeight: CGFloat(hours.count) * baseHourHeight + 100,
+                    alignment: .topLeading
+                )
+                .allowsHitTesting(true)
+                // Keep current time marker above banners
+                .zIndex(3)
             }
-            .frame(maxWidth: .infinity)
         }
         .onAppear {
             currentTime = timeProvider.currentTime
@@ -214,14 +291,13 @@ struct TimelineView: View {
             // Check if meal belongs to a window in this hour
             if let windowId = meal.windowId,
                let window = viewModel.mealWindows.first(where: { $0.id == windowId }) {
-                // If meal has a window, show it in the hour where the window starts
+                // Align meal vertically relative to the window span
                 let windowStartHour = calendar.component(.hour, from: window.startTime)
-                
-                
                 if windowStartHour == hour {
-                    let minutes = calendar.component(.minute, from: meal.timestamp)
-                    let offset = CGFloat(minutes) / 60.0
-                    return (meal: meal, offset: offset)
+                    let total = max(window.endTime.timeIntervalSince(window.startTime), 1)
+                    let delta = meal.timestamp.timeIntervalSince(window.startTime)
+                    let ratio = CGFloat(min(max(delta / total, 0), 1))
+                    return (meal: meal, offset: ratio)
                 }
                 return nil
             } else if let windowId = meal.windowId {
@@ -248,21 +324,19 @@ struct TimelineView: View {
         
         return viewModel.analyzingMeals.compactMap { meal in
             if meal.timestamp >= startOfHour && meal.timestamp < endOfHour {
-                // Check if this meal should be shown as standalone
-                let shouldShowAsStandalone: Bool
-                
+                // Show as standalone only when outside assigned window time
                 if let windowId = meal.windowId,
                    let window = viewModel.mealWindows.first(where: { $0.id == windowId }) {
-                    // Has a window - only show as standalone if outside window time
-                    shouldShowAsStandalone = meal.timestamp < window.startTime || meal.timestamp > window.endTime
+                    if meal.timestamp < window.startTime || meal.timestamp > window.endTime {
+                        let minutes = calendar.component(.minute, from: meal.timestamp)
+                        let offset = CGFloat(minutes) / 60.0
+                        return (meal: meal, offset: offset)
+                    } else {
+                        return nil
+                    }
                 } else {
-                    // No window assigned - always show as standalone
-                    shouldShowAsStandalone = true
-                }
-                
-                if shouldShowAsStandalone {
                     let minutes = calendar.component(.minute, from: meal.timestamp)
-                    let offset = CGFloat(minutes) / 60.0 // 0.0 to 1.0 representing position in hour
+                    let offset = CGFloat(minutes) / 60.0
                     return (meal: meal, offset: offset)
                 }
             }
@@ -383,11 +457,11 @@ struct TimelineHourRow: View {
         Calendar.current.component(.hour, from: currentTime) == hour
     }
     
+    // Deprecated: window banners are now drawn in overlay. Keep for divider heuristics if needed.
     var windowForHour: MealWindow? {
         windows.first { window in
             let calendar = Calendar.current
             let startHour = calendar.component(.hour, from: window.startTime)
-            // Only show window in the hour where it starts
             return hour == startHour
         }
     }
@@ -403,6 +477,7 @@ struct TimelineHourRow: View {
             // Hour label
             TimeLabel(hour: hour, isCurrent: isCurrentHour)
                 .frame(width: 60)
+                .zIndex(4) // Ensure time labels sit above banners
             
             // Main content area
             timelineContent
@@ -419,27 +494,22 @@ struct TimelineHourRow: View {
                 hourDivider
                     .zIndex(0)
             }
-            
-            // Window or meals content
-            if let window = windowForHour {
-                windowContent(for: window)
-                    .zIndex(2)
-            } else {
-                standaloneMealsContent
-                    .zIndex(1)
-            }
-            
+
+            // Show only standalone/analyzing meals here; windows are drawn in overlay layer
+            standaloneMealsContent
+                .zIndex(1)
+
             // Current time indicator with context awareness
             if isCurrentHour {
                 let currentWindowInfo = getCurrentWindowInfo()
-                    CurrentTimeMarker(
-                        currentTime: currentTime,
-                        isInsideWindow: currentWindowInfo.isInside,
-                        windowPurpose: currentWindowInfo.purpose
-                    )
+                CurrentTimeMarker(
+                    currentTime: currentTime,
+                    isInsideWindow: currentWindowInfo.isInside,
+                    windowPurpose: currentWindowInfo.purpose
+                )
                 .offset(y: getCurrentMinuteOffset())
-                .animation(.linear(duration: 10), value: getCurrentMinuteOffset()) // Smooth movement between updates
-                .zIndex(4) // Higher z-index to appear above everything
+                .animation(.linear(duration: 10), value: getCurrentMinuteOffset())
+                .zIndex(4)
             }
         }
         .frame(height: hourHeight)
@@ -459,25 +529,7 @@ struct TimelineHourRow: View {
     }
     
     @ViewBuilder
-    private func windowContent(for window: MealWindow) -> some View {
-        let calendar = Calendar.current
-        let startMinute = calendar.component(.minute, from: window.startTime)
-        // Use baseHourHeight for consistent positioning
-        let windowOffset = CGFloat(startMinute) / 60.0 * baseHourHeight
-        let windowMeals = viewModel.mealsInWindow(window)
-        
-        ExpandableWindowBanner(
-            window: window,
-            meals: windowMeals,
-            selectedWindow: $selectedWindow,
-            showWindowDetail: $showWindowDetail,
-            animationNamespace: animationNamespace,
-            viewModel: viewModel
-        )
-        .offset(y: windowOffset)
-        .allowsHitTesting(true)
-        .zIndex(10) // Ensure window banners are above everything else
-    }
+    private func windowContent(for window: MealWindow) -> some View { EmptyView() }
     
     @ViewBuilder
     private var standaloneMealsContent: some View {
@@ -556,11 +608,10 @@ struct TimelineHourRow: View {
     
     // Check if meal is far enough from window to be considered standalone
     private func isMealStandalone(_ meal: LoggedMeal, window: MealWindow) -> Bool {
-        let hoursBefore = window.startTime.timeIntervalSince(meal.timestamp) / 3600
-        let hoursAfter = meal.timestamp.timeIntervalSince(window.endTime) / 3600
-        
-        // Meal is standalone if it's 2+ hours before or after the window
-        return hoursBefore >= 2 || hoursAfter >= 2
+        let buffer: TimeInterval = max(3600, window.duration * 0.25) // 1h or 25% of window length
+        let isFarBefore = meal.timestamp < window.startTime.addingTimeInterval(-buffer)
+        let isFarAfter = meal.timestamp > window.endTime.addingTimeInterval(buffer)
+        return isFarBefore || isFarAfter
     }
     
     // Group meals that are within 30 minutes of each other
@@ -918,13 +969,8 @@ struct MealTimeIndicator: View {
     let window: MealWindow
     let onTap: () -> Void
     
-    private var isLate: Bool {
-        meal.timestamp > window.endTime
-    }
-    
-    private var isEarly: Bool {
-        meal.timestamp < window.startTime
-    }
+    private var isLate: Bool { meal.timestamp > window.endTime }
+    private var isEarly: Bool { meal.timestamp < window.startTime }
     
     private var timeFormatter: DateFormatter {
         let formatter = DateFormatter()

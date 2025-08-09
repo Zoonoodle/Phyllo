@@ -69,6 +69,8 @@ struct ExpandableWindowBanner: View {
     @Binding var showWindowDetail: Bool
     let animationNamespace: Namespace.ID
     @ObservedObject var viewModel: ScheduleViewModel
+    // Optional fixed banner height so the card can exactly represent the time span on the timeline
+    let bannerHeight: CGFloat?
     
     // Add analyzing meals for this window - only if scanned within window time
     private var analyzingMealsInWindow: [AnalyzingMeal] {
@@ -86,20 +88,26 @@ struct ExpandableWindowBanner: View {
     @State private var isExpanded = false
     @State private var pulseAnimation = false
     
+    // Smarter naming: categorize by time-of-day and disambiguate duplicates (Breakfast 2, Lunch 2, etc.)
     private var mealType: String {
-        let hour = Calendar.current.component(.hour, from: window.startTime)
-        
+        let base = baseMealName(for: window.startTime)
+        // Count prior windows with same base
+        let priorSame = viewModel.mealWindows
+            .filter { baseMealName(for: $0.startTime) == base && $0.startTime < window.startTime }
+            .count
+        if priorSame == 0 { return base }
+        return "\(base) \(priorSame + 1)"
+    }
+
+    private func baseMealName(for date: Date) -> String {
+        let hour = Calendar.current.component(.hour, from: date)
         switch hour {
-        case 5...10:
-            return "Breakfast"
-        case 11...14:
-            return "Lunch"
-        case 15...17:
-            return "Snack"
-        case 18...21:
-            return "Dinner"
-        default:
-            return "Late Snack"
+        case 5...10: return "Breakfast"
+        case 11...12: return "Brunch"
+        case 13...15: return "Lunch"
+        case 16...17: return "Snack"
+        case 18...21: return "Dinner"
+        default: return "Snack"
         }
     }
     
@@ -107,7 +115,7 @@ struct ExpandableWindowBanner: View {
         switch mealType.lowercased() {
         case "breakfast":
             return "sun.max.fill"
-        case "lunch":
+        case "brunch", "lunch":
             return "sun.min.fill"
         case "dinner":
             return "moon.fill"
@@ -338,34 +346,34 @@ struct ExpandableWindowBanner: View {
     }
     
     var body: some View {
-        Button {
-            withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
-                selectedWindow = window
-                showWindowDetail = true
+        // Container only; tap/drag handled by overlay layer wrapper
+        VStack(spacing: 0) {
+            windowBannerContent
+            
+            // Add spacer to expand content for longer windows
+            if let height = bannerHeight, height > 80 {
+                Spacer(minLength: 0)
             }
-        } label: {
-            VStack(spacing: 0) {
-                windowBannerContent
-                
-                // Meals section (if any meals or analyzing)
-                if !meals.isEmpty || !analyzingMealsInWindow.isEmpty {
-                    mealsSection
-                }
+            
+            // Meals section (if any meals or analyzing)
+            if !meals.isEmpty || !analyzingMealsInWindow.isEmpty {
+                mealsSection
             }
-            .background(windowBackground)
-            .shadow(color: Color.black.opacity(0.35), radius: 12, x: 0, y: 8)
-            .clipShape(RoundedRectangle(cornerRadius: { if case .active = windowStatus { return 16 } else { return 12 } }()))
-            .overlay(
-                RoundedRectangle(cornerRadius: { if case .active = windowStatus { return 16 } else { return 12 } }())
-                    .strokeBorder(
-                        windowBorderColor,
-                        lineWidth: { if case .active = windowStatus { return 2 } else { return 1 } }()
-                    )
-            )
-            .opacity(windowOpacity)
-            .overlay(optimalTimeIndicators)
         }
-        .buttonStyle(PlainButtonStyle())
+        .background(windowBackground)
+        .shadow(color: Color.black.opacity(0.35), radius: 12, x: 0, y: 8)
+        .clipShape(RoundedRectangle(cornerRadius: { if case .active = windowStatus { return 16 } else { return 12 } }()))
+        .overlay(
+            RoundedRectangle(cornerRadius: { if case .active = windowStatus { return 16 } else { return 12 } }())
+                .strokeBorder(
+                    windowBorderColor,
+                    lineWidth: { if case .active = windowStatus { return 2 } else { return 1 } }()
+                )
+        )
+        .opacity(windowOpacity)
+        .overlay(optimalTimeIndicators)
+        // Apply fixed height if provided so the background and content expand to match duration
+        .frame(minHeight: bannerHeight, maxHeight: bannerHeight, alignment: .top)
         .onAppear {
             withAnimation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true)) {
                 pulseAnimation = true
@@ -385,7 +393,22 @@ struct ExpandableWindowBanner: View {
             statusIndicator
                 .frame(width: 50, height: 50)
         }
-        .padding({ if case .active = windowStatus { return 16 } else { return 12 } }())
+        .padding(windowBannerPadding)
+    }
+    
+    // Calculate padding based on banner height for better visual proportion
+    private var windowBannerPadding: CGFloat {
+        let basePadding: CGFloat = {
+            if case .active = windowStatus { return 16 } else { return 12 }
+        }()
+        
+        // Scale padding for taller windows
+        if let height = bannerHeight {
+            let scaleFactor = min(height / 88, 2.0) // 88 is base hour height
+            return basePadding * scaleFactor
+        }
+        
+        return basePadding
     }
     
     @ViewBuilder
@@ -400,12 +423,21 @@ struct ExpandableWindowBanner: View {
             }
             .foregroundColor(.white)
             
-            // Time range display
-            Text(formatTimeRange(start: window.startTime, end: window.endTime))
-                .font(.system(size: 12, weight: .medium))
-                .foregroundColor(.white.opacity(0.7))
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
+            // Time range display with duration
+            HStack(spacing: 4) {
+                Text(formatTimeRange(start: window.startTime, end: window.endTime))
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(.white.opacity(0.7))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                
+                // Show duration for windows longer than 1 hour
+                if window.duration > 3600 {
+                    Text("• \(Int(window.duration / 3600))h")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(.white.opacity(0.5))
+                }
+            }
             
             // Status text based on window state
             switch windowStatus {
@@ -1033,7 +1065,8 @@ struct AnalyzingMealRowCompact: View {
                     selectedWindow: $selectedWindow,
                     showWindowDetail: $showWindowDetail,
                     animationNamespace: animationNamespace,
-                    viewModel: viewModel
+                    viewModel: viewModel,
+                    bannerHeight: nil
                 )
                 .padding(.horizontal)
             }

@@ -118,6 +118,24 @@ extension LoggedMeal {
             data["imageData"] = imageData
         }
         
+        // Serialize ingredients as array of dictionaries
+        if !ingredients.isEmpty {
+            data["ingredients"] = ingredients.map { ingredient in
+                var dict: [String: Any] = [
+                    "id": ingredient.id.uuidString,
+                    "name": ingredient.name,
+                    "quantity": ingredient.quantity,
+                    "unit": ingredient.unit,
+                    "foodGroup": ingredient.foodGroup.rawValue
+                ]
+                if let calories = ingredient.calories { dict["calories"] = calories }
+                if let protein = ingredient.protein { dict["protein"] = protein }
+                if let carbs = ingredient.carbs { dict["carbs"] = carbs }
+                if let fat = ingredient.fat { dict["fat"] = fat }
+                return dict
+            }
+        }
+        
         return data
     }
     
@@ -167,7 +185,29 @@ extension LoggedMeal {
             meal.appliedClarifications = clar
         }
         
-        // TODO: Parse ingredients from data["ingredients"]
+        // Parse ingredients
+        if let ingredientList = data["ingredients"] as? [[String: Any]] {
+            meal.ingredients = ingredientList.compactMap { dict in
+                guard let name = dict["name"] as? String,
+                      let quantity = dict["quantity"] as? Double,
+                      let unit = dict["unit"] as? String,
+                      let fgRaw = dict["foodGroup"] as? String,
+                      let foodGroup = FoodGroup(rawValue: fgRaw) else {
+                    return nil
+                }
+                var item = MealIngredient(
+                    name: name,
+                    quantity: quantity,
+                    unit: unit,
+                    foodGroup: foodGroup
+                )
+                item.calories = dict["calories"] as? Int
+                item.protein = dict["protein"] as? Double
+                item.carbs = dict["carbs"] as? Double
+                item.fat = dict["fat"] as? Double
+                return item
+            }
+        }
         
         return meal
     }

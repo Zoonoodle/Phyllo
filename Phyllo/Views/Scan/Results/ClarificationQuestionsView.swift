@@ -197,8 +197,22 @@ struct ClarificationQuestionsView: View {
         } else if lowercased.contains("vegetable") || lowercased.contains("plant") || lowercased.contains("almond") || lowercased.contains("oat") || lowercased.contains("soy") {
             return "leaf.fill"
         } else {
-            return "questionmark.circle"
+            return "info.circle"
         }
+    }
+
+    // Derive a better leading icon from the question text
+    private func iconForQuestion(_ question: String) -> String {
+        let q = question.lowercased()
+        if q.contains("protein") { return "bolt.fill" }
+        if q.contains("milk") || q.contains("dairy") { return "drop.circle" }
+        if q.contains("sweet") || q.contains("sugar") { return "cube.fill" }
+        if q.contains("oil") || q.contains("butter") { return "drop.fill" }
+        if q.contains("cooking") || q.contains("grilled") || q.contains("fried") { return "flame.fill" }
+        if q.contains("portion") || q.contains("amount") || q.contains("size") { return "ruler" }
+        if q.contains("bread") || q.contains("wrap") || q.contains("bun") { return "baguette" }
+        if q.contains("vegetable") || q.contains("plant") { return "leaf.fill" }
+        return "info.circle"
     }
     
     var body: some View {
@@ -281,32 +295,42 @@ struct ClarificationQuestionsView: View {
     }
     
     private var progressIndicator: some View {
-        HStack(spacing: 8) {
-            ForEach(0..<questions.count, id: \.self) { index in
-                Circle()
-                    .fill(index <= currentQuestionIndex ? Color.white : Color.white.opacity(0.3))
-                    .frame(width: 8, height: 8)
+        // Smooth capsule progress; use white accent per design
+        GeometryReader { geo in
+            let progress = CGFloat(max(1, currentQuestionIndex + 1)) / CGFloat(max(1, questions.count))
+            ZStack(alignment: .leading) {
+                Capsule()
+                    .fill(Color.white.opacity(0.08))
+                Capsule()
+                    .fill(Color.white)
+                    .frame(width: geo.size.width * progress)
             }
         }
+        .frame(height: 6)
+        .padding(.horizontal, 20)
+        .padding(.bottom, 8)
     }
     
     private var questionSection: some View {
         HStack(spacing: 12) {
             ZStack {
                 Circle()
-                    .fill(Color.white.opacity(0.03))
-                    .frame(width: 32, height: 32)
-                
-                Image(systemName: "questionmark")
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(.white.opacity(0.7))
+                    .fill(Color.white.opacity(0.06))
+                    .frame(width: 34, height: 34)
+                Image(systemName: iconForQuestion(currentQuestion.question))
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.8))
             }
-            
-            Text(currentQuestion.question)
-                .font(.system(size: 17, weight: .medium))
-                .foregroundColor(.white)
-                .multilineTextAlignment(.leading)
-            
+            VStack(alignment: .leading, spacing: 4) {
+                Text(currentQuestion.question)
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.leading)
+                    .lineSpacing(2)
+                Text("Choose the closest option")
+                    .font(.system(size: 13))
+                    .foregroundColor(.white.opacity(0.5))
+            }
             Spacer()
         }
         .padding(.horizontal, 20)
@@ -473,76 +497,78 @@ struct OptionRow: View {
     let onTap: () -> Void
     
     var body: some View {
-        Button(action: onTap) {
-            HStack(spacing: 16) {
-                // Icon
-                Image(systemName: option.icon)
-                    .font(.system(size: 20))
-                    .foregroundColor(.white.opacity(0.6))
-                    .frame(width: 24)
-                
-                // Content
+        Button(action: {
+            let generator = UIImpactFeedbackGenerator(style: .light)
+            generator.impactOccurred()
+            onTap()
+        }) {
+            HStack(spacing: 14) {
+                ZStack {
+                    Circle()
+                        .fill(isSelected ? Color.white.opacity(0.08) : Color.white.opacity(0.06))
+                        .frame(width: 34, height: 34)
+                    Image(systemName: option.icon)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.white.opacity(isSelected ? 0.95 : 0.8))
+                }
                 VStack(alignment: .leading, spacing: 8) {
-                    HStack {
+                    HStack(spacing: 8) {
                         Text(option.text)
-                            .font(.system(size: 16, weight: .medium))
+                            .font(.system(size: 16, weight: .semibold))
                             .foregroundColor(.white)
-                        
-                        if let note = option.note {
-                            Text(note)
-                                .font(.system(size: 13))
-                                .foregroundColor(.white.opacity(0.5))
+                            .lineLimit(2)
+                            .fixedSize(horizontal: false, vertical: true)
+                        if option.isRecommended {
+                            Text("Recommended")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundColor(Color.phylloAccent)
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 2)
-                                .background(
-                                    Capsule()
-                                        .fill(Color.white.opacity(0.05))
-                                )
+                                .background(Capsule().fill(Color.phylloAccent.opacity(0.15)))
+                        } else if let note = option.note {
+                            Text(note)
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundColor(.white.opacity(0.6))
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 2)
+                                .background(Capsule().fill(Color.white.opacity(0.06)))
                         }
                     }
-                    
-                    // Impact indicators
-                    HStack(spacing: 16) {
-                        // Calories
-                        if option.calorieImpact != 0 {
-                            HStack(spacing: 4) {
-                                Image(systemName: option.calorieImpact > 0 ? "plus" : "minus")
-                                    .font(.system(size: 11, weight: .medium))
-                                Text("\(abs(option.calorieImpact)) cal")
-                                    .font(.system(size: 13, weight: .medium))
+                    // Impact row
+                    HStack(spacing: 14) {
+                        Group {
+                            if option.calorieImpact == 0 {
+                                Label("+0 cal", systemImage: "checkmark")
+                                    .labelStyle(.titleAndIcon)
+                                    .font(.system(size: 12, weight: .medium))
+                                    .foregroundColor(.green)
+                            } else {
+                                HStack(spacing: 4) {
+                                    Image(systemName: option.calorieImpact > 0 ? "plus" : "minus")
+                                        .font(.system(size: 11, weight: .medium))
+                                    Text("\(abs(option.calorieImpact)) cal")
+                                        .font(.system(size: 12, weight: .medium))
+                                }
+                                .foregroundColor(option.calorieImpact > 80 ? .red : .orange)
                             }
-                            .foregroundColor(option.calorieImpact > 50 ? .red.opacity(0.8) : .white.opacity(0.5))
-                        } else {
-                            HStack(spacing: 4) {
-                                Image(systemName: "checkmark")
-                                    .font(.system(size: 11, weight: .medium))
-                                Text("+0 calories")
-                                    .font(.system(size: 13, weight: .medium))
-                            }
-                            .foregroundColor(.green)
                         }
-                        
-                        // Macros
                         if option.proteinImpact > 0 {
                             Text("+ \(option.proteinImpact) g P")
-                                .font(.system(size: 13))
-                                .foregroundColor(.white.opacity(0.5))
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundColor(.blue)
                         }
-                        
                         if option.carbImpact > 0 {
                             Text("+ \(option.carbImpact) g C")
-                                .font(.system(size: 13))
-                                .foregroundColor(option.carbImpact > 20 ? .orange.opacity(0.8) : .white.opacity(0.5))
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundColor(.orange)
                         }
-                        
                         if option.fatImpact > 0 {
                             Text("+ \(option.fatImpact) g F")
-                                .font(.system(size: 13))
-                                .foregroundColor(.white.opacity(0.5))
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundColor(.yellow)
                         }
                     }
                 }
-                
                 Spacer()
             }
             .padding(16)
@@ -551,10 +577,7 @@ struct OptionRow: View {
                     .fill(isSelected ? Color.white.opacity(0.08) : Color.white.opacity(0.03))
                     .overlay(
                         RoundedRectangle(cornerRadius: 16)
-                            .stroke(
-                                isSelected ? Color.white.opacity(0.15) : Color.white.opacity(0.05),
-                                lineWidth: 1
-                            )
+                            .stroke(isSelected ? Color.white.opacity(0.15) : Color.white.opacity(0.05), lineWidth: 1)
                     )
             )
         }

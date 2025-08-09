@@ -107,7 +107,7 @@ class MealCaptureService: ObservableObject {
         let analyzingMeal = AnalyzingMeal(
             timestamp: now,
             windowId: bestWindow?.id,
-            imageData: image?.jpegData(compressionQuality: 0.8),
+            imageData: image.flatMap { makePreviewData(from: $0) },
             voiceDescription: voiceTranscript
         )
         
@@ -152,10 +152,15 @@ class MealCaptureService: ObservableObject {
                             DebugLogger.shared.mealAnalysis("No clarification needed - completing analysis")
                         }
                         // No clarification needed, complete the analysis
-                        let savedMeal = try await dataProvider.completeAnalyzingMeal(
+                        var savedMeal = try await dataProvider.completeAnalyzingMeal(
                             id: analyzingMeal.id.uuidString,
                             result: result
                         )
+                        // Preserve captured image from the session when coming from photo library/camera
+                        if savedMeal.imageData == nil, let img = analyzingMeal.imageData {
+                            savedMeal.imageData = img
+                            try? await dataProvider.updateMeal(savedMeal)
+                        }
                         
                         Task { @MainActor in
                             DebugLogger.shared.success("Meal analysis completed: \(result.mealName)")
@@ -341,6 +346,10 @@ class MealCaptureService: ObservableObject {
 
         // Persist applied clarifications on the saved meal and update record
         savedMeal.appliedClarifications = appliedClarifications
+        // Attach image data if available from capture time
+        if savedMeal.imageData == nil {
+            savedMeal.imageData = analyzingMeal.imageData
+        }
         try? await dataProvider.updateMeal(savedMeal)
         
         // Schedule post-meal check-in reminder
@@ -399,6 +408,20 @@ class MealCaptureService: ObservableObject {
 }
 
 // MARK: - Helper Extensions
+
+private func makePreviewData(from image: UIImage) -> Data? {
+    // Create a small preview image suitable for Firestore (<1 MB)
+    let maxDimension: CGFloat = 640
+    let widthScale = maxDimension / image.size.width
+    let heightScale = maxDimension / image.size.height
+    let scale = min(1.0, min(widthScale, heightScale))
+    let newSize = CGSize(width: image.size.width * scale, height: image.size.height * scale)
+    UIGraphicsBeginImageContextWithOptions(newSize, false, 1.0)
+    image.draw(in: CGRect(origin: .zero, size: newSize))
+    let resized = UIGraphicsGetImageFromCurrentImageContext()
+    UIGraphicsEndImageContext()
+    return resized?.jpegData(compressionQuality: 0.65)
+}
 
 // MARK: - Notification Names
 

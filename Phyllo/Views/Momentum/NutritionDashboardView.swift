@@ -208,15 +208,33 @@ struct NutritionDashboardView: View {
                 )
                 .animation(.spring(response: 1.0, dampingFraction: 0.8).delay(0.2), value: ringAnimations.adherenceProgress)
                 
-                // Center metrics
-                VStack(spacing: 4) {
-                    Text("\(totalPercentage)%")
-                        .font(.system(size: 42, weight: .bold, design: .rounded))
-                        .foregroundColor(.white)
+                // Center metrics with subtle glass background
+                ZStack {
+                    // Glass circle
+                    Circle()
+                        .fill(Color.white.opacity(0.03))
+                        .frame(width: 138, height: 138)
+                        .overlay(
+                            Circle()
+                                .stroke(Color.white.opacity(0.06), lineWidth: 1)
+                        )
+                        .shadow(color: .black.opacity(0.4), radius: 12, x: 0, y: 6)
                     
-                    Text("Overall")
-                        .font(.system(size: 14))
-                        .foregroundColor(.phylloTextSecondary)
+                    VStack(spacing: 6) {
+                        Text("\(totalPercentage)%")
+                            .font(.system(size: 44, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
+                            .monospacedDigit()
+                        
+                        Text("Overall")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.8))
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 4)
+                            .background(
+                                Capsule().fill(Color.white.opacity(0.06))
+                            )
+                    }
                 }
             }
             .frame(height: 300)
@@ -1676,12 +1694,24 @@ struct AppleStyleRing: View {
     
     var body: some View {
         ZStack {
-            // Background ring (dimmed more for contrast)
+            // Background ring (dimmed more for contrast) with ticks
             Circle()
-                .stroke(backgroundColor.opacity(0.3), lineWidth: lineWidth)
+                .stroke(backgroundColor.opacity(0.22), lineWidth: lineWidth)
                 .frame(width: diameter, height: diameter)
+                .overlay(
+                    // Discrete tick marks every 10%
+                    ZStack {
+                        ForEach(0..<10, id: \.self) { index in
+                            Capsule()
+                                .fill(Color.white.opacity(0.06))
+                                .frame(width: 2, height: lineWidth * 0.9)
+                                .offset(y: -(diameter / 2))
+                                .rotationEffect(.degrees(Double(index) * 36))
+                        }
+                    }
+                )
             
-            // Active ring with 3D effect
+            // Active ring with 3D effect and soft outer glow
             Circle()
                 .trim(from: 0, to: progress)
                 .stroke(
@@ -1694,7 +1724,7 @@ struct AppleStyleRing: View {
                 )
                 .frame(width: diameter, height: diameter)
                 .rotationEffect(.degrees(-90))
-                .shadow(color: foregroundColors.first?.opacity(0.3) ?? .clear, radius: 4, x: 0, y: 2)
+                .shadow(color: foregroundColors.first?.opacity(0.45) ?? .clear, radius: 10, x: 0, y: 6)
                 .overlay(
                     // Add highlight for 3D effect
                     Circle()
@@ -1715,6 +1745,16 @@ struct AppleStyleRing: View {
                         .blur(radius: 1)
                 )
             
+            // End cap dot indicating progress head
+            Circle()
+                .fill(foregroundColors.last ?? .white)
+                .frame(width: lineWidth * 0.55, height: lineWidth * 0.55)
+                .shadow(color: (foregroundColors.last ?? .white).opacity(0.6), radius: 4, x: 0, y: 2)
+                .offset(y: -(diameter / 2))
+                .rotationEffect(.degrees(progress * 360 - 90))
+                .opacity(progress > 0.01 ? 1 : 0)
+                .animation(.easeInOut(duration: 0.35), value: progress)
+
             // Icon at starting point (top center)
             Image(systemName: icon)
                 .font(.system(size: lineWidth * 0.9, weight: .bold))
