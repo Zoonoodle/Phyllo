@@ -28,6 +28,7 @@ class NudgeManager: ObservableObject {
         case mealLoggedCelebration(meal: LoggedMeal)
         case missedWindow(window: MealWindow)
         case activeWindowReminder(window: MealWindow, timeRemaining: Int)
+        case postMealCheckIn(meal: LoggedMeal)
         
         var id: String {
             switch self {
@@ -41,6 +42,8 @@ class NudgeManager: ObservableObject {
                 return "missed_\(window.id)"
             case .activeWindowReminder(let window, _):
                 return "reminder_\(window.id)"
+            case .postMealCheckIn(let meal):
+                return "postmeal_checkin_\(meal.id)"
             }
         }
         
@@ -48,7 +51,7 @@ class NudgeManager: ObservableObject {
             switch self {
             case .morningCheckIn, .missedWindow:
                 return .critical
-            case .activeWindowReminder:
+            case .activeWindowReminder, .postMealCheckIn:
                 return .prominent
             case .mealLoggedCelebration, .firstTimeTutorial:
                 return .gentle
@@ -219,7 +222,7 @@ class NudgeManager: ObservableObject {
         switch nudge {
         case .firstTimeTutorial, .mealLoggedCelebration:
             return true
-        case .morningCheckIn, .missedWindow, .activeWindowReminder:
+        case .morningCheckIn, .missedWindow, .activeWindowReminder, .postMealCheckIn:
             return false // Can reappear
         }
     }

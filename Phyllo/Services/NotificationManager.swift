@@ -516,12 +516,37 @@ extension NotificationManager: @preconcurrency UNUserNotificationCenterDelegate 
                     nudgeManager.triggerNudge(.morningCheckIn)
                     
                 case "postMealCheckIn":
-                    // Navigate to schedule tab for post-meal check-in
-                    NotificationCenter.default.post(
-                        name: .navigateToTab,
-                        object: nil,
-                        userInfo: ["tab": "schedule"]
-                    )
+                    // Trigger post-meal check-in nudge
+                    if let mealIdString = userInfo["mealId"] as? String {
+                        Task {
+                            do {
+                                if let meal = try await dataProvider.getMeal(id: mealIdString) {
+                                    await MainActor.run {
+                                        nudgeManager.triggerNudge(.postMealCheckIn(meal: meal))
+                                    }
+                                } else {
+                                    // Fallback to schedule tab if meal not found
+                                    await MainActor.run {
+                                        NotificationCenter.default.post(
+                                            name: .navigateToTab,
+                                            object: nil,
+                                            userInfo: ["tab": "schedule"]
+                                        )
+                                    }
+                                }
+                            } catch {
+                                print("Error fetching meal: \(error)")
+                                // Fallback to schedule tab on error
+                                await MainActor.run {
+                                    NotificationCenter.default.post(
+                                        name: .navigateToTab,
+                                        object: nil,
+                                        userInfo: ["tab": "schedule"]
+                                    )
+                                }
+                            }
+                        }
+                    }
                     
                 default:
                     break

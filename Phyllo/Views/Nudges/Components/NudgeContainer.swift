@@ -10,6 +10,9 @@ import SwiftUI
 struct NudgeContainer: View {
     @StateObject private var nudgeManager = NudgeManager.shared
     private let dataProvider = DataSourceProvider.shared.provider
+    @State private var showMorningCheckIn = false
+    @State private var showPostMealCheckIn = false
+    @State private var postMealCheckInMeal: LoggedMeal?
     
     var body: some View {
         ZStack {
@@ -26,8 +29,8 @@ struct NudgeContainer: View {
                 case .morningCheckIn:
                     MorningCheckInNudge(
                         onCheckIn: {
-                            // TODO: Implement morning check-in with real data provider
                             nudgeManager.dismissCurrentNudge()
+                            showMorningCheckIn = true
                         },
                         onDismiss: {
                             nudgeManager.dismissCurrentNudge()
@@ -88,10 +91,33 @@ struct NudgeContainer: View {
                     }
                     .zIndex(10001)
                     .transition(.opacity.combined(with: .scale(scale: 0.9)))
+                    
+                case .postMealCheckIn(let meal):
+                    PostMealCheckInNudge(
+                        meal: meal,
+                        onCheckIn: {
+                            postMealCheckInMeal = meal
+                            nudgeManager.dismissCurrentNudge()
+                            showPostMealCheckIn = true
+                        },
+                        onDismiss: {
+                            nudgeManager.dismissCurrentNudge()
+                        }
+                    )
+                    .zIndex(10001)
+                    .transition(.opacity.combined(with: .scale(scale: 0.9)))
                 }
             }
         }
         .animation(.spring(response: 0.4, dampingFraction: 0.8), value: nudgeManager.activeNudge?.id)
+        .sheet(isPresented: $showMorningCheckIn) {
+            MorningCheckInView()
+        }
+        .sheet(isPresented: $showPostMealCheckIn) {
+            if let meal = postMealCheckInMeal {
+                PostMealCheckInView(mealId: meal.id.uuidString, mealName: meal.name)
+            }
+        }
     }
 }
 
