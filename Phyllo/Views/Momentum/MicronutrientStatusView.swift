@@ -25,14 +25,56 @@ struct MicronutrientStatusView: View {
         return Int(average)
     }
     
-    // Get top nutrients for display below hexagon
-    private var displayNutrients: [InsightsEngine.MicronutrientStatus.NutrientStatus] {
-        // Prioritize deficient nutrients, then show others
-        let deficient = status.nutrients.filter { $0.status == .deficient || $0.status == .low }
-        let adequate = status.nutrients.filter { $0.status == .adequate || $0.status == .high }
+    // Separate good nutrients and anti-nutrients for guidance display
+    private var goodNutrients: [(status: InsightsEngine.MicronutrientStatus.NutrientStatus, info: MicronutrientInfo)] {
+        status.nutrients.compactMap { nutrientStatus in
+            guard let info = MicronutrientData.getNutrient(byName: nutrientStatus.nutrient.name),
+                  !info.isAntiNutrient else { return nil }
+            return (status: nutrientStatus, info: info)
+        }
+    }
+    
+    private var antiNutrients: [(name: String, consumed: Double, info: MicronutrientInfo)] {
+        status.nutrients.compactMap { nutrientStatus in
+            guard let info = MicronutrientData.getNutrient(byName: nutrientStatus.nutrient.name),
+                  info.isAntiNutrient else { return nil }
+            return (name: nutrientStatus.nutrient.name, consumed: nutrientStatus.consumed, info: info)
+        }
+    }
+    
+    // Get nutrients that need attention (for guidance)
+    private var nutrientsNeedingAttention: [(status: InsightsEngine.MicronutrientStatus.NutrientStatus, info: MicronutrientInfo, guidanceLevel: NutrientGuidanceLevel)] {
+        var results: [(status: InsightsEngine.MicronutrientStatus.NutrientStatus, info: MicronutrientInfo, guidanceLevel: NutrientGuidanceLevel)] = []
         
-        let combined = deficient + adequate
-        return Array(combined.prefix(6))
+        // Add good nutrients that need more
+        for (nutrientStatus, info) in goodNutrients {
+            let guidanceLevel = info.getGuidanceLevel(consumed: nutrientStatus.consumed)
+            if guidanceLevel == .needsMore {
+                results.append((status: nutrientStatus, info: info, guidanceLevel: guidanceLevel))
+            }
+        }
+        
+        // Add anti-nutrients that are excessive or critical
+        for (name, consumed, info) in antiNutrients {
+            let guidanceLevel = info.getGuidanceLevel(consumed: consumed)
+            if guidanceLevel == .excessive || guidanceLevel == .critical {
+                // Create a dummy status for display
+                let nutrient = MicronutrientData(
+                    name: name,
+                    unit: info.unit,
+                    rda: info.dailyLimit ?? 0
+                )
+                let status = InsightsEngine.MicronutrientStatus.NutrientStatus(
+                    nutrient: nutrient,
+                    consumed: consumed,
+                    percentageOfRDA: (consumed / (info.dailyLimit ?? 1)) * 100,
+                    status: guidanceLevel == .critical ? .deficient : .low
+                )
+                results.append((status: status, info: info, guidanceLevel: guidanceLevel))
+            }
+        }
+        
+        return Array(results.prefix(6))
     }
     
     var body: some View {
@@ -57,18 +99,26 @@ struct MicronutrientStatusView: View {
             .frame(height: 200)
             .padding(.top, 4)
             
-            // Nutrient Cards Grid
-            VStack(spacing: 16) {
-                ForEach(Array(displayNutrients.enumerated()), id: \.element.nutrient.id) { index, nutrientStatus in
-                    MicronutrientRow(
-                        nutrientStatus: nutrientStatus,
-                        isExpanded: expandedNutrients.contains(nutrientStatus.nutrient.id.uuidString),
+            // Anti-nutrient warnings if any
+            if !antiNutrients.isEmpty {
+                AntiNutrientWarningCard(antiNutrients: antiNutrients)
+                    .padding(.horizontal, 20)
+            }
+            
+            // Nutrient Guidance Cards
+            VStack(spacing: 12) {
+                ForEach(Array(nutrientsNeedingAttention.enumerated()), id: \.offset) { index, item in
+                    MicronutrientGuidanceRow(
+                        nutrientStatus: item.status,
+                        nutrientInfo: item.info,
+                        guidanceLevel: item.guidanceLevel,
+                        isExpanded: expandedNutrients.contains(item.status.nutrient.name),
                         onTap: {
                             withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                                if expandedNutrients.contains(nutrientStatus.nutrient.id.uuidString) {
-                                    expandedNutrients.remove(nutrientStatus.nutrient.id.uuidString)
+                                if expandedNutrients.contains(item.status.nutrient.name) {
+                                    expandedNutrients.remove(item.status.nutrient.name)
                                 } else {
-                                    expandedNutrients.insert(nutrientStatus.nutrient.id.uuidString)
+                                    expandedNutrients.insert(item.status.nutrient.name)
                                 }
                             }
                         }
@@ -116,7 +166,220 @@ struct DeficiencyAlertCard: View {
     }
 }
 
-// MARK: - Micronutrient Row
+// MARK: - Micronutrient Guidance Row
+
+struct MicronutrientGuidanceRow: View {
+    let nutrientStatus: InsightsEngine.MicronutrientStatus.NutrientStatus
+    let nutrientInfo: MicronutrientInfo
+    let guidanceLevel: NutrientGuidanceLevel
+    let isExpanded: Bool
+    let onTap: () -> Void
+    
+    // Get icon emoji based on nutrient name
+    private var nutrientIcon: String {
+        let icons: [String: String] = [
+            "Iron": "💧",
+            "Vitamin D": "☀️",
+            "Calcium": "🦴",
+            "B12": "⚡",
+            "Folate": "🍃",
+            "Zinc": "🛡️",
+            "Vitamin C": "🍊",
+            "Magnesium": "💪",
+            "Vitamin A": "👁️",
+            "Omega-3": "🐟",
+            "Potassium": "🍌",
+            "Vitamin E": "✨",
+            "Sodium": "🧂",
+            "Added Sugar": "🍬",
+            "Saturated Fat": "🧈",
+            "Trans Fat": "⚠️",
+            "Cholesterol": "🥚",
+            "Caffeine": "☕"
+        ]
+        return icons[nutrientStatus.nutrient.name] ?? "💊"
+    }
+    
+    private var guidanceColor: Color {
+        switch guidanceLevel {
+        case .needsMore:
+            return .orange
+        case .adequate:
+            return .green
+        case .excessive:
+            return .orange
+        case .critical:
+            return .red
+        }
+    }
+    
+    private var guidanceIcon: String {
+        switch guidanceLevel {
+        case .needsMore:
+            return "arrow.up.circle.fill"
+        case .adequate:
+            return "checkmark.circle.fill"
+        case .excessive:
+            return "exclamationmark.triangle.fill"
+        case .critical:
+            return "exclamationmark.circle.fill"
+        }
+    }
+    
+    private var guidanceText: String {
+        switch guidanceLevel {
+        case .needsMore:
+            return "Eat more"
+        case .adequate:
+            return "Good"
+        case .excessive:
+            return "High"
+        case .critical:
+            return "Too high"
+        }
+    }
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            // Main row
+            HStack(spacing: 16) {
+                // Icon
+                Text(nutrientIcon)
+                    .font(.system(size: 24))
+                
+                // Name and guidance
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(nutrientStatus.nutrient.name)
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundColor(.white)
+                    
+                    HStack(spacing: 6) {
+                        Image(systemName: guidanceIcon)
+                            .font(.system(size: 12))
+                        Text(guidanceText)
+                            .font(.system(size: 13))
+                    }
+                    .foregroundColor(guidanceColor)
+                }
+                
+                Spacer()
+                
+                // Amount and chevron
+                HStack(spacing: 8) {
+                    Text(String(format: "%.0f%@", nutrientStatus.consumed, nutrientStatus.nutrient.unit))
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.7))
+                    
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.white.opacity(0.5))
+                        .rotationEffect(.degrees(isExpanded ? 180 : 0))
+                }
+            }
+            .padding(16)
+            .background(
+                Group {
+                    if isExpanded {
+                        UnevenRoundedRectangle(
+                            topLeadingRadius: 16,
+                            bottomLeadingRadius: 0,
+                            bottomTrailingRadius: 0,
+                            topTrailingRadius: 16
+                        )
+                        .fill(guidanceColor.opacity(0.1))
+                    } else {
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(guidanceColor.opacity(0.1))
+                    }
+                }
+            )
+            .onTapGesture(perform: onTap)
+            
+            // Expanded detail
+            if isExpanded {
+                VStack(alignment: .leading, spacing: 12) {
+                    // Consumed vs Target/Limit
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Consumed")
+                                .font(.system(size: 12))
+                                .foregroundColor(.white.opacity(0.5))
+                            Text("\(String(format: "%.1f", nutrientStatus.consumed))\(nutrientStatus.nutrient.unit)")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(.white)
+                        }
+                        
+                        Spacer()
+                        
+                        VStack(alignment: .trailing, spacing: 2) {
+                            Text(nutrientInfo.isAntiNutrient ? "Daily Limit" : "Daily Goal")
+                                .font(.system(size: 12))
+                                .foregroundColor(.white.opacity(0.5))
+                            Text("\(String(format: "%.1f", nutrientStatus.nutrient.rda))\(nutrientStatus.nutrient.unit)")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(.white.opacity(0.7))
+                        }
+                    }
+                    
+                    // Guidance message
+                    if guidanceLevel == .needsMore {
+                        let foodSources = InsightsEngine.shared.getFoodsRichIn(nutrient: nutrientStatus.nutrient.name)
+                        
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Good sources:")
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundColor(.white.opacity(0.7))
+                            
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 8) {
+                                    ForEach(foodSources, id: \.self) { food in
+                                        Text(food)
+                                            .font(.system(size: 12))
+                                            .foregroundColor(.white)
+                                            .padding(.horizontal, 12)
+                                            .padding(.vertical, 6)
+                                            .background(guidanceColor.opacity(0.2))
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: 8)
+                                                    .stroke(guidanceColor.opacity(0.3), lineWidth: 1)
+                                            )
+                                            .cornerRadius(8)
+                                    }
+                                }
+                            }
+                        }
+                    } else if guidanceLevel == .excessive || guidanceLevel == .critical {
+                        Text(nutrientInfo.isAntiNutrient ? 
+                            "Try to reduce intake of processed foods and choose whole foods instead." :
+                            "You're consuming high amounts of this nutrient. Consider moderating intake.")
+                            .font(.system(size: 13))
+                            .foregroundColor(.white.opacity(0.7))
+                            .padding(.vertical, 8)
+                            .padding(.horizontal, 12)
+                            .background(guidanceColor.opacity(0.1))
+                            .cornerRadius(8)
+                    }
+                }
+                .padding(16)
+                .background(
+                    UnevenRoundedRectangle(
+                        topLeadingRadius: 0,
+                        bottomLeadingRadius: 16,
+                        bottomTrailingRadius: 16,
+                        topTrailingRadius: 0
+                    )
+                    .fill(guidanceColor.opacity(0.05))
+                )
+            }
+        }
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(guidanceColor.opacity(0.3), lineWidth: 1)
+        )
+    }
+}
+
+// MARK: - Micronutrient Row (OLD - keeping for reference)
 
 struct MicronutrientRow: View {
     let nutrientStatus: InsightsEngine.MicronutrientStatus.NutrientStatus
