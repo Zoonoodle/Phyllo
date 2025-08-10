@@ -223,18 +223,13 @@ struct MockMealsTabView: View {
     
     var body: some View {
         VStack(spacing: 20) {
-            // Quick Actions
+            // Data Management
             VStack(spacing: 12) {
-                Button(action: {
-                    mockData.addMockMeal()
-                }) {
-                    Label("Add Random Meal", systemImage: "plus.circle.fill")
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.phylloAccent)
-                        .foregroundColor(.black)
-                        .cornerRadius(12)
-                }
+                Text("All meals must be logged through the Scan tab")
+                    .font(.subheadline)
+                    .foregroundColor(.white.opacity(0.7))
+                    .multilineTextAlignment(.center)
+                    .padding()
                 
                 Button(action: {
                     showClearConfirmation = true
@@ -263,34 +258,6 @@ struct MockMealsTabView: View {
                     Button("Cancel", role: .cancel) {}
                 } message: {
                     Text("This will permanently delete ALL meals from Firebase (not just today's) and all mock data. This action cannot be undone.")
-                }
-                
-                Button(action: {
-                    // Start analyzing meal and navigate to timeline
-                    let analyzingMeal = mockData.startAnalyzingMeal()
-                    NotificationCenter.default.post(
-                        name: .switchToTimelineWithScroll,
-                        object: analyzingMeal
-                    )
-                    
-                    // Simulate completion after 3 seconds
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-                        let result = analyzingMeal.toLoggedMeal(
-                            name: "Test Analyzed Meal",
-                            calories: 400,
-                            protein: 30,
-                            carbs: 40,
-                            fat: 15
-                        )
-                        mockData.completeAnalyzingMeal(analyzingMeal, with: result)
-                    }
-                }) {
-                    Label("Test Analyzing Meal", systemImage: "waveform")
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.blue.opacity(0.8))
-                        .foregroundColor(.white)
-                        .cornerRadius(12)
                 }
             }
             

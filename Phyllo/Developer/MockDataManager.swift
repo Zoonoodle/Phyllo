@@ -85,60 +85,16 @@ class MockDataManager: ObservableObject {
     
     // MARK: - Setup Methods
     func setupDefaultData() {
-        userGoals = [.performanceFocus, .betterSleep]
-        // Don't generate windows until morning check-in is completed
+        // No default data - everything driven by user actions
+        userGoals = []
         mealWindows = []
-        
-        // Add some default meals for testing
-        // addDefaultMealsForTesting() // Commented out to start with empty schedule
     }
     
-    private func addDefaultMealsForTesting() {
-        // Add breakfast
-        let breakfastTime = Calendar.current.date(bySettingHour: 8, minute: 0, second: 0, of: Date())!
-        addMockMeal(
-            name: "Veggie Omelet & Toast",
-            calories: 420,
-            protein: 24,
-            carbs: 35,
-            fat: 18,
-            at: breakfastTime
-        )
-        
-        // Add lunch
-        let lunchTime = Calendar.current.date(bySettingHour: 12, minute: 30, second: 0, of: Date())!
-        addMockMeal(
-            name: "Grilled Chicken Salad",
-            calories: 480,
-            protein: 38,
-            carbs: 25,
-            fat: 22,
-            at: lunchTime
-        )
-        
-        // Add snack
-        let snackTime = Calendar.current.date(bySettingHour: 15, minute: 30, second: 0, of: Date())!
-        addMockMeal(
-            name: "Greek Yogurt & Berries",
-            calories: 280,
-            protein: 18,
-            carbs: 32,
-            fat: 8,
-            at: snackTime
-        )
-    }
     
     // MARK: - Goal Management
     func setPrimaryGoal(_ goal: NutritionGoal) {
         userProfile.primaryGoal = goal
-        
-        // Regenerate windows with new goal
-        let windowGenerator = WindowGenerationService.shared
-        mealWindows = windowGenerator.generateWindows(
-            for: Date(),
-            profile: userProfile,
-            checkIn: morningCheckIn
-        )
+        // Don't auto-generate windows - wait for morning check-in
     }
     
     func addSecondaryGoal(_ goal: NutritionGoal) {
@@ -152,60 +108,10 @@ class MockDataManager: ObservableObject {
     }
     
     // MARK: - Window Generation
-    func generateMockWindows(for goal: NutritionGoal) {
-        // Convert to use WindowGenerationService
-        let windowGenerator = WindowGenerationService.shared
-        mealWindows = windowGenerator.generateWindows(
-            for: Date(),
-            profile: userProfile,
-            checkIn: morningCheckIn
-        )
-    }
+    // Removed mock window generation - windows only generate after morning check-in
     
     // MARK: - Meal Management
-    func addMockMeal(in window: MealWindow? = nil) {
-        let mockMeals = [
-            ("Grilled Chicken Salad", 450, 35, 25, 20),
-            ("Protein Smoothie", 350, 30, 40, 8),
-            ("Salmon & Quinoa", 550, 40, 45, 22),
-            ("Greek Yogurt Parfait", 300, 20, 35, 10),
-            ("Turkey Wrap", 400, 30, 35, 15),
-            ("Overnight Oats", 380, 15, 55, 12)
-        ]
-        
-        let randomMeal = mockMeals.randomElement()!
-        let mealTime = window?.startTime ?? TimeProvider.shared.currentTime
-        
-        // Find the appropriate window for this meal time
-        let targetWindow = window ?? windowForTimestamp(mealTime)
-        
-        // Generate micronutrient data based on window purpose
-        var micronutrients: [String: Double] = [:]
-        if let windowPurpose = targetWindow?.purpose {
-            micronutrients = generateMicronutrients(for: windowPurpose, mealName: randomMeal.0)
-        }
-        
-        // Generate ingredients based on meal name
-        let ingredients = generateIngredients(for: randomMeal.0)
-        
-        var newMeal = LoggedMeal(
-            name: randomMeal.0,
-            calories: randomMeal.1,
-            protein: randomMeal.2,
-            carbs: randomMeal.3,
-            fat: randomMeal.4,
-            timestamp: mealTime,
-            windowId: targetWindow?.id
-        )
-        newMeal.micronutrients = micronutrients
-        newMeal.ingredients = ingredients
-        
-        todaysMeals.append(newMeal)
-        todaysMeals.sort { $0.timestamp < $1.timestamp }
-        
-        // Trigger redistribution after adding meal
-        redistributeWindows()
-    }
+    // Removed mock meal generation - all meals must come from user actions
     
     func clearAllMeals() {
         todaysMeals.removeAll()
@@ -260,20 +166,7 @@ class MockDataManager: ObservableObject {
     
     func simulateDayProgress(hour: Int) {
         simulateTime(hour: hour)
-        
-        // Add meals based on time
-        if hour >= 8 && todaysMeals.isEmpty {
-            addMockMeal() // Breakfast
-        }
-        if hour >= 12 && todaysMeals.count == 1 {
-            addMockMeal() // Lunch
-        }
-        if hour >= 15 && todaysMeals.count == 2 {
-            addMockMeal() // Snack
-        }
-        if hour >= 19 && todaysMeals.count == 3 {
-            addMockMeal() // Dinner
-        }
+        // No automatic meal generation - user must log meals manually
     }
     
     // MARK: - Profile Settings
@@ -337,33 +230,7 @@ class MockDataManager: ObservableObject {
     }
     
     // MARK: - Meal Management
-    func addMockMeal(name: String, calories: Int, protein: Int, carbs: Int, fat: Int, at timestamp: Date) {
-        // Find the appropriate window for this meal time
-        let targetWindow = windowForTimestamp(timestamp)
-        
-        // Generate micronutrient data based on window purpose
-        var micronutrients: [String: Double] = [:]
-        if let windowPurpose = targetWindow?.purpose {
-            micronutrients = generateMicronutrients(for: windowPurpose, mealName: name)
-        }
-        
-        // Generate ingredients
-        let ingredients = generateIngredients(for: name)
-        
-        var meal = LoggedMeal(
-            name: name,
-            calories: calories,
-            protein: protein,
-            carbs: carbs,
-            fat: fat,
-            timestamp: timestamp,
-            windowId: targetWindow?.id
-        )
-        meal.micronutrients = micronutrients
-        meal.ingredients = ingredients
-        todaysMeals.append(meal)
-        todaysMeals.sort { $0.timestamp < $1.timestamp }
-    }
+    // Removed second mock meal method
     
     // MARK: - Analyzing Meals Management
     func startAnalyzingMeal(imageData: Data? = nil, voiceDescription: String? = nil) -> AnalyzingMeal {
