@@ -9,6 +9,7 @@ import SwiftUI
 
 struct NoWindowsView: View {
     @StateObject private var nudgeManager = NudgeManager.shared
+    @State private var showMorningCheckIn = false
     
     var body: some View {
         VStack(spacing: 32) {
@@ -32,7 +33,7 @@ struct NoWindowsView: View {
             
             // Check-in button
             Button(action: {
-                nudgeManager.triggerNudge(.morningCheckIn)
+                showMorningCheckIn = true
             }) {
                 HStack(spacing: 12) {
                     Image(systemName: "checkmark.circle.fill")
@@ -75,6 +76,9 @@ struct NoWindowsView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.phylloBackground)
+        .sheet(isPresented: $showMorningCheckIn) {
+            MorningCheckInView()
+        }
     }
 }
 
