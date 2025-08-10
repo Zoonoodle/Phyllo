@@ -309,13 +309,31 @@ class MockDataManager: ObservableObject {
     }
     
     func resetDay() {
+        // Clear all data for a fresh start
         todaysMeals.removeAll()
+        analyzingMeals.removeAll()
         morningCheckIn = nil
         showMorningCheckIn = true
         // Clear windows - they should only be generated after morning check-in
         mealWindows = []
-        currentSimulatedTime = Date()
-        TimeProvider.shared.resetToRealTime()
+        
+        // Reset nudge state for the new day
+        nudgeState.lastNudgeTimestamps.removeAll()
+        
+        // Simulate it being 7 AM on a new day
+        let calendar = Calendar.current
+        var components = calendar.dateComponents([.year, .month, .day], from: Date())
+        components.hour = 7
+        components.minute = 0
+        components.second = 0
+        
+        if let morningTime = calendar.date(from: components) {
+            currentSimulatedTime = morningTime
+            TimeProvider.shared.setSimulatedTime(morningTime)
+        } else {
+            currentSimulatedTime = Date()
+            TimeProvider.shared.resetToRealTime()
+        }
     }
     
     // MARK: - Meal Management

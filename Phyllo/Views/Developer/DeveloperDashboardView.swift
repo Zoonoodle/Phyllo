@@ -561,7 +561,7 @@ struct TimeControlTabView: View {
                 Button(action: {
                     mockData.resetDay()
                 }) {
-                    Label("New Day", systemImage: "sunrise.fill")
+                    Label("Reset Day (7 AM)", systemImage: "sunrise.fill")
                         .frame(maxWidth: .infinity)
                         .padding()
                         .background(Color.orange.opacity(0.8))
