@@ -147,24 +147,24 @@ struct PermissionsView: View {
     // MARK: - Permission Requests
     
     private func requestNotificationPermission() {
-        // In a real app, this would request notification permission
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-            notificationsEnabled = true
+        Task {
+            let granted = await NotificationManager.shared.requestAuthorization()
+            await MainActor.run {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                    notificationsEnabled = granted
+                }
+            }
         }
     }
     
     private func requestHealthPermission() {
-        // In a real app, this would request HealthKit permission
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-            healthEnabled = true
-        }
+        // Placeholder hook for HealthKit integration
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) { healthEnabled = true }
     }
     
     private func requestCameraPermission() {
-        // In a real app, this would request camera permission
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-            cameraEnabled = true
-        }
+        // Placeholder hook for camera permission
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) { cameraEnabled = true }
     }
 }
 

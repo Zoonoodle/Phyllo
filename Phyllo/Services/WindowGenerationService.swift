@@ -36,6 +36,8 @@ class WindowGenerationService {
         let targets = calculateNutritionTargets(for: profile)
         
         let calendar = Calendar.current
+        let currentTime = TimeProvider.shared.currentTime
+        
         // Derive wake and sleep ranges from morning check-in when available.
         let wakeTime = checkIn?.wakeTime ?? calendar.date(bySettingHour: 7, minute: 0, second: 0, of: date)!
         // Heuristic: earlier dinner if short sleep or low energy; later dinner allowed with high energy
@@ -140,70 +142,153 @@ class WindowGenerationService {
         targets: GoalCalculationService.NutritionTargets
     ) -> [MealWindow] {
         let calendar = Calendar.current
+        let currentTime = TimeProvider.shared.currentTime
         let totalCalories = targets.dailyCalories
         let totalProtein = targets.protein
         let totalCarbs = targets.carbs
         let totalFat = targets.fat
         
         // 16:8 fasting - eating window from 12pm to 8pm
-        let windowStart = calendar.date(bySettingHour: 12, minute: 0, second: 0, of: date)!
-        let windowEnd = calendar.date(bySettingHour: 20, minute: 0, second: 0, of: date)!
+        var windowStart = calendar.date(bySettingHour: 12, minute: 0, second: 0, of: date)!
+        var windowEnd = calendar.date(bySettingHour: 20, minute: 0, second: 0, of: date)!
         
-        return [
-            // Lunch (12pm-2pm) - 40% of daily intake
-            MealWindow(
-                startTime: windowStart,
-                endTime: min(windowStart.addingTimeInterval(purposeDuration(.sustainedEnergy)), calendar.date(byAdding: .minute, value: -90, to: sleepTime)!),
-                targetCalories: Int(Double(totalCalories) * 0.4),
-                targetMacros: MacroTargets(
-                    protein: Int(Double(totalProtein) * 0.4),
-                    carbs: Int(Double(totalCarbs) * 0.4),
-                    fat: Int(Double(totalFat) * 0.4)
-                ),
-                purpose: .sustainedEnergy,
-                flexibility: .moderate,
-                dayDate: calendar.startOfDay(for: date),
-                adjustedCalories: nil,
-                adjustedMacros: nil,
-                redistributionReason: nil
-            ),
+        // Handle late check-ins: if current time is past noon, start eating window 30 minutes from now
+        if currentTime > windowStart {
+            windowStart = currentTime.addingTimeInterval(30 * 60) // 30 minutes from now
+            // Maintain 8-hour eating window, but don't go past original end time
+            windowEnd = min(windowStart.addingTimeInterval(8 * 60 * 60), windowEnd)
+        }
+        
+        // Calculate available time for eating window
+        let availableTime = windowEnd.timeIntervalSince(windowStart)
+        let minimumWindowDuration: TimeInterval = 60 * 60 // 1 hour minimum
+        
+        // Generate windows based on available time
+        if availableTime >= 6 * 60 * 60 { // At least 6 hours available
+            // Standard 3-window approach
+            let lunchEnd = min(windowStart.addingTimeInterval(purposeDuration(.sustainedEnergy)), windowStart.addingTimeInterval(availableTime * 0.33))
+            let snackStart = lunchEnd.addingTimeInterval(30 * 60) // 30 min gap
+            let snackEnd = min(snackStart.addingTimeInterval(purposeDuration(.focusBoost)), snackStart.addingTimeInterval(minimumWindowDuration))
+            let dinnerStart = snackEnd.addingTimeInterval(30 * 60) // 30 min gap
             
-            // Snack (3pm-4pm) - 20% of daily intake
-            MealWindow(
-                startTime: calendar.date(bySettingHour: 15, minute: 0, second: 0, of: date)!,
-                endTime: min(calendar.date(bySettingHour: 15, minute: 0, second: 0, of: date)!.addingTimeInterval(purposeDuration(.focusBoost)), calendar.date(byAdding: .minute, value: -90, to: sleepTime)!),
-                targetCalories: Int(Double(totalCalories) * 0.2),
-                targetMacros: MacroTargets(
-                    protein: Int(Double(totalProtein) * 0.2),
-                    carbs: Int(Double(totalCarbs) * 0.2),
-                    fat: Int(Double(totalFat) * 0.2)
+            return [
+                // Lunch - 40% of daily intake
+                MealWindow(
+                    startTime: windowStart,
+                    endTime: lunchEnd,
+                    targetCalories: Int(Double(totalCalories) * 0.4),
+                    targetMacros: MacroTargets(
+                        protein: Int(Double(totalProtein) * 0.4),
+                        carbs: Int(Double(totalCarbs) * 0.4),
+                        fat: Int(Double(totalFat) * 0.4)
+                    ),
+                    purpose: .sustainedEnergy,
+                    flexibility: .moderate,
+                    dayDate: calendar.startOfDay(for: date),
+                    adjustedCalories: nil,
+                    adjustedMacros: nil,
+                    redistributionReason: nil
                 ),
-                purpose: .focusBoost,
-                flexibility: .flexible,
-                dayDate: calendar.startOfDay(for: date),
-                adjustedCalories: nil,
-                adjustedMacros: nil,
-                redistributionReason: nil
-            ),
+                
+                // Snack - 20% of daily intake
+                MealWindow(
+                    startTime: snackStart,
+                    endTime: snackEnd,
+                    targetCalories: Int(Double(totalCalories) * 0.2),
+                    targetMacros: MacroTargets(
+                        protein: Int(Double(totalProtein) * 0.2),
+                        carbs: Int(Double(totalCarbs) * 0.2),
+                        fat: Int(Double(totalFat) * 0.2)
+                    ),
+                    purpose: .focusBoost,
+                    flexibility: .flexible,
+                    dayDate: calendar.startOfDay(for: date),
+                    adjustedCalories: nil,
+                    adjustedMacros: nil,
+                    redistributionReason: nil
+                ),
+                
+                // Dinner - 40% of daily intake
+                MealWindow(
+                    startTime: dinnerStart,
+                    endTime: min(dinnerStart.addingTimeInterval(purposeDuration(.recovery)), windowEnd),
+                    targetCalories: Int(Double(totalCalories) * 0.4),
+                    targetMacros: MacroTargets(
+                        protein: Int(Double(totalProtein) * 0.4),
+                        carbs: Int(Double(totalCarbs) * 0.4),
+                        fat: Int(Double(totalFat) * 0.4)
+                    ),
+                    purpose: .recovery,
+                    flexibility: .moderate,
+                    dayDate: calendar.startOfDay(for: date),
+                    adjustedCalories: nil,
+                    adjustedMacros: nil,
+                    redistributionReason: nil
+                )
+            ]
+        } else if availableTime >= 3 * 60 * 60 { // 3-6 hours available
+            // Compressed 2-window approach
+            let firstWindowEnd = windowStart.addingTimeInterval(availableTime * 0.45)
+            let secondWindowStart = firstWindowEnd.addingTimeInterval(30 * 60) // 30 min gap
             
-            // Dinner (6pm-8pm) - 40% of daily intake
-            MealWindow(
-                startTime: calendar.date(bySettingHour: 18, minute: 0, second: 0, of: date)!,
-                endTime: min(calendar.date(bySettingHour: 18, minute: 0, second: 0, of: date)!.addingTimeInterval(purposeDuration(.recovery)), windowEnd),
-                targetCalories: Int(Double(totalCalories) * 0.4),
-                targetMacros: MacroTargets(
-                    protein: Int(Double(totalProtein) * 0.4),
-                    carbs: Int(Double(totalCarbs) * 0.4),
-                    fat: Int(Double(totalFat) * 0.4)
+            return [
+                // Combined Lunch/Snack - 60% of daily intake
+                MealWindow(
+                    startTime: windowStart,
+                    endTime: firstWindowEnd,
+                    targetCalories: Int(Double(totalCalories) * 0.6),
+                    targetMacros: MacroTargets(
+                        protein: Int(Double(totalProtein) * 0.6),
+                        carbs: Int(Double(totalCarbs) * 0.6),
+                        fat: Int(Double(totalFat) * 0.6)
+                    ),
+                    purpose: .sustainedEnergy,
+                    flexibility: .flexible,
+                    dayDate: calendar.startOfDay(for: date),
+                    adjustedCalories: nil,
+                    adjustedMacros: nil,
+                    redistributionReason: nil
                 ),
-                purpose: .recovery,
-                flexibility: .moderate,
-                dayDate: calendar.startOfDay(for: date),
-                adjustedCalories: nil,
-                adjustedMacros: nil,
-                redistributionReason: nil
-            )
-        ]
+                
+                // Dinner - 40% of daily intake
+                MealWindow(
+                    startTime: secondWindowStart,
+                    endTime: windowEnd,
+                    targetCalories: Int(Double(totalCalories) * 0.4),
+                    targetMacros: MacroTargets(
+                        protein: Int(Double(totalProtein) * 0.4),
+                        carbs: Int(Double(totalCarbs) * 0.4),
+                        fat: Int(Double(totalFat) * 0.4)
+                    ),
+                    purpose: .recovery,
+                    flexibility: .moderate,
+                    dayDate: calendar.startOfDay(for: date),
+                    adjustedCalories: nil,
+                    adjustedMacros: nil,
+                    redistributionReason: nil
+                )
+            ]
+        } else {
+            // Less than 3 hours - single window with all nutrition
+            return [
+                MealWindow(
+                    startTime: windowStart,
+                    endTime: windowEnd,
+                    targetCalories: totalCalories,
+                    targetMacros: MacroTargets(
+                        protein: totalProtein,
+                        carbs: totalCarbs,
+                        fat: totalFat
+                    ),
+                    purpose: .sustainedEnergy,
+                    flexibility: .flexible,
+                    dayDate: calendar.startOfDay(for: date),
+                    adjustedCalories: nil,
+                    adjustedMacros: nil,
+                    redistributionReason: nil
+                )
+            ]
+        }
     }
     
     // MARK: - Muscle Build Windows (5-6 meals)
@@ -215,13 +300,65 @@ class WindowGenerationService {
         targets: GoalCalculationService.NutritionTargets
     ) -> [MealWindow] {
         let calendar = Calendar.current
+        let currentTime = TimeProvider.shared.currentTime
         let totalCalories = targets.dailyCalories
         let totalProtein = targets.protein
         let totalCarbs = targets.carbs
         let totalFat = targets.fat
         
-        // Adjust meal times based on wake time
-        let breakfast = calendar.date(byAdding: .hour, value: 1, to: wakeTime)!
+        // Adjust meal times based on wake time, but handle late check-ins
+        var breakfast = calendar.date(byAdding: .hour, value: 1, to: wakeTime)!
+        
+        // If we're past the planned breakfast time, start 30 minutes from now
+        if currentTime > breakfast {
+            breakfast = currentTime.addingTimeInterval(30 * 60)
+        }
+        
+        // Calculate remaining time until sleep
+        let remainingTime = sleepTime.timeIntervalSince(breakfast) - (90 * 60) // Minus 90 min before sleep
+        
+        // Adjust number of windows based on available time
+        if remainingTime < 4 * 60 * 60 { // Less than 4 hours
+            // Compressed schedule with 2 windows
+            let firstWindowEnd = breakfast.addingTimeInterval(remainingTime * 0.45)
+            let secondWindowStart = firstWindowEnd.addingTimeInterval(30 * 60)
+            
+            return [
+                MealWindow(
+                    startTime: breakfast,
+                    endTime: firstWindowEnd,
+                    targetCalories: Int(Double(totalCalories) * 0.6),
+                    targetMacros: MacroTargets(
+                        protein: Int(Double(totalProtein) * 0.6),
+                        carbs: Int(Double(totalCarbs) * 0.65),
+                        fat: Int(Double(totalFat) * 0.5)
+                    ),
+                    purpose: .sustainedEnergy,
+                    flexibility: .flexible,
+                    dayDate: calendar.startOfDay(for: date),
+                    adjustedCalories: nil,
+                    adjustedMacros: nil,
+                    redistributionReason: nil
+                ),
+                
+                MealWindow(
+                    startTime: secondWindowStart,
+                    endTime: min(secondWindowStart.addingTimeInterval(purposeDuration(.recovery)), calendar.date(byAdding: .minute, value: -90, to: sleepTime)!),
+                    targetCalories: Int(Double(totalCalories) * 0.4),
+                    targetMacros: MacroTargets(
+                        protein: Int(Double(totalProtein) * 0.4),
+                        carbs: Int(Double(totalCarbs) * 0.35),
+                        fat: Int(Double(totalFat) * 0.5)
+                    ),
+                    purpose: .recovery,
+                    flexibility: .moderate,
+                    dayDate: calendar.startOfDay(for: date),
+                    adjustedCalories: nil,
+                    adjustedMacros: nil,
+                    redistributionReason: nil
+                )
+            ]
+        }
         
         return [
             // Breakfast - 20%
@@ -325,12 +462,63 @@ class WindowGenerationService {
         targets: GoalCalculationService.NutritionTargets
     ) -> [MealWindow] {
         let calendar = Calendar.current
+        let currentTime = TimeProvider.shared.currentTime
         let totalCalories = targets.dailyCalories
         let totalProtein = targets.protein
         let totalCarbs = targets.carbs
         let totalFat = targets.fat
         
-        let breakfast = calendar.date(byAdding: .hour, value: 1, to: wakeTime)!
+        var breakfast = calendar.date(byAdding: .hour, value: 1, to: wakeTime)!
+        
+        // Handle late check-ins
+        if currentTime > breakfast {
+            breakfast = currentTime.addingTimeInterval(30 * 60)
+        }
+        
+        // Calculate available time
+        let remainingTime = sleepTime.timeIntervalSince(breakfast) - (90 * 60)
+        
+        // If less than 5 hours remaining, compress to 2 windows
+        if remainingTime < 5 * 60 * 60 {
+            let firstWindowEnd = breakfast.addingTimeInterval(remainingTime * 0.45)
+            let secondWindowStart = firstWindowEnd.addingTimeInterval(30 * 60)
+            
+            return [
+                MealWindow(
+                    startTime: breakfast,
+                    endTime: firstWindowEnd,
+                    targetCalories: Int(Double(totalCalories) * 0.6),
+                    targetMacros: MacroTargets(
+                        protein: Int(Double(totalProtein) * 0.6),
+                        carbs: Int(Double(totalCarbs) * 0.65),
+                        fat: Int(Double(totalFat) * 0.55)
+                    ),
+                    purpose: .sustainedEnergy,
+                    flexibility: .flexible,
+                    dayDate: calendar.startOfDay(for: date),
+                    adjustedCalories: nil,
+                    adjustedMacros: nil,
+                    redistributionReason: nil
+                ),
+                
+                MealWindow(
+                    startTime: secondWindowStart,
+                    endTime: min(secondWindowStart.addingTimeInterval(purposeDuration(.recovery)), calendar.date(byAdding: .minute, value: -90, to: sleepTime)!),
+                    targetCalories: Int(Double(totalCalories) * 0.4),
+                    targetMacros: MacroTargets(
+                        protein: Int(Double(totalProtein) * 0.4),
+                        carbs: Int(Double(totalCarbs) * 0.35),
+                        fat: Int(Double(totalFat) * 0.45)
+                    ),
+                    purpose: .recovery,
+                    flexibility: .moderate,
+                    dayDate: calendar.startOfDay(for: date),
+                    adjustedCalories: nil,
+                    adjustedMacros: nil,
+                    redistributionReason: nil
+                )
+            ]
+        }
         
         return [
             // Breakfast - 25%
@@ -416,12 +604,123 @@ class WindowGenerationService {
         targets: GoalCalculationService.NutritionTargets
     ) -> [MealWindow] {
         let calendar = Calendar.current
+        let currentTime = TimeProvider.shared.currentTime
         let totalCalories = targets.dailyCalories
         let totalProtein = targets.protein
         let totalCarbs = targets.carbs
         let totalFat = targets.fat
         
-        let breakfast = calendar.date(byAdding: .minute, value: 30, to: wakeTime)!
+        var breakfast = calendar.date(byAdding: .minute, value: 30, to: wakeTime)!
+        
+        // Handle late check-ins
+        if currentTime > breakfast {
+            breakfast = currentTime.addingTimeInterval(30 * 60)
+        }
+        
+        // Calculate available time
+        let remainingTime = sleepTime.timeIntervalSince(breakfast) - (90 * 60)
+        
+        // If less than 5 hours remaining, compress schedule
+        if remainingTime < 5 * 60 * 60 {
+            // Create 2-3 windows based on available time
+            if remainingTime < 3 * 60 * 60 {
+                // Very compressed - 2 windows
+                let firstWindowEnd = breakfast.addingTimeInterval(remainingTime * 0.45)
+                let secondWindowStart = firstWindowEnd.addingTimeInterval(30 * 60)
+                
+                return [
+                    MealWindow(
+                        startTime: breakfast,
+                        endTime: firstWindowEnd,
+                        targetCalories: Int(Double(totalCalories) * 0.6),
+                        targetMacros: MacroTargets(
+                            protein: Int(Double(totalProtein) * 0.6),
+                            carbs: Int(Double(totalCarbs) * 0.5),
+                            fat: Int(Double(totalFat) * 0.65)
+                        ),
+                        purpose: .sustainedEnergy,
+                        flexibility: .flexible,
+                        dayDate: calendar.startOfDay(for: date),
+                        adjustedCalories: nil,
+                        adjustedMacros: nil,
+                        redistributionReason: nil
+                    ),
+                    
+                    MealWindow(
+                        startTime: secondWindowStart,
+                        endTime: min(secondWindowStart.addingTimeInterval(purposeDuration(.recovery)), calendar.date(byAdding: .minute, value: -90, to: sleepTime)!),
+                        targetCalories: Int(Double(totalCalories) * 0.4),
+                        targetMacros: MacroTargets(
+                            protein: Int(Double(totalProtein) * 0.4),
+                            carbs: Int(Double(totalCarbs) * 0.5),
+                            fat: Int(Double(totalFat) * 0.35)
+                        ),
+                        purpose: .recovery,
+                        flexibility: .moderate,
+                        dayDate: calendar.startOfDay(for: date),
+                        adjustedCalories: nil,
+                        adjustedMacros: nil,
+                        redistributionReason: nil
+                    )
+                ]
+            } else {
+                // 3 compressed windows
+                let windowSpacing = remainingTime / 3.5
+                
+                return [
+                    MealWindow(
+                        startTime: breakfast,
+                        endTime: breakfast.addingTimeInterval(windowSpacing * 0.8),
+                        targetCalories: Int(Double(totalCalories) * 0.35),
+                        targetMacros: MacroTargets(
+                            protein: Int(Double(totalProtein) * 0.35),
+                            carbs: Int(Double(totalCarbs) * 0.3),
+                            fat: Int(Double(totalFat) * 0.4)
+                        ),
+                        purpose: .sustainedEnergy,
+                        flexibility: .moderate,
+                        dayDate: calendar.startOfDay(for: date),
+                        adjustedCalories: nil,
+                        adjustedMacros: nil,
+                        redistributionReason: nil
+                    ),
+                    
+                    MealWindow(
+                        startTime: breakfast.addingTimeInterval(windowSpacing),
+                        endTime: breakfast.addingTimeInterval(windowSpacing * 1.8),
+                        targetCalories: Int(Double(totalCalories) * 0.35),
+                        targetMacros: MacroTargets(
+                            protein: Int(Double(totalProtein) * 0.35),
+                            carbs: Int(Double(totalCarbs) * 0.4),
+                            fat: Int(Double(totalFat) * 0.3)
+                        ),
+                        purpose: .focusBoost,
+                        flexibility: .flexible,
+                        dayDate: calendar.startOfDay(for: date),
+                        adjustedCalories: nil,
+                        adjustedMacros: nil,
+                        redistributionReason: nil
+                    ),
+                    
+                    MealWindow(
+                        startTime: breakfast.addingTimeInterval(windowSpacing * 2),
+                        endTime: min(breakfast.addingTimeInterval(windowSpacing * 2.8), calendar.date(byAdding: .minute, value: -90, to: sleepTime)!),
+                        targetCalories: Int(Double(totalCalories) * 0.3),
+                        targetMacros: MacroTargets(
+                            protein: Int(Double(totalProtein) * 0.3),
+                            carbs: Int(Double(totalCarbs) * 0.3),
+                            fat: Int(Double(totalFat) * 0.3)
+                        ),
+                        purpose: .recovery,
+                        flexibility: .moderate,
+                        dayDate: calendar.startOfDay(for: date),
+                        adjustedCalories: nil,
+                        adjustedMacros: nil,
+                        redistributionReason: nil
+                    )
+                ]
+            }
+        }
         
         return [
             // Early breakfast - 20%

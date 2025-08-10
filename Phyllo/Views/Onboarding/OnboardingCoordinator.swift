@@ -10,11 +10,17 @@ import SwiftUI
 enum OnboardingStep: Int, CaseIterable {
     case welcome
     case goals
-    case profile
-    case schedule
+    // Split profile into focused atomic steps
+    case age
+    case height
+    case weight
+    case gender
     case activity
+    case schedule
     case dietary
     case challenges
+    case habits
+    case nudges
     case preview
     case permissions
     
@@ -22,11 +28,16 @@ enum OnboardingStep: Int, CaseIterable {
         switch self {
         case .welcome: return "Welcome to Phyllo"
         case .goals: return "Your Goals"
-        case .profile: return "About You"
-        case .schedule: return "Daily Schedule"
+        case .age: return "Your Age"
+        case .height: return "Your Height"
+        case .weight: return "Your Weight"
+        case .gender: return "Your Gender"
         case .activity: return "Activity Level"
+        case .schedule: return "Daily Schedule"
         case .dietary: return "Dietary Preferences"
         case .challenges: return "Current Challenges"
+        case .habits: return "Your Habits"
+        case .nudges: return "Nudges & Devices"
         case .preview: return "Your Plan"
         case .permissions: return "Enable Features"
         }
@@ -38,8 +49,8 @@ enum OnboardingStep: Int, CaseIterable {
     
     var canSkip: Bool {
         switch self {
-        case .welcome, .goals, .profile, .schedule: return false
-        case .activity, .dietary, .challenges, .preview, .permissions: return true
+        case .welcome, .goals, .age, .height, .weight, .gender, .schedule: return false
+        case .activity, .dietary, .challenges, .habits, .nudges, .preview, .permissions: return true
         }
     }
 }
@@ -81,7 +92,7 @@ class OnboardingCoordinator {
     }
     
     private func completeOnboarding() {
-        // Save to UserDefaults or Firebase
+        // Persist and bootstrap plan generation
         saveOnboardingData()
         
         withAnimation(.easeOut(duration: 0.3)) {
@@ -91,10 +102,136 @@ class OnboardingCoordinator {
     }
     
     private func saveOnboardingData() {
-        // In a real app, this would save to Firebase or UserDefaults
-        print("Saving onboarding data...")
-        print("Primary goal: \(onboardingData.primaryGoal?.displayName ?? "None")")
-        print("Profile: \(onboardingData.name ?? ""), \(onboardingData.age ?? 0) years old")
+        // Build a UserProfile and generate initial windows
+        guard
+            let age = onboardingData.age,
+            let gender = onboardingData.gender,
+            let height = onboardingData.height,
+            let weight = onboardingData.currentWeight,
+            let primaryGoal = onboardingData.primaryGoal
+        else {
+            print("⚠️ Incomplete onboarding data; skipping persistence")
+            return
+        }
+        
+        // Calculate nutrition targets using the goal calculator
+        let goalType: GoalCalculationService.GoalType
+        switch primaryGoal {
+        case .weightLoss(let targetPounds, let timeline):
+            goalType = .specificWeightTarget(
+                currentWeight: weight,
+                targetWeight: max(80, weight - targetPounds),
+                weeks: timeline
+            )
+        case .muscleGain(let targetPounds, let timeline):
+            goalType = .specificWeightTarget(
+                currentWeight: weight,
+                targetWeight: weight + targetPounds,
+                weeks: timeline
+            )
+        case .maintainWeight:
+            goalType = .performanceOptimization(currentWeight: weight, activityLevel: onboardingData.activityLevel)
+        case .performanceFocus, .betterSleep:
+            goalType = .performanceOptimization(currentWeight: weight, activityLevel: onboardingData.activityLevel)
+        case .overallWellbeing:
+            goalType = .performanceOptimization(currentWeight: weight, activityLevel: onboardingData.activityLevel)
+        case .athleticPerformance:
+            goalType = .bodyComposition(currentWeight: weight, currentBF: nil, targetBF: nil, focus: .leanMuscleGain)
+        }
+        
+        let targets = GoalCalculationService.shared.calculateTargets(
+            for: goalType,
+            height: height,
+            age: age,
+            gender: gender,
+            activityLevel: onboardingData.activityLevel
+        )
+        
+        // Build profile
+        let profile = UserProfile(
+            id: UUID(),
+            name: onboardingData.name.isEmpty ? "User" : onboardingData.name,
+            age: age,
+            gender: gender,
+            height: height,
+            weight: weight,
+            activityLevel: onboardingData.activityLevel,
+            primaryGoal: primaryGoal,
+            dietaryPreferences: [onboardingData.eatingStyle.rawValue],
+            dietaryRestrictions: Array(onboardingData.dietaryRestrictions.map { $0.rawValue }),
+            dailyCalorieTarget: targets.dailyCalories,
+            dailyProteinTarget: targets.protein,
+            dailyCarbTarget: targets.carbs,
+            dailyFatTarget: targets.fat,
+            preferredMealTimes: {
+                var times: [String] = []
+                if let first = onboardingData.firstMealTime { times.append(first.formatted(date: .omitted, time: .shortened)) }
+                if let last = onboardingData.lastMealTime { times.append(last.formatted(date: .omitted, time: .shortened)) }
+                return times
+            }(),
+            micronutrientPriorities: []
+        )
+        
+        Task {
+            // Persist profile if provider supports it
+            try? await DataSourceProvider.shared.provider.saveUserProfile(profile)
+            
+            // Seed notification preferences from onboarding choices
+            await MainActor.run {
+                var prefs = NotificationManager.shared.notificationPreferences
+                switch onboardingData.notificationPreference {
+                case .all:
+                    prefs.windowReminders = true
+                    prefs.checkInReminders = true
+                    prefs.goalProgress = true
+                    prefs.coachingTips = true
+                case .important:
+                    prefs.windowReminders = true
+                    prefs.checkInReminders = true
+                    prefs.goalProgress = false
+                    prefs.coachingTips = false
+                case .minimal:
+                    prefs.windowReminders = true
+                    prefs.checkInReminders = false
+                    prefs.goalProgress = false
+                    prefs.coachingTips = false
+                case .none:
+                    prefs.windowReminders = false
+                    prefs.checkInReminders = false
+                    prefs.goalProgress = false
+                    prefs.coachingTips = false
+                }
+                prefs.quietHoursEnabled = onboardingData.quietHoursEnabled
+                prefs.quietHoursStart = onboardingData.quietHoursStart
+                prefs.quietHoursEnd = onboardingData.quietHoursEnd
+                NotificationManager.shared.notificationPreferences = prefs
+                NotificationManager.shared.savePreferences()
+            }
+
+            // Generate initial windows
+            let checkIn: MorningCheckInData? = {
+                guard let wake = onboardingData.wakeTime else { return nil }
+                return MorningCheckInData(
+                    date: Date(),
+                    wakeTime: wake,
+                    sleepQuality: 7,
+                    sleepDuration: 7.5 * 3600,
+                    energyLevel: onboardingData.energyBaseline,
+                    plannedActivities: [],
+                    hungerLevel: 3
+                )
+            }()
+            
+            let windows = try? await DataSourceProvider.shared.provider.generateDailyWindows(
+                for: Date(),
+                profile: profile,
+                checkIn: checkIn
+            )
+            
+            if let windows = windows {
+                await NotificationManager.shared.scheduleWindowNotifications(for: windows)
+            }
+        }
     }
     
     // Validation
@@ -104,22 +241,28 @@ class OnboardingCoordinator {
             return true
         case .goals:
             return onboardingData.primaryGoal != nil
-        case .profile:
-            return !onboardingData.name.isEmpty &&
-                   onboardingData.age != nil &&
-                   onboardingData.gender != nil &&
-                   onboardingData.height != nil &&
-                   onboardingData.currentWeight != nil
+        case .age:
+            return onboardingData.age != nil
+        case .height:
+            return onboardingData.height != nil
+        case .weight:
+            return onboardingData.currentWeight != nil
+        case .gender:
+            return onboardingData.gender != nil
         case .schedule:
             return onboardingData.wakeTime != nil &&
                    onboardingData.sleepTime != nil &&
                    onboardingData.workSchedule != nil
         case .activity:
-            return true // Optional but should have activity level
+            return true
         case .dietary:
-            return true // Optional
+            return true
         case .challenges:
-            return true // Optional
+            return true
+        case .habits:
+            return true
+        case .nudges:
+            return true
         case .preview:
             return true
         case .permissions:
@@ -166,6 +309,23 @@ struct OnboardingData {
     var preferredMealCount: Int = 3
     var fastingProtocol: FastingProtocol?
     var notificationPreference: NotificationPreference = .important
+    // Quiet hours seed from schedule
+    var quietHoursEnabled: Bool = true
+    var quietHoursStart: Int = 22
+    var quietHoursEnd: Int = 7
+    
+    // Habits Baseline
+    var firstMealTime: Date?
+    var lastMealTime: Date?
+    var waterIntake: WaterIntake = .moderate
+    var caffeineLevel: CaffeineLevel = .none
+    var alcoholFrequency: AlcoholFrequency = .never
+    var energyBaseline: Int = 5 // 1-10
+    var stressLevel: StressLevel = .moderate
+    
+    // Devices & Privacy
+    var wearables: Set<Wearable> = []
+    var privacyPreference: PrivacyPreference = .privateOnly
     
     // Computed properties
     var heightInCm: Double? {
@@ -250,4 +410,47 @@ enum NotificationPreference: String, CaseIterable {
     case important = "Important only"
     case minimal = "Minimal"
     case none = "None"
+}
+
+// MARK: - New Supporting Types (Habits & Preferences)
+
+enum WaterIntake: String, CaseIterable {
+    case low = "Low"
+    case moderate = "Moderate"
+    case high = "High"
+}
+
+enum CaffeineLevel: String, CaseIterable {
+    case none = "None"
+    case oneTwo = "1-2 cups"
+    case threeFour = "3-4 cups"
+    case fivePlus = "5+ cups"
+}
+
+enum AlcoholFrequency: String, CaseIterable {
+    case never = "Never"
+    case occasional = "Occasionally"
+    case weekly = "Weekly"
+    case daily = "Daily"
+}
+
+enum StressLevel: String, CaseIterable {
+    case low = "Low"
+    case moderate = "Moderate"
+    case high = "High"
+    case veryHigh = "Very High"
+}
+
+enum Wearable: String, CaseIterable, Hashable {
+    case appleWatch = "Apple Watch"
+    case fitbit = "Fitbit"
+    case whoop = "Whoop"
+    case oura = "Oura"
+    case garmin = "Garmin"
+}
+
+enum PrivacyPreference: String, CaseIterable {
+    case publicSharing = "Share publicly"
+    case anonymousOnly = "Anonymous only"
+    case privateOnly = "Keep private"
 }

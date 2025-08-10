@@ -140,6 +140,15 @@ struct ScheduleSetupView: View {
                             ))
                         }
                     }
+                    .onChange(of: data.sleepTime) { _, _ in
+                        // Seed quiet hours to match schedule
+                        if let sleep = data.sleepTime, let wake = data.wakeTime {
+                            let start = Calendar.current.component(.hour, from: sleep)
+                            let end = Calendar.current.component(.hour, from: wake)
+                            data.quietHoursStart = start
+                            data.quietHoursEnd = end
+                        }
+                    }
                     
                     // Sleep Duration Display
                     if let wake = data.wakeTime, let sleep = data.sleepTime {

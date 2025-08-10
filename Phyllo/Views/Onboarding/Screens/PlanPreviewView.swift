@@ -113,7 +113,7 @@ struct PlanPreviewView: View {
                 .padding(.top, 20)
                 .animation(.easeOut(duration: 0.6), value: animateIn)
                 
-                // Summary Cards
+                // Summary Cards (computed from onboarding data)
                 VStack(spacing: 16) {
                     // Daily Targets
                     DailyTargetsCard(data: data)
