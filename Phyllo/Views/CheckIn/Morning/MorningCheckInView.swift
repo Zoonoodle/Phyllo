@@ -21,7 +21,7 @@ struct MorningCheckInView: View {
     @State private var showContent = false
     @State private var isTransitioning = false
     
-    private let totalSteps = 3
+    private let totalSteps = 4
     
     var body: some View {
         ZStack {
@@ -66,6 +66,15 @@ struct MorningCheckInView: View {
                                     removal: .move(edge: .leading).combined(with: .opacity)
                                 ))
                         case 2:
+                            WakeTimeSelectionView(
+                                wakeTime: $wakeTime,
+                                onContinue: handleNextStep
+                            )
+                            .transition(.asymmetric(
+                                insertion: .move(edge: .trailing).combined(with: .opacity),
+                                removal: .move(edge: .leading).combined(with: .opacity)
+                            ))
+                        case 3:
                             SleepQualityView(
                                 selectedQuality: $sleepQuality,
                                 onContinue: handleNextStep
@@ -74,7 +83,7 @@ struct MorningCheckInView: View {
                                 insertion: .move(edge: .trailing).combined(with: .opacity),
                                 removal: .move(edge: .leading).combined(with: .opacity)
                             ))
-                        case 3:
+                        case 4:
                             DayFocusSelectionView(
                                 selectedFocuses: $selectedFocuses,
                                 onContinue: completeCheckIn
