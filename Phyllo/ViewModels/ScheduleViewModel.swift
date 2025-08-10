@@ -112,12 +112,18 @@ class ScheduleViewModel: ObservableObject {
             // Load morning check-in
             morningCheckIn = try await dataProvider.getMorningCheckIn(for: today)
             
-            // Generate windows if needed
+            // Generate windows only if morning check-in is completed
             if mealWindows.isEmpty {
-                Task { @MainActor in
-                    DebugLogger.shared.warning("No windows found for today, generating default windows")
+                if morningCheckIn != nil {
+                    Task { @MainActor in
+                        DebugLogger.shared.warning("No windows found for today, generating windows based on check-in")
+                    }
+                    await generateDailyWindows()
+                } else {
+                    Task { @MainActor in
+                        DebugLogger.shared.info("No windows generated - waiting for morning check-in")
+                    }
                 }
-                await generateDailyWindows()
             }
             
         } catch {

@@ -10,6 +10,7 @@ import Foundation
 /// Service responsible for generating meal windows based on user goals and preferences
 class WindowGenerationService {
     static let shared = WindowGenerationService()
+    private let goalCalculator = GoalCalculationService.shared
     
     private init() {}
     
@@ -31,6 +32,9 @@ class WindowGenerationService {
         profile: UserProfile,
         checkIn: MorningCheckInData?
     ) -> [MealWindow] {
+        // Calculate nutrition targets based on goals
+        let targets = calculateNutritionTargets(for: profile)
+        
         let calendar = Calendar.current
         // Derive wake and sleep ranges from morning check-in when available.
         let wakeTime = checkIn?.wakeTime ?? calendar.date(bySettingHour: 7, minute: 0, second: 0, of: date)!
@@ -53,26 +57,78 @@ class WindowGenerationService {
         // Phase 2 adjustments hooks would live here (post-meal/morning signals) — for now generation returns base windows; redistribution happens later
         switch profile.primaryGoal {
         case .weightLoss:
-            return generateWeightLossWindows(date: date, wakeTime: wakeTime, sleepTime: sleepTime, profile: profile)
+            return generateWeightLossWindows(date: date, wakeTime: wakeTime, sleepTime: sleepTime, profile: profile, targets: targets)
         case .muscleGain:
-            return generateMuscleBuildWindows(date: date, wakeTime: wakeTime, sleepTime: sleepTime, profile: profile)
+            return generateMuscleBuildWindows(date: date, wakeTime: wakeTime, sleepTime: sleepTime, profile: profile, targets: targets)
         case .maintainWeight:
-            return generateMaintenanceWindows(date: date, wakeTime: wakeTime, sleepTime: sleepTime, profile: profile)
+            return generateMaintenanceWindows(date: date, wakeTime: wakeTime, sleepTime: sleepTime, profile: profile, targets: targets)
         case .performanceFocus:
-            return generateEnergyWindows(date: date, wakeTime: wakeTime, sleepTime: sleepTime, profile: profile)
+            return generateEnergyWindows(date: date, wakeTime: wakeTime, sleepTime: sleepTime, profile: profile, targets: targets)
             
         case .betterSleep:
             // Use performance approach for better sleep
-            return generateEnergyWindows(date: date, wakeTime: wakeTime, sleepTime: sleepTime, profile: profile)
+            return generateEnergyWindows(date: date, wakeTime: wakeTime, sleepTime: sleepTime, profile: profile, targets: targets)
             
         case .overallWellbeing:
             // Use balanced maintenance approach
-            return generateMaintenanceWindows(date: date, wakeTime: wakeTime, sleepTime: sleepTime, profile: profile)
+            return generateMaintenanceWindows(date: date, wakeTime: wakeTime, sleepTime: sleepTime, profile: profile, targets: targets)
             
         case .athleticPerformance:
             // Use muscle building approach for athletic performance
-            return generateMuscleBuildWindows(date: date, wakeTime: wakeTime, sleepTime: sleepTime, profile: profile)
+            return generateMuscleBuildWindows(date: date, wakeTime: wakeTime, sleepTime: sleepTime, profile: profile, targets: targets)
         }
+    }
+    
+    // MARK: - Nutrition Target Calculation
+    
+    private func calculateNutritionTargets(for profile: UserProfile) -> GoalCalculationService.NutritionTargets {
+        // Determine goal type based on profile
+        let goalType: GoalCalculationService.GoalType
+        
+        switch profile.primaryGoal {
+        case .weightLoss(let targetPounds, let timeline):
+            goalType = .specificWeightTarget(
+                currentWeight: profile.weight,
+                targetWeight: profile.weight - targetPounds,
+                weeks: timeline
+            )
+            
+        case .muscleGain(let targetPounds, let timeline):
+            goalType = .specificWeightTarget(
+                currentWeight: profile.weight,
+                targetWeight: profile.weight + targetPounds,
+                weeks: timeline
+            )
+            
+        case .maintainWeight, .overallWellbeing:
+            goalType = .performanceOptimization(
+                currentWeight: profile.weight,
+                activityLevel: profile.activityLevel
+            )
+            
+        case .performanceFocus, .betterSleep:
+            goalType = .performanceOptimization(
+                currentWeight: profile.weight,
+                activityLevel: profile.activityLevel
+            )
+            
+        case .athleticPerformance:
+            goalType = .bodyComposition(
+                currentWeight: profile.weight,
+                currentBF: nil, // Would be provided if we track it
+                targetBF: nil,
+                focus: .leanMuscleGain
+            )
+        }
+        
+        // Calculate targets using the service
+        return goalCalculator.calculateTargets(
+            for: goalType,
+            height: profile.height,
+            age: profile.age,
+            gender: profile.gender,
+            activityLevel: profile.activityLevel
+        )
     }
     
     // MARK: - Weight Loss Windows (16:8 Intermittent Fasting)
@@ -80,13 +136,14 @@ class WindowGenerationService {
         date: Date,
         wakeTime: Date,
         sleepTime: Date,
-        profile: UserProfile
+        profile: UserProfile,
+        targets: GoalCalculationService.NutritionTargets
     ) -> [MealWindow] {
         let calendar = Calendar.current
-        let totalCalories = profile.dailyCalorieTarget
-        let totalProtein = profile.dailyProteinTarget
-        let totalCarbs = profile.dailyCarbTarget
-        let totalFat = profile.dailyFatTarget
+        let totalCalories = targets.dailyCalories
+        let totalProtein = targets.protein
+        let totalCarbs = targets.carbs
+        let totalFat = targets.fat
         
         // 16:8 fasting - eating window from 12pm to 8pm
         let windowStart = calendar.date(bySettingHour: 12, minute: 0, second: 0, of: date)!
@@ -154,13 +211,14 @@ class WindowGenerationService {
         date: Date,
         wakeTime: Date,
         sleepTime: Date,
-        profile: UserProfile
+        profile: UserProfile,
+        targets: GoalCalculationService.NutritionTargets
     ) -> [MealWindow] {
         let calendar = Calendar.current
-        let totalCalories = profile.dailyCalorieTarget
-        let totalProtein = profile.dailyProteinTarget
-        let totalCarbs = profile.dailyCarbTarget
-        let totalFat = profile.dailyFatTarget
+        let totalCalories = targets.dailyCalories
+        let totalProtein = targets.protein
+        let totalCarbs = targets.carbs
+        let totalFat = targets.fat
         
         // Adjust meal times based on wake time
         let breakfast = calendar.date(byAdding: .hour, value: 1, to: wakeTime)!
@@ -263,13 +321,14 @@ class WindowGenerationService {
         date: Date,
         wakeTime: Date,
         sleepTime: Date,
-        profile: UserProfile
+        profile: UserProfile,
+        targets: GoalCalculationService.NutritionTargets
     ) -> [MealWindow] {
         let calendar = Calendar.current
-        let totalCalories = profile.dailyCalorieTarget
-        let totalProtein = profile.dailyProteinTarget
-        let totalCarbs = profile.dailyCarbTarget
-        let totalFat = profile.dailyFatTarget
+        let totalCalories = targets.dailyCalories
+        let totalProtein = targets.protein
+        let totalCarbs = targets.carbs
+        let totalFat = targets.fat
         
         let breakfast = calendar.date(byAdding: .hour, value: 1, to: wakeTime)!
         
@@ -353,13 +412,14 @@ class WindowGenerationService {
         date: Date,
         wakeTime: Date,
         sleepTime: Date,
-        profile: UserProfile
+        profile: UserProfile,
+        targets: GoalCalculationService.NutritionTargets
     ) -> [MealWindow] {
         let calendar = Calendar.current
-        let totalCalories = profile.dailyCalorieTarget
-        let totalProtein = profile.dailyProteinTarget
-        let totalCarbs = profile.dailyCarbTarget
-        let totalFat = profile.dailyFatTarget
+        let totalCalories = targets.dailyCalories
+        let totalProtein = targets.protein
+        let totalCarbs = targets.carbs
+        let totalFat = targets.fat
         
         let breakfast = calendar.date(byAdding: .minute, value: 30, to: wakeTime)!
         

@@ -99,15 +99,19 @@ struct TimelineView: View {
     private let baseHourHeight: CGFloat = 88 // slightly taller for clearer proportional mapping
     
     var body: some View {
-        ScrollViewReader { proxy in
-            buildTimeline(proxy: proxy)
-        }
-        .overlay(alignment: .topLeading) {
-            if showMealAnimation, let meal = animatingMeal {
-                MealRow(meal: meal)
-                    .padding(.horizontal, 24)
-                    .position(showMealAnimation ? animationEndPosition : animationStartPosition)
-                    .animation(.spring(response: 0.8, dampingFraction: 0.8, blendDuration: 0), value: showMealAnimation)
+        if viewModel.mealWindows.isEmpty && viewModel.morningCheckIn == nil {
+            NoWindowsView()
+        } else {
+            ScrollViewReader { proxy in
+                buildTimeline(proxy: proxy)
+            }
+            .overlay(alignment: .topLeading) {
+                if showMealAnimation, let meal = animatingMeal {
+                    MealRow(meal: meal)
+                        .padding(.horizontal, 24)
+                        .position(showMealAnimation ? animationEndPosition : animationStartPosition)
+                        .animation(.spring(response: 0.8, dampingFraction: 0.8, blendDuration: 0), value: showMealAnimation)
+                }
             }
         }
     }
