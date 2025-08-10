@@ -450,6 +450,8 @@ struct MockMealsTabView: View {
 struct TimeControlTabView: View {
     @StateObject private var mockData = MockDataManager.shared
     @State private var selectedHour = 12
+    @State private var isClearing = false
+    @State private var showClearConfirmation = false
     
     var body: some View {
         VStack(spacing: 20) {
@@ -547,6 +549,48 @@ struct TimeControlTabView: View {
                         .cornerRadius(12)
                 }
             }
+            
+            // Firebase Data Management
+            VStack(spacing: 12) {
+                Text("Firebase Data")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.top, 8)
+                
+                Button(action: {
+                    showClearConfirmation = true
+                }) {
+                    Label("Clear All Firebase Data", systemImage: "trash.fill")
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.red.opacity(0.8))
+                        .foregroundColor(.white)
+                        .cornerRadius(12)
+                }
+                .alert("Clear All Firebase Data?", isPresented: $showClearConfirmation) {
+                    Button("Cancel", role: .cancel) { }
+                    Button("Clear All Data", role: .destructive) {
+                        clearFirebaseData()
+                    }
+                } message: {
+                    Text("This will permanently delete ALL data from Firebase including meals, windows, check-ins, and analytics. This action cannot be undone.")
+                }
+                .disabled(isClearing)
+                .opacity(isClearing ? 0.6 : 1.0)
+                
+                if isClearing {
+                    HStack {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            .scaleEffect(0.8)
+                        Text("Clearing Firebase data...")
+                            .font(.caption)
+                            .foregroundColor(.white.opacity(0.7))
+                    }
+                    .padding(.top, 4)
+                }
+            }
         }
     }
     
@@ -555,6 +599,31 @@ struct TimeControlTabView: View {
         formatter.timeStyle = .medium
         formatter.dateStyle = .short
         return formatter
+    }
+    
+    private func clearFirebaseData() {
+        isClearing = true
+        
+        Task {
+            do {
+                // Get the data provider (should be Firebase in production)
+                let dataProvider = DataSourceProvider.shared.provider
+                
+                // Clear all data
+                try await dataProvider.clearAllUserData()
+                
+                await MainActor.run {
+                    isClearing = false
+                    // Reset mock data to match Firebase state
+                    mockData.resetDay()
+                }
+            } catch {
+                await MainActor.run {
+                    isClearing = false
+                    print("❌ Error clearing Firebase data: \(error)")
+                }
+            }
+        }
     }
 }
 

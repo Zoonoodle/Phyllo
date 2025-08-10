@@ -342,4 +342,28 @@ class MockDataProvider: DataProvider {
             tokenCancellable = nil
         }
     }
+    
+    // MARK: - Data Management
+    
+    func clearAllUserData() async throws {
+        await MainActor.run {
+            // Clear all mock data
+            mockManager.todaysMeals.removeAll()
+            mockManager.mealWindows.removeAll()
+            mockManager.analyzingMeals.removeAll()
+            mockManager.morningCheckIn = nil
+            mockManager.showMorningCheckIn = true
+            mockManager.userGoals.removeAll()
+            mockManager.nudgeState = NudgeState()
+            
+            // Reset to default profile
+            mockManager.userProfile = .defaultProfile
+            
+            // Reset time to real time
+            mockManager.currentSimulatedTime = Date()
+            TimeProvider.shared.resetToRealTime()
+            
+            print("✅ Mock data cleared successfully")
+        }
+    }
 }

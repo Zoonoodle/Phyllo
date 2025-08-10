@@ -43,6 +43,10 @@ protocol DataProvider {
     func observeMeals(for date: Date, onChange: @escaping ([LoggedMeal]) -> Void) -> ObservationToken
     func observeWindows(for date: Date, onChange: @escaping ([MealWindow]) -> Void) -> ObservationToken
     func observeAnalyzingMeals(onChange: @escaping ([AnalyzingMeal]) -> Void) -> ObservationToken
+    
+    // MARK: - Data Management
+    /// Clears ALL user data - USE WITH CAUTION
+    func clearAllUserData() async throws
 }
 
 // MARK: - Observation Token

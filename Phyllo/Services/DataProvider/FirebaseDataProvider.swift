@@ -577,6 +577,77 @@ class FirebaseDataProvider: DataProvider {
         // TODO: Implement analytics update logic
         // This would aggregate meal data into daily totals
     }
+    
+    // MARK: - Clear All Data
+    
+    /// Clears ALL user data from Firebase - USE WITH CAUTION
+    func clearAllUserData() async throws {
+        Task { @MainActor in
+            DebugLogger.shared.warning("Starting complete Firebase data deletion for user: \(currentUserId)")
+        }
+        
+        // Collections to clear
+        let collections = [
+            "meals",
+            "windows",
+            "analyzingMeals"
+        ]
+        
+        // Clear each collection
+        for collectionName in collections {
+            let snapshot = try await userRef.collection(collectionName).getDocuments()
+            
+            for document in snapshot.documents {
+                try await document.reference.delete()
+            }
+            
+            Task { @MainActor in
+                DebugLogger.shared.firebase("Cleared \(snapshot.documents.count) documents from \(collectionName)")
+            }
+        }
+        
+        // Clear profile
+        let profileDoc = userRef.collection("profile").document("current")
+        let profileExists = try await profileDoc.getDocument().exists
+        if profileExists {
+            try await profileDoc.delete()
+            Task { @MainActor in
+                DebugLogger.shared.firebase("Cleared user profile")
+            }
+        }
+        
+        // Clear check-ins (nested collections)
+        // Morning check-ins
+        let morningCheckIns = try await userRef.collection("checkIns").document("morning").collection("data").getDocuments()
+        for doc in morningCheckIns.documents {
+            try await doc.reference.delete()
+        }
+        Task { @MainActor in
+            DebugLogger.shared.firebase("Cleared \(morningCheckIns.documents.count) morning check-ins")
+        }
+        
+        // Post-meal check-ins
+        let postMealCheckIns = try await userRef.collection("checkIns").document("postMeal").collection("data").getDocuments()
+        for doc in postMealCheckIns.documents {
+            try await doc.reference.delete()
+        }
+        Task { @MainActor in
+            DebugLogger.shared.firebase("Cleared \(postMealCheckIns.documents.count) post-meal check-ins")
+        }
+        
+        // Clear analytics
+        let analyticsData = try await userRef.collection("analytics").document("daily").collection("data").getDocuments()
+        for doc in analyticsData.documents {
+            try await doc.reference.delete()
+        }
+        Task { @MainActor in
+            DebugLogger.shared.firebase("Cleared \(analyticsData.documents.count) analytics entries")
+        }
+        
+        Task { @MainActor in
+            DebugLogger.shared.success("Successfully cleared ALL Firebase data for user: \(currentUserId)")
+        }
+    }
 }
 
 // Removed duplicate ISO8601DateFormatter.yyyyMMdd extension (defined in NotificationManager)
