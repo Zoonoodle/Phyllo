@@ -48,6 +48,7 @@ class ScheduleViewModel: ObservableObject {
     
     // MARK: - Data Loading
     private func setupObservations() {
+        // Use a computed property to always get current date
         let today = timeProvider.currentTime
         
         // Observe meals
@@ -82,6 +83,7 @@ class ScheduleViewModel: ObservableObject {
         defer { isLoading = false }
         
         do {
+            // Use current time from TimeProvider for consistency
             let today = timeProvider.currentTime
             
             // Load user profile
@@ -186,7 +188,7 @@ class ScheduleViewModel: ObservableObject {
             }
             
             let windows = try await dataProvider.generateDailyWindows(
-                for: Date(),
+                for: timeProvider.currentTime,
                 profile: profile,
                 checkIn: morningCheckIn
             )
