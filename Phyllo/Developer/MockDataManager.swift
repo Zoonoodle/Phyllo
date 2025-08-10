@@ -86,13 +86,8 @@ class MockDataManager: ObservableObject {
     // MARK: - Setup Methods
     func setupDefaultData() {
         userGoals = [.performanceFocus, .betterSleep]
-        // Use WindowGenerationService instead of mock windows
-        let windowGenerator = WindowGenerationService.shared
-        mealWindows = windowGenerator.generateWindows(
-            for: Date(),
-            profile: userProfile,
-            checkIn: nil
-        )
+        // Don't generate windows until morning check-in is completed
+        mealWindows = []
         
         // Add some default meals for testing
         // addDefaultMealsForTesting() // Commented out to start with empty schedule
@@ -317,13 +312,8 @@ class MockDataManager: ObservableObject {
         todaysMeals.removeAll()
         morningCheckIn = nil
         showMorningCheckIn = true
-        // Regenerate windows
-        let windowGenerator = WindowGenerationService.shared
-        mealWindows = windowGenerator.generateWindows(
-            for: Date(),
-            profile: userProfile,
-            checkIn: nil
-        )
+        // Clear windows - they should only be generated after morning check-in
+        mealWindows = []
         currentSimulatedTime = Date()
         TimeProvider.shared.resetToRealTime()
     }
