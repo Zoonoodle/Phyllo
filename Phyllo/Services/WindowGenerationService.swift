@@ -149,15 +149,8 @@ class WindowGenerationService {
         let totalFat = targets.fat
         
         // 16:8 fasting - eating window from 12pm to 8pm
-        var windowStart = calendar.date(bySettingHour: 12, minute: 0, second: 0, of: date)!
-        var windowEnd = calendar.date(bySettingHour: 20, minute: 0, second: 0, of: date)!
-        
-        // Handle late check-ins: if current time is past noon, start eating window 30 minutes from now
-        if currentTime > windowStart {
-            windowStart = currentTime.addingTimeInterval(30 * 60) // 30 minutes from now
-            // Maintain 8-hour eating window, but don't go past original end time
-            windowEnd = min(windowStart.addingTimeInterval(8 * 60 * 60), windowEnd)
-        }
+        let windowStart = calendar.date(bySettingHour: 12, minute: 0, second: 0, of: date)!
+        let windowEnd = calendar.date(bySettingHour: 20, minute: 0, second: 0, of: date)!
         
         // Calculate available time for eating window
         let availableTime = windowEnd.timeIntervalSince(windowStart)
@@ -306,13 +299,8 @@ class WindowGenerationService {
         let totalCarbs = targets.carbs
         let totalFat = targets.fat
         
-        // Adjust meal times based on wake time, but handle late check-ins
-        var breakfast = calendar.date(byAdding: .hour, value: 1, to: wakeTime)!
-        
-        // If we're past the planned breakfast time, start 30 minutes from now
-        if currentTime > breakfast {
-            breakfast = currentTime.addingTimeInterval(30 * 60)
-        }
+        // Adjust meal times based on wake time
+        let breakfast = calendar.date(byAdding: .hour, value: 1, to: wakeTime)!
         
         // Calculate remaining time until sleep
         let remainingTime = sleepTime.timeIntervalSince(breakfast) - (90 * 60) // Minus 90 min before sleep
@@ -468,12 +456,7 @@ class WindowGenerationService {
         let totalCarbs = targets.carbs
         let totalFat = targets.fat
         
-        var breakfast = calendar.date(byAdding: .hour, value: 1, to: wakeTime)!
-        
-        // Handle late check-ins
-        if currentTime > breakfast {
-            breakfast = currentTime.addingTimeInterval(30 * 60)
-        }
+        let breakfast = calendar.date(byAdding: .hour, value: 1, to: wakeTime)!
         
         // Calculate available time
         let remainingTime = sleepTime.timeIntervalSince(breakfast) - (90 * 60)
@@ -610,12 +593,7 @@ class WindowGenerationService {
         let totalCarbs = targets.carbs
         let totalFat = targets.fat
         
-        var breakfast = calendar.date(byAdding: .minute, value: 30, to: wakeTime)!
-        
-        // Handle late check-ins
-        if currentTime > breakfast {
-            breakfast = currentTime.addingTimeInterval(30 * 60)
-        }
+        let breakfast = calendar.date(byAdding: .minute, value: 30, to: wakeTime)!
         
         // Calculate available time
         let remainingTime = sleepTime.timeIntervalSince(breakfast) - (90 * 60)

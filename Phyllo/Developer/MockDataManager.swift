@@ -142,7 +142,7 @@ class MockDataManager: ObservableObject {
         // Regenerate windows with current profile
         let windowGenerator = WindowGenerationService.shared
         mealWindows = windowGenerator.generateWindows(
-            for: Date(),
+            for: wakeTime,
             profile: userProfile,
             checkIn: morningCheckIn
         )
