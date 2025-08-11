@@ -334,15 +334,15 @@ struct ExpandableWindowBanner: View {
     private var windowBorderColor: Color {
         switch windowStatus {
         case .active:
-            return window.purpose.color.opacity(0.5)
+            return window.purpose.color.opacity(0.4)
         case .lateButDoable:
             return Color.yellow.opacity(0.3)
         case .completed:
-            return Color.white.opacity(0.05)
+            return Color.white.opacity(0.08)
         case .missed:
             return Color.orange.opacity(0.2)
         case .upcoming:
-            return Color.white.opacity(0.1)
+            return Color.white.opacity(0.08)
         }
     }
     
@@ -411,15 +411,15 @@ struct ExpandableWindowBanner: View {
             }
         }
         .background(windowBackground)
-        .shadow(color: Color.black.opacity(0.35), radius: 12, x: 0, y: 8)
-        .clipShape(RoundedRectangle(cornerRadius: { if case .active = windowStatus { return 16 } else { return 12 } }()))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
         .overlay(
-            RoundedRectangle(cornerRadius: { if case .active = windowStatus { return 16 } else { return 12 } }())
+            RoundedRectangle(cornerRadius: 8)
                 .strokeBorder(
                     windowBorderColor,
-                    lineWidth: { if case .active = windowStatus { return 2 } else { return 1 } }()
+                    lineWidth: 1
                 )
         )
+        .shadow(color: Color.black.opacity(0.15), radius: 4, x: 0, y: 2)
         .opacity(windowOpacity)
         .overlay(optimalTimeIndicators)
         // Apply fixed height if provided so the background and content expand to match duration
@@ -923,12 +923,8 @@ struct ExpandableWindowBanner: View {
     }
     
     private var windowBackground: some View {
-        RoundedRectangle(cornerRadius: { if case .active = windowStatus { return 16 } else { return 12 } }())
-            .fill(Color.phylloBackground)  // Fully opaque black background first
-            .overlay(
-                RoundedRectangle(cornerRadius: { if case .active = windowStatus { return 16 } else { return 12 } }())
-                    .fill(windowBackgroundColor)
-            )
+        RoundedRectangle(cornerRadius: 8)
+            .fill(Color(red: 0.12, green: 0.12, blue: 0.13)) // Slightly lighter than pure black
             .matchedGeometryEffect(
                 id: "window-\(window.id)",
                 in: animationNamespace,

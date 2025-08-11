@@ -30,9 +30,9 @@ class TimelineLayoutManager: ObservableObject {
     
     // MARK: - Constants
     
-    let baseHourHeight: CGFloat = 88
-    let minimumWindowSpacing: CGFloat = 20
-    let windowPadding: CGFloat = 16
+    let baseHourHeight: CGFloat = 60 // Reduced for cleaner look
+    let minimumWindowSpacing: CGFloat = 8 // Tighter spacing like Google Calendar
+    let windowPadding: CGFloat = 12
     
     // MARK: - Properties
     
@@ -169,10 +169,10 @@ class TimelineLayoutManager: ObservableObject {
         let hasMeals = mealCount > 0
         
         // Base height for the window content
-        var contentHeight = baseHourHeight
+        var contentHeight = baseHourHeight * 0.8
         
         // Add space for header and basic info
-        contentHeight += 40
+        contentHeight += 30
         
         // Add space for window insights section based on state
         if window.isActive {

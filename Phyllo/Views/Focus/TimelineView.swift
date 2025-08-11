@@ -77,7 +77,7 @@ struct TimelineView: View {
     // Define timeline hours (7 AM to 10 PM)
     let hours = Array(7...22)
     // Base height for one hour on the vertical timeline
-    private let baseHourHeight: CGFloat = 88 // slightly taller for clearer proportional mapping
+    private let baseHourHeight: CGFloat = 60 // Matching layout manager
     
     var body: some View {
         if viewModel.mealWindows.isEmpty && viewModel.morningCheckIn == nil {
@@ -130,22 +130,31 @@ struct TimelineView: View {
     private func buildTimeline(proxy: ScrollViewProxy) -> some View {
         ScrollView(.vertical, showsIndicators: false) {
             ZStack(alignment: .topLeading) {
-                // Background hour grid using calculated layouts
+                // Background hour grid with clean lines
                 VStack(spacing: 0) {
                     ForEach(calculatedHourLayouts, id: \.hour) { hourLayout in
-                        TimelineHourRow(
-                            hour: hourLayout.hour,
-                            currentTime: currentTime,
-                            windows: viewModel.mealWindows,
-                            meals: mealsForTimeRange(hour: hourLayout.hour),
-                            analyzingMeals: analyzingMealsForTimeRange(hour: hourLayout.hour),
-                            isLastHour: hourLayout.hour == hours.last,
-                            selectedWindow: $selectedWindow,
-                            showWindowDetail: $showWindowDetail,
-                            animationNamespace: animationNamespace,
-                            viewModel: viewModel
-                        )
-                        .padding(.horizontal, 24)
+                        VStack(spacing: 0) {
+                            // Hour divider line at the top
+                            Rectangle()
+                                .fill(Color.white.opacity(0.08))
+                                .frame(height: 1)
+                                .padding(.leading, 84) // Start after time label
+                                .padding(.trailing, 24)
+                            
+                            TimelineHourRow(
+                                hour: hourLayout.hour,
+                                currentTime: currentTime,
+                                windows: viewModel.mealWindows,
+                                meals: mealsForTimeRange(hour: hourLayout.hour),
+                                analyzingMeals: analyzingMealsForTimeRange(hour: hourLayout.hour),
+                                isLastHour: hourLayout.hour == hours.last,
+                                selectedWindow: $selectedWindow,
+                                showWindowDetail: $showWindowDetail,
+                                animationNamespace: animationNamespace,
+                                viewModel: viewModel
+                            )
+                            .padding(.horizontal, 24)
+                        }
                         .frame(height: hourLayout.height)
                         .animation(.spring(response: 0.4, dampingFraction: 0.8), value: hourLayout.height)
                         .id("hour-\(hourLayout.hour)")
@@ -540,10 +549,10 @@ struct TimelineHourRow: View {
     
     var body: some View {
         HStack(alignment: .top, spacing: 16) {
-            // Hour label
+            // Hour label - fixed position
             TimeLabel(hour: hour, isCurrent: isCurrentHour)
                 .frame(width: 60)
-                .zIndex(4) // Ensure time labels sit above banners
+                .zIndex(10) // Ensure time labels always sit above everything
             
             // Main content area
             timelineContent
@@ -554,12 +563,6 @@ struct TimelineHourRow: View {
     @ViewBuilder
     private var timelineContent: some View {
         ZStack(alignment: .topLeading) {
-            // Hour divider - only show if there's no window banner overlapping
-            if !isLastHour && shouldShowDivider() {
-                hourDivider
-                    .zIndex(0)
-            }
-
             // Show only standalone/analyzing meals here; windows are drawn in overlay layer
             standaloneMealsContent
                 .zIndex(1)
@@ -775,7 +778,7 @@ struct TimelineHourRow: View {
     }
 }
 
-// Cylindrical hour label like MacroFactors
+// Clean hour label inspired by Google Calendar
 struct TimeLabel: View {
     let hour: Int
     var isCurrent: Bool = false
@@ -792,20 +795,11 @@ struct TimeLabel: View {
     
     var body: some View {
         Text(timeString)
-            .font(.system(size: 13, weight: .semibold, design: .monospaced))
+            .font(.system(size: 12, weight: .regular))
             .monospacedDigit()
-            .foregroundColor(isCurrent ? .white : .white.opacity(0.55))
-            .frame(width: 50)
-            .padding(.vertical, 4)
-            .background(
-                Capsule()
-                    .fill(isCurrent ? Color.white.opacity(0.08) : Color.white.opacity(0.05))
-            )
-            .overlay(
-                Capsule()
-                    .stroke(isCurrent ? Color.phylloAccent.opacity(0.35) : Color.white.opacity(0.08), lineWidth: 1)
-            )
-            .shadow(color: isCurrent ? Color.phylloAccent.opacity(0.15) : .clear, radius: 4, x: 0, y: 2)
+            .foregroundColor(.white.opacity(0.6))
+            .frame(maxWidth: .infinity, alignment: .trailing)
+            .offset(y: -8) // Offset up to align with hour line
     }
 }
 
