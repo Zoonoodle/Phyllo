@@ -270,6 +270,11 @@ class TimelineLayoutManager: ObservableObject {
     }
     
     private func adjustForOverlaps(_ layouts: [WindowLayout]) -> [WindowLayout] {
+        // If there are 0 or 1 windows, no adjustments needed
+        guard layouts.count > 1 else {
+            return layouts
+        }
+        
         var adjusted = layouts
         
         // Sort by Y position
