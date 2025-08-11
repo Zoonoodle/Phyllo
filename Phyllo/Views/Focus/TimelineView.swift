@@ -27,10 +27,9 @@ private struct WindowsRenderLayer: View {
     var body: some View {
         ZStack(alignment: .topLeading) {
             ForEach(windows, id: \.id) { window in
-                let yTop = yPosition(for: window.startTime)
-                let yBottom = yPosition(for: window.endTime)
-                // Ensure minimum visual height but keep proportional to real duration
-                let height = max(yBottom - yTop, baseHourHeight * 0.6)
+                let positions = calculateWindowPosition(for: window)
+                let height = positions.height
+                
                 ExpandableWindowBanner(
                     window: window,
                     meals: viewModel.mealsInWindow(window),
@@ -40,25 +39,102 @@ private struct WindowsRenderLayer: View {
                     viewModel: viewModel,
                     bannerHeight: height
                 )
-                .offset(y: yTop)
+                .offset(y: positions.yTop)
             }
         }
     }
 
-    private func yPosition(for date: Date) -> CGFloat {
+    private func calculateWindowPosition(for window: MealWindow) -> (yTop: CGFloat, height: CGFloat) {
         let calendar = Calendar.current
-        guard let firstHour = hours.first else { return 0 }
-        // Anchor the vertical scale to the same day as the date passed in, at the first timeline hour
-        let anchor = calendar.date(
-            bySettingHour: firstHour,
-            minute: 0,
-            second: 0,
-            of: date
-        ) ?? date
-        let interval = date.timeIntervalSince(anchor)
-        // Scale seconds to points using exact hour height
-        let pointsPerSecond = baseHourHeight / 3600.0
-        return CGFloat(interval) * pointsPerSecond
+        let startHour = calendar.component(.hour, from: window.startTime)
+        let startMinute = calendar.component(.minute, from: window.startTime)
+        let endHour = calendar.component(.hour, from: window.endTime)
+        let endMinute = calendar.component(.minute, from: window.endTime)
+        
+        var yOffset: CGFloat = 0
+        
+        // Calculate offset to start of window
+        for h in hours where h < startHour {
+            yOffset += hourHeight(for: h)
+        }
+        
+        // Add offset for minutes within start hour
+        let startHourHeight = hourHeight(for: startHour)
+        yOffset += (CGFloat(startMinute) / 60.0) * startHourHeight
+        
+        // Calculate window height
+        var windowHeight: CGFloat = 0
+        
+        if startHour == endHour {
+            // Window within single hour
+            let duration = CGFloat(endMinute - startMinute) / 60.0
+            windowHeight = duration * startHourHeight
+        } else {
+            // Window spans multiple hours
+            // Remaining time in start hour
+            windowHeight += (1.0 - CGFloat(startMinute) / 60.0) * startHourHeight
+            
+            // Full hours in between
+            for h in (startHour + 1)..<endHour {
+                windowHeight += hourHeight(for: h)
+            }
+            
+            // Time in end hour
+            if endHour < 24 {
+                let endHourHeight = hourHeight(for: endHour)
+                windowHeight += (CGFloat(endMinute) / 60.0) * endHourHeight
+            }
+        }
+        
+        // Ensure minimum height for visibility
+        windowHeight = max(windowHeight, baseHourHeight * 0.6)
+        
+        return (yTop: yOffset, height: windowHeight)
+    }
+    
+    private func hourHeight(for hour: Int) -> CGFloat {
+        // Check if there's an active window that starts in this hour
+        if let window = windows.first(where: { w in
+            Calendar.current.component(.hour, from: w.startTime) == hour && w.isActive
+        }) {
+            // Active windows need more space for expanded content
+            let hasAnalyzingMeals = viewModel.analyzingMeals.contains { $0.windowId == window.id }
+            let mealCount = viewModel.mealsInWindow(window).count
+            
+            // Base expanded height for active window
+            var expandedHeight = baseHourHeight * 1.3
+            
+            // Add space for window insights section (reduced)
+            expandedHeight += 40
+            
+            // Add space for meals
+            if mealCount > 0 || hasAnalyzingMeals {
+                expandedHeight += 20 + CGFloat(max(mealCount, hasAnalyzingMeals ? 1 : 0)) * 35
+            }
+            
+            // Add space for remaining macros in tall windows
+            if window.duration > 5400 { // > 1.5 hours
+                expandedHeight += 30
+            }
+            
+            return min(expandedHeight, baseHourHeight * 2.5)
+        }
+        
+        // Check if previous hour has an active window that extends into this hour
+        if hour > 0 {
+            let previousHour = hour - 1
+            if let prevWindow = windows.first(where: { window in
+                Calendar.current.component(.hour, from: window.startTime) == previousHour && window.isActive
+            }) {
+                let endHour = Calendar.current.component(.hour, from: prevWindow.endTime)
+                if endHour >= hour {
+                    // This hour is partially covered by an active window from previous hour
+                    return baseHourHeight * 0.5
+                }
+            }
+        }
+        
+        return baseHourHeight
     }
 }
 struct TimelineView: View {
@@ -136,7 +212,8 @@ struct TimelineView: View {
                             viewModel: viewModel
                         )
                         .padding(.horizontal, 24)
-                        .frame(height: baseHourHeight)
+                        .frame(height: calculateHourHeight(hour))
+                        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: calculateHourHeight(hour))
                     }
                     Color.clear.frame(height: 100)
                 }
@@ -156,7 +233,7 @@ struct TimelineView: View {
                 .padding(EdgeInsets(top: 0, leading: 24 + 60 + 16, bottom: 0, trailing: 24))
                 .frame(
                     maxWidth: .infinity,
-                    maxHeight: CGFloat(hours.count) * baseHourHeight + 100,
+                    maxHeight: calculateTotalTimelineHeight() + 100,
                     alignment: .topLeading
                 )
                 .allowsHitTesting(true)
@@ -218,6 +295,59 @@ struct TimelineView: View {
     
     private var currentHour: Int {
         Calendar.current.component(.hour, from: currentTime)
+    }
+    
+    // Calculate dynamic height for each hour based on active windows
+    private func calculateHourHeight(_ hour: Int) -> CGFloat {
+        // Check if there's an active window that starts in this hour
+        if let window = viewModel.mealWindows.first(where: { w in
+            Calendar.current.component(.hour, from: w.startTime) == hour && w.isActive
+        }) {
+            // Active windows need more space for expanded content
+            let hasAnalyzingMeals = viewModel.analyzingMeals.contains { $0.windowId == window.id }
+            let mealCount = viewModel.mealsInWindow(window).count
+            
+            // Base expanded height for active window
+            var expandedHeight = baseHourHeight * 1.3
+            
+            // Add space for window insights section (reduced)
+            expandedHeight += 40
+            
+            // Add space for meals
+            if mealCount > 0 || hasAnalyzingMeals {
+                expandedHeight += 20 + CGFloat(max(mealCount, hasAnalyzingMeals ? 1 : 0)) * 35
+            }
+            
+            // Add space for remaining macros in tall windows
+            if window.duration > 5400 { // > 1.5 hours
+                expandedHeight += 30
+            }
+            
+            return min(expandedHeight, baseHourHeight * 2.5)
+        }
+        
+        // Check if previous hour has an active window that extends into this hour
+        if hour > 0 {
+            let previousHour = hour - 1
+            if let prevWindow = viewModel.mealWindows.first(where: { window in
+                Calendar.current.component(.hour, from: window.startTime) == previousHour && window.isActive
+            }) {
+                let endHour = Calendar.current.component(.hour, from: prevWindow.endTime)
+                if endHour >= hour {
+                    // This hour is partially covered by an active window from previous hour
+                    return baseHourHeight * 0.5
+                }
+            }
+        }
+        
+        return baseHourHeight
+    }
+    
+    // Calculate total timeline height based on all hour heights
+    private func calculateTotalTimelineHeight() -> CGFloat {
+        hours.reduce(0) { total, hour in
+            total + calculateHourHeight(hour)
+        }
     }
     
     // Handle auto-scrolling to keep NOW indicator visible with magnetic snapping
@@ -470,9 +600,47 @@ struct TimelineHourRow: View {
         }
     }
     
-    // Calculate dynamic height based on content
+    // Calculate dynamic height based on content and active windows
     private var hourHeight: CGFloat {
-        // Always return base height - windows extend into next hours naturally
+        // Check if there's an active window that starts in this hour
+        if let window = windowForHour, window.isActive {
+            // Active windows need more space for expanded content
+            let hasAnalyzingMeals = viewModel.analyzingMeals.contains { $0.windowId == window.id }
+            let mealCount = viewModel.mealsInWindow(window).count
+            
+            // Base expanded height for active window
+            var expandedHeight = baseHourHeight * 1.3
+            
+            // Add space for window insights section (reduced)
+            expandedHeight += 40
+            
+            // Add space for meals
+            if mealCount > 0 || hasAnalyzingMeals {
+                expandedHeight += 20 + CGFloat(max(mealCount, hasAnalyzingMeals ? 1 : 0)) * 35
+            }
+            
+            // Add space for remaining macros in tall windows
+            if window.duration > 5400 { // > 1.5 hours
+                expandedHeight += 30
+            }
+            
+            return min(expandedHeight, baseHourHeight * 2.5)
+        }
+        
+        // Check if previous hour has an active window that extends into this hour
+        if hour > 0 {
+            let previousHour = hour - 1
+            if let prevWindow = windows.first(where: { window in
+                Calendar.current.component(.hour, from: window.startTime) == previousHour && window.isActive
+            }) {
+                let endHour = Calendar.current.component(.hour, from: prevWindow.endTime)
+                if endHour >= hour {
+                    // This hour is partially covered by an active window from previous hour
+                    return baseHourHeight * 0.5
+                }
+            }
+        }
+        
         return baseHourHeight
     }
     

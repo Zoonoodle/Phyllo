@@ -797,7 +797,7 @@ struct ExpandableWindowBanner: View {
                         
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 8) {
-                                ForEach(getMealSuggestions().prefix(3), id: \.self) { suggestion in
+                                ForEach(getMealSuggestions().prefix(2), id: \.self) { suggestion in
                                     HStack(spacing: 4) {
                                         Image(systemName: getSuggestionIcon(suggestion))
                                             .font(.system(size: 10))
