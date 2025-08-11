@@ -400,10 +400,7 @@ struct ExpandableWindowBanner: View {
                 }
             }
             
-            // Add spacer to expand content for longer windows
-            if let height = bannerHeight, height > 80 {
-                Spacer(minLength: 0)
-            }
+            // Remove spacer - let content determine height naturally
             
             // Meals section (if any meals or analyzing)
             if !meals.isEmpty || !analyzingMealsInWindow.isEmpty {
@@ -423,7 +420,7 @@ struct ExpandableWindowBanner: View {
         .opacity(windowOpacity)
         .overlay(optimalTimeIndicators)
         // Apply fixed height if provided so the background and content expand to match duration
-        .frame(minHeight: bannerHeight, maxHeight: bannerHeight, alignment: .top)
+        .frame(minHeight: nil, idealHeight: bannerHeight, maxHeight: bannerHeight, alignment: .top)
         .onTapGesture {
             withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
                 selectedWindow = window
@@ -452,19 +449,9 @@ struct ExpandableWindowBanner: View {
         .padding(windowBannerPadding)
     }
     
-    // Calculate padding based on banner height for better visual proportion
+    // Use consistent padding for cleaner look
     private var windowBannerPadding: CGFloat {
-        let basePadding: CGFloat = {
-            if case .active = windowStatus { return 16 } else { return 12 }
-        }()
-        
-        // Scale padding for taller windows
-        if let height = bannerHeight {
-            let scaleFactor = min(height / 88, 2.0) // 88 is base hour height
-            return basePadding * scaleFactor
-        }
-        
-        return basePadding
+        return 12
     }
     
     @ViewBuilder
@@ -484,8 +471,7 @@ struct ExpandableWindowBanner: View {
                 Text(formatTimeRange(start: window.startTime, end: window.endTime))
                     .font(.system(size: 12, weight: .medium))
                     .foregroundColor(.white.opacity(0.7))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
+                    .fixedSize(horizontal: false, vertical: true)
                 
                 // Show duration for windows longer than 1 hour
                 if window.duration > 3600 {
@@ -515,11 +501,13 @@ struct ExpandableWindowBanner: View {
                         Image(systemName: "exclamationmark.circle")
                             .font(.system(size: 11))
                         if hoursLate < 1 {
-                            Text("\(Int(hoursLate * 60))m late • still doable")
+                            Text("\(Int(hoursLate * 60))m late •")
                                 .monospacedDigit()
+                            Text("still doable")
                         } else {
-                            Text("\(Int(hoursLate))h late • still doable")
+                            Text("\(Int(hoursLate))h late •")
                                 .monospacedDigit()
+                            Text("still doable")
                         }
                     }
                     .font(.system(size: 12, weight: .medium))
@@ -562,8 +550,7 @@ struct ExpandableWindowBanner: View {
                         .monospacedDigit()
                         .foregroundColor(.white.opacity(0.7))
                 }
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
+                .fixedSize(horizontal: true, vertical: false)
                 
                 // Show redistribution info if available
                 if let reason = redistribution {

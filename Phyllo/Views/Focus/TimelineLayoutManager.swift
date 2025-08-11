@@ -168,31 +168,28 @@ class TimelineLayoutManager: ObservableObject {
         let mealCount = viewModel.mealsInWindow(window).count
         let hasMeals = mealCount > 0
         
-        // Base height for the window content
-        var contentHeight = baseHourHeight * 0.8
-        
-        // Add space for header and basic info
-        contentHeight += 30
+        // Start with minimal base height
+        var contentHeight: CGFloat = 40 // Just for header
         
         // Add space for window insights section based on state
         if window.isActive {
             if hasMeals || hasAnalyzingMeals {
-                // Active with meals - minimal expansion
-                contentHeight += 20 // Just a small buffer
+                // Active with meals - just show the meals
+                contentHeight += 10 // Small buffer
             } else {
                 // Active but empty - needs space for insights and suggestions
-                contentHeight += 80 // Insights text, purpose, suggestions
+                contentHeight += 60 // Insights text, purpose, suggestions
                 
                 // Add space for remaining macros (only for longer windows)
                 if window.duration > 5400 { // > 1.5 hours
-                    contentHeight += 60
+                    contentHeight += 40
                 }
             }
         }
         
         // Add space for meals
         if hasMeals || hasAnalyzingMeals {
-            let mealSectionHeight = 20 + CGFloat(max(mealCount, hasAnalyzingMeals ? 1 : 0)) * 45
+            let mealSectionHeight = 10 + CGFloat(max(mealCount, hasAnalyzingMeals ? 1 : 0)) * 40
             contentHeight += mealSectionHeight
         }
         
