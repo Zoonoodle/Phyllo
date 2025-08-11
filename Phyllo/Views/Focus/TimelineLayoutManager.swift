@@ -133,7 +133,7 @@ class TimelineLayoutManager: ObservableObject {
         }
         
         if !activeWindowsStartingHere.isEmpty {
-            // This hour has active windows starting - need significant expansion
+            // This hour has active windows starting - expansion based on content
             for window in activeWindowsStartingHere {
                 let expansion = calculateWindowExpansion(window: window, viewModel: viewModel)
                 height = max(height, expansion)
@@ -166,6 +166,7 @@ class TimelineLayoutManager: ObservableObject {
         
         let hasAnalyzingMeals = viewModel.analyzingMeals.contains { $0.windowId == window.id }
         let mealCount = viewModel.mealsInWindow(window).count
+        let hasMeals = mealCount > 0
         
         // Base height for the window content
         var contentHeight = baseHourHeight
@@ -173,19 +174,25 @@ class TimelineLayoutManager: ObservableObject {
         // Add space for header and basic info
         contentHeight += 40
         
-        // Add space for window insights section
+        // Add space for window insights section based on state
         if window.isActive {
-            contentHeight += 80 // Insights text, purpose, suggestions
-            
-            // Add space for remaining macros (only for longer windows)
-            if window.duration > 5400 { // > 1.5 hours
-                contentHeight += 60
+            if hasMeals || hasAnalyzingMeals {
+                // Active with meals - minimal expansion
+                contentHeight += 20 // Just a small buffer
+            } else {
+                // Active but empty - needs space for insights and suggestions
+                contentHeight += 80 // Insights text, purpose, suggestions
+                
+                // Add space for remaining macros (only for longer windows)
+                if window.duration > 5400 { // > 1.5 hours
+                    contentHeight += 60
+                }
             }
         }
         
         // Add space for meals
-        if mealCount > 0 || hasAnalyzingMeals {
-            let mealSectionHeight = 40 + CGFloat(max(mealCount, hasAnalyzingMeals ? 1 : 0)) * 45
+        if hasMeals || hasAnalyzingMeals {
+            let mealSectionHeight = 20 + CGFloat(max(mealCount, hasAnalyzingMeals ? 1 : 0)) * 45
             contentHeight += mealSectionHeight
         }
         
