@@ -275,7 +275,7 @@ class TimelineLayoutManager: ObservableObject {
         var adjusted = layouts
         
         // Sort by Y position
-        adjusted.sort { $0.yPosition < $1.yPosition }
+     
         
         // Check for overlaps and adjust
         for i in 1..<adjusted.count {

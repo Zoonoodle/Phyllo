@@ -138,7 +138,7 @@ struct TimelineView: View {
                             Rectangle()
                                 .fill(Color.white.opacity(0.08))
                                 .frame(height: 1)
-                                .padding(.leading, 84) // Start after time label
+                                .padding(.leading, 68) // Start after time label (8 + 48 + 12)
                                 .padding(.trailing, 24)
                             
                             TimelineHourRow(
@@ -153,7 +153,6 @@ struct TimelineView: View {
                                 animationNamespace: animationNamespace,
                                 viewModel: viewModel
                             )
-                            .padding(.horizontal, 24)
                         }
                         .frame(height: hourLayout.height)
                         .animation(.spring(response: 0.4, dampingFraction: 0.8), value: hourLayout.height)
@@ -172,7 +171,7 @@ struct TimelineView: View {
                     showWindowDetail: $showWindowDetail
                 )
                 // Align with the start of the timeline content (leave gutter for time labels)
-                .padding(EdgeInsets(top: 0, leading: 24 + 60 + 16, bottom: 0, trailing: 24))
+                .padding(EdgeInsets(top: 0, leading: 68, bottom: 0, trailing: 24))
                 .frame(
                     maxWidth: .infinity,
                     maxHeight: calculateTotalLayoutHeight() + 100,
@@ -548,15 +547,17 @@ struct TimelineHourRow: View {
     }
     
     var body: some View {
-        HStack(alignment: .top, spacing: 16) {
+        HStack(alignment: .top, spacing: 12) {
             // Hour label - fixed position
             TimeLabel(hour: hour, isCurrent: isCurrentHour)
-                .frame(width: 60)
+                .frame(width: 48)
+                .padding(.leading, 8) // Small left padding
                 .zIndex(10) // Ensure time labels always sit above everything
             
             // Main content area
             timelineContent
                 .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.trailing, 24) // Keep right padding for content
         }
     }
     
