@@ -60,18 +60,38 @@ struct AnimatedInfoSwitcher: View {
     var body: some View {
         ZStack {
             // Macros display
-            HStack(spacing: 4) {
-                Text("\(window.effectiveMacros.protein)g P")
-                    .font(.system(size: 10))
+            HStack(spacing: 3) {
+                Text("\(window.effectiveMacros.protein)g")
+                    .font(.system(size: 10, weight: .medium))
                     .foregroundColor(.orange.opacity(0.8))
+                    .minimumScaleFactor(0.8)
+                Text("P")
+                    .font(.system(size: 9))
+                    .foregroundColor(.orange.opacity(0.6))
                 
-                Text("\(window.effectiveMacros.fat)g F")
-                    .font(.system(size: 10))
+                Text("·")
+                    .font(.system(size: 9))
+                    .foregroundColor(.white.opacity(0.3))
+                
+                Text("\(window.effectiveMacros.fat)g")
+                    .font(.system(size: 10, weight: .medium))
                     .foregroundColor(.yellow.opacity(0.8))
+                    .minimumScaleFactor(0.8)
+                Text("F")
+                    .font(.system(size: 9))
+                    .foregroundColor(.yellow.opacity(0.6))
                 
-                Text("\(window.effectiveMacros.carbs)g C")
-                    .font(.system(size: 10))
+                Text("·")
+                    .font(.system(size: 9))
+                    .foregroundColor(.white.opacity(0.3))
+                
+                Text("\(window.effectiveMacros.carbs)g")
+                    .font(.system(size: 10, weight: .medium))
                     .foregroundColor(.blue.opacity(0.8))
+                    .minimumScaleFactor(0.8)
+                Text("C")
+                    .font(.system(size: 9))
+                    .foregroundColor(.blue.opacity(0.6))
             }
             .lineLimit(1)
             .opacity(showMacros ? 1 : 0)
@@ -79,11 +99,13 @@ struct AnimatedInfoSwitcher: View {
             .offset(y: showMacros ? 0 : 3)
             
             // Window purpose display
-            HStack(spacing: 4) {
+            HStack(spacing: 3) {
                 Image(systemName: window.purpose.icon)
                     .font(.system(size: 10))
                 Text(window.purpose.rawValue)
                     .font(.system(size: 10, weight: .medium))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
             }
             .foregroundColor(window.purpose.color)
             .opacity(showMacros ? 0 : 1)
@@ -395,8 +417,8 @@ struct ExpandableWindowBanner: View {
             if window.isActive && meals.isEmpty && analyzingMealsInWindow.isEmpty {
                 if let height = bannerHeight, height > 100 {
                     windowInsightsSection
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 8)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 10)
                 }
             }
             
@@ -436,22 +458,22 @@ struct ExpandableWindowBanner: View {
     
     @ViewBuilder
     private var windowBannerContent: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 8) {
             windowInfoSection
-            
-            Spacer()
+                .frame(maxWidth: .infinity, alignment: .leading)
             
             quickStatsSection
+                .frame(minWidth: 80, alignment: .trailing)
             
             statusIndicator
-                .frame(width: 50, height: 50)
+                .frame(width: 44, height: 44)
         }
         .padding(windowBannerPadding)
     }
     
     // Use consistent padding for cleaner look
     private var windowBannerPadding: CGFloat {
-        return 12
+        return 14
     }
     
     @ViewBuilder
@@ -467,16 +489,17 @@ struct ExpandableWindowBanner: View {
             .foregroundColor(.white)
             
             // Time range display with duration
-            HStack(spacing: 4) {
+            VStack(alignment: .leading, spacing: 1) {
                 Text(formatTimeRange(start: window.startTime, end: window.endTime))
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.system(size: 11, weight: .medium))
                     .foregroundColor(.white.opacity(0.7))
-                    .fixedSize(horizontal: false, vertical: true)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
                 
                 // Show duration for windows longer than 1 hour
                 if window.duration > 3600 {
-                    Text("• \(Int(window.duration / 3600))h")
-                        .font(.system(size: 11, weight: .medium))
+                    Text("\(formatDuration(window.duration)) window")
+                        .font(.system(size: 10))
                         .foregroundColor(.white.opacity(0.5))
                 }
             }
@@ -537,85 +560,114 @@ struct ExpandableWindowBanner: View {
             switch windowStatus {
             case .completed(let consumed, let target, let redistribution):
                 // Show consumed vs target
-                HStack(spacing: 4) {
+                HStack(spacing: 2) {
                     Text("\(consumed)")
-                        .font(.system(size: consumed >= 1000 ? 13 : 14, weight: .semibold))
+                        .font(.system(size: consumed >= 1000 ? 12 : 14, weight: .semibold))
                         .monospacedDigit()
                         .foregroundColor(consumptionColor(consumed: consumed, target: target))
+                        .minimumScaleFactor(0.6)
+                        .lineLimit(1)
                     Text("/")
-                        .font(.system(size: 12))
+                        .font(.system(size: 11))
                         .foregroundColor(.white.opacity(0.5))
-                    Text("\(target) cal")
-                        .font(.system(size: 12))
+                    Text("\(target)")
+                        .font(.system(size: 11, weight: .medium))
                         .monospacedDigit()
                         .foregroundColor(.white.opacity(0.7))
+                        .minimumScaleFactor(0.6)
+                    Text("cal")
+                        .font(.system(size: 11))
+                        .foregroundColor(.white.opacity(0.6))
                 }
-                .fixedSize(horizontal: true, vertical: false)
                 
                 // Show redistribution info if available
                 if let reason = redistribution {
                     redistributionText(for: reason)
                         .font(.system(size: 10))
                         .foregroundColor(redistributionColor(for: reason))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
                 } else {
                     Text("completed")
-                        .font(.system(size: 12))
+                        .font(.system(size: 11))
                         .foregroundColor(.white.opacity(0.5))
                 }
                 
             case .missed(let redistribution):
-                Text("\(window.effectiveCalories) cal")
-                    .font(.system(size: 14, weight: .semibold))
-                    .monospacedDigit()
-                    .foregroundColor(.orange.opacity(0.8))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
+                HStack(spacing: 2) {
+                    Text("\(window.effectiveCalories)")
+                        .font(.system(size: window.effectiveCalories >= 1000 ? 13 : 14, weight: .semibold))
+                        .monospacedDigit()
+                        .foregroundColor(.orange.opacity(0.8))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
+                    Text("cal")
+                        .font(.system(size: 11))
+                        .foregroundColor(.orange.opacity(0.7))
+                }
                 
                 if let reason = redistribution {
                     redistributionText(for: reason)
                         .font(.system(size: 10))
                         .foregroundColor(.orange.opacity(0.7))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
                 } else {
                     Text("missed")
-                        .font(.system(size: 12))
+                        .font(.system(size: 11))
                         .foregroundColor(.orange.opacity(0.7))
                 }
                 
             case .lateButDoable:
-                Text("\(window.effectiveCalories) cal")
-                    .font(.system(size: 14, weight: .semibold))
-                    .monospacedDigit()
-                    .foregroundColor(.white.opacity(0.9))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
+                HStack(spacing: 2) {
+                    Text("\(window.effectiveCalories)")
+                        .font(.system(size: window.effectiveCalories >= 1000 ? 13 : 14, weight: .semibold))
+                        .monospacedDigit()
+                        .foregroundColor(.white.opacity(0.9))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
+                    Text("cal")
+                        .font(.system(size: 11))
+                        .foregroundColor(.white.opacity(0.8))
+                }
                 
                 AnimatedInfoSwitcher(window: window, isActive: false)
-                    .frame(width: 120)
+                    .frame(maxWidth: 140)
                 
             case .active:
-                Text("\(windowCaloriesRemaining) cal")
-                    .font(.system(size: windowCaloriesRemaining >= 1000 ? 14 : 16, weight: .semibold))
-                    .monospacedDigit()
-                    .foregroundColor(.white)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-                    .layoutPriority(1)
+                HStack(spacing: 2) {
+                    Text("\(windowCaloriesRemaining)")
+                        .font(.system(size: windowCaloriesRemaining >= 1000 ? 13 : 15, weight: .semibold))
+                        .monospacedDigit()
+                        .foregroundColor(.white)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
+                        .layoutPriority(1)
+                    Text("cal")
+                        .font(.system(size: 11))
+                        .foregroundColor(.white.opacity(0.9))
+                }
                 
                 Text("remaining")
-                    .font(.system(size: 12))
+                    .font(.system(size: 11))
                     .foregroundColor(.white.opacity(0.5))
                 
             case .upcoming:
-                Text("\(window.effectiveCalories) cal")
-                    .font(.system(size: window.effectiveCalories >= 1000 ? 12 : 14, weight: .semibold))
-                    .monospacedDigit()
-                    .foregroundColor(.white.opacity(0.9))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-                    .layoutPriority(1)
+                HStack(spacing: 2) {
+                    Text("\(window.effectiveCalories)")
+                        .font(.system(size: window.effectiveCalories >= 1000 ? 12 : 14, weight: .semibold))
+                        .monospacedDigit()
+                        .foregroundColor(.white.opacity(0.9))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
+                        .layoutPriority(1)
+                    Text("cal")
+                        .font(.system(size: 11))
+                        .foregroundColor(.white.opacity(0.8))
+                }
                 
                 AnimatedInfoSwitcher(window: window, isActive: false)
-                    .frame(width: 120)
+                    .frame(maxWidth: 140)
             }
         }
     }
@@ -887,12 +939,12 @@ struct ExpandableWindowBanner: View {
             Rectangle()
                 .fill(Color.white.opacity(0.1))
                 .frame(height: 1)
-                .padding(.horizontal, 16)
+                .padding(.horizontal, 14)
             
             // Show analyzing meals first
             ForEach(analyzingMealsInWindow) { analyzingMeal in
                 AnalyzingMealRowCompact(meal: analyzingMeal)
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, 14)
                     .transition(.asymmetric(
                         insertion: .scale(scale: 0.95).combined(with: .opacity),
                         removal: .opacity
@@ -902,10 +954,10 @@ struct ExpandableWindowBanner: View {
             // Then show logged meals
             ForEach(meals) { meal in
                 MealRowCompact(meal: meal)
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, 14)
             }
         }
-        .padding(.bottom, 12)
+        .padding(.bottom, 14)
         .background(Color(red: 0.11, green: 0.11, blue: 0.12))  // Ensure opaque background for meals section
     }
     
@@ -926,6 +978,19 @@ struct ExpandableWindowBanner: View {
         
         if hours > 0 {
             return "\(hours)h \(minutes)m"
+        } else {
+            return "\(minutes)m"
+        }
+    }
+    
+    private func formatDuration(_ interval: TimeInterval) -> String {
+        let hours = Int(interval) / 3600
+        let minutes = (Int(interval) % 3600) / 60
+        
+        if hours > 0 && minutes > 0 {
+            return "\(hours)h \(minutes)m"
+        } else if hours > 0 {
+            return "\(hours)h"
         } else {
             return "\(minutes)m"
         }
@@ -1098,7 +1163,7 @@ struct MealRowCompact: View {
     let meal: LoggedMeal
     
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 6) {
             // Time
             Text(timeFormatter.string(from: meal.timestamp))
                 .font(.system(size: 11))
@@ -1109,44 +1174,58 @@ struct MealRowCompact: View {
             // Food emoji
             Text(meal.emoji)
                 .font(.system(size: 16))
+                .frame(width: 20)
             
             // Meal info
-            VStack(alignment: .leading, spacing: 1) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(meal.name)
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(.white)
                     .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 
-                HStack(spacing: 4) {
-                    Text("\(meal.calories) cal")
-                        .font(.system(size: 11))
-                        .monospacedDigit()
-                        .foregroundColor(.white.opacity(0.6))
-                        .lineLimit(1)
+                HStack(spacing: 3) {
+                    // Calories
+                    HStack(spacing: 2) {
+                        Text("\(meal.calories)")
+                            .font(.system(size: 10, weight: .medium))
+                            .monospacedDigit()
+                            .foregroundColor(.white.opacity(0.7))
+                            .minimumScaleFactor(0.8)
+                        Text("cal")
+                            .font(.system(size: 9))
+                            .foregroundColor(.white.opacity(0.5))
+                    }
                     
-                    Text("•")
-                        .font(.system(size: 11))
+                    Text("·")
+                        .font(.system(size: 9))
                         .foregroundColor(.white.opacity(0.3))
                     
-                    Text("\(meal.protein)P")
-                        .font(.system(size: 11))
-                        .monospacedDigit()
-                        .foregroundColor(.orange.opacity(0.7))
-                    
-                    Text("\(meal.fat)F")
-                        .font(.system(size: 11))
-                        .monospacedDigit()
-                        .foregroundColor(.yellow.opacity(0.7))
-                    
-                    Text("\(meal.carbs)C")
-                        .font(.system(size: 11))
-                        .monospacedDigit()
-                        .foregroundColor(.blue.opacity(0.7))
+                    // Macros with better spacing
+                    HStack(spacing: 4) {
+                        Text("\(meal.protein)g")
+                            .font(.system(size: 10))
+                            .monospacedDigit()
+                            .foregroundColor(.orange.opacity(0.7))
+                            .minimumScaleFactor(0.8)
+                        
+                        Text("\(meal.fat)g")
+                            .font(.system(size: 10))
+                            .monospacedDigit()
+                            .foregroundColor(.yellow.opacity(0.7))
+                            .minimumScaleFactor(0.8)
+                        
+                        Text("\(meal.carbs)g")
+                            .font(.system(size: 10))
+                            .monospacedDigit()
+                            .foregroundColor(.blue.opacity(0.7))
+                            .minimumScaleFactor(0.8)
+                    }
                 }
                 .lineLimit(1)
             }
-            
-            Spacer()
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
     
