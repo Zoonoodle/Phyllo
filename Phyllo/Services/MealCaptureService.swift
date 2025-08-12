@@ -14,6 +14,7 @@ class MealCaptureService: ObservableObject {
     
     private let dataProvider = DataSourceProvider.shared.provider
     private let vertexAI = VertexAIService.shared
+    private let agent = MealAnalysisAgent.shared
     private let timeProvider = TimeProvider.shared
     private let notificationManager = NotificationManager.shared
     private var cancellables = Set<AnyCancellable>()
@@ -275,8 +276,8 @@ class MealCaptureService: ObservableObject {
             mealWindow: assignedWindow
         )
         
-        // Perform AI analysis
-        return try await vertexAI.analyzeMeal(request)
+        // Perform AI analysis with intelligent agent tools
+        return try await agent.analyzeMealWithTools(request)
     }
     
     /// Handle clarification answers

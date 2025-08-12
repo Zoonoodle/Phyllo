@@ -15,6 +15,7 @@ struct ScheduleView: View {
     @State private var selectedWindow: MealWindow?
     @State private var showWindowDetail = false
     @State private var selectedMealId: String?
+    @State private var showMissedMealsRecovery = false
     @Namespace private var animationNamespace
     
     var body: some View {
@@ -86,6 +87,34 @@ struct ScheduleView: View {
                 // If meal is not in any window, just stay on timeline
             }
         }
+        .onAppear {
+            checkForMissedMeals()
+        }
+        .sheet(isPresented: $showMissedMealsRecovery) {
+            MissedMealsRecoveryView(
+                viewModel: viewModel,
+                missedWindows: viewModel.missedWindows
+            )
+        }
+    }
+    
+    private func checkForMissedMeals() {
+        // Only show on first appearance, not every time tab switches
+        if viewModel.needsMissedMealsRecovery && !UserDefaults.standard.bool(forKey: "missedMealsPromptShown_\(Date().dateString)") {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                showMissedMealsRecovery = true
+                UserDefaults.standard.set(true, forKey: "missedMealsPromptShown_\(Date().dateString)")
+            }
+        }
+    }
+}
+
+// Helper extension for date formatting
+private extension Date {
+    var dateString: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.string(from: self)
     }
 }
 

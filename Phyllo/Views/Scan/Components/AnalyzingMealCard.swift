@@ -9,6 +9,7 @@ import SwiftUI
 
 struct AnalyzingMealCard: View {
     let timestamp: Date
+    @ObservedObject private var agent = MealAnalysisAgent.shared
     @State private var dotsAnimation = false
     @State private var currentMessageIndex = 0
     @State private var messageTimer: Timer?
@@ -48,9 +49,10 @@ struct AnalyzingMealCard: View {
             
             // Meal info (loading state)
             VStack(alignment: .leading, spacing: 4) {
-                Text(messages[currentMessageIndex])
+                Text(agent.currentTool?.displayName ?? messages[currentMessageIndex])
                     .font(.system(size: 16, weight: .medium))
                     .foregroundColor(.white)
+                    .animation(.easeInOut(duration: 0.3), value: agent.currentTool)
                     .animation(.easeInOut(duration: 0.3), value: currentMessageIndex)
                 
                 HStack(spacing: 8) {
@@ -66,11 +68,26 @@ struct AnalyzingMealCard: View {
                         .foregroundColor(.white.opacity(0.7))
                 }
                 
-                // Shimmer placeholder for macro data
-                RoundedRectangle(cornerRadius: 4)
-                    .fill(Color.white.opacity(0.1))
-                    .frame(width: 120, height: 12)
-                    .shimmer()
+                // Tool progress indicator
+                if agent.isUsingTools, agent.currentTool != nil {
+                    HStack(spacing: 6) {
+                        Image(systemName: agent.currentTool?.iconName ?? "sparkle")
+                            .font(.system(size: 11))
+                            .foregroundColor(.phylloAccent)
+                        
+                        Text(agent.toolProgress)
+                            .font(.system(size: 12))
+                            .foregroundColor(.phylloAccent.opacity(0.8))
+                            .lineLimit(1)
+                    }
+                    .transition(.move(edge: .leading).combined(with: .opacity))
+                } else {
+                    // Shimmer placeholder for macro data
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(Color.white.opacity(0.1))
+                        .frame(width: 120, height: 12)
+                        .shimmer()
+                }
             }
             
             Spacer()
@@ -116,6 +133,7 @@ struct AnalyzingMealCard: View {
 // Timeline version with smaller design
 struct AnalyzingMealRow: View {
     let timestamp: Date
+    @ObservedObject private var agent = MealAnalysisAgent.shared
     @State private var dotsAnimation = false
     @State private var currentMessageIndex = 0
     @State private var messageTimer: Timer?
@@ -155,11 +173,20 @@ struct AnalyzingMealRow: View {
             
             // Meal info
             VStack(alignment: .leading, spacing: 2) {
-                Text(messages[currentMessageIndex])
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(.white)
-                    .lineLimit(1)
-                    .animation(.easeInOut(duration: 0.3), value: currentMessageIndex)
+                HStack(spacing: 4) {
+                    if agent.isUsingTools, agent.currentTool != nil {
+                        Image(systemName: agent.currentTool?.iconName ?? "sparkle")
+                            .font(.system(size: 10))
+                            .foregroundColor(.phylloAccent)
+                    }
+                    
+                    Text(agent.currentTool?.displayName ?? messages[currentMessageIndex])
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.white)
+                        .lineLimit(1)
+                        .animation(.easeInOut(duration: 0.3), value: agent.currentTool)
+                        .animation(.easeInOut(duration: 0.3), value: currentMessageIndex)
+                }
                 
                 // Shimmer for macros
                 RoundedRectangle(cornerRadius: 3)

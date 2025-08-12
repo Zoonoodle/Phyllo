@@ -230,7 +230,8 @@ extension MealWindow {
             "targetFat": targetMacros.fat,
             "purpose": purpose.rawValue,
             "flexibility": flexibility.rawValue,
-            "dayDate": dayDate
+            "dayDate": dayDate,
+            "isMarkedAsFasted": isMarkedAsFasted
         ]
         
         if let adjustedCalories = adjustedCalories {
@@ -296,6 +297,7 @@ extension MealWindow {
         )
         
         window.adjustedCalories = data["adjustedCalories"] as? Int
+        window.isMarkedAsFasted = data["isMarkedAsFasted"] as? Bool ?? false
         
         if let reasonData = data["redistributionReason"] as? [String: Any],
            let type = reasonData["type"] as? String {

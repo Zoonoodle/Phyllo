@@ -83,6 +83,9 @@ struct MealWindow: Identifiable {
     var adjustedMacros: MacroTargets?
     var redistributionReason: WindowRedistributionManager.RedistributionReason?
     
+    // Tracking fasting status
+    var isMarkedAsFasted: Bool = false
+    
     // Computed properties
     var duration: TimeInterval {
         endTime.timeIntervalSince(startTime)
@@ -163,7 +166,8 @@ struct MealWindow: Identifiable {
         dayDate: Date,
         adjustedCalories: Int? = nil,
         adjustedMacros: MacroTargets? = nil,
-        redistributionReason: WindowRedistributionManager.RedistributionReason? = nil
+        redistributionReason: WindowRedistributionManager.RedistributionReason? = nil,
+        isMarkedAsFasted: Bool = false
     ) {
         self.id = id ?? UUID()
         self.startTime = startTime
@@ -176,6 +180,7 @@ struct MealWindow: Identifiable {
         self.adjustedCalories = adjustedCalories
         self.adjustedMacros = adjustedMacros
         self.redistributionReason = redistributionReason
+        self.isMarkedAsFasted = isMarkedAsFasted
     }
     
     // Convenience initializer for new windows (generates ID)
