@@ -4,13 +4,208 @@
 //
 //  Created on 2/2/25.
 //
-//  Displays micronutrient status with deficiency alerts
+//  Enhanced micronutrient display with smart prioritization and full grid view
 
 import SwiftUI
 
+// MARK: - Prioritized Nutrient Model
+
+struct PrioritizedNutrient {
+    let status: InsightsEngine.MicronutrientStatus.NutrientStatus
+    let priorityScore: Double
+    let priorityReason: String
+}
+
+// MARK: - Nutrient Prioritization Engine
+
+struct NutrientPrioritizationEngine {
+    static func getPrioritizedNutrients(
+        from status: InsightsEngine.MicronutrientStatus,
+        userGoal: NutritionGoal?,
+        currentWindow: MealWindow?,
+        currentTime: Date = Date(),
+        maxCount: Int = 4
+    ) -> [PrioritizedNutrient] {
+        
+        var scoredNutrients: [(nutrient: InsightsEngine.MicronutrientStatus.NutrientStatus, score: Double, reason: String)] = []
+        
+        // Process both good nutrients and anti-nutrients
+        for nutrientStatus in status.nutrients {
+            guard let info = MicronutrientData.getNutrient(byName: nutrientStatus.nutrient.name) else { continue }
+            
+            var score = 0.0
+            var reasons: [String] = []
+            
+            if info.isAntiNutrient {
+                // Anti-nutrient scoring
+                let guidanceLevel = info.getGuidanceLevel(consumed: nutrientStatus.consumed)
+                if guidanceLevel == .critical {
+                    score += 100
+                    reasons.append("Critical level")
+                } else if guidanceLevel == .excessive {
+                    score += 70
+                    reasons.append("Excessive intake")
+                }
+            } else {
+                // Good nutrient scoring
+                
+                // 1. Deficiency score (highest priority)
+                if nutrientStatus.percentageOfRDA < 30 {
+                    score += (30 - nutrientStatus.percentageOfRDA) * 3 // Triple weight for severe deficiency
+                    reasons.append("Severely low")
+                } else if nutrientStatus.percentageOfRDA < 50 {
+                    score += (50 - nutrientStatus.percentageOfRDA) * 2 // Double weight
+                    reasons.append("Low intake")
+                } else if nutrientStatus.percentageOfRDA < 80 {
+                    score += (80 - nutrientStatus.percentageOfRDA) * 1
+                    reasons.append("Below target")
+                }
+                
+                // 2. Goal relevance score
+                if let goal = userGoal {
+                    let goalScore = calculateGoalRelevanceScore(nutrient: info, goal: goal)
+                    if goalScore > 0 {
+                        score += goalScore
+                        reasons.append("Important for \(goal.displayName.lowercased())")
+                    }
+                }
+                
+                // 3. Window relevance score
+                if let window = currentWindow {
+                    let windowScore = calculateWindowRelevanceScore(nutrient: info, window: window, currentTime: currentTime)
+                    if windowScore > 0 {
+                        score += windowScore
+                        reasons.append("Key for \(window.purpose.displayName.lowercased())")
+                    }
+                }
+                
+                // 4. Time of day relevance
+                let timeScore = calculateTimeRelevanceScore(nutrient: info, currentTime: currentTime)
+                if timeScore > 0 {
+                    score += timeScore
+                }
+            }
+            
+            if score > 0 {
+                let primaryReason = reasons.first ?? "Monitor intake"
+                scoredNutrients.append((nutrient: nutrientStatus, score: score, reason: primaryReason))
+            }
+        }
+        
+        // Sort by score and take top N
+        return scoredNutrients
+            .sorted { $0.score > $1.score }
+            .prefix(maxCount)
+            .map { PrioritizedNutrient(status: $0.nutrient, priorityScore: $0.score, priorityReason: $0.reason) }
+    }
+    
+    private static func calculateGoalRelevanceScore(nutrient: MicronutrientInfo, goal: NutritionGoal) -> Double {
+        var relevantPetals: Set<HealthImpactPetal> = []
+        
+        switch goal {
+        case .muscleGain:
+            relevantPetals = [.strength, .energy]
+        case .weightLoss:
+            relevantPetals = [.energy, .heart]
+        case .performanceFocus:
+            relevantPetals = [.energy, .focus]
+        case .athleticPerformance:
+            relevantPetals = [.energy, .heart, .antioxidant, .strength]
+        case .betterSleep:
+            relevantPetals = [.focus, .antioxidant]
+        case .maintainWeight, .overallWellbeing:
+            return 10 // All nutrients equally important
+        }
+        
+        // Check if nutrient impacts relevant petals
+        let matchingPetals = Set(nutrient.healthImpacts).intersection(relevantPetals)
+        return Double(matchingPetals.count) * 15
+    }
+    
+    private static func calculateWindowRelevanceScore(nutrient: MicronutrientInfo, window: MealWindow, currentTime: Date) -> Double {
+        // Check if we're currently in this window
+        let isActive = window.contains(timestamp: currentTime)
+        let multiplier = isActive ? 2.0 : 1.0
+        
+        var score = 0.0
+        
+        switch window.purpose {
+        case .preworkout, .postworkout:
+            if nutrient.healthImpacts.contains(.energy) || nutrient.healthImpacts.contains(.strength) {
+                score = 20
+            }
+        case .sustainedEnergy:
+            if nutrient.name.contains("B") || nutrient.name == "Iron" {
+                score = 20
+            }
+        case .recovery:
+            if nutrient.name == "Magnesium" || nutrient.name == "Zinc" || nutrient.healthImpacts.contains(.strength) {
+                score = 20
+            }
+        case .focusBoost:
+            if nutrient.healthImpacts.contains(.focus) || nutrient.name.contains("B12") || nutrient.name == "Omega-3" {
+                score = 20
+            }
+        case .metabolicBoost:
+            if nutrient.healthImpacts.contains(.energy) {
+                score = 15
+            }
+        case .sleepOptimization:
+            if nutrient.name == "Magnesium" || nutrient.name == "Calcium" {
+                score = 25
+            }
+        default:
+            // Check for other relevant impacts
+            if nutrient.healthImpacts.contains(.immune) {
+                score = 15
+            } else {
+                score = 0
+            }
+        }
+        
+        return score * multiplier
+    }
+    
+    private static func calculateTimeRelevanceScore(nutrient: MicronutrientInfo, currentTime: Date) -> Double {
+        let hour = Calendar.current.component(.hour, from: currentTime)
+        
+        // Morning (6 AM - 12 PM): Energy nutrients
+        if hour >= 6 && hour < 12 {
+            if nutrient.healthImpacts.contains(.energy) || nutrient.name.contains("B") {
+                return 10
+            }
+        }
+        
+        // Evening (6 PM - 10 PM): Sleep-supporting nutrients
+        if hour >= 18 && hour < 22 {
+            if nutrient.name == "Magnesium" || nutrient.name == "Calcium" {
+                return 15
+            }
+        }
+        
+        return 0
+    }
+}
+
 struct MicronutrientStatusView: View {
     let status: InsightsEngine.MicronutrientStatus
+    var userGoal: NutritionGoal? = nil
+    var currentWindow: MealWindow? = nil
+    
     @State private var expandedNutrients: Set<String> = []
+    @State private var showAllNutrients = false
+    @State private var selectedNutrient: InsightsEngine.MicronutrientStatus.NutrientStatus?
+    @State private var expandedPriorityCards: Set<String> = []
+    @State private var animateIn = false
+    
+    // Get prioritized nutrients
+    private var prioritizedNutrients: [PrioritizedNutrient] {
+        NutrientPrioritizationEngine.getPrioritizedNutrients(
+            from: status,
+            userGoal: userGoal,
+            currentWindow: currentWindow
+        )
+    }
     
     // Convert to micronutrient data format for HexagonFlowerView
     private var micronutrientData: [(name: String, percentage: Double)] {
@@ -25,7 +220,7 @@ struct MicronutrientStatusView: View {
         return Int(average)
     }
     
-    // Separate good nutrients and anti-nutrients for guidance display
+    // Keep legacy properties for backward compatibility
     private var goodNutrients: [(status: InsightsEngine.MicronutrientStatus.NutrientStatus, info: MicronutrientInfo)] {
         status.nutrients.compactMap { nutrientStatus in
             guard let info = MicronutrientData.getNutrient(byName: nutrientStatus.nutrient.name),
@@ -40,41 +235,6 @@ struct MicronutrientStatusView: View {
                   info.isAntiNutrient else { return nil }
             return (name: nutrientStatus.nutrient.name, consumed: nutrientStatus.consumed, info: info)
         }
-    }
-    
-    // Get nutrients that need attention (for guidance)
-    private var nutrientsNeedingAttention: [(status: InsightsEngine.MicronutrientStatus.NutrientStatus, info: MicronutrientInfo, guidanceLevel: NutrientGuidanceLevel)] {
-        var results: [(status: InsightsEngine.MicronutrientStatus.NutrientStatus, info: MicronutrientInfo, guidanceLevel: NutrientGuidanceLevel)] = []
-        
-        // Add good nutrients that need more
-        for (nutrientStatus, info) in goodNutrients {
-            let guidanceLevel = info.getGuidanceLevel(consumed: nutrientStatus.consumed)
-            if guidanceLevel == .needsMore {
-                results.append((status: nutrientStatus, info: info, guidanceLevel: guidanceLevel))
-            }
-        }
-        
-        // Add anti-nutrients that are excessive or critical
-        for (name, consumed, info) in antiNutrients {
-            let guidanceLevel = info.getGuidanceLevel(consumed: consumed)
-            if guidanceLevel == .excessive || guidanceLevel == .critical {
-                // Create a dummy status for display
-                let nutrient = MicronutrientData(
-                    name: name,
-                    unit: info.unit,
-                    rda: info.dailyLimit ?? 0
-                )
-                let status = InsightsEngine.MicronutrientStatus.NutrientStatus(
-                    nutrient: nutrient,
-                    consumed: consumed,
-                    percentageOfRDA: (consumed / (info.dailyLimit ?? 1)) * 100,
-                    status: guidanceLevel == .critical ? .deficient : .low
-                )
-                results.append((status: status, info: info, guidanceLevel: guidanceLevel))
-            }
-        }
-        
-        return Array(results.prefix(6))
     }
     
     var body: some View {
@@ -94,42 +254,120 @@ struct MicronutrientStatusView: View {
                 micronutrients: micronutrientData,
                 size: 220,
                 showLabels: false,
-                showPurposeText: false
+                showPurposeText: false,
+                userGoal: userGoal
             )
             .frame(height: 200)
             .padding(.top, 4)
+            .opacity(animateIn ? 1 : 0)
+            .scaleEffect(animateIn ? 1 : 0.8)
+            .animation(.spring(response: 0.5, dampingFraction: 0.8), value: animateIn)
             
-            // Anti-nutrient warnings if any
-            if !antiNutrients.isEmpty {
-                AntiNutrientWarningCard(antiNutrients: antiNutrients)
-                    .padding(.horizontal, 20)
-            }
-            
-            // Nutrient Guidance Cards
-            VStack(spacing: 12) {
-                ForEach(Array(nutrientsNeedingAttention.enumerated()), id: \.offset) { index, item in
-                    MicronutrientGuidanceRow(
-                        nutrientStatus: item.status,
-                        nutrientInfo: item.info,
-                        guidanceLevel: item.guidanceLevel,
-                        isExpanded: expandedNutrients.contains(item.status.nutrient.name),
-                        onTap: {
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                                if expandedNutrients.contains(item.status.nutrient.name) {
-                                    expandedNutrients.remove(item.status.nutrient.name)
-                                } else {
-                                    expandedNutrients.insert(item.status.nutrient.name)
-                                }
-                            }
-                        }
-                    )
+            // Smart Priority Section
+            VStack(alignment: .leading, spacing: 16) {
+                HStack {
+                    Text("Nutrients Needing Attention")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundColor(.white.opacity(0.7))
+                    
+                    Spacer()
+                    
+                    if !prioritizedNutrients.isEmpty {
+                        Text("\(prioritizedNutrients.count) priority")
+                            .font(.system(size: 13))
+                            .foregroundColor(.white.opacity(0.5))
+                    }
                 }
+                .padding(.horizontal, 20)
+                
+                if prioritizedNutrients.isEmpty {
+                    // All nutrients are adequate
+                    HStack(spacing: 12) {
+                        Image(systemName: "checkmark.seal.fill")
+                            .font(.system(size: 20))
+                            .foregroundColor(.green)
+                        
+                        Text("All nutrients are at healthy levels!")
+                            .font(.system(size: 15))
+                            .foregroundColor(.white.opacity(0.7))
+                        
+                        Spacer()
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 16)
+                    .background(Color.green.opacity(0.1))
+                    .cornerRadius(12)
+                    .padding(.horizontal, 20)
+                } else {
+                    // Priority nutrient cards
+                    VStack(spacing: 12) {
+                        ForEach(Array(prioritizedNutrients.enumerated()), id: \.element.status.nutrient.id) { index, prioritized in
+                            PriorityNutrientCard(
+                                prioritized: prioritized,
+                                isExpanded: expandedPriorityCards.contains(prioritized.status.nutrient.id.uuidString),
+                                onTap: {
+                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                        if expandedPriorityCards.contains(prioritized.status.nutrient.id.uuidString) {
+                                            expandedPriorityCards.remove(prioritized.status.nutrient.id.uuidString)
+                                        } else {
+                                            expandedPriorityCards.insert(prioritized.status.nutrient.id.uuidString)
+                                        }
+                                    }
+                                }
+                            )
+                            .opacity(animateIn ? 1 : 0)
+                            .offset(y: animateIn ? 0 : 20)
+                            .animation(.spring(response: 0.5).delay(Double(index) * 0.1), value: animateIn)
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                }
+                
+                // View All Nutrients Button
+                Button(action: {
+                    showAllNutrients = true
+                }) {
+                    HStack(spacing: 12) {
+                        Image(systemName: "square.grid.3x3")
+                            .font(.system(size: 16))
+                        
+                        Text("View All Nutrients")
+                            .font(.system(size: 15, weight: .medium))
+                        
+                        Spacer()
+                        
+                        Text("\(status.nutrients.count)")
+                            .font(.system(size: 14))
+                            .foregroundColor(.white.opacity(0.5))
+                        
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 14))
+                            .foregroundColor(.white.opacity(0.5))
+                    }
+                    .foregroundColor(.white)
+                    .padding(16)
+                    .background(Color.white.opacity(0.08))
+                    .cornerRadius(12)
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 8)
             }
-            .padding(.horizontal, 20)
         }
         .padding(.vertical, 20)
         .background(Color.phylloBackground)
         .cornerRadius(20)
+        .onAppear {
+            withAnimation(.easeOut(duration: 0.4)) {
+                animateIn = true
+            }
+        }
+        .sheet(isPresented: $showAllNutrients) {
+            AllNutrientsView(
+                status: status,
+                selectedNutrient: $selectedNutrient
+            )
+            .presentationBackground(Color.phylloBackground)
+        }
     }
 }
 
