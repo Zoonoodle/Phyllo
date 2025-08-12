@@ -4,7 +4,7 @@
 **Version:** 1.0 (Current Implementation)  
 **Platform:** iOS 17+ (SwiftUI 6)  
 **Backend:** Firebase (Auth, Firestore, Functions, Storage, Analytics)  
-**AI Engine:** Google Gemini 2.5 Flash  
+**AI Engine:** Google Gemini 2.0 Flash with Intelligent Agent Toolset  
 **MCP Tools:** Serena (Code Analysis) + Context7 (Documentation) + BraveSearch  
 
 ---
@@ -18,12 +18,13 @@ Phyllo is a nutrition tracking app built around **meal windows** - smart eating 
 1. **Timeline-Based Schedule View** - Visual meal window management
 2. **Comprehensive Check-In System** - Morning and post-meal tracking
 3. **Smart Nudge System** - Proactive coaching and reminders
-4. **Advanced Meal Analysis** - Photo capture with detailed nutrition breakdown
+4. **Advanced Meal Analysis** - AI-powered photo analysis with intelligent agent toolset
 5. **Momentum Analytics** - Progress tracking and insights with PhylloScore
 6. **Developer Dashboard** - Mock data management for testing
 7. **Micronutrient Intelligence** - 18+ tracked micronutrients with smart evaluation
 8. **Ingredient Tracking** - Full ingredient breakdown with food group categorization
 9. **Health Impact Petals** - Visual micronutrient health impact system
+10. **Intelligent Meal Analysis Agent** - Multi-tool AI system for accurate nutrition detection
 
 ---
 
@@ -227,9 +228,35 @@ struct MealIngredient {
 }
 ```
 
-### **Meal Analysis View**
+### **Meal Analysis System**
 
-**Three-Tab Interface**:
+**Intelligent AI Agent Architecture**:
+The meal analysis system uses a sophisticated multi-tool agent that automatically enhances accuracy:
+
+1. **MealAnalysisAgent** - Orchestrates analysis tools based on content and confidence
+   - Monitors initial analysis confidence levels
+   - Detects 30+ restaurant/brand names (McDonald's, Starbucks, Chipotle, etc.)
+   - Triggers appropriate tools for deep analysis
+   - Shows subtle progress indicators during analysis
+
+2. **Analysis Tools**:
+   - **Brand Search**: Uses Gemini's web search to find official restaurant nutrition
+   - **Deep Analysis**: Multi-step ingredient breakdown for complex meals
+   - **Nutrition Lookup**: Verifies values against USDA and nutrition databases
+
+3. **Automatic Triggers**:
+   - Low confidence (<0.75) → Activates deep analysis
+   - Brand/restaurant detected → Searches official nutrition data
+   - Complex meals (>5 ingredients) → Component-by-component analysis
+   - Voice mentions brand → Automatic restaurant search
+
+4. **Performance**:
+   - Regular meals: 2-3 seconds (standard analysis)
+   - Restaurant meals: 6-8 seconds (with brand search)
+   - Results cached for 7 days to improve speed
+   - Seamless fallback if tools unavailable
+
+**Meal Analysis View** (Three-Tab Interface):
 1. **Nutrition Tab**:
    - Calorie and macro overview
    - Scrollable micronutrient list with progress bars
@@ -340,17 +367,17 @@ struct MealIngredient {
 - ✅ Ingredient-level nutrition breakdown
 - ✅ Health impact petal visualizations
 - ✅ Window-aware micronutrient evaluation
-- ⏳ Firebase backend
-- ⏳ Real AI integration (using mock responses)
+- ✅ Firebase backend (Auth, Firestore, Storage, Functions integrated)
+- ✅ Real Gemini AI integration with intelligent agent toolset
 - ⏳ Social features
 - ⏳ Apple Health integration
 
 ### **Known Issues**
-- Mock data only (no persistence)
-- Simulated AI responses
-- No real photo analysis (using placeholder images)
-- Basic goal calculations
-- Limited to pre-defined meal types in mock data
+- Camera capture uses photo library picker (not direct camera)
+- Social features show mock users only
+- Apple Health integration pending
+- Push notifications not implemented
+- Barcode scanning incomplete
 
 ---
 
@@ -364,11 +391,11 @@ struct MealIngredient {
 5. Enhanced meal analysis with 3-tab interface
 
 ### **Immediate Next Steps**
-1. Firebase authentication setup
-2. Real Gemini API integration for photo analysis
-3. Persist user data to Firestore
-4. Implement actual camera capture (currently placeholder)
-5. Connect mock data to real Firebase backend
+1. Implement actual camera capture (currently using photo library)
+2. Add user authentication flow
+3. Implement push notifications for nudges
+4. Connect social features with real users
+5. Add Apple Health integration
 
 ### **Phase 2 Features**
 1. Apple Health integration

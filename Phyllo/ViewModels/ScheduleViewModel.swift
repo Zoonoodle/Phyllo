@@ -378,27 +378,15 @@ extension ScheduleViewModel {
     /// Process retrospective meals from user description
     func processRetrospectiveMeals(description: String, missedWindows: [MealWindow]) async {
         do {
-            // Use AI to parse the description and create meals
-            let parsedMeals = try await parseRetrospectiveMeals(from: description)
+            // Use the new RetrospectiveMealParser for better AI parsing
+            let parsedMeals = try await RetrospectiveMealParser.shared.parseMealsFromDescription(
+                description,
+                missedWindows: missedWindows
+            )
             
-            // Distribute meals to appropriate windows
-            for (index, meal) in parsedMeals.enumerated() {
-                if index < missedWindows.count {
-                    // Create a new meal with the updated timestamp and window ID
-                    let mealWithWindow = LoggedMeal(
-                        name: meal.name,
-                        calories: meal.calories,
-                        protein: meal.protein,
-                        carbs: meal.carbs,
-                        fat: meal.fat,
-                        timestamp: missedWindows[index].startTime.addingTimeInterval(1800)
-                    )
-                    var updatedMeal = mealWithWindow
-                    updatedMeal.windowId = missedWindows[index].id
-                    
-                    // Save the meal
-                    try await dataProvider.saveMeal(updatedMeal)
-                }
+            // Save each parsed meal (already has windowId and timestamp assigned)
+            for meal in parsedMeals {
+                try await dataProvider.saveMeal(meal)
             }
             
             Task { @MainActor in
@@ -408,104 +396,6 @@ extension ScheduleViewModel {
         } catch {
             errorMessage = "Failed to process meals: \(error.localizedDescription)"
             print("❌ Failed to process retrospective meals: \(error)")
-        }
-    }
-    
-    /// Parse meals from text description using AI
-    private func parseRetrospectiveMeals(from description: String) async throws -> [LoggedMeal] {
-        // For now, use a simple parsing approach
-        // In production, this would call Gemini AI
-        
-        var meals: [LoggedMeal] = []
-        // Split by common separators
-        let mealDescriptions = description
-            .replacingOccurrences(of: " and ", with: ", ")
-            .replacingOccurrences(of: " then ", with: ", ")
-            .replacingOccurrences(of: ".", with: ", ")
-            .components(separatedBy: ", ")
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .filter { !$0.isEmpty }
-        
-        for desc in mealDescriptions {
-            // Simple keyword matching for now
-            let meal = createMealFromDescription(desc)
-            if meal.calories > 0 {
-                meals.append(meal)
-            }
-        }
-        
-        return meals
-    }
-    
-    /// Create a meal from a simple description
-    private func createMealFromDescription(_ description: String) -> LoggedMeal {
-        let desc = description.lowercased()
-        
-        // Simple keyword-based meal creation
-        if desc.contains("eggs") || desc.contains("breakfast") || desc.contains("cereal") {
-            return LoggedMeal(
-                name: "Breakfast",
-                calories: 350,
-                protein: 20,
-                carbs: 30,
-                fat: 15,
-                timestamp: Date()
-            )
-        } else if desc.contains("sandwich") || desc.contains("lunch") {
-            return LoggedMeal(
-                name: "Lunch",
-                calories: 450,
-                protein: 25,
-                carbs: 45,
-                fat: 20,
-                timestamp: Date()
-            )
-        } else if desc.contains("salad") {
-            return LoggedMeal(
-                name: "Salad",
-                calories: 250,
-                protein: 15,
-                carbs: 20,
-                fat: 15,
-                timestamp: Date()
-            )
-        } else if desc.contains("chicken") || desc.contains("dinner") {
-            return LoggedMeal(
-                name: "Dinner",
-                calories: 550,
-                protein: 35,
-                carbs: 40,
-                fat: 25,
-                timestamp: Date()
-            )
-        } else if desc.contains("shake") || desc.contains("protein") {
-            return LoggedMeal(
-                name: "Protein Shake",
-                calories: 200,
-                protein: 25,
-                carbs: 10,
-                fat: 5,
-                timestamp: Date()
-            )
-        } else if desc.contains("snack") || desc.contains("fruit") {
-            return LoggedMeal(
-                name: "Snack",
-                calories: 150,
-                protein: 5,
-                carbs: 30,
-                fat: 5,
-                timestamp: Date()
-            )
-        } else {
-            // Default meal
-            return LoggedMeal(
-                name: "Meal",
-                calories: 400,
-                protein: 20,
-                carbs: 40,
-                fat: 20,
-                timestamp: Date()
-            )
         }
     }
 }
