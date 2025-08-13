@@ -307,9 +307,13 @@ extension MealAnalysisAgent {
         DebugLogger.shared.mealAnalysis("Performing brand-specific analysis for \(brand): \(mealName)")
         
         let searchPrompt = """
-        Analyze this \(brand) menu item: \(mealName)
+        Analyze this menu item. The initial detection was: \(mealName)
+        Brand: \(brand)
         
-        IMPORTANT: Use official \(brand) nutrition information. DO NOT recalculate or add extra calories.
+        IMPORTANT: 
+        1. Keep the FULL meal name including brand (e.g., "\(mealName)")
+        2. Use official \(brand) nutrition information
+        3. DO NOT recalculate or add extra calories
         
         Restaurant Nutrition Database:
         
@@ -353,6 +357,10 @@ extension MealAnalysisAgent {
         3. If not listed, estimate based on similar items
         4. DO NOT add extra calories for oil/preparation - it's already included in restaurant nutrition
         
+        CRITICAL: Preserve the full meal name including the brand!
+        - CORRECT: "Chick-fil-A Chicken Sandwich"
+        - WRONG: "Chicken Sandwich" (missing brand)
+        
         For ingredient breakdown:
         - List main components visible
         - Individual ingredient nutrition is optional
@@ -360,7 +368,7 @@ extension MealAnalysisAgent {
         
         Return a JSON response:
         {
-          "mealName": "Exact menu name from \(brand)",
+          "mealName": "MUST include brand name - e.g. '\(brand) Chicken Sandwich' not just 'Chicken Sandwich'",
           "confidence": 0.95,
           "brandDetected": "\(brand)",
           "ingredients": [
@@ -401,9 +409,25 @@ extension MealAnalysisAgent {
             // Try to parse as MealAnalysisResult directly
             if let data = searchResult.data(using: .utf8) {
                 do {
-                    let result = try JSONDecoder().decode(MealAnalysisResult.self, from: data)
+                    var result = try JSONDecoder().decode(MealAnalysisResult.self, from: data)
                     DebugLogger.shared.success("Successfully parsed brand-specific result")
                     DebugLogger.shared.mealAnalysis("Brand result nutrition: \(result.nutrition.calories) cal, \(result.nutrition.protein)g P, \(result.nutrition.carbs)g C, \(result.nutrition.fat)g F")
+                    
+                    // Ensure brand name is preserved in meal name
+                    if !result.mealName.lowercased().contains(brand.lowercased()) && initialResult.mealName.lowercased().contains(brand.lowercased()) {
+                        DebugLogger.shared.warning("Brand name missing from result, using initial meal name")
+                        result = MealAnalysisResult(
+                            mealName: initialResult.mealName, // Keep the original name with brand
+                            confidence: result.confidence,
+                            ingredients: result.ingredients,
+                            nutrition: result.nutrition,
+                            micronutrients: result.micronutrients,
+                            clarifications: result.clarifications,
+                            requestedTools: result.requestedTools,
+                            brandDetected: result.brandDetected
+                        )
+                    }
+                    
                     return result
                 } catch {
                     DebugLogger.shared.warning("Failed to parse as MealAnalysisResult: \(error)")
@@ -583,8 +607,15 @@ extension MealAnalysisAgent {
             }
         }
         
+        // Ensure brand name is preserved
+        var mealName = json["mealName"] as? String ?? initialResult.mealName
+        if !mealName.lowercased().contains(brand.lowercased()) && initialResult.mealName.lowercased().contains(brand.lowercased()) {
+            mealName = initialResult.mealName // Keep the original name with brand
+            DebugLogger.shared.warning("Manual parse: Brand name missing, using initial meal name")
+        }
+        
         return MealAnalysisResult(
-            mealName: json["mealName"] as? String ?? initialResult.mealName,
+            mealName: mealName,
             confidence: json["confidence"] as? Double ?? 0.9,
             ingredients: ingredients.isEmpty ? initialResult.ingredients : ingredients,
             nutrition: nutrition,
