@@ -12,6 +12,9 @@ class MealCaptureService: ObservableObject {
     @Published var analysisProgress: Double = 0.0
     @Published var currentError: Error?
     
+    // Store last analysis metadata for celebration nudge
+    private var lastAnalysisMetadata: [UUID: AnalysisMetadata] = [:]
+    
     private let dataProvider = DataSourceProvider.shared.provider
     private let vertexAI = VertexAIService.shared
     private let agent = MealAnalysisAgent.shared
@@ -162,6 +165,9 @@ class MealCaptureService: ObservableObject {
                             savedMeal.imageData = img
                             try? await dataProvider.updateMeal(savedMeal)
                         }
+                        
+                        // Store metadata for celebration nudge
+                        storeAnalysisMetadata(analysisMetadata, for: savedMeal.id)
                         
                         Task { @MainActor in
                             DebugLogger.shared.success("Meal analysis completed: \(result.mealName)")
@@ -427,6 +433,30 @@ private func makePreviewData(from image: UIImage) -> Data? {
     let resized = UIGraphicsGetImageFromCurrentImageContext()
     UIGraphicsEndImageContext()
     return resized?.jpegData(compressionQuality: 0.65)
+}
+
+// MARK: - Metadata Management
+
+extension MealCaptureService {
+    func getAnalysisMetadata(for mealId: UUID) -> AnalysisMetadata? {
+        return lastAnalysisMetadata[mealId]
+    }
+    
+    private func storeAnalysisMetadata(_ metadata: AnalysisMetadata?, for mealId: UUID) {
+        guard let metadata = metadata else { return }
+        lastAnalysisMetadata[mealId] = metadata
+        
+        // Clean up old metadata (keep only last 10)
+        if lastAnalysisMetadata.count > 10 {
+            let sortedKeys = lastAnalysisMetadata.keys.sorted { a, b in
+                // Keep most recent based on insertion order (no timestamp available)
+                return true
+            }
+            if let oldestKey = sortedKeys.first {
+                lastAnalysisMetadata.removeValue(forKey: oldestKey)
+            }
+        }
+    }
 }
 
 // MARK: - Notification Names

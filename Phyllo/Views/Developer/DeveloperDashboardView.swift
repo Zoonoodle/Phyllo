@@ -1136,7 +1136,15 @@ struct NudgesDebugTabView: View {
                             fat: 15,
                             timestamp: Date()
                         )
-                        nudgeManager.triggerTestNudge(.mealLoggedCelebration(meal: testMeal, metadata: nil))
+                        let testMetadata = AnalysisMetadata(
+                            toolsUsed: [.brandSearch, .deepAnalysis],
+                            complexity: .restaurant,
+                            analysisTime: 5.8,
+                            confidence: 0.92,
+                            brandDetected: "Test Restaurant",
+                            ingredientCount: 8
+                        )
+                        nudgeManager.triggerTestNudge(.mealLoggedCelebration(meal: testMeal, metadata: testMetadata))
                     }) {
                         Label("Meal Celebration", systemImage: "checkmark.circle.fill")
                             .frame(maxWidth: .infinity)

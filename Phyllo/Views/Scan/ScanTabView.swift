@@ -255,6 +255,8 @@ struct ScanTabView: View {
                let result = notification.userInfo?["result"] as? MealAnalysisResult,
                let savedMeal = notification.userInfo?["savedMeal"] as? LoggedMeal,
                analyzingMeal.id == currentAnalyzingMeal?.id {
+                let metadata = notification.userInfo?["metadata"] as? AnalysisMetadata
+                
                 Task { @MainActor in
                     DebugLogger.shared.mealAnalysis("Analysis completed for meal: \(result.mealName)")
                     DebugLogger.shared.logMeal(savedMeal, action: "Received saved meal from notification")

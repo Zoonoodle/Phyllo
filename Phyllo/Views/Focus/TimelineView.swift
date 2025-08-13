@@ -388,7 +388,8 @@ struct TimelineView: View {
         }) else {
             // Meal not in any window, trigger celebration without animation
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                NudgeManager.shared.triggerNudge(.mealLoggedCelebration(meal: meal, metadata: nil))
+                let metadata = MealCaptureService.shared.getAnalysisMetadata(for: meal.id)
+                NudgeManager.shared.triggerNudge(.mealLoggedCelebration(meal: meal, metadata: metadata))
             }
             return
         }
@@ -429,7 +430,8 @@ struct TimelineView: View {
                 
                 // Trigger meal celebration nudge
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    NudgeManager.shared.triggerNudge(.mealLoggedCelebration(meal: meal, metadata: nil))
+                    let metadata = MealCaptureService.shared.getAnalysisMetadata(for: meal.id)
+                    NudgeManager.shared.triggerNudge(.mealLoggedCelebration(meal: meal, metadata: metadata))
                 }
             }
         }
