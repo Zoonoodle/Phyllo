@@ -480,10 +480,6 @@ struct TimelineView: View {
         return groups
     }
     
-    struct MealGroup {
-        let meals: [LoggedMeal]
-        let offset: CGFloat
-    }
 }
 
 // Timeline hour row with MacroFactors style
@@ -500,10 +496,6 @@ struct TimelineHourRow: View {
     let animationNamespace: Namespace.ID
     @ObservedObject var viewModel: ScheduleViewModel
     
-    struct MealGroup {
-        let meals: [LoggedMeal]
-        let offset: CGFloat
-    }
     
     var isCurrentHour: Bool {
         Calendar.current.component(.hour, from: currentTime) == hour
@@ -575,25 +567,7 @@ struct TimelineHourRow: View {
     
     @ViewBuilder
     private var standaloneMealsContent: some View {
-        // First, separate meals into indicators and standalone
-        let mealCategories = categorizeMeals()
-        
-        // Show indicators for meals in window banners
-        ForEach(mealCategories.indicators, id: \.meal.id) { item in
-            MealTimeIndicator(
-                meal: item.meal,
-                window: item.window,
-                onTap: {
-                    withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
-                        selectedWindow = item.window
-                        showWindowDetail = true
-                    }
-                }
-            )
-            .offset(y: item.offset * hourHeight)
-        }
-        
-        // Show analyzing meals
+        // Only show analyzing meals - all logged meals should appear in their windows
         ForEach(analyzingMeals, id: \.meal.id) { item in
             AnalyzingMealRow(timestamp: item.meal.timestamp, metadata: nil)
                 .offset(y: item.offset * hourHeight)
@@ -602,89 +576,8 @@ struct TimelineHourRow: View {
                     removal: .opacity
                 ))
         }
-        
-        // Group and show standalone meals
-        let groups = groupMeals(mealCategories.standalone)
-        ForEach(Array(groups.enumerated()), id: \.offset) { _, group in
-            if group.meals.count > 1 {
-                // Show grouped meals
-                GroupedMealsRow(meals: group.meals)
-                    .offset(y: group.offset * hourHeight)
-            } else if let meal = group.meals.first {
-                // Show single meal
-                MealRow(meal: meal)
-                    .offset(y: group.offset * hourHeight)
-                    .transition(.asymmetric(
-                        insertion: .scale(scale: 0.95).combined(with: .opacity),
-                        removal: .opacity
-                    ))
-            }
-        }
     }
     
-    private func categorizeMeals() -> (indicators: [(meal: LoggedMeal, window: MealWindow, offset: CGFloat)], 
-                                       standalone: [(meal: LoggedMeal, offset: CGFloat)]) {
-        var indicators: [(meal: LoggedMeal, window: MealWindow, offset: CGFloat)] = []
-        var standalone: [(meal: LoggedMeal, offset: CGFloat)] = []
-        
-        for item in meals {
-            if let windowId = item.meal.windowId,
-               let window = viewModel.mealWindows.first(where: { $0.id == windowId }) {
-                let windowStartHour = Calendar.current.component(.hour, from: window.startTime)
-                
-                if windowStartHour == hour || !isMealStandalone(item.meal, window: window) {
-                    // Show as indicator if window is in this hour OR meal is close to window
-                    indicators.append((meal: item.meal, window: window, offset: item.offset))
-                } else {
-                    // Show as standalone if far from window
-                    standalone.append(item)
-                }
-            } else {
-                // No window assigned or window not found
-                standalone.append(item)
-            }
-        }
-        
-        return (indicators, standalone)
-    }
-    
-    // Check if meal is far enough from window to be considered standalone
-    private func isMealStandalone(_ meal: LoggedMeal, window: MealWindow) -> Bool {
-        let buffer: TimeInterval = max(3600, window.duration * 0.25) // 1h or 25% of window length
-        let isFarBefore = meal.timestamp < window.startTime.addingTimeInterval(-buffer)
-        let isFarAfter = meal.timestamp > window.endTime.addingTimeInterval(buffer)
-        return isFarBefore || isFarAfter
-    }
-    
-    // Group meals that are within 30 minutes of each other
-    private func groupMeals(_ meals: [(meal: LoggedMeal, offset: CGFloat)]) -> [MealGroup] {
-        guard !meals.isEmpty else { return [] }
-        
-        var groups: [MealGroup] = []
-        var currentGroup: [LoggedMeal] = [meals[0].meal]
-        var groupOffset = meals[0].offset
-        
-        for i in 1..<meals.count {
-            let previousMeal = meals[i-1].meal
-            let currentMeal = meals[i].meal
-            let timeDiff = currentMeal.timestamp.timeIntervalSince(previousMeal.timestamp) / 60 // minutes
-            
-            if timeDiff <= 30 {
-                // Add to current group
-                currentGroup.append(currentMeal)
-            } else {
-                // Start new group
-                groups.append(MealGroup(meals: currentGroup, offset: groupOffset))
-                currentGroup = [currentMeal]
-                groupOffset = meals[i].offset
-            }
-        }
-        
-        // Add final group
-        groups.append(MealGroup(meals: currentGroup, offset: groupOffset))
-        
-        return groups
-    }
     
     private func getCurrentMinuteOffset() -> CGFloat {
         let minutes = Calendar.current.component(.minute, from: currentTime)
@@ -733,13 +626,6 @@ struct TimelineHourRow: View {
             }
         }
         
-        // Check if there are meal indicators near the top
-        let mealCategories = categorizeMeals()
-        for indicator in mealCategories.indicators {
-            if indicator.offset < 0.17 { // Within first 10 minutes
-                return false
-            }
-        }
         
         // Check analyzing meals
         for analyzingMeal in analyzingMeals {
@@ -996,336 +882,11 @@ struct JumpToNowButton: View {
     }
 }
 
-// Compact meal time indicator for meals shown in window banners
-struct MealTimeIndicator: View {
-    let meal: LoggedMeal
-    let window: MealWindow
-    let onTap: () -> Void
-    
-    private var isLate: Bool { meal.timestamp > window.endTime }
-    private var isEarly: Bool { meal.timestamp < window.startTime }
-    
-    private var timeFormatter: DateFormatter {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "h:mm a"
-        return formatter
-    }
-    
-    var body: some View {
-        Button(action: onTap) {
-            HStack(spacing: 6) {
-                Text("🍽️")
-                    .font(.system(size: 12))
-                
-                Text(timeFormatter.string(from: meal.timestamp))
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(.white.opacity(0.7))
-                
-                if isLate || isEarly {
-                    Text("•")
-                        .font(.system(size: 11))
-                        .foregroundColor(.white.opacity(0.3))
-                    
-                    Text(isLate ? "LATE" : "EARLY")
-                        .font(.system(size: 10, weight: .semibold))
-                        .foregroundColor(isLate ? .orange : .blue)
-                }
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 4)
-            .background(
-                Capsule()
-                    .fill(Color.phylloBackground)
-                    .overlay(
-                        Capsule()
-                            .fill(Color.white.opacity(0.05))
-                    )
-                    .overlay(
-                        Capsule()
-                            .strokeBorder(
-                                (isLate ? Color.orange : isEarly ? Color.blue : Color.white).opacity(0.2),
-                                lineWidth: 1
-                            )
-                    )
-            )
-        }
-        .buttonStyle(PlainButtonStyle())
-    }
-}
 
-// Grouped meals row for meals within 30 minutes of each other
-struct GroupedMealsRow: View {
-    let meals: [LoggedMeal]
-    @State private var showingModal = false
-    
-    private var totalCalories: Int {
-        meals.reduce(0) { $0 + $1.calories }
-    }
-    
-    private var timeFormatter: DateFormatter {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "h:mm"
-        return formatter
-    }
-    
-    private var timeRange: String {
-        guard let first = meals.first?.timestamp,
-              let last = meals.last?.timestamp else { return "" }
-        
-        if meals.count == 1 {
-            return timeFormatter.string(from: first)
-        } else {
-            return "\(timeFormatter.string(from: first)) - \(timeFormatter.string(from: last))"
-        }
-    }
-    
-    var body: some View {
-        Button {
-            showingModal = true
-        } label: {
-            HStack(spacing: 12) {
-                // Time range
-                Text(timeRange)
-                    .font(.system(size: 11))
-                    .monospacedDigit()
-                    .foregroundColor(.white.opacity(0.5))
-                    .frame(width: 50)
-                
-                // Multiple food emojis
-                HStack(spacing: -8) {
-                    ForEach(Array(meals.prefix(3).enumerated()), id: \.offset) { index, meal in
-                        Text(meal.emoji)
-                            .font(.system(size: 18))
-                            .zIndex(Double(3 - index))
-                    }
-                    if meals.count > 3 {
-                        Text("+\(meals.count - 3)")
-                            .font(.system(size: 10, weight: .semibold))
-                            .foregroundColor(.white.opacity(0.6))
-                            .padding(.leading, 4)
-                    }
-                }
-                
-                // Group info
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("\(meals.count) meals")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(.white)
-                    
-                    Text("\(totalCalories) cal total")
-                        .font(.system(size: 11))
-                        .monospacedDigit()
-                        .foregroundColor(.white.opacity(0.6))
-                }
-                
-                Spacer()
-                
-                // Expand indicator
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(.white.opacity(0.3))
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
-            .background(
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(Color.phylloBackground)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(Color.white.opacity(0.05))
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8)
-                            .strokeBorder(Color.white.opacity(0.1), lineWidth: 1)
-                    )
-            )
-        }
-        .buttonStyle(PlainButtonStyle())
-        .sheet(isPresented: $showingModal) {
-            GroupedMealsModal(meals: meals)
-        }
-    }
-}
 
-// Modal view for grouped meals details
-struct GroupedMealsModal: View {
-    let meals: [LoggedMeal]
-    @Environment(\.dismiss) private var dismiss
-    
-    private var totalNutrition: (calories: Int, protein: Int, carbs: Int, fat: Int) {
-        meals.reduce((0, 0, 0, 0)) { result, meal in
-            (result.0 + meal.calories,
-             result.1 + meal.protein,
-             result.2 + meal.carbs,
-             result.3 + meal.fat)
-        }
-    }
-    
-    var body: some View {
-        NavigationView {
-            ZStack {
-                Color.phylloBackground.ignoresSafeArea()
-                
-                VStack(spacing: 20) {
-                    // Total nutrition summary
-                    VStack(spacing: 12) {
-                        Text("\(totalNutrition.calories) cal")
-                            .font(.system(size: 28, weight: .bold))
-                            .foregroundColor(.white)
-                        
-                        HStack(spacing: 20) {
-                            MacroLabel(value: totalNutrition.protein, label: "Protein", color: .orange)
-                            MacroLabel(value: totalNutrition.carbs, label: "Carbs", color: .blue)
-                            MacroLabel(value: totalNutrition.fat, label: "Fat", color: .yellow)
-                        }
-                    }
-                    .padding()
-                    .background(
-                        RoundedRectangle(cornerRadius: 16)
-                            .fill(Color.white.opacity(0.05))
-                    )
-                    
-                    // Individual meals
-                    ScrollView {
-                        VStack(spacing: 12) {
-                            ForEach(meals) { meal in
-                                MealDetailRow(meal: meal)
-                            }
-                        }
-                    }
-                }
-                .padding()
-            }
-            .navigationTitle("Meal Group Details")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") {
-                        dismiss()
-                    }
-                    .foregroundColor(.phylloAccent)
-                }
-            }
-        }
-    }
-}
 
-// Macro label component for modal
-struct MacroLabel: View {
-    let value: Int
-    let label: String
-    let color: Color
-    
-    var body: some View {
-        VStack(spacing: 4) {
-            Text("\(value)g")
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundColor(color)
-            
-            Text(label)
-                .font(.system(size: 12))
-                .foregroundColor(.white.opacity(0.6))
-        }
-    }
-}
 
-// Detailed meal row for modal
-struct MealDetailRow: View {
-    let meal: LoggedMeal
-    
-    private var timeFormatter: DateFormatter {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "h:mm a"
-        return formatter
-    }
-    
-    var body: some View {
-        HStack(spacing: 12) {
-            Text(meal.emoji)
-                .font(.system(size: 24))
-            
-            VStack(alignment: .leading, spacing: 4) {
-                Text(meal.name)
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(.white)
-                
-                HStack(spacing: 8) {
-                    Text(timeFormatter.string(from: meal.timestamp))
-                        .font(.system(size: 12))
-                        .foregroundColor(.white.opacity(0.5))
-                    
-                    Text("•")
-                        .foregroundColor(.white.opacity(0.3))
-                    
-                    Text("\(meal.calories) cal")
-                        .font(.system(size: 12))
-                        .foregroundColor(.white.opacity(0.6))
-                }
-                
-                HStack(spacing: 12) {
-                    Text("\(meal.protein)g P")
-                        .font(.system(size: 11))
-                        .foregroundColor(.orange.opacity(0.7))
-                    
-                    Text("\(meal.carbs)g C")
-                        .font(.system(size: 11))
-                        .foregroundColor(.blue.opacity(0.7))
-                    
-                    Text("\(meal.fat)g F")
-                        .font(.system(size: 11))
-                        .foregroundColor(.yellow.opacity(0.7))
-                }
-            }
-            
-            Spacer()
-        }
-        .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color.white.opacity(0.03))
-        )
-    }
-}
 
-// Meal row with window indicator for meals logged outside their window
-struct MealRowWithWindowIndicator: View {
-    let meal: LoggedMeal
-    let window: MealWindow
-    
-    private var windowName: String {
-        let hour = Calendar.current.component(.hour, from: window.startTime)
-        switch hour {
-        case 5...10:
-            return "Breakfast"
-        case 11...14:
-            return "Lunch"
-        case 15...17:
-            return "Snack"
-        case 18...21:
-            return "Dinner"
-        default:
-            return "Late Snack"
-        }
-    }
-    
-    var body: some View {
-        VStack(spacing: 8) {
-            // Window indicator
-            HStack(spacing: 4) {
-                Image(systemName: "arrow.turn.down.right")
-                    .font(.system(size: 10))
-                Text("Assigned to \(windowName)")
-                    .font(.system(size: 11))
-                Spacer()
-            }
-            .foregroundColor(window.purpose.color.opacity(0.8))
-            .padding(.leading, 35)
-            
-            // Regular meal row
-            MealRow(meal: meal)
-        }
-    }
-}
 
 #Preview {
     @Previewable @State var selectedWindow: MealWindow?
