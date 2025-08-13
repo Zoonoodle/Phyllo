@@ -184,6 +184,11 @@ class VertexAIService: ObservableObject {
            - If you need nutrition database lookups: set requestedTools: ["nutritionLookup"]
            - You can request multiple tools if needed
            - Common brands to detect: Chick-fil-A, McDonald's, Starbucks, Chipotle, etc.
+           
+        CRITICAL for known restaurants:
+        - Chick-fil-A Chicken Sandwich is ALWAYS 440 calories (not 720!)
+        - Use standard nutrition values from official sources
+        - DO NOT add extra calories for preparation or oil
         
         IMPORTANT: Return ONLY this exact JSON structure with these exact field names:
         {

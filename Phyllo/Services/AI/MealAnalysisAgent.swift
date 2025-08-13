@@ -309,57 +309,82 @@ extension MealAnalysisAgent {
         let searchPrompt = """
         Analyze this \(brand) menu item: \(mealName)
         
-        You are an expert nutritionist with detailed knowledge of restaurant nutrition. Provide accurate nutrition analysis based on:
+        IMPORTANT: Use official \(brand) nutrition information. DO NOT recalculate or add extra calories.
         
-        1. RESTAURANT PATTERNS for \(brand):
-           - Typical portion sizes and preparation methods
-           - Common ingredients and cooking oils used
-           - Standard menu item compositions
+        Restaurant Nutrition Database:
         
-        2. ANALYZE EACH COMPONENT:
-           - Break down into individual ingredients
-           - Estimate portion sizes based on visual cues
-           - Include all sauces, oils, and preparation additions
-           - Account for restaurant-style preparation (more oil/butter than home cooking)
+        Chick-fil-A:
+        - Chicken Sandwich: 440 cal, 29g protein, 41g carbs, 19g fat
+        - Deluxe Sandwich: 540 cal, 32g protein, 43g carbs, 28g fat  
+        - Spicy Sandwich: 460 cal, 28g protein, 45g carbs, 22g fat
+        - Grilled Sandwich: 390 cal, 37g protein, 44g carbs, 12g fat
+        - Nuggets (8pc): 260 cal, 27g protein, 11g carbs, 12g fat
+        - Nuggets (12pc): 390 cal, 41g protein, 16g carbs, 18g fat
+        - Strips (3pc): 310 cal, 29g protein, 16g carbs, 14g fat
+        - Strips (4pc): 410 cal, 39g protein, 21g carbs, 19g fat
+        - Waffle Fries (small): 320 cal, 4g protein, 38g carbs, 19g fat
+        - Waffle Fries (medium): 420 cal, 5g protein, 51g carbs, 24g fat
+        - Waffle Fries (large): 520 cal, 7g protein, 63g carbs, 29g fat
+        - Mac & Cheese (medium): 450 cal, 20g protein, 52g carbs, 19g fat
+        - Side Salad: 80 cal, 5g protein, 6g carbs, 4g fat
+        - Cobb Salad: 510 cal, 40g protein, 28g carbs, 27g fat
+        - Market Salad: 330 cal, 28g protein, 26g carbs, 15g fat
+        - Frosted Lemonade: 320 cal, 5g protein, 64g carbs, 6g fat
+        - Milkshake (vanilla): 570 cal, 12g protein, 87g carbs, 20g fat
+        - Sauce Packet: 140 cal, 0g protein, 6g carbs, 13g fat
+        - Coca-Cola (small): 140 cal, 0g protein, 38g carbs, 0g fat
+        - Coca-Cola (medium): 200 cal, 0g protein, 55g carbs, 0g fat
+        - Coca-Cola (large): 310 cal, 0g protein, 86g carbs, 0g fat
         
-        3. NUTRITION CALCULATIONS:
-           - Calculate nutrition for EACH ingredient separately
-           - Show how each contributes to the total
-           - Be specific about hidden calories (oils, butter, sauces)
+        McDonald's:
+        - Big Mac: 550 cal, 25g protein, 45g carbs, 30g fat
+        - Quarter Pounder: 520 cal, 30g protein, 42g carbs, 26g fat
+        - McChicken: 400 cal, 14g protein, 41g carbs, 21g fat
+        - Medium Fries: 340 cal, 4g protein, 43g carbs, 16g fat
         
-        For \(brand) specifically:
-        - Fried items use peanut oil (adds ~150-200 cal)
-        - Waffle fries are cooked in canola oil
-        - Sauces are 140-190 calories per packet
-        - Drinks: Large = 32oz, Medium = 20oz
+        Chipotle:
+        - Chicken Bowl (typical): 750 cal, 45g protein, 65g carbs, 32g fat
+        - Steak Bowl (typical): 800 cal, 40g protein, 65g carbs, 37g fat
+        - Burrito (typical): 1000+ cal, 45g protein, 110g carbs, 40g fat
         
-        Return a detailed JSON response:
+        Based on the image:
+        1. Identify the exact menu item
+        2. Use the official nutrition values above if it matches
+        3. If not listed, estimate based on similar items
+        4. DO NOT add extra calories for oil/preparation - it's already included in restaurant nutrition
+        
+        For ingredient breakdown:
+        - List main components visible
+        - Individual ingredient nutrition is optional
+        - The total nutrition should match the official menu item
+        
+        Return a JSON response:
         {
-          "mealName": "Exact menu name",
-          "confidence": 0.85-0.95,
+          "mealName": "Exact menu name from \(brand)",
+          "confidence": 0.95,
           "brandDetected": "\(brand)",
           "ingredients": [
             {
-              "name": "specific ingredient",
-              "amount": "quantity",
-              "unit": "unit",
-              "foodGroup": "category",
-              "nutrition": {
-                "calories": number,
-                "protein": number,
-                "carbs": number,
-                "fat": number
-              }
+              "name": "component name",
+              "amount": "1",
+              "unit": "serving",
+              "foodGroup": "category"
+              // nutrition per ingredient is OPTIONAL
             }
           ],
           "nutrition": {
-            "calories": total,
-            "protein": total,
-            "carbs": total,
-            "fat": total
+            // MUST match official nutrition for the complete menu item
+            "calories": official_total_calories,
+            "protein": official_total_protein,
+            "carbs": official_total_carbs,
+            "fat": official_total_fat
           },
-          "micronutrients": [...],
-          "clarifications": [] // Empty for restaurant meals - no cooking questions
+          "micronutrients": [
+            {"name": "Sodium", "amount": value, "unit": "mg", "percentRDA": percent}
+          ],
+          "clarifications": [],
+          "requestedTools": null,
+          "brandDetected": "\(brand)"
         }
         """
         
@@ -371,13 +396,14 @@ extension MealAnalysisAgent {
                 imageData: request.image.jpegData(compressionQuality: 0.8)
             )
             
-            DebugLogger.shared.info("Brand analysis response: \(searchResult.prefix(200))...")
+            DebugLogger.shared.info("Brand analysis response: \(searchResult.prefix(500))...")
             
             // Try to parse as MealAnalysisResult directly
             if let data = searchResult.data(using: .utf8) {
                 do {
                     let result = try JSONDecoder().decode(MealAnalysisResult.self, from: data)
                     DebugLogger.shared.success("Successfully parsed brand-specific result")
+                    DebugLogger.shared.mealAnalysis("Brand result nutrition: \(result.nutrition.calories) cal, \(result.nutrition.protein)g P, \(result.nutrition.carbs)g C, \(result.nutrition.fat)g F")
                     return result
                 } catch {
                     DebugLogger.shared.warning("Failed to parse as MealAnalysisResult: \(error)")
@@ -529,11 +555,18 @@ extension MealAnalysisAgent {
         
         // Parse nutrition
         let nutritionDict = json["nutrition"] as? [String: Any] ?? [:]
+        let calories = nutritionDict["calories"] as? Int ?? initialResult.nutrition.calories
+        let protein = nutritionDict["protein"] as? Double ?? initialResult.nutrition.protein
+        let carbs = nutritionDict["carbs"] as? Double ?? initialResult.nutrition.carbs
+        let fat = nutritionDict["fat"] as? Double ?? initialResult.nutrition.fat
+        
+        DebugLogger.shared.mealAnalysis("Manual parse nutrition: \(calories) cal, \(protein)g P, \(carbs)g C, \(fat)g F")
+        
         let nutrition = MealAnalysisResult.NutritionInfo(
-            calories: nutritionDict["calories"] as? Int ?? initialResult.nutrition.calories,
-            protein: nutritionDict["protein"] as? Double ?? initialResult.nutrition.protein,
-            carbs: nutritionDict["carbs"] as? Double ?? initialResult.nutrition.carbs,
-            fat: nutritionDict["fat"] as? Double ?? initialResult.nutrition.fat
+            calories: calories,
+            protein: protein,
+            carbs: carbs,
+            fat: fat
         )
         
         // Parse micronutrients
