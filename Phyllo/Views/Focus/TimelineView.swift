@@ -450,35 +450,6 @@ struct TimelineView: View {
         }
     }
     
-    // Group meals that are within 30 minutes of each other
-    private func groupMeals(_ meals: [(meal: LoggedMeal, offset: CGFloat)]) -> [MealGroup] {
-        guard !meals.isEmpty else { return [] }
-        
-        var groups: [MealGroup] = []
-        var currentGroup: [LoggedMeal] = [meals[0].meal]
-        var groupOffset = meals[0].offset
-        
-        for i in 1..<meals.count {
-            let previousMeal = meals[i-1].meal
-            let currentMeal = meals[i].meal
-            let timeDiff = currentMeal.timestamp.timeIntervalSince(previousMeal.timestamp) / 60 // minutes
-            
-            if timeDiff <= 30 {
-                // Add to current group
-                currentGroup.append(currentMeal)
-            } else {
-                // Start new group
-                groups.append(MealGroup(meals: currentGroup, offset: groupOffset))
-                currentGroup = [currentMeal]
-                groupOffset = meals[i].offset
-            }
-        }
-        
-        // Add final group
-        groups.append(MealGroup(meals: currentGroup, offset: groupOffset))
-        
-        return groups
-    }
     
 }
 
