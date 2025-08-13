@@ -39,9 +39,10 @@ struct NudgeContainer: View {
                     .zIndex(10001)
                     .transition(.opacity.combined(with: .scale(scale: 0.9)))
                     
-                case .mealLoggedCelebration(let meal):
+                case .mealLoggedCelebration(let meal, let metadata):
                     MealCelebrationNudge(
                         meal: meal,
+                        metadata: metadata,
                         onDismiss: {
                             nudgeManager.dismissCurrentNudge()
                         },

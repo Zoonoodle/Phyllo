@@ -53,7 +53,7 @@ struct WindowFoodsList: View {
                 VStack(spacing: 12) {
                     // Show analyzing meal if present
                     if let analyzing = analyzingMeal {
-                        AnalyzingMealCard(timestamp: analyzing.timestamp)
+                        AnalyzingMealCard(timestamp: analyzing.timestamp, metadata: nil)
                             .transition(.asymmetric(
                                 insertion: .scale.combined(with: .opacity),
                                 removal: .opacity

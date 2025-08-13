@@ -9,12 +9,14 @@ import SwiftUI
 
 struct MealCelebrationNudge: View {
     let meal: LoggedMeal
+    let metadata: AnalysisMetadata?
     let onDismiss: () -> Void
     var onViewDetails: (() -> Void)? = nil
     
     @State private var animateContent = false
     @State private var animateConfetti = false
     @State private var showNudge = true
+    @State private var showMetadata = false
     
     var body: some View {
         if showNudge {
@@ -53,6 +55,85 @@ struct MealCelebrationNudge: View {
                                 MacroTag(value: meal.fat, label: "F", color: .orange)
                             }
                             .padding(.top, 8)
+                            
+                            // Analysis metadata
+                            if let metadata = metadata, showMetadata {
+                                VStack(spacing: 12) {
+                                    // Complexity badge
+                                    HStack(spacing: 8) {
+                                        Image(systemName: metadata.complexity.icon)
+                                            .font(.system(size: 14))
+                                            .foregroundColor(.phylloAccent)
+                                        
+                                        Text("\(metadata.complexity.displayName) Analysis")
+                                            .font(.system(size: 14, weight: .medium))
+                                            .foregroundColor(.white.opacity(0.8))
+                                        
+                                        if let brand = metadata.brandDetected {
+                                            Text("• \(brand)")
+                                                .font(.system(size: 14))
+                                                .foregroundColor(.phylloAccent)
+                                        }
+                                    }
+                                    
+                                    // Tools used
+                                    if !metadata.toolsUsed.isEmpty {
+                                        HStack(spacing: 8) {
+                                            ForEach(metadata.toolsUsed, id: \.self) { tool in
+                                                HStack(spacing: 4) {
+                                                    Image(systemName: tool.icon)
+                                                        .font(.system(size: 11))
+                                                    Text(tool.displayName)
+                                                        .font(.system(size: 11, weight: .medium))
+                                                }
+                                                .padding(.horizontal, 10)
+                                                .padding(.vertical, 5)
+                                                .background(
+                                                    RoundedRectangle(cornerRadius: 6)
+                                                        .fill(Color(hex: tool.color).opacity(0.2))
+                                                )
+                                                .foregroundColor(Color(hex: tool.color))
+                                            }
+                                        }
+                                    }
+                                    
+                                    // Analysis stats
+                                    HStack(spacing: 16) {
+                                        VStack(spacing: 2) {
+                                            Text(String(format: "%.1fs", metadata.analysisTime))
+                                                .font(.system(size: 12, weight: .semibold))
+                                                .foregroundColor(.white)
+                                            Text("Analysis")
+                                                .font(.system(size: 10))
+                                                .foregroundColor(.white.opacity(0.5))
+                                        }
+                                        
+                                        VStack(spacing: 2) {
+                                            Text("\(Int(metadata.confidence * 100))%")
+                                                .font(.system(size: 12, weight: .semibold))
+                                                .foregroundColor(.white)
+                                            Text("Confidence")
+                                                .font(.system(size: 10))
+                                                .foregroundColor(.white.opacity(0.5))
+                                        }
+                                        
+                                        VStack(spacing: 2) {
+                                            Text("\(metadata.ingredientCount)")
+                                                .font(.system(size: 12, weight: .semibold))
+                                                .foregroundColor(.white)
+                                            Text("Ingredients")
+                                                .font(.system(size: 10))
+                                                .foregroundColor(.white.opacity(0.5))
+                                        }
+                                    }
+                                    .padding(.top, 4)
+                                }
+                                .padding(.top, 12)
+                                .transition(.asymmetric(
+                                    insertion: .scale.combined(with: .opacity),
+                                    removal: .scale.combined(with: .opacity)
+                                ))
+                            }
                         }
                         .opacity(animateContent ? 1 : 0)
                         .offset(y: animateContent ? 0 : 20)
@@ -117,8 +198,16 @@ struct MealCelebrationNudge: View {
                     animateConfetti = true
                 }
                 
-                // Auto dismiss after 3 seconds
-                DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                // Show metadata after initial animation
+                if metadata != nil {
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8).delay(0.8)) {
+                        showMetadata = true
+                    }
+                }
+                
+                // Auto dismiss after 4 seconds (increased for metadata)
+                let dismissDelay = metadata != nil ? 4.0 : 3.0
+                DispatchQueue.main.asyncAfter(deadline: .now() + dismissDelay) {
                     dismissNudge()
                 }
             }
@@ -230,17 +319,43 @@ struct MealCelebrationNudge_Previews: PreviewProvider {
         ZStack {
             Color.phylloBackground.ignoresSafeArea()
             
-            MealCelebrationNudge(
-                meal: LoggedMeal(
-                    name: "Grilled Chicken Salad",
-                    calories: 450,
-                    protein: 42,
-                    carbs: 28,
-                    fat: 18,
-                    timestamp: Date()
-                )
-            ) {
-                print("Dismissed")
+            VStack(spacing: 20) {
+                // Standard celebration
+                MealCelebrationNudge(
+                    meal: LoggedMeal(
+                        name: "Grilled Chicken Salad",
+                        calories: 450,
+                        protein: 42,
+                        carbs: 28,
+                        fat: 18,
+                        timestamp: Date()
+                    ),
+                    metadata: nil
+                ) {
+                    print("Dismissed")
+                }
+                
+                // With metadata
+                MealCelebrationNudge(
+                    meal: LoggedMeal(
+                        name: "Chipotle Bowl",
+                        calories: 680,
+                        protein: 45,
+                        carbs: 62,
+                        fat: 28,
+                        timestamp: Date()
+                    ),
+                    metadata: AnalysisMetadata(
+                        toolsUsed: [.brandSearch, .deepAnalysis],
+                        complexity: .restaurant,
+                        analysisTime: 6.2,
+                        confidence: 0.95,
+                        brandDetected: "Chipotle",
+                        ingredientCount: 12
+                    )
+                ) {
+                    print("Dismissed")
+                }
             }
         }
     }

@@ -28,12 +28,16 @@ struct PlanPreviewView: View {
         
         // Calculate eating window based on fasting protocol
         let eatingWindowHours: Int
-        switch data.fastingProtocol {
-        case .sixteen8: eatingWindowHours = 8
-        case .eighteen6: eatingWindowHours = 6
-        case .twenty4: eatingWindowHours = 4
-        case .omad: eatingWindowHours = 2
-        case .custom, .none: eatingWindowHours = 14
+        if let fastingProtocol = data.fastingProtocol {
+            switch fastingProtocol {
+            case .sixteen8: eatingWindowHours = 8
+            case .eighteen6: eatingWindowHours = 6
+            case .twenty4: eatingWindowHours = 4
+            case .omad: eatingWindowHours = 2
+            case .custom, .none: eatingWindowHours = 14
+            }
+        } else {
+            eatingWindowHours = 14 // Default when no fasting
         }
         
         // First meal time (considering fasting)

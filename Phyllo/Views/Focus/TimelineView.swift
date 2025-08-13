@@ -74,8 +74,10 @@ struct TimelineView: View {
         Timer.publish(every: 10, on: .main, in: isPreview ? .default : .common).autoconnect()
     }
     
-    // Define timeline hours (7 AM to 10 PM)
-    let hours = Array(7...22)
+    // Dynamic timeline hours from ViewModel
+    var hours: [Int] {
+        viewModel.timelineHours
+    }
     // Base height for one hour on the vertical timeline
     private let baseHourHeight: CGFloat = 60 // Matching layout manager
     
@@ -386,7 +388,7 @@ struct TimelineView: View {
         }) else {
             // Meal not in any window, trigger celebration without animation
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                NudgeManager.shared.triggerNudge(.mealLoggedCelebration(meal: meal))
+                NudgeManager.shared.triggerNudge(.mealLoggedCelebration(meal: meal, metadata: nil))
             }
             return
         }
@@ -427,7 +429,7 @@ struct TimelineView: View {
                 
                 // Trigger meal celebration nudge
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    NudgeManager.shared.triggerNudge(.mealLoggedCelebration(meal: meal))
+                    NudgeManager.shared.triggerNudge(.mealLoggedCelebration(meal: meal, metadata: nil))
                 }
             }
         }
@@ -622,7 +624,7 @@ struct TimelineHourRow: View {
         
         // Show analyzing meals
         ForEach(analyzingMeals, id: \.meal.id) { item in
-            AnalyzingMealRow(timestamp: item.meal.timestamp)
+            AnalyzingMealRow(timestamp: item.meal.timestamp, metadata: nil)
                 .offset(y: item.offset * hourHeight)
                 .transition(.asymmetric(
                     insertion: .scale.combined(with: .opacity),

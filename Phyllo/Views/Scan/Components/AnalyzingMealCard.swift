@@ -9,10 +9,12 @@ import SwiftUI
 
 struct AnalyzingMealCard: View {
     let timestamp: Date
+    let metadata: AnalysisMetadata?
     @ObservedObject private var agent = MealAnalysisAgent.shared
     @State private var dotsAnimation = false
     @State private var currentMessageIndex = 0
     @State private var messageTimer: Timer?
+    @State private var showMetadata = false
     
     let messages = [
         "Analyzing your meal...",
@@ -68,8 +70,51 @@ struct AnalyzingMealCard: View {
                         .foregroundColor(.white.opacity(0.7))
                 }
                 
-                // Tool progress indicator
-                if agent.isUsingTools, agent.currentTool != nil {
+                // Tool progress indicator or metadata
+                if let metadata = metadata {
+                    // Show completed analysis metadata
+                    VStack(alignment: .leading, spacing: 4) {
+                        // Complexity badge
+                        HStack(spacing: 6) {
+                            Image(systemName: metadata.complexity.icon)
+                                .font(.system(size: 10))
+                                .foregroundColor(.phylloAccent)
+                            
+                            Text(metadata.complexity.displayName)
+                                .font(.system(size: 11, weight: .medium))
+                                .foregroundColor(.phylloAccent)
+                            
+                            if !metadata.toolsUsed.isEmpty {
+                                Text("•")
+                                    .foregroundColor(.white.opacity(0.3))
+                                
+                                Text("\(metadata.toolsUsed.count) tool\(metadata.toolsUsed.count == 1 ? "" : "s")")
+                                    .font(.system(size: 11))
+                                    .foregroundColor(.white.opacity(0.6))
+                            }
+                        }
+                        
+                        // Tools used badges
+                        if !metadata.toolsUsed.isEmpty {
+                            HStack(spacing: 4) {
+                                ForEach(metadata.toolsUsed, id: \.self) { tool in
+                                    HStack(spacing: 3) {
+                                        Image(systemName: tool.icon)
+                                            .font(.system(size: 9))
+                                        Text(tool.displayName)
+                                            .font(.system(size: 9))
+                                    }
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 2)
+                                    .background(Color(hex: tool.color).opacity(0.2))
+                                    .foregroundColor(Color(hex: tool.color))
+                                    .cornerRadius(4)
+                                }
+                            }
+                        }
+                    }
+                    .transition(.scale.combined(with: .opacity))
+                } else if agent.isUsingTools, agent.currentTool != nil {
                     HStack(spacing: 6) {
                         Image(systemName: agent.currentTool?.iconName ?? "sparkle")
                             .font(.system(size: 11))
@@ -133,6 +178,7 @@ struct AnalyzingMealCard: View {
 // Timeline version with smaller design
 struct AnalyzingMealRow: View {
     let timestamp: Date
+    let metadata: AnalysisMetadata?
     @ObservedObject private var agent = MealAnalysisAgent.shared
     @State private var dotsAnimation = false
     @State private var currentMessageIndex = 0
@@ -174,25 +220,56 @@ struct AnalyzingMealRow: View {
             // Meal info
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 4) {
-                    if agent.isUsingTools, agent.currentTool != nil {
+                    if let metadata = metadata {
+                        // Show completed analysis badge
+                        Image(systemName: metadata.complexity.icon)
+                            .font(.system(size: 10))
+                            .foregroundColor(.phylloAccent)
+                        
+                        Text(metadata.complexity.displayName)
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.white)
+                            .lineLimit(1)
+                    } else if agent.isUsingTools, agent.currentTool != nil {
                         Image(systemName: agent.currentTool?.iconName ?? "sparkle")
                             .font(.system(size: 10))
                             .foregroundColor(.phylloAccent)
+                        
+                        Text(agent.currentTool?.displayName ?? messages[currentMessageIndex])
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.white)
+                            .lineLimit(1)
+                            .animation(.easeInOut(duration: 0.3), value: agent.currentTool)
+                    } else {
+                        Text(messages[currentMessageIndex])
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.white)
+                            .lineLimit(1)
+                            .animation(.easeInOut(duration: 0.3), value: currentMessageIndex)
                     }
-                    
-                    Text(agent.currentTool?.displayName ?? messages[currentMessageIndex])
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(.white)
-                        .lineLimit(1)
-                        .animation(.easeInOut(duration: 0.3), value: agent.currentTool)
-                        .animation(.easeInOut(duration: 0.3), value: currentMessageIndex)
                 }
                 
-                // Shimmer for macros
-                RoundedRectangle(cornerRadius: 3)
-                    .fill(Color.white.opacity(0.1))
-                    .frame(width: 100, height: 11)
-                    .shimmer()
+                // Show tools or shimmer
+                if let metadata = metadata, !metadata.toolsUsed.isEmpty {
+                    HStack(spacing: 3) {
+                        ForEach(metadata.toolsUsed.prefix(2), id: \.self) { tool in
+                            Image(systemName: tool.icon)
+                                .font(.system(size: 9))
+                                .foregroundColor(Color(hex: tool.color))
+                        }
+                        if metadata.toolsUsed.count > 2 {
+                            Text("+\(metadata.toolsUsed.count - 2)")
+                                .font(.system(size: 9))
+                                .foregroundColor(.white.opacity(0.5))
+                        }
+                    }
+                } else {
+                    // Shimmer for macros
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(Color.white.opacity(0.1))
+                        .frame(width: 100, height: 11)
+                        .shimmer()
+                }
             }
             
             Spacer()
@@ -281,8 +358,37 @@ extension View {
         Color.phylloBackground.ignoresSafeArea()
         
         VStack(spacing: 20) {
-            AnalyzingMealCard(timestamp: Date())
+            // Standard analyzing
+            AnalyzingMealCard(timestamp: Date(), metadata: nil)
                 .padding()
+            
+            // With metadata - restaurant
+            AnalyzingMealCard(
+                timestamp: Date(),
+                metadata: AnalysisMetadata(
+                    toolsUsed: [.brandSearch, .deepAnalysis],
+                    complexity: .restaurant,
+                    analysisTime: 6.5,
+                    confidence: 0.95,
+                    brandDetected: "Chipotle",
+                    ingredientCount: 8
+                )
+            )
+            .padding()
+            
+            // With metadata - complex
+            AnalyzingMealCard(
+                timestamp: Date(),
+                metadata: AnalysisMetadata(
+                    toolsUsed: [.deepAnalysis, .nutritionLookup],
+                    complexity: .complex,
+                    analysisTime: 4.2,
+                    confidence: 0.82,
+                    brandDetected: nil,
+                    ingredientCount: 12
+                )
+            )
+            .padding()
         }
     }
 }
@@ -292,8 +398,22 @@ extension View {
         Color.phylloBackground.ignoresSafeArea()
         
         VStack(spacing: 20) {
-            AnalyzingMealRow(timestamp: Date())
+            AnalyzingMealRow(timestamp: Date(), metadata: nil)
                 .padding()
+            
+            // With metadata
+            AnalyzingMealRow(
+                timestamp: Date(),
+                metadata: AnalysisMetadata(
+                    toolsUsed: [.brandSearch],
+                    complexity: .restaurant,
+                    analysisTime: 5.2,
+                    confidence: 0.92,
+                    brandDetected: "Starbucks",
+                    ingredientCount: 5
+                )
+            )
+            .padding()
             
             // Preview of final state
             let mockMeal = LoggedMeal(
@@ -309,3 +429,4 @@ extension View {
         }
     }
 }
+

@@ -146,11 +146,39 @@ enum NutritionGoal: Identifiable, Codable {
 
 // MARK: - Supporting Types
 
-enum WorkSchedule: String, CaseIterable {
+enum WorkSchedule: String, CaseIterable, Codable {
     case traditional = "9-5 Office"
     case shiftWork = "Shift Work"
     case remote = "Remote/Flexible"
     case irregular = "Irregular Hours"
+    case standard = "standard"          // 9-5 job (alias for traditional)
+    case nightShift = "nightShift"      // 11PM-7AM work
+    case rotating = "rotating"          // Changes weekly
+    case flexible = "flexible"          // No fixed schedule (alias for remote)
+    
+    var displayName: String {
+        switch self {
+        case .traditional, .standard: return "Standard (9-5)"
+        case .shiftWork: return "Shift Work"
+        case .nightShift: return "Night Shift"
+        case .rotating: return "Rotating Shifts"
+        case .remote, .flexible: return "Flexible Hours"
+        case .irregular: return "Irregular Hours"
+        }
+    }
+    
+    var defaultMealHours: (earliest: Int, latest: Int) {
+        switch self {
+        case .traditional, .standard:
+            return (earliest: 6, latest: 22)
+        case .nightShift:
+            return (earliest: 16, latest: 10) // 4PM to 10AM next day
+        case .shiftWork, .rotating:
+            return (earliest: 5, latest: 23)  // Wide range for flexibility
+        case .remote, .flexible, .irregular:
+            return (earliest: 5, latest: 23)
+        }
+    }
 }
 
 struct ExerciseWindow: Identifiable {
@@ -161,12 +189,35 @@ struct ExerciseWindow: Identifiable {
     let type: String
 }
 
-enum FastingProtocol: String, CaseIterable {
+enum FastingProtocol: String, CaseIterable, Codable {
+    case none = "none"
     case sixteen8 = "16:8"
     case eighteen6 = "18:6"
     case twenty4 = "20:4"
     case omad = "OMAD"
     case custom = "Custom"
+    
+    var displayName: String {
+        switch self {
+        case .none: return "No Fasting"
+        case .sixteen8: return "16:8 Intermittent Fasting"
+        case .eighteen6: return "18:6 Intermittent Fasting"
+        case .twenty4: return "20:4 Intermittent Fasting"
+        case .omad: return "One Meal a Day (OMAD)"
+        case .custom: return "Custom Fasting Schedule"
+        }
+    }
+    
+    var eatingWindowHours: Int {
+        switch self {
+        case .none: return 16
+        case .sixteen8: return 8
+        case .eighteen6: return 6
+        case .twenty4: return 4
+        case .omad: return 2
+        case .custom: return 8 // Default for custom
+        }
+    }
 }
 
 // MARK: - Morning Check-In Data

@@ -25,7 +25,7 @@ class NudgeManager: ObservableObject {
     enum NudgeType: Identifiable {
         case morningCheckIn
         case firstTimeTutorial(page: Int)
-        case mealLoggedCelebration(meal: LoggedMeal)
+        case mealLoggedCelebration(meal: LoggedMeal, metadata: AnalysisMetadata?)
         case missedWindow(window: MealWindow)
         case activeWindowReminder(window: MealWindow, timeRemaining: Int)
         case postMealCheckIn(meal: LoggedMeal)
@@ -36,7 +36,7 @@ class NudgeManager: ObservableObject {
                 return "morning_checkin"
             case .firstTimeTutorial(let page):
                 return "tutorial_\(page)"
-            case .mealLoggedCelebration(let meal):
+            case .mealLoggedCelebration(let meal, _):
                 return "celebration_\(meal.id)"
             case .missedWindow(let window):
                 return "missed_\(window.id)"

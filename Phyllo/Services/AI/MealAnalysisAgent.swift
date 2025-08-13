@@ -13,6 +13,11 @@ class MealAnalysisAgent: ObservableObject {
     @Published var currentTool: AnalysisTool?
     @Published var toolProgress: String = ""
     @Published var isUsingTools = false
+    @Published var currentMetadata: AnalysisMetadata?
+    
+    // Track analysis state
+    private var analysisStartTime = Date()
+    private var toolsUsedInAnalysis: [AnalysisMetadata.AnalysisTool] = []
     
     // MARK: - Types
     enum AnalysisTool {
@@ -57,13 +62,16 @@ class MealAnalysisAgent: ObservableObject {
     
     // MARK: - Public Methods
     
-    func analyzeMealWithTools(_ request: MealAnalysisRequest) async throws -> MealAnalysisResult {
+    func analyzeMealWithTools(_ request: MealAnalysisRequest) async throws -> (result: MealAnalysisResult, metadata: AnalysisMetadata) {
         DebugLogger.shared.mealAnalysis("MealAnalysisAgent starting analysis")
+        analysisStartTime = Date()
+        toolsUsedInAnalysis = []
         isUsingTools = true
         defer { 
             isUsingTools = false
             currentTool = nil
             toolProgress = ""
+            currentMetadata = nil
         }
         
         // Step 1: Initial quick analysis
@@ -74,13 +82,25 @@ class MealAnalysisAgent: ObservableObject {
         DebugLogger.shared.info("Initial analysis: \(initialResult.mealName) (confidence: \(initialResult.confidence))")
         
         // Step 2: Decision logic for tool usage
+        let finalResult: MealAnalysisResult
         if shouldUseTools(initialResult, request: request) {
             DebugLogger.shared.mealAnalysis("Tools needed - starting deep analysis")
-            return try await performDeepAnalysis(initialResult, request: request)
+            finalResult = try await performDeepAnalysis(initialResult, request: request)
+        } else {
+            DebugLogger.shared.success("High confidence result - no tools needed")
+            finalResult = initialResult
         }
         
-        DebugLogger.shared.success("High confidence result - no tools needed")
-        return initialResult
+        // Create metadata
+        let metadata = createAnalysisMetadata(
+            result: finalResult,
+            request: request,
+            toolsUsed: toolsUsedInAnalysis
+        )
+        
+        currentMetadata = metadata
+        
+        return (result: finalResult, metadata: metadata)
     }
     
     // MARK: - Private Methods
@@ -157,6 +177,7 @@ class MealAnalysisAgent: ObservableObject {
             
             currentTool = .brandSearch
             toolProgress = "Searching \(brand) nutrition info..."
+            toolsUsedInAnalysis.append(.brandSearch)
             
             let searchResult = try await performBrandSearch(
                 brand: brand,
@@ -175,6 +196,7 @@ class MealAnalysisAgent: ObservableObject {
         if enhancedResult.confidence < 0.85 {
             currentTool = .deepAnalysis
             toolProgress = "Analyzing each ingredient..."
+            toolsUsedInAnalysis.append(.deepAnalysis)
             
             let deepResult = try await performDeepIngredientAnalysis(
                 enhancedResult,
@@ -188,6 +210,7 @@ class MealAnalysisAgent: ObservableObject {
         if shouldPerformNutritionLookup(enhancedResult) {
             currentTool = .nutritionLookup
             toolProgress = "Verifying nutrition data..."
+            toolsUsedInAnalysis.append(.nutritionLookup)
             
             let nutritionResult = try await performNutritionLookup(
                 enhancedResult,
@@ -221,6 +244,36 @@ class MealAnalysisAgent: ObservableObject {
     private func shouldPerformNutritionLookup(_ result: MealAnalysisResult) -> Bool {
         // Perform lookup for meals with few ingredients and moderate confidence
         return result.ingredients.count <= 3 && result.confidence < 0.9
+    }
+    
+    private func createAnalysisMetadata(
+        result: MealAnalysisResult,
+        request: MealAnalysisRequest,
+        toolsUsed: [AnalysisMetadata.AnalysisTool]
+    ) -> AnalysisMetadata {
+        // Determine complexity
+        let complexity: AnalysisMetadata.ComplexityRating
+        if extractBrandName(from: result, request: request) != nil {
+            complexity = .restaurant
+        } else if result.ingredients.count > 8 || toolsUsed.contains(.deepAnalysis) {
+            complexity = .complex
+        } else if result.ingredients.count > 3 {
+            complexity = .moderate
+        } else {
+            complexity = .simple
+        }
+        
+        // Calculate analysis time
+        let analysisTime = Date().timeIntervalSince(analysisStartTime)
+        
+        return AnalysisMetadata(
+            toolsUsed: toolsUsed,
+            complexity: complexity,
+            analysisTime: analysisTime,
+            confidence: result.confidence,
+            brandDetected: extractBrandName(from: result, request: request),
+            ingredientCount: result.ingredients.count
+        )
     }
 }
 

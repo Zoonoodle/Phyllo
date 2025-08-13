@@ -99,11 +99,25 @@ struct ScheduleView: View {
     }
     
     private func checkForMissedMeals() {
-        // Only show on first appearance, not every time tab switches
-        if viewModel.needsMissedMealsRecovery && !UserDefaults.standard.bool(forKey: "missedMealsPromptShown_\(Date().dateString)") {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                showMissedMealsRecovery = true
-                UserDefaults.standard.set(true, forKey: "missedMealsPromptShown_\(Date().dateString)")
+        // Check if we should show the missed meals recovery
+        guard viewModel.needsMissedMealsRecovery else { return }
+        
+        // Check if we've already prompted today
+        let today = Calendar.current.startOfDay(for: Date())
+        if let lastPromptDate = viewModel.userProfile.lastBulkLogDate,
+           Calendar.current.isDate(lastPromptDate, inSameDayAs: today) {
+            return // Already prompted today
+        }
+        
+        // Show the recovery modal after a delay
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            showMissedMealsRecovery = true
+            
+            // Update last prompt date
+            Task {
+                var updatedProfile = viewModel.userProfile
+                updatedProfile.lastBulkLogDate = Date()
+                await viewModel.updateUserProfile(updatedProfile)
             }
         }
     }

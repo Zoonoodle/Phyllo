@@ -304,18 +304,20 @@ struct WorkScheduleOption: View {
     
     var icon: String {
         switch schedule {
-        case .traditional: return "building.2"
-        case .shiftWork: return "clock.arrow.2.circlepath"
-        case .remote: return "house.laptop"
+        case .traditional, .standard: return "building.2"
+        case .shiftWork, .rotating: return "clock.arrow.2.circlepath"
+        case .nightShift: return "moon.stars.fill"
+        case .remote, .flexible: return "house.laptop"
         case .irregular: return "calendar.badge.clock"
         }
     }
     
     var description: String {
         switch schedule {
-        case .traditional: return "Regular daytime hours"
-        case .shiftWork: return "Rotating or night shifts"
-        case .remote: return "Flexible work from home"
+        case .traditional, .standard: return "Regular daytime hours"
+        case .shiftWork, .rotating: return "Rotating or changing shifts"
+        case .nightShift: return "Night shift schedule"
+        case .remote, .flexible: return "Flexible work from home"
         case .irregular: return "Varies day to day"
         }
     }

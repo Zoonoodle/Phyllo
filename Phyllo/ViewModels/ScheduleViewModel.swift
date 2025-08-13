@@ -26,6 +26,54 @@ class ScheduleViewModel: ObservableObject {
         todaysMeals
     }
     
+    // Dynamic timeline hours based on user profile
+    var timelineHours: [Int] {
+        // Start with user's typical schedule if available
+        let buffer = 1 // hour before/after
+        
+        // First, check morning check-in wake time
+        var earliestHour: Int? = nil
+        if let checkIn = morningCheckIn {
+            let wakeHour = Calendar.current.component(.hour, from: checkIn.wakeTime)
+            // Always show at least 1 hour before wake time
+            earliestHour = max(0, wakeHour - buffer)
+        }
+        
+        // Check for explicitly set meal hours
+        if let firstMeal = userProfile.earliestMealHour,
+           let lastMeal = userProfile.latestMealHour {
+            let startHour = earliestHour != nil ? min(earliestHour!, firstMeal - buffer) : max(0, firstMeal - buffer)
+            let endHour = min(23, lastMeal + buffer)
+            return Array(startHour...endHour)
+        }
+        
+        // Use work schedule defaults
+        let (defaultEarliest, defaultLatest) = userProfile.workSchedule.defaultMealHours
+        
+        // Analyze meal history to find patterns
+        if !todaysMeals.isEmpty {
+            let mealHours = todaysMeals.map { Calendar.current.component(.hour, from: $0.timestamp) }
+            if let minHour = mealHours.min(),
+               let maxHour = mealHours.max() {
+                // Expand slightly beyond actual meal times
+                var startHour = max(0, min(minHour - buffer, defaultEarliest))
+                // If we have a wake time, ensure we start before it
+                if let earliestFromWake = earliestHour {
+                    startHour = min(startHour, earliestFromWake)
+                }
+                let endHour = min(23, max(maxHour + buffer, defaultLatest))
+                return Array(startHour...endHour)
+            }
+        }
+        
+        // Fall back to wake time if available, otherwise work schedule defaults
+        if let earliestFromWake = earliestHour {
+            return Array(earliestFromWake...defaultLatest)
+        }
+        
+        return Array(defaultEarliest...defaultLatest)
+    }
+    
     // MARK: - Dependencies
     private let dataProvider = DataSourceProvider.shared.provider
     private let timeProvider = TimeProvider.shared
@@ -372,6 +420,17 @@ extension ScheduleViewModel {
                     print("❌ Failed to mark window as fasted: \(error)")
                 }
             }
+        }
+    }
+    
+    /// Update user profile
+    func updateUserProfile(_ profile: UserProfile) async {
+        do {
+            try await dataProvider.saveUserProfile(profile)
+            self.userProfile = profile
+        } catch {
+            errorMessage = "Failed to update profile: \(error.localizedDescription)"
+            print("❌ Failed to update user profile: \(error)")
         }
     }
     

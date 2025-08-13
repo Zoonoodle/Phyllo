@@ -1136,7 +1136,7 @@ struct NudgesDebugTabView: View {
                             fat: 15,
                             timestamp: Date()
                         )
-                        nudgeManager.triggerTestNudge(.mealLoggedCelebration(meal: testMeal))
+                        nudgeManager.triggerTestNudge(.mealLoggedCelebration(meal: testMeal, metadata: nil))
                     }) {
                         Label("Meal Celebration", systemImage: "checkmark.circle.fill")
                             .frame(maxWidth: .infinity)

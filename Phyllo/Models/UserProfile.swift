@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import FirebaseFirestore
 
 // MARK: - Activity Level
 enum ActivityLevel: String, CaseIterable, Codable {
@@ -46,6 +47,15 @@ struct UserProfile: Codable, Identifiable {
     var preferredMealTimes: [String]
     var micronutrientPriorities: [String]
     
+    // Schedule preferences for dynamic timeline
+    var earliestMealHour: Int?      // Earliest hour user typically eats
+    var latestMealHour: Int?        // Latest hour user typically eats
+    var workSchedule: WorkSchedule = .standard
+    var typicalWakeTime: Date?
+    var typicalSleepTime: Date?
+    var fastingProtocol: FastingProtocol = .none
+    var lastBulkLogDate: Date?      // Track when we last prompted for missed meals
+    
     // MARK: - Firestore Conversion
     private func primaryGoalForFirestore() -> [String: Any] {
         do {
@@ -83,7 +93,14 @@ struct UserProfile: Codable, Identifiable {
             "dailyCarbTarget": dailyCarbTarget,
             "dailyFatTarget": dailyFatTarget,
             "preferredMealTimes": preferredMealTimes,
-            "micronutrientPriorities": micronutrientPriorities
+            "micronutrientPriorities": micronutrientPriorities,
+            "earliestMealHour": earliestMealHour as Any,
+            "latestMealHour": latestMealHour as Any,
+            "workSchedule": workSchedule.rawValue,
+            "typicalWakeTime": typicalWakeTime as Any,
+            "typicalSleepTime": typicalSleepTime as Any,
+            "fastingProtocol": fastingProtocol.rawValue,
+            "lastBulkLogDate": lastBulkLogDate as Any
         ]
     }
     
@@ -112,7 +129,18 @@ struct UserProfile: Codable, Identifiable {
         let preferredMealTimes = data["preferredMealTimes"] as? [String] ?? []
         let micronutrientPriorities = data["micronutrientPriorities"] as? [String] ?? []
         
-        return UserProfile(
+        // Parse new schedule fields
+        let earliestMealHour = data["earliestMealHour"] as? Int
+        let latestMealHour = data["latestMealHour"] as? Int
+        let workSchedule = WorkSchedule(rawValue: data["workSchedule"] as? String ?? "standard") ?? .standard
+        let fastingProtocol = FastingProtocol(rawValue: data["fastingProtocol"] as? String ?? "none") ?? .none
+        
+        // Handle Date fields
+        let typicalWakeTime = (data["typicalWakeTime"] as? FirebaseFirestore.Timestamp)?.dateValue() ?? (data["typicalWakeTime"] as? Date)
+        let typicalSleepTime = (data["typicalSleepTime"] as? FirebaseFirestore.Timestamp)?.dateValue() ?? (data["typicalSleepTime"] as? Date)
+        let lastBulkLogDate = (data["lastBulkLogDate"] as? FirebaseFirestore.Timestamp)?.dateValue() ?? (data["lastBulkLogDate"] as? Date)
+        
+        var profile = UserProfile(
             id: id,
             name: name,
             age: age,
@@ -130,6 +158,17 @@ struct UserProfile: Codable, Identifiable {
             preferredMealTimes: preferredMealTimes,
             micronutrientPriorities: micronutrientPriorities
         )
+        
+        // Set optional schedule fields
+        profile.earliestMealHour = earliestMealHour
+        profile.latestMealHour = latestMealHour
+        profile.workSchedule = workSchedule
+        profile.typicalWakeTime = typicalWakeTime
+        profile.typicalSleepTime = typicalSleepTime
+        profile.fastingProtocol = fastingProtocol
+        profile.lastBulkLogDate = lastBulkLogDate
+        
+        return profile
     }
     
     // MARK: - Default Profile

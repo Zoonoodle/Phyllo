@@ -130,7 +130,7 @@ class MealCaptureService: ObservableObject {
                         DebugLogger.shared.mealAnalysis("Processing image-based analysis")
                     }
                     // Use VertexAI for photo analysis
-                    let result = try await analyzeWithAI(
+                    let (result, analysisMetadata) = try await analyzeWithAI(
                         image: image,
                         voiceTranscript: voiceTranscript,
                         analyzingMeal: analyzingMeal
@@ -176,7 +176,7 @@ class MealCaptureService: ObservableObject {
                             NotificationCenter.default.post(
                                 name: .mealAnalysisCompleted,
                                 object: analyzingMeal,
-                                userInfo: ["result": result, "savedMeal": savedMeal]
+                                userInfo: ["result": result, "savedMeal": savedMeal, "metadata": analysisMetadata as Any]
                             )
                         }
                     }
@@ -248,7 +248,7 @@ class MealCaptureService: ObservableObject {
         image: UIImage,
         voiceTranscript: String?,
         analyzingMeal: AnalyzingMeal
-    ) async throws -> MealAnalysisResult {
+    ) async throws -> (MealAnalysisResult, AnalysisMetadata?) {
         
         // Get current user context
         let userProfile = try await dataProvider.getUserProfile() ?? UserProfile.defaultProfile
@@ -277,7 +277,12 @@ class MealCaptureService: ObservableObject {
         )
         
         // Perform AI analysis with intelligent agent tools
-        return try await agent.analyzeMealWithTools(request)
+        let (result, metadata) = try await agent.analyzeMealWithTools(request)
+        
+        // Note: metadata is available but we can't modify the analyzingMeal parameter
+        // The metadata will be available in the notification userInfo instead
+        
+        return (result, metadata)
     }
     
     /// Handle clarification answers
@@ -361,7 +366,7 @@ class MealCaptureService: ObservableObject {
             NotificationCenter.default.post(
                 name: .mealAnalysisCompleted,
                 object: analyzingMeal,
-                userInfo: ["result": adjustedResult, "savedMeal": savedMeal]
+                userInfo: ["result": adjustedResult, "savedMeal": savedMeal, "metadata": Optional<AnalysisMetadata>.none as Any]
             )
         }
     }
