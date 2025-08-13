@@ -164,15 +164,17 @@ class VertexAIService: ObservableObject {
            - Include vitamin/mineral name, amount, unit, and %RDA
            
         5. CLARIFICATION NEEDS (IMPORTANT - BE PRACTICAL)
-            - Ask 2-4 targeted questions MAX that materially change calories/macros
-            - Prefer everyday, realistic knobs a user can recall:
+            - RESTAURANT DETECTION: If you detect restaurant branding, packaging, or menu items:
+              • DO NOT ask about cooking methods (it's already prepared)
+              • DO NOT ask about oil/butter (restaurant standard)
+              • ONLY ask about: sauce types, drink sizes, customizations
+            - For HOME-COOKED meals, ask 2-4 targeted questions MAX:
               • Cook fats (oil/butter amount), dressings/sauces amount
               • Milk/base type for drinks; sweeteners added
               • Cooking method (fried vs grilled vs baked)
               • Portion tweaks (small/medium/large)
             - Each option MUST include calorieImpact and optional proteinImpact/carbImpact/fatImpact
             - Keep text short, neutral, and non-judgmental
-            - Example option texts: "No oil", "1 tsp olive oil", "1 tbsp butter", "Spices only"
         
         CRITICAL: For protein shakes/smoothies ALWAYS ask about protein type and milk type!
         

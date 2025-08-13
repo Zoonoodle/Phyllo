@@ -85,7 +85,14 @@ class MealAnalysisAgent: ObservableObject {
         let finalResult: MealAnalysisResult
         if shouldUseTools(initialResult, request: request) {
             DebugLogger.shared.mealAnalysis("Tools needed - starting deep analysis")
-            finalResult = try await performDeepAnalysis(initialResult, request: request)
+            do {
+                finalResult = try await performDeepAnalysis(initialResult, request: request)
+                DebugLogger.shared.success("Deep analysis completed successfully")
+            } catch {
+                DebugLogger.shared.error("Deep analysis failed: \(error)")
+                // Fallback to initial result if deep analysis fails
+                finalResult = initialResult
+            }
         } else {
             DebugLogger.shared.success("High confidence result - no tools needed")
             finalResult = initialResult
@@ -163,15 +170,19 @@ class MealAnalysisAgent: ObservableObject {
         _ initialResult: MealAnalysisResult,
         request: MealAnalysisRequest
     ) async throws -> MealAnalysisResult {
+        DebugLogger.shared.mealAnalysis("Starting performDeepAnalysis")
         var enhancedResult = initialResult
         let brandName = extractBrandName(from: initialResult, request: request)
         
         // Step 1: Brand/Restaurant Search (if applicable)
         if let brand = brandName {
+            DebugLogger.shared.mealAnalysis("Brand detected: \(brand) - starting brand analysis")
+            
             // Check cache first
             let cacheKey = "\(brand)_\(initialResult.mealName)"
             if let cached = analysisCache.getCachedBrand(cacheKey) {
                 DebugLogger.shared.info("Using cached brand result for \(cacheKey)")
+                toolsUsedInAnalysis.append(.brandSearch)
                 return cached.result
             }
             
@@ -179,17 +190,24 @@ class MealAnalysisAgent: ObservableObject {
             toolProgress = "Searching \(brand) nutrition info..."
             toolsUsedInAnalysis.append(.brandSearch)
             
+            DebugLogger.shared.mealAnalysis("Calling performBrandSearch for \(brand)")
             let searchResult = try await performBrandSearch(
                 brand: brand,
                 mealName: initialResult.mealName,
-                initialResult: initialResult
+                initialResult: initialResult,
+                request: request
             )
             
             if let searchResult = searchResult {
+                DebugLogger.shared.success("Brand search returned enhanced result")
                 enhancedResult = searchResult
                 // Cache the result
                 analysisCache.cacheBrandResult(cacheKey, result: enhancedResult)
+            } else {
+                DebugLogger.shared.warning("Brand search returned nil, using initial result")
             }
+        } else {
+            DebugLogger.shared.info("No brand detected, skipping brand search")
         }
         
         // Step 2: Deep Ingredient Analysis (if still low confidence)
@@ -283,61 +301,96 @@ extension MealAnalysisAgent {
     private func performBrandSearch(
         brand: String,
         mealName: String,
-        initialResult: MealAnalysisResult
+        initialResult: MealAnalysisResult,
+        request: MealAnalysisRequest
     ) async throws -> MealAnalysisResult? {
         
+        DebugLogger.shared.mealAnalysis("Performing brand-specific analysis for \(brand): \(mealName)")
+        
         let searchPrompt = """
-        SEARCH ONLINE for official nutrition information:
+        Analyze this \(brand) menu item: \(mealName)
         
-        Restaurant/Brand: \(brand)
-        Item: \(mealName)
+        You are an expert nutritionist with detailed knowledge of restaurant nutrition. Provide accurate nutrition analysis based on:
         
-        USE YOUR WEB SEARCH CAPABILITY to find:
-        1. Official \(brand) nutrition PDFs or website nutrition facts
-        2. Current menu nutrition data (check for 2024-2025 updates)
-        3. Exact serving sizes and variations
-        4. All ingredients and allergen information
+        1. RESTAURANT PATTERNS for \(brand):
+           - Typical portion sizes and preparation methods
+           - Common ingredients and cooking oils used
+           - Standard menu item compositions
         
-        Search queries to try:
-        - "\(brand) \(mealName) nutrition facts"
-        - "\(brand) menu nutrition PDF 2024"
-        - "site:\(brand.lowercased().replacingOccurrences(of: " ", with: "")).com nutrition"
+        2. ANALYZE EACH COMPONENT:
+           - Break down into individual ingredients
+           - Estimate portion sizes based on visual cues
+           - Include all sauces, oils, and preparation additions
+           - Account for restaurant-style preparation (more oil/butter than home cooking)
         
-        IMPORTANT:
-        - Only use OFFICIAL sources (restaurant websites, official PDFs)
-        - Include the source URL for verification
-        - If multiple sizes exist, match to the image
-        - Return exact values, not estimates
+        3. NUTRITION CALCULATIONS:
+           - Calculate nutrition for EACH ingredient separately
+           - Show how each contributes to the total
+           - Be specific about hidden calories (oils, butter, sauces)
         
-        Return JSON with structure:
+        For \(brand) specifically:
+        - Fried items use peanut oil (adds ~150-200 cal)
+        - Waffle fries are cooked in canola oil
+        - Sauces are 140-190 calories per packet
+        - Drinks: Large = 32oz, Medium = 20oz
+        
+        Return a detailed JSON response:
         {
-          "found": true/false,
-          "source": "URL of source",
-          "mealName": "Official menu name",
-          "confidence": 0.95-1.0 for official data,
-          "nutrition": { calories, protein, carbs, fat },
-          "ingredients": [{"name", "amount", "unit", "foodGroup"}],
-          "servingSize": "e.g., 1 sandwich (250g)"
+          "mealName": "Exact menu name",
+          "confidence": 0.85-0.95,
+          "brandDetected": "\(brand)",
+          "ingredients": [
+            {
+              "name": "specific ingredient",
+              "amount": "quantity",
+              "unit": "unit",
+              "foodGroup": "category",
+              "nutrition": {
+                "calories": number,
+                "protein": number,
+                "carbs": number,
+                "fat": number
+              }
+            }
+          ],
+          "nutrition": {
+            "calories": total,
+            "protein": total,
+            "carbs": total,
+            "fat": total
+          },
+          "micronutrients": [...],
+          "clarifications": [] // Empty for restaurant meals - no cooking questions
         }
         """
         
         do {
+            DebugLogger.shared.mealAnalysis("Calling performToolAnalysis for brand search")
             let searchResult = try await vertexAI.performToolAnalysis(
                 tool: .brandSearch,
                 prompt: searchPrompt,
-                imageData: nil
+                imageData: request.image.jpegData(compressionQuality: 0.8)
             )
             
-            // Parse the search result
-            if let data = searchResult.data(using: .utf8),
-               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-               let found = json["found"] as? Bool, found {
-                
-                // Merge with initial result
-                return mergeWithBrandData(initialResult, brandData: json)
+            DebugLogger.shared.info("Brand analysis response: \(searchResult.prefix(200))...")
+            
+            // Try to parse as MealAnalysisResult directly
+            if let data = searchResult.data(using: .utf8) {
+                do {
+                    let result = try JSONDecoder().decode(MealAnalysisResult.self, from: data)
+                    DebugLogger.shared.success("Successfully parsed brand-specific result")
+                    return result
+                } catch {
+                    DebugLogger.shared.warning("Failed to parse as MealAnalysisResult: \(error)")
+                    // Try manual parsing
+                    if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                        return parseManualBrandResult(json, brand: brand, initialResult: initialResult)
+                    }
+                }
             }
         } catch {
-            DebugLogger.shared.error("Brand search failed: \(error)")
+            DebugLogger.shared.error("Brand search failed with error: \(error.localizedDescription)")
+            // Return nil to fallback to initial result
         }
         
         return nil
@@ -446,22 +499,65 @@ extension MealAnalysisAgent {
 // MARK: - Helper Methods
 
 extension MealAnalysisAgent {
-    private func mergeWithBrandData(_ original: MealAnalysisResult, brandData: [String: Any]) -> MealAnalysisResult {
-        // Extract nutrition from brand data
-        let nutrition = brandData["nutrition"] as? [String: Any] ?? [:]
+    private func parseManualBrandResult(_ json: [String: Any], brand: String, initialResult: MealAnalysisResult) -> MealAnalysisResult {
+        DebugLogger.shared.mealAnalysis("Parsing manual brand result")
+        
+        // Parse ingredients with nutrition
+        var ingredients: [MealAnalysisResult.AnalyzedIngredient] = []
+        if let ingredientsArray = json["ingredients"] as? [[String: Any]] {
+            for ing in ingredientsArray {
+                // Parse individual ingredient nutrition if available
+                var nutrition: MealAnalysisResult.NutritionInfo? = nil
+                if let nutritionDict = ing["nutrition"] as? [String: Any] {
+                    nutrition = MealAnalysisResult.NutritionInfo(
+                        calories: nutritionDict["calories"] as? Int ?? 0,
+                        protein: nutritionDict["protein"] as? Double ?? 0,
+                        carbs: nutritionDict["carbs"] as? Double ?? 0,
+                        fat: nutritionDict["fat"] as? Double ?? 0
+                    )
+                }
+                
+                let ingredient = MealAnalysisResult.AnalyzedIngredient(
+                    name: ing["name"] as? String ?? "Unknown",
+                    amount: ing["amount"] as? String ?? "1",
+                    unit: ing["unit"] as? String ?? "serving",
+                    foodGroup: ing["foodGroup"] as? String ?? "Unknown",
+                    nutrition: nutrition
+                )
+                ingredients.append(ingredient)
+            }
+        }
+        
+        // Parse nutrition
+        let nutritionDict = json["nutrition"] as? [String: Any] ?? [:]
+        let nutrition = MealAnalysisResult.NutritionInfo(
+            calories: nutritionDict["calories"] as? Int ?? initialResult.nutrition.calories,
+            protein: nutritionDict["protein"] as? Double ?? initialResult.nutrition.protein,
+            carbs: nutritionDict["carbs"] as? Double ?? initialResult.nutrition.carbs,
+            fat: nutritionDict["fat"] as? Double ?? initialResult.nutrition.fat
+        )
+        
+        // Parse micronutrients
+        var micronutrients: [MealAnalysisResult.MicronutrientInfo] = []
+        if let microArray = json["micronutrients"] as? [[String: Any]] {
+            for micro in microArray {
+                let nutrient = MealAnalysisResult.MicronutrientInfo(
+                    name: micro["name"] as? String ?? "Unknown",
+                    amount: micro["amount"] as? Double ?? 0,
+                    unit: micro["unit"] as? String ?? "mg",
+                    percentRDA: micro["percentRDA"] as? Double ?? 0
+                )
+                micronutrients.append(nutrient)
+            }
+        }
         
         return MealAnalysisResult(
-            mealName: (brandData["mealName"] as? String) ?? original.mealName,
-            confidence: (brandData["confidence"] as? Double) ?? 0.95,
-            ingredients: original.ingredients, // Keep original for now
-            nutrition: .init(
-                calories: (nutrition["calories"] as? Int) ?? original.nutrition.calories,
-                protein: (nutrition["protein"] as? Double) ?? original.nutrition.protein,
-                carbs: (nutrition["carbs"] as? Double) ?? original.nutrition.carbs,
-                fat: (nutrition["fat"] as? Double) ?? original.nutrition.fat
-            ),
-            micronutrients: original.micronutrients,
-            clarifications: [] // Brand data is accurate, no clarifications needed
+            mealName: json["mealName"] as? String ?? initialResult.mealName,
+            confidence: json["confidence"] as? Double ?? 0.9,
+            ingredients: ingredients.isEmpty ? initialResult.ingredients : ingredients,
+            nutrition: nutrition,
+            micronutrients: micronutrients.isEmpty ? initialResult.micronutrients : micronutrients,
+            clarifications: [] // No clarifications for restaurant meals
         )
     }
     
@@ -540,13 +636,15 @@ extension VertexAIService {
         prompt: String,
         imageData: Data? = nil
     ) async throws -> String {
+        DebugLogger.shared.mealAnalysis("VertexAI performToolAnalysis called for tool: \(tool.displayName)")
+        
         // Configure generation for specific tool
         let config = GenerationConfig(
             temperature: tool == .brandSearch ? 0.3 : 0.7,
             topP: 0.95,
             topK: 40,
             maxOutputTokens: tool == .deepAnalysis ? 4096 : 2048,
-            responseMIMEType: "text/plain" // For search results
+            responseMIMEType: "application/json" // Request JSON response
         )
         
         // Create model with tool-specific config
@@ -556,14 +654,25 @@ extension VertexAIService {
             generationConfig: config
         )
         
+        DebugLogger.shared.mealAnalysis("Sending request to Gemini for \(tool.displayName)")
+        let startTime = Date()
+        
         // Generate content
+        let response: String
         if let imageData = imageData {
+            DebugLogger.shared.info("Including image data (\(imageData.count) bytes)")
             let imageContent = InlineDataPart(data: imageData, mimeType: "image/jpeg")
-            let response = try await model.generateContent(imageContent, prompt)
-            return response.text ?? ""
+            let result = try await model.generateContent(imageContent, prompt)
+            response = result.text ?? ""
         } else {
-            let response = try await model.generateContent(prompt)
-            return response.text ?? ""
+            let result = try await model.generateContent(prompt)
+            response = result.text ?? ""
         }
+        
+        let elapsed = Date().timeIntervalSince(startTime)
+        DebugLogger.shared.performance("⏱️ Tool analysis completed in \(String(format: "%.2f", elapsed))s")
+        DebugLogger.shared.info("Response length: \(response.count) characters")
+        
+        return response
     }
 }

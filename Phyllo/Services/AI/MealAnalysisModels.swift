@@ -36,6 +36,17 @@ struct MealAnalysisResult: Codable {
         let amount: String
         let unit: String
         let foodGroup: String
+        // Optional nutrition for individual ingredients
+        let nutrition: NutritionInfo?
+        
+        // Backward compatibility initializer
+        init(name: String, amount: String, unit: String, foodGroup: String, nutrition: NutritionInfo? = nil) {
+            self.name = name
+            self.amount = amount
+            self.unit = unit
+            self.foodGroup = foodGroup
+            self.nutrition = nutrition
+        }
     }
     
     struct NutritionInfo: Codable {
