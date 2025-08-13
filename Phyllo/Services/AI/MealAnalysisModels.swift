@@ -30,6 +30,9 @@ struct MealAnalysisResult: Codable {
     let nutrition: NutritionInfo
     let micronutrients: [MicronutrientInfo]
     let clarifications: [ClarificationQuestion]
+    // Model can request additional analysis tools
+    let requestedTools: [String]?
+    let brandDetected: String?
     
     struct AnalyzedIngredient: Codable {
         let name: String

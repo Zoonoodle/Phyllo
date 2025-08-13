@@ -124,39 +124,9 @@ class TimelineLayoutManager: ObservableObject {
         viewModel: ScheduleViewModel
     ) -> CGFloat {
         
-        var height = baseHourHeight
-        
-        // Check for active windows that start in this hour
-        let activeWindowsStartingHere = windows.filter { window in
-            let startHour = Calendar.current.component(.hour, from: window.startTime)
-            return startHour == hour && window.isActive
-        }
-        
-        if !activeWindowsStartingHere.isEmpty {
-            // This hour has active windows starting - expansion based on content
-            for window in activeWindowsStartingHere {
-                let expansion = calculateWindowExpansion(window: window, viewModel: viewModel)
-                height = max(height, expansion)
-            }
-        }
-        
-        // Check for active windows from previous hours that extend into this hour
-        let activeWindowsExtendingHere = windows.filter { window in
-            let startHour = Calendar.current.component(.hour, from: window.startTime)
-            return startHour < hour && window.isActive
-        }
-        
-        if !activeWindowsExtendingHere.isEmpty {
-            // This hour is partially covered by active windows - moderate expansion
-            height = max(height, baseHourHeight * 1.2)
-        }
-        
-        // Add spacing if there are multiple windows in this hour
-        if windows.count > 1 {
-            height += CGFloat(windows.count - 1) * minimumWindowSpacing
-        }
-        
-        return height
+        // Use consistent base height for all hours
+        // This prevents the visual spacing issues between hours
+        return baseHourHeight
     }
     
     private func calculateWindowExpansion(

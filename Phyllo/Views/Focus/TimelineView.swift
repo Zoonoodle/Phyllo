@@ -153,6 +153,7 @@ struct TimelineView: View {
                                 meals: mealsForTimeRange(hour: hourLayout.hour),
                                 analyzingMeals: analyzingMealsForTimeRange(hour: hourLayout.hour),
                                 isLastHour: hourLayout.hour == hours.last,
+                                hourHeight: hourLayout.height,
                                 selectedWindow: $selectedWindow,
                                 showWindowDetail: $showWindowDetail,
                                 animationNamespace: animationNamespace,
@@ -189,8 +190,17 @@ struct TimelineView: View {
         }
         .onAppear {
             currentTime = timeProvider.currentTime
+            // Scroll to first window or first hour
+            let targetHour: Int
+            if let firstWindow = viewModel.mealWindows.first {
+                targetHour = Calendar.current.component(.hour, from: firstWindow.startTime)
+            } else if let firstHour = hours.first {
+                targetHour = firstHour
+            } else {
+                targetHour = currentHour
+            }
             withAnimation {
-                proxy.scrollTo("hour-\(currentHour)", anchor: .center)
+                proxy.scrollTo("hour-\(targetHour)", anchor: .top)
             }
         }
         .onReceive(timer) { _ in
@@ -484,12 +494,11 @@ struct TimelineHourRow: View {
     let meals: [(meal: LoggedMeal, offset: CGFloat)]
     let analyzingMeals: [(meal: AnalyzingMeal, offset: CGFloat)]
     let isLastHour: Bool
+    let hourHeight: CGFloat
     @Binding var selectedWindow: MealWindow?
     @Binding var showWindowDetail: Bool
     let animationNamespace: Namespace.ID
     @ObservedObject var viewModel: ScheduleViewModel
-    
-    let baseHourHeight: CGFloat = 80
     
     struct MealGroup {
         let meals: [LoggedMeal]
@@ -509,49 +518,6 @@ struct TimelineHourRow: View {
         }
     }
     
-    // Calculate dynamic height based on content and active windows
-    private var hourHeight: CGFloat {
-        // Check if there's an active window that starts in this hour
-        if let window = windowForHour, window.isActive {
-            // Active windows need more space for expanded content
-            let hasAnalyzingMeals = viewModel.analyzingMeals.contains { $0.windowId == window.id }
-            let mealCount = viewModel.mealsInWindow(window).count
-            
-            // Base expanded height for active window
-            var expandedHeight = baseHourHeight * 1.3
-            
-            // Add space for window insights section (reduced)
-            expandedHeight += 40
-            
-            // Add space for meals
-            if mealCount > 0 || hasAnalyzingMeals {
-                expandedHeight += 20 + CGFloat(max(mealCount, hasAnalyzingMeals ? 1 : 0)) * 35
-            }
-            
-            // Add space for remaining macros in tall windows
-            if window.duration > 5400 { // > 1.5 hours
-                expandedHeight += 30
-            }
-            
-            return min(expandedHeight, baseHourHeight * 2.5)
-        }
-        
-        // Check if previous hour has an active window that extends into this hour
-        if hour > 0 {
-            let previousHour = hour - 1
-            if let prevWindow = windows.first(where: { window in
-                Calendar.current.component(.hour, from: window.startTime) == previousHour && window.isActive
-            }) {
-                let endHour = Calendar.current.component(.hour, from: prevWindow.endTime)
-                if endHour >= hour {
-                    // This hour is partially covered by an active window from previous hour
-                    return baseHourHeight * 0.5
-                }
-            }
-        }
-        
-        return baseHourHeight
-    }
     
     var body: some View {
         HStack(alignment: .top, spacing: 12) {

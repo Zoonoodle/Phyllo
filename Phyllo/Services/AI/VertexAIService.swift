@@ -178,6 +178,13 @@ class VertexAIService: ObservableObject {
         
         CRITICAL: For protein shakes/smoothies ALWAYS ask about protein type and milk type!
         
+        6. TOOL REQUESTS (IMPORTANT - Help yourself be more accurate!)
+           - If you see restaurant branding/packaging: set requestedTools: ["brandSearch"] and brandDetected: "restaurant name"
+           - If the meal is complex and you need deeper analysis: set requestedTools: ["deepAnalysis"]
+           - If you need nutrition database lookups: set requestedTools: ["nutritionLookup"]
+           - You can request multiple tools if needed
+           - Common brands to detect: Chick-fil-A, McDonald's, Starbucks, Chipotle, etc.
+        
         IMPORTANT: Return ONLY this exact JSON structure with these exact field names:
         {
           "mealName": "Name of meal",
@@ -214,7 +221,9 @@ class VertexAIService: ObservableObject {
                 {"text": "Water", "calorieImpact": -120, "proteinImpact": -8, "carbImpact": -12, "fatImpact": -5, "isRecommended": false}
               ]
             }
-          ]
+          ],
+          "requestedTools": ["brandSearch"],
+          "brandDetected": "Chick-fil-A"
         }
         
         CRITICAL: Use exactly these field names:
@@ -326,7 +335,7 @@ class VertexAIService: ObservableObject {
                 mealName: "Analyzed Meal",
                 confidence: 0.8,
                 ingredients: [
-                    .init(name: "Food Item", amount: "1", unit: "serving", foodGroup: "Mixed")
+                    .init(name: "Food Item", amount: "1", unit: "serving", foodGroup: "Mixed", nutrition: nil)
                 ],
                 nutrition: .init(
                     calories: 400,
@@ -335,7 +344,9 @@ class VertexAIService: ObservableObject {
                     fat: 15
                 ),
                 micronutrients: [],
-                clarifications: []
+                clarifications: [],
+                requestedTools: nil,
+                brandDetected: nil
             )
         }
     }
@@ -386,7 +397,9 @@ class VertexAIService: ObservableObject {
             ingredients: ingredients,
             nutrition: nutrition,
             micronutrients: micronutrients,
-            clarifications: clarifications
+            clarifications: clarifications,
+            requestedTools: json["requestedTools"] as? [String],
+            brandDetected: json["brandDetected"] as? String
         )
     }
     

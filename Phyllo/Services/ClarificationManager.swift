@@ -31,7 +31,9 @@ class ClarificationManager: ObservableObject {
             ingredients: result.ingredients,
             nutrition: result.nutrition,
             micronutrients: result.micronutrients,
-            clarifications: normalized
+            clarifications: normalized,
+            requestedTools: result.requestedTools,
+            brandDetected: result.brandDetected
         )
         self.pendingAnalyzingMeal = analyzingMeal
         self.pendingAnalysisResult = adjusted
@@ -130,7 +132,9 @@ class ClarificationManager: ObservableObject {
                 fat: Double(result.fat)
             ),
             micronutrients: [],
-            clarifications: []
+            clarifications: [],
+            requestedTools: nil,
+            brandDetected: nil
         )
         
         presentClarification(for: analyzingMeal, with: analysisResult)

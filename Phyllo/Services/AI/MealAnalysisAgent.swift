@@ -118,31 +118,24 @@ class MealAnalysisAgent: ObservableObject {
     }
     
     private func shouldUseTools(_ result: MealAnalysisResult, request: MealAnalysisRequest) -> Bool {
-        // 1. Low confidence triggers tools
-        if result.confidence < 0.75 {
-            DebugLogger.shared.mealAnalysis("Low confidence (\(result.confidence)) - tools needed")
+        DebugLogger.shared.mealAnalysis("Checking if tools needed for: \(result.mealName)")
+        
+        // Check if the model requested tools
+        if let requestedTools = result.requestedTools, !requestedTools.isEmpty {
+            DebugLogger.shared.mealAnalysis("Model requested tools: \(requestedTools.joined(separator: ", "))")
+            if let brand = result.brandDetected {
+                DebugLogger.shared.info("Model detected brand: \(brand)")
+            }
             return true
         }
         
-        // 2. Brand/restaurant detected
-        if detectsBrandOrRestaurant(result, request: request) {
-            DebugLogger.shared.mealAnalysis("Brand/restaurant detected - tools needed")
+        // Fallback: Low confidence still triggers tools
+        if result.confidence < 0.7 {
+            DebugLogger.shared.mealAnalysis("Very low confidence (\(result.confidence)) - tools needed")
             return true
         }
         
-        // 3. Complex mixed dishes
-        if result.ingredients.count > 5 || 
-           ["mixed", "combo", "platter", "bowl"].contains(where: { result.mealName.lowercased().contains($0) }) {
-            DebugLogger.shared.mealAnalysis("Complex dish detected - tools needed")
-            return true
-        }
-        
-        // 4. High calorie variance dishes (likely restaurant portions)
-        if result.nutrition.calories > 800 && result.confidence < 0.85 {
-            DebugLogger.shared.mealAnalysis("High calorie dish with moderate confidence - tools needed")
-            return true
-        }
-        
+        DebugLogger.shared.info("No tools requested by model, confidence: \(result.confidence)")
         return false
     }
     
@@ -172,10 +165,10 @@ class MealAnalysisAgent: ObservableObject {
     ) async throws -> MealAnalysisResult {
         DebugLogger.shared.mealAnalysis("Starting performDeepAnalysis")
         var enhancedResult = initialResult
-        let brandName = extractBrandName(from: initialResult, request: request)
+        let requestedTools = initialResult.requestedTools ?? []
         
-        // Step 1: Brand/Restaurant Search (if applicable)
-        if let brand = brandName {
+        // Step 1: Brand/Restaurant Search (if requested by model)
+        if requestedTools.contains("brandSearch"), let brand = initialResult.brandDetected {
             DebugLogger.shared.mealAnalysis("Brand detected: \(brand) - starting brand analysis")
             
             // Check cache first
@@ -210,8 +203,8 @@ class MealAnalysisAgent: ObservableObject {
             DebugLogger.shared.info("No brand detected, skipping brand search")
         }
         
-        // Step 2: Deep Ingredient Analysis (if still low confidence)
-        if enhancedResult.confidence < 0.85 {
+        // Step 2: Deep Ingredient Analysis (if requested by model)
+        if requestedTools.contains("deepAnalysis") {
             currentTool = .deepAnalysis
             toolProgress = "Analyzing each ingredient..."
             toolsUsedInAnalysis.append(.deepAnalysis)
@@ -224,8 +217,8 @@ class MealAnalysisAgent: ObservableObject {
             enhancedResult = deepResult
         }
         
-        // Step 3: Nutrition Database Lookup (for specific ingredients if needed)
-        if shouldPerformNutritionLookup(enhancedResult) {
+        // Step 3: Nutrition Database Lookup (if requested by model)
+        if requestedTools.contains("nutritionLookup") {
             currentTool = .nutritionLookup
             toolProgress = "Verifying nutrition data..."
             toolsUsedInAnalysis.append(.nutritionLookup)
@@ -244,6 +237,12 @@ class MealAnalysisAgent: ObservableObject {
     }
     
     private func extractBrandName(from result: MealAnalysisResult, request: MealAnalysisRequest) -> String? {
+        // First check if model already detected a brand
+        if let modelDetectedBrand = result.brandDetected {
+            return modelDetectedBrand
+        }
+        
+        // Fallback to keyword search
         let searchText = "\(result.mealName) \(request.voiceTranscript ?? "")".lowercased()
         
         for brand in brandKeywords {
@@ -557,7 +556,9 @@ extension MealAnalysisAgent {
             ingredients: ingredients.isEmpty ? initialResult.ingredients : ingredients,
             nutrition: nutrition,
             micronutrients: micronutrients.isEmpty ? initialResult.micronutrients : micronutrients,
-            clarifications: [] // No clarifications for restaurant meals
+            clarifications: [], // No clarifications for restaurant meals
+            requestedTools: nil,
+            brandDetected: brand
         )
     }
     
@@ -576,7 +577,9 @@ extension MealAnalysisAgent {
             ingredients: original.ingredients,
             nutrition: original.nutrition,
             micronutrients: original.micronutrients,
-            clarifications: original.clarifications
+            clarifications: original.clarifications,
+            requestedTools: original.requestedTools,
+            brandDetected: original.brandDetected
         )
     }
     

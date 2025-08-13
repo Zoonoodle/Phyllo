@@ -342,7 +342,9 @@ class MealCaptureService: ObservableObject {
                 fat: adjustedFat
             ),
             micronutrients: originalResult.micronutrients,
-            clarifications: originalResult.clarifications
+            clarifications: originalResult.clarifications,
+            requestedTools: originalResult.requestedTools,
+            brandDetected: originalResult.brandDetected
         )
 
         Task { @MainActor in
@@ -396,7 +398,9 @@ class MealCaptureService: ObservableObject {
                 .init(name: "Calcium", amount: 100, unit: "mg", percentRDA: 10),
                 .init(name: "Iron", amount: 2, unit: "mg", percentRDA: 11)
             ],
-            clarifications: []
+            clarifications: [],
+            requestedTools: nil,
+            brandDetected: nil
         )
     }
     
@@ -414,7 +418,9 @@ class MealCaptureService: ObservableObject {
                 fat: 15
             ),
             micronutrients: [],
-            clarifications: []
+            clarifications: [],
+            requestedTools: nil,
+            brandDetected: nil
         )
     }
 }
