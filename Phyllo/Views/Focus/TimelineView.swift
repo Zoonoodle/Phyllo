@@ -105,6 +105,9 @@ struct TimelineView: View {
             .onChange(of: viewModel.analyzingMeals.count) { _, _ in
                 updateLayouts()
             }
+            .onChange(of: viewModel.morningCheckIn) { _, _ in
+                updateLayouts()
+            }
             .onAppear {
                 updateLayouts()
             }

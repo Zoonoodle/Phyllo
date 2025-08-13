@@ -222,7 +222,7 @@ enum FastingProtocol: String, CaseIterable, Codable {
 
 // MARK: - Morning Check-In Data
 
-struct MorningCheckInData: Identifiable {
+struct MorningCheckInData: Identifiable, Equatable {
     let id: UUID
     let date: Date
     let wakeTime: Date
