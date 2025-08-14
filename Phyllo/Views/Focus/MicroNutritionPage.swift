@@ -126,7 +126,7 @@ struct MicroNutritionPage: View {
         VStack(spacing: 24) {
             // Title
             HStack {
-                Text("Phyllo Petals")
+                Text("NutriSync Petals")
                     .font(.system(size: 18, weight: .semibold))
                     .foregroundColor(.white)
                 Spacer()

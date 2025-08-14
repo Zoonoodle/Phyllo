@@ -37,7 +37,7 @@ struct MacroNutritionPage: View {
         VStack(spacing: 24) {
             // Title
             HStack {
-                Text("Phyllo Ring")
+                Text("NutriSync Ring")
                     .font(.system(size: 18, weight: .semibold))
                     .foregroundColor(.white)
                 Spacer()

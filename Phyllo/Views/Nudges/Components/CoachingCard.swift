@@ -60,7 +60,7 @@ struct CoachingCard: View {
                     )
                 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Phyllo Coach")
+                    Text("NutriSync Coach")
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundColor(.white)
                     

@@ -28,7 +28,7 @@ Location: General tab → Identity section
 
 ### 3. Display Name
 - Current: "Phyllo"
-- Consider: "Phyllo" or "Phyllo Nutrition"
+- Update to: "NutriSync"
 
 ### 4. Deployment Info
 - **iOS Deployment Target**: 17.0 (currently set)

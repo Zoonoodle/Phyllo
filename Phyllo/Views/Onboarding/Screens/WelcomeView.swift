@@ -32,7 +32,7 @@ struct WelcomeView: View {
                 .animation(.spring(response: 0.8, dampingFraction: 0.6), value: animateIn)
                 
                 VStack(spacing: 12) {
-                    Text("Welcome to Phyllo")
+                    Text("Welcome to NutriSync")
                         .font(.system(size: 32, weight: .bold, design: .rounded))
                         .foregroundColor(.white)
                     

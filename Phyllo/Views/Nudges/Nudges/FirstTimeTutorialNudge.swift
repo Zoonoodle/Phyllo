@@ -30,7 +30,7 @@ struct FirstTimeTutorialNudge: View {
         FullScreenNudgeCard(
             icon: "sparkles",
             iconColor: .phylloAccent,
-            title: "Welcome to Phyllo",
+            title: "Welcome to NutriSync",
             subtitle: "Your AI-powered nutrition coach that learns your patterns and helps you optimize your health. Let me show you around!",
             primaryButtonTitle: "Get Started",
             primaryAction: {
@@ -59,7 +59,7 @@ struct FirstTimeTutorialNudge: View {
                         .font(.system(size: 24, weight: .bold))
                         .foregroundColor(.white)
                     
-                    Text("Phyllo creates personalized meal windows based on your goals and lifestyle")
+                    Text("NutriSync creates personalized meal windows based on your goals and lifestyle")
                         .font(.system(size: 16))
                         .foregroundColor(.white.opacity(0.8))
                         .multilineTextAlignment(.center)
