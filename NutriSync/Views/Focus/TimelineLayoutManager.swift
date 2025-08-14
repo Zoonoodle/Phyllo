@@ -166,6 +166,12 @@ class TimelineLayoutManager: ObservableObject {
                     
                     if hourFraction > 0 {
                         let neededHourHeight = hourFractionOfContent / hourFraction
+                        
+                        // For active empty windows, limit expansion to prevent visual overflow
+                        if window.isActive && viewModel.mealsInWindow(window).isEmpty {
+                            neededHourHeight = min(neededHourHeight, baseHourHeight * 2.5)
+                        }
+                        
                         requiredHeight = max(requiredHeight, neededHourHeight)
                     }
                 }
@@ -195,12 +201,8 @@ class TimelineLayoutManager: ObservableObject {
                 contentHeight += 10 // Small buffer
             } else {
                 // Active but empty - needs space for insights and suggestions
-                contentHeight += 40 // Reduced from 60 - Insights text, purpose
-                
-                // Add space for remaining macros (only for longer windows)
-                if window.duration > 5400 { // > 1.5 hours
-                    contentHeight += 30 // Reduced from 40
-                }
+                // Now that insights are always shown, we need proper space
+                contentHeight += 60 // Insights text, macros, suggestions
             }
         }
         

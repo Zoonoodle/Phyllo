@@ -415,11 +415,9 @@ struct ExpandableWindowBanner: View {
             
             // Show additional content for active windows when empty
             if window.isActive && meals.isEmpty && analyzingMealsInWindow.isEmpty {
-                if let height = bannerHeight, height > 100 {
-                    windowInsightsSection
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 10)
-                }
+                windowInsightsSection
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
             }
             
             // Remove spacer - let content determine height naturally
@@ -798,7 +796,7 @@ struct ExpandableWindowBanner: View {
                 }
                 
                 // Show remaining macros for active windows (only when empty to guide choices)
-                if case .active = windowStatus, meals.isEmpty && analyzingMealsInWindow.isEmpty, let height = bannerHeight, height > 140 {
+                if case .active = windowStatus, meals.isEmpty && analyzingMealsInWindow.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Remaining in window:")
                             .font(.system(size: 11, weight: .medium))
