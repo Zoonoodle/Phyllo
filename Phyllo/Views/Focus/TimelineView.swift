@@ -375,17 +375,12 @@ struct TimelineView: View {
         
         return viewModel.analyzingMeals.compactMap { meal in
             if meal.timestamp >= startOfHour && meal.timestamp < endOfHour {
-                // Show as standalone only when outside assigned window time
-                if let windowId = meal.windowId,
-                   let window = viewModel.mealWindows.first(where: { $0.id == windowId }) {
-                    if meal.timestamp < window.startTime || meal.timestamp > window.endTime {
-                        let minutes = calendar.component(.minute, from: meal.timestamp)
-                        let offset = CGFloat(minutes) / 60.0
-                        return (meal: meal, offset: offset)
-                    } else {
-                        return nil
-                    }
+                // Never show analyzing meals as standalone if they have a windowId
+                // They should only appear in their assigned window banner
+                if meal.windowId != nil {
+                    return nil
                 } else {
+                    // Only show standalone analyzing meals that have no window assignment
                     let minutes = calendar.component(.minute, from: meal.timestamp)
                     let offset = CGFloat(minutes) / 60.0
                     return (meal: meal, offset: offset)
