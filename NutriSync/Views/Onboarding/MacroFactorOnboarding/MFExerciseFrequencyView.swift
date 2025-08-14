@@ -1,0 +1,131 @@
+//
+//  MFExerciseFrequencyView.swift
+//  NutriSync
+//
+//  MacroFactor Replica Screen 3
+//
+
+import SwiftUI
+
+struct MFExerciseFrequencyView: View {
+    @State private var selectedFrequency = "0 sessions / week"
+    
+    let frequencies = [
+        ("0 sessions / week", "calendar"),
+        ("1-3 sessions / week", "calendar"),
+        ("4-6 sessions / week", "calendar"),
+        ("7+ sessions / week", "calendar")
+    ]
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            // Progress bar
+            MFProgressBar(totalSteps: 14, currentStep: 3)
+                .padding(.horizontal, 20)
+                .padding(.top, 8)
+                .padding(.bottom, 32)
+            
+            // Title
+            Text("How often do you exercise?")
+                .font(.system(size: 28, weight: .bold))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 12)
+            
+            // Subtitle
+            Text("Choose the number of recreational sports, cardio, or resistance training sessions you do per week.")
+                .font(.system(size: 17))
+                .foregroundColor(.gray)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 40)
+                .padding(.bottom, 40)
+            
+            // Exercise frequency options
+            VStack(spacing: 16) {
+                ForEach(frequencies, id: \.0) { frequency, icon in
+                    ExerciseFrequencyOption(
+                        text: frequency,
+                        icon: icon,
+                        isSelected: selectedFrequency == frequency
+                    ) {
+                        selectedFrequency = frequency
+                    }
+                }
+            }
+            .padding(.horizontal, 20)
+            
+            Spacer()
+            
+            // Navigation
+            HStack {
+                Button {
+                    // Back action
+                } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 20, weight: .medium))
+                        .foregroundColor(.black)
+                        .frame(width: 44, height: 44)
+                }
+                
+                Spacer()
+                
+                Button {
+                    // Next action
+                } label: {
+                    HStack(spacing: 6) {
+                        Text("Next")
+                            .font(.system(size: 17, weight: .semibold))
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 14, weight: .semibold))
+                    }
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 24)
+                    .frame(height: 44)
+                    .background(Color.black)
+                    .cornerRadius(22)
+                }
+            }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 34)
+        }
+        .background(Color.white)
+    }
+}
+
+struct ExerciseFrequencyOption: View {
+    let text: String
+    let icon: String
+    let isSelected: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 16) {
+                Image(systemName: icon)
+                    .font(.system(size: 20))
+                    .foregroundColor(.black)
+                    .frame(width: 24)
+                
+                Text(text)
+                    .font(.system(size: 18))
+                    .foregroundColor(.black)
+                
+                Spacer()
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 20)
+            .background(Color.white)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(isSelected ? Color.black : Color(UIColor.systemGray4), lineWidth: isSelected ? 3 : 1)
+            )
+            .cornerRadius(16)
+        }
+    }
+}
+
+struct MFExerciseFrequencyView_Previews: PreviewProvider {
+    static var previews: some View {
+        MFExerciseFrequencyView()
+    }
+}
