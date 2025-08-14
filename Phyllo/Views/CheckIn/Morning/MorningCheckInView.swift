@@ -12,7 +12,7 @@ struct MorningCheckInView: View {
     @Environment(\.dismiss) private var dismiss
     
     // Check-in state
-    @State private var currentStep = 1
+    @State private var currentStep = 2
     @State private var wakeTime = Date()
     @State private var sleepQuality: MorningCheckIn.SleepQuality?
     @State private var selectedFocuses: Set<MorningCheckIn.DayFocus> = []
@@ -59,12 +59,6 @@ struct MorningCheckInView: View {
                 if showContent {
                     Group {
                         switch currentStep {
-                        case 1:
-                            WelcomeCheckInView(onContinue: handleNextStep)
-                                .transition(.asymmetric(
-                                    insertion: .move(edge: .trailing).combined(with: .opacity),
-                                    removal: .move(edge: .leading).combined(with: .opacity)
-                                ))
                         case 2:
                             WakeTimeSelectionView(
                                 wakeTime: $wakeTime,
@@ -108,7 +102,7 @@ struct MorningCheckInView: View {
     }
     
     private func handleBack() {
-        guard currentStep > 1 else {
+        guard currentStep > 2 else {
             dismiss()
             return
         }
