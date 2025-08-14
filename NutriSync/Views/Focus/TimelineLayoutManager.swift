@@ -165,7 +165,7 @@ class TimelineLayoutManager: ObservableObject {
                     let hourFraction = overlapDuration / 3600.0 // How much of the hour this window uses
                     
                     if hourFraction > 0 {
-                        let neededHourHeight = hourFractionOfContent / hourFraction
+                        var neededHourHeight = hourFractionOfContent / hourFraction
                         
                         // For active empty windows, limit expansion to prevent visual overflow
                         if window.isActive && viewModel.mealsInWindow(window).isEmpty {
