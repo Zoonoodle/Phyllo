@@ -1,9 +1,9 @@
-# Privacy Policy for Phyllo
+# Privacy Policy for NutriSync
 
 *Last updated: [DATE]*
 
 ## Introduction
-Phyllo ("we", "our", or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our mobile application.
+NutriSync ("we", "our", or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our mobile application.
 
 ## Information We Collect
 
@@ -46,7 +46,7 @@ We use the following services:
 - Opt-out of notifications
 
 ## Children's Privacy
-Phyllo is not intended for children under 13. We do not knowingly collect data from children under 13.
+NutriSync is not intended for children under 13. We do not knowingly collect data from children under 13.
 
 ## Changes to This Policy
 We may update this Privacy Policy from time to time. We will notify you of changes by updating the "Last updated" date.

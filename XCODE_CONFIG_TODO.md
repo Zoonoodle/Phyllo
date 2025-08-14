@@ -1,23 +1,24 @@
 # Xcode Configuration TODO
 
 ## Current Settings
-- **Bundle Identifier**: `com.Phyllo.Phyllo`
+- **Bundle Identifier**: `com.Phyllo.Phyllo` (needs update to `com.yourcompany.nutrisync`)
 - **Development Team**: `5T7D257WY6`
-- **Product Name**: Phyllo
+- **Product Name**: Phyllo (needs update to NutriSync)
 
 ## Required Updates
 
 ### 1. Update Bundle Identifier
 The current bundle ID `com.Phyllo.Phyllo` should be changed to follow Apple's reverse domain notation:
-- Example: `com.yourcompany.phyllo`
-- Example: `com.zoonoodle.phyllo`
-- Example: `io.phyllo.nutrition`
+- Example: `com.yourcompany.nutrisync`
+- Example: `com.zoonoodle.nutrisync`
+- Example: `io.nutrisync.app`
 
 To update:
 1. Open Phyllo.xcodeproj
-2. Select project → Phyllo target
+2. Select project → Phyllo target (will rename to NutriSync)
 3. Change Bundle Identifier in General tab
 4. Also update in Build Settings if needed
+5. Rename target from "Phyllo" to "NutriSync"
 
 ### 2. Version and Build Numbers
 - **Version**: 1.0.0 (for initial release)

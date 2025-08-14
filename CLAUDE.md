@@ -1,6 +1,6 @@
-# Phyllo v1.0 - AI-Powered Nutrition Intelligence Platform
+# NutriSync v1.0 - AI-Powered Nutrition Intelligence Platform
 
-**Project:** Phyllo - Smart Nutrition Coach with Meal Window Management  
+**Project:** NutriSync - Smart Nutrition Coach with Meal Window Management  
 **Version:** 1.0 (Current Implementation)  
 **Platform:** iOS 17+ (SwiftUI 6)  
 **Backend:** Firebase (Auth, Firestore, Functions, Storage, Analytics)  
@@ -11,7 +11,7 @@
 
 ## 🚀 **Current Implementation Overview**
 
-Phyllo is a nutrition tracking app built around **meal windows** - smart eating periods optimized for your goals. The app uses a timeline-based interface to visualize when you should eat throughout the day, with proactive nudges to keep you on track.
+NutriSync is a nutrition tracking app built around **meal windows** - smart eating periods optimized for your goals. The app uses a timeline-based interface to visualize when you should eat throughout the day, with proactive nudges to keep you on track.
 
 ### **Core Features Implemented**
 
@@ -19,7 +19,7 @@ Phyllo is a nutrition tracking app built around **meal windows** - smart eating 
 2. **Comprehensive Check-In System** - Morning and post-meal tracking
 3. **Smart Nudge System** - Proactive coaching and reminders
 4. **Advanced Meal Analysis** - AI-powered photo analysis with intelligent agent toolset
-5. **Momentum Analytics** - Progress tracking and insights with PhylloScore
+5. **Momentum Analytics** - Progress tracking and insights with NutriSyncScore
 6. **Developer Dashboard** - Mock data management for testing
 7. **Micronutrient Intelligence** - 18+ tracked micronutrients with smart evaluation
 8. **Ingredient Tracking** - Full ingredient breakdown with food group categorization
@@ -93,7 +93,7 @@ chore: Update dependencies
 
 #### **2. Momentum Tab**
 - **4-Card Grid Layout**:
-  - PhylloScore (overall nutrition score)
+  - NutriSyncScore (overall nutrition score)
   - Social Leaderboard
   - Metrics & Goal Progress
   - Weekly Momentum Trends
@@ -499,11 +499,11 @@ A feature is complete when:
 
 ---
 
-## 🚀 **The Current Phyllo Experience**
+## 🚀 **The Current NutriSync Experience**
 
-Users open Phyllo to see their personalized eating schedule for the day. Smart meal windows guide when to eat for optimal energy and goal achievement. The timeline view makes it easy to plan meals and stay on track. Gentle nudges provide coaching at the right moments. Progress tracking in Momentum tab keeps users motivated.
+Users open NutriSync to see their personalized eating schedule for the day. Smart meal windows guide when to eat for optimal energy and goal achievement. The timeline view makes it easy to plan meals and stay on track. Gentle nudges provide coaching at the right moments. Progress tracking in Momentum tab keeps users motivated.
 
-**From timeline to transformation - Phyllo makes nutrition timing intelligent.** 🌱
+**From timeline to transformation - NutriSync makes nutrition timing intelligent.** 🌱
 
 ---
 
@@ -511,7 +511,7 @@ Users open Phyllo to see their personalized eating schedule for the day. Smart m
 
 ### **File Structure**
 ```
-Phyllo/
+NutriSync/
 ├── Views/
 │   ├── Focus/          # Timeline and window management
 │   ├── Momentum/       # Analytics and progress

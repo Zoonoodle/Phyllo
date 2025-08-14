@@ -3,17 +3,17 @@
 <plist version="1.0">
 <dict>
 	<key>NSCameraUsageDescription</key>
-	<string>Phyllo needs camera access to capture photos of your meals for nutrition analysis.</string>
+	<string>NutriSync needs camera access to capture photos of your meals for nutrition analysis.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Phyllo needs photo library access to select meal photos for nutrition analysis.</string>
+	<string>NutriSync needs photo library access to select meal photos for nutrition analysis.</string>
 	<key>NSHealthShareUsageDescription</key>
-	<string>Phyllo reads health data to provide personalized nutrition recommendations based on your activity and biometrics.</string>
+	<string>NutriSync reads health data to provide personalized nutrition recommendations based on your activity and biometrics.</string>
 	<key>NSHealthUpdateUsageDescription</key>
-	<string>Phyllo writes nutrition data to Health to track your dietary intake alongside other health metrics.</string>
+	<string>NutriSync writes nutrition data to Health to track your dietary intake alongside other health metrics.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Phyllo uses the microphone for voice descriptions of meals to improve analysis accuracy.</string>
+	<string>NutriSync uses the microphone for voice descriptions of meals to improve analysis accuracy.</string>
 	<key>NSUserNotificationsUsageDescription</key>
-	<string>Phyllo sends timely reminders for your meal windows and check-ins to help you stay on track with your nutrition goals.</string>
+	<string>NutriSync sends timely reminders for your meal windows and check-ins to help you stay on track with your nutrition goals.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>

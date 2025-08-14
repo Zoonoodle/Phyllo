@@ -1,4 +1,4 @@
-# App Store Connect Setup Guide for Phyllo
+# App Store Connect Setup Guide for NutriSync
 
 ## Prerequisites
 - Apple Developer Account ($99/year)
@@ -13,8 +13,8 @@
 4. Select **App IDs** → Continue
 5. Select **App** → Continue
 6. Fill in:
-   - **Description**: Phyllo - Nutrition Coach
-   - **Bundle ID**: Explicit, `com.yourcompany.phyllo` (replace with your actual domain)
+   - **Description**: NutriSync - Nutrition Coach
+   - **Bundle ID**: Explicit, `com.yourcompany.nutrisync` (replace with your actual domain)
    - **Capabilities**: Enable:
      - ✅ Push Notifications
      - ✅ HealthKit
@@ -27,28 +27,28 @@
 ### Development Profile
 1. Go to **Profiles** → **+**
 2. Select **iOS App Development** → Continue
-3. Select your App ID (Phyllo) → Continue
+3. Select your App ID (NutriSync) → Continue
 4. Select your development certificate → Continue
 5. Select your test devices → Continue
-6. Name it: "Phyllo Development" → Generate
+6. Name it: "NutriSync Development" → Generate
 7. Download and double-click to install
 
 ### Distribution Profile (App Store)
 1. Go to **Profiles** → **+**
 2. Select **App Store** → Continue
-3. Select your App ID (Phyllo) → Continue
+3. Select your App ID (NutriSync) → Continue
 4. Select your distribution certificate → Continue
-5. Name it: "Phyllo App Store" → Generate
+5. Name it: "NutriSync App Store" → Generate
 6. Download and double-click to install
 
 ## Step 3: Update Xcode Project Settings
 
-1. Open Phyllo.xcodeproj in Xcode
-2. Select the project → Target "Phyllo"
+1. Open Phyllo.xcodeproj in Xcode (will rename to NutriSync.xcodeproj later)
+2. Select the project → Target "Phyllo" (will rename to "NutriSync" later)
 3. Go to **Signing & Capabilities** tab
 4. Update:
    - **Team**: Select your developer team
-   - **Bundle Identifier**: `com.yourcompany.phyllo`
+   - **Bundle Identifier**: `com.yourcompany.nutrisync`
    - **Automatically manage signing**: ON (recommended)
 5. Add Capabilities:
    - Click **+ Capability**
@@ -62,10 +62,10 @@
 2. Click **My Apps** → **+** → **New App**
 3. Fill in:
    - **Platforms**: iOS
-   - **Name**: Phyllo (or "Phyllo - Smart Nutrition Coach" if taken)
+   - **Name**: NutriSync (or "NutriSync - Smart Nutrition Coach" if taken)
    - **Primary Language**: English (U.S.)
    - **Bundle ID**: Select the one you created
-   - **SKU**: phyllo-nutrition-coach-001
+   - **SKU**: nutrisync-nutrition-coach-001
    - **User Access**: Full Access
 4. Click **Create**
 
@@ -109,7 +109,7 @@
 
 **Description** (4000 chars max):
 ```
-Phyllo transforms nutrition tracking into personalized intelligence with AI-powered meal analysis and smart meal windows.
+NutriSync transforms nutrition tracking into personalized intelligence with AI-powered meal analysis and smart meal windows.
 
 KEY FEATURES:
 • AI Meal Analysis - Snap a photo for instant nutrition breakdown
@@ -118,20 +118,20 @@ KEY FEATURES:
 • Intelligent Reminders - Gentle nudges to keep you on track
 • Morning & Post-Meal Check-ins - Track energy, sleep, and progress
 
-WHAT MAKES PHYLLO DIFFERENT:
-Unlike simple calorie counters, Phyllo learns your patterns and provides actionable insights. Our AI analyzes how different foods affect your energy, sleep, and performance.
+WHAT MAKES NUTRISYNC DIFFERENT:
+Unlike simple calorie counters, NutriSync learns your patterns and provides actionable insights. Our AI analyzes how different foods affect your energy, sleep, and performance.
 
 FEATURES:
 • Photo-based meal logging with ingredient breakdown
 • Voice descriptions for better accuracy
 • Circadian-optimized meal timing
 • Goal-specific meal windows
-• Progress tracking with PhylloScore
+• Progress tracking with NutriSyncScore
 • Detailed micronutrient analysis
 
 Perfect for anyone wanting to optimize their nutrition for better energy, sleep, and overall health.
 
-Phyllo uses HealthKit to read and write nutrition data, providing a complete picture of your health.
+NutriSync uses HealthKit to read and write nutrition data, providing a complete picture of your health.
 ```
 
 **Keywords**: 

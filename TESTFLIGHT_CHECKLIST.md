@@ -1,4 +1,4 @@
-# TestFlight Release Checklist for Phyllo
+# TestFlight Release Checklist for NutriSync
 
 ## 📋 Pre-Release Requirements
 
@@ -9,16 +9,16 @@
 - [ ] Set up app metadata (name, description, keywords, categories)
 - [ ] Prepare app icons (1024x1024 for App Store)
 - [ ] Create screenshots for required device sizes
-- [ ] Update Bundle Identifier in Xcode (currently: com.Phyllo.Phyllo)
+- [ ] Update Bundle Identifier in Xcode (currently: com.Phyllo.Phyllo, suggest: com.yourcompany.nutrisync)
 - [ ] Configure version number (1.0.0) and build number (1)
 
 ### 2. **Missing Privacy Permissions** 🔐 ✅
 Add to Info.plist:
-- [x] `NSCameraUsageDescription` - "Phyllo needs camera access to capture photos of your meals for nutrition analysis"
-- [x] `NSPhotoLibraryUsageDescription` - "Phyllo needs photo library access to select meal photos for nutrition analysis"
-- [x] `NSHealthShareUsageDescription` - "Phyllo reads health data to provide personalized nutrition recommendations"
-- [x] `NSHealthUpdateUsageDescription` - "Phyllo writes nutrition data to track your dietary intake"
-- [x] `NSMicrophoneUsageDescription` - "Phyllo uses microphone for voice descriptions of meals"
+- [x] `NSCameraUsageDescription` - "NutriSync needs camera access to capture photos of your meals for nutrition analysis"
+- [x] `NSPhotoLibraryUsageDescription` - "NutriSync needs photo library access to select meal photos for nutrition analysis"
+- [x] `NSHealthShareUsageDescription` - "NutriSync reads health data to provide personalized nutrition recommendations"
+- [x] `NSHealthUpdateUsageDescription` - "NutriSync writes nutrition data to track your dietary intake"
+- [x] `NSMicrophoneUsageDescription` - "NutriSync uses microphone for voice descriptions of meals"
 
 ### 3. **Critical Feature Fixes** 🛠️
 - [ ] **Camera capture** - Currently using photo picker, need actual camera capture
