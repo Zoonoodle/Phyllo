@@ -30,48 +30,88 @@ class ScheduleViewModel: ObservableObject {
     var timelineHours: [Int] {
         // Start with user's typical schedule if available
         let buffer = 1 // hour before/after
+        let calendar = Calendar.current
         
         // First, check morning check-in wake time
         var earliestHour: Int? = nil
         if let checkIn = morningCheckIn {
-            let wakeHour = Calendar.current.component(.hour, from: checkIn.wakeTime)
+            let wakeHour = calendar.component(.hour, from: checkIn.wakeTime)
             // Always show at least 1 hour before wake time
             earliestHour = max(0, wakeHour - buffer)
+        }
+        
+        // Check meal windows to ensure all are visible
+        var windowEarliestHour: Int? = nil
+        var windowLatestHour: Int? = nil
+        if !mealWindows.isEmpty {
+            let windowStartHours = mealWindows.map { calendar.component(.hour, from: $0.startTime) }
+            let windowEndHours = mealWindows.map { calendar.component(.hour, from: $0.endTime) }
+            
+            if let minStartHour = windowStartHours.min() {
+                windowEarliestHour = max(0, minStartHour - buffer)
+            }
+            if let maxEndHour = windowEndHours.max() {
+                windowLatestHour = min(23, maxEndHour + buffer)
+            }
         }
         
         // Check for explicitly set meal hours
         if let firstMeal = userProfile.earliestMealHour,
            let lastMeal = userProfile.latestMealHour {
-            let startHour = earliestHour != nil ? min(earliestHour!, firstMeal - buffer) : max(0, firstMeal - buffer)
-            let endHour = min(23, lastMeal + buffer)
+            var startHour = max(0, firstMeal - buffer)
+            var endHour = min(23, lastMeal + buffer)
+            
+            // Ensure we include wake time if available
+            if let earliestFromWake = earliestHour {
+                startHour = min(startHour, earliestFromWake)
+            }
+            
+            // Ensure we include all meal windows
+            if let windowStart = windowEarliestHour {
+                startHour = min(startHour, windowStart)
+            }
+            if let windowEnd = windowLatestHour {
+                endHour = max(endHour, windowEnd)
+            }
+            
             return Array(startHour...endHour)
         }
         
         // Use work schedule defaults
         let (defaultEarliest, defaultLatest) = userProfile.workSchedule.defaultMealHours
         
+        // Calculate range based on all available data
+        var startHour = defaultEarliest
+        var endHour = defaultLatest
+        
+        // Include wake time
+        if let earliestFromWake = earliestHour {
+            startHour = min(startHour, earliestFromWake)
+        }
+        
+        // Include meal windows
+        if let windowStart = windowEarliestHour {
+            startHour = min(startHour, windowStart)
+        }
+        if let windowEnd = windowLatestHour {
+            endHour = max(endHour, windowEnd)
+        }
+        
         // Analyze meal history to find patterns
         if !todaysMeals.isEmpty {
-            let mealHours = todaysMeals.map { Calendar.current.component(.hour, from: $0.timestamp) }
+            let mealHours = todaysMeals.map { calendar.component(.hour, from: $0.timestamp) }
             if let minHour = mealHours.min(),
                let maxHour = mealHours.max() {
-                // Expand slightly beyond actual meal times
-                var startHour = max(0, min(minHour - buffer, defaultEarliest))
-                // If we have a wake time, ensure we start before it
-                if let earliestFromWake = earliestHour {
-                    startHour = min(startHour, earliestFromWake)
-                }
-                let endHour = min(23, max(maxHour + buffer, defaultLatest))
-                return Array(startHour...endHour)
+                startHour = min(startHour, max(0, minHour - buffer))
+                endHour = max(endHour, min(23, maxHour + buffer))
             }
         }
         
-        // Fall back to wake time if available, otherwise work schedule defaults
-        if let earliestFromWake = earliestHour {
-            return Array(earliestFromWake...defaultLatest)
-        }
+        // Ensure valid range
+        startHour = max(0, startHour)
+        endHour = min(23, endHour)
         
-        return Array(defaultEarliest...defaultLatest)
+        return Array(startHour...endHour)
     }
     
     // MARK: - Dependencies

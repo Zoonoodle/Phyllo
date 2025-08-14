@@ -2,13 +2,15 @@
 
 ## 📋 Pre-Release Requirements
 
-### 1. **App Store Connect Setup** 🏪
-- [ ] Create App ID in Apple Developer Portal
+### 1. **App Store Connect Setup** 🏪 📝
+- [ ] Create App ID in Apple Developer Portal (see APP_STORE_CONNECT_SETUP.md)
 - [ ] Generate provisioning profiles (Development & Distribution)
 - [ ] Create app in App Store Connect
 - [ ] Set up app metadata (name, description, keywords, categories)
 - [ ] Prepare app icons (1024x1024 for App Store)
 - [ ] Create screenshots for required device sizes
+- [ ] Update Bundle Identifier in Xcode (currently: com.Phyllo.Phyllo)
+- [ ] Configure version number (1.0.0) and build number (1)
 
 ### 2. **Missing Privacy Permissions** 🔐 ✅
 Add to Info.plist:

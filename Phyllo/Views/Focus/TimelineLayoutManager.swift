@@ -127,6 +127,9 @@ class TimelineLayoutManager: ObservableObject {
         // Start with base height as minimum
         var requiredHeight = baseHourHeight
         
+        // Track the maximum content needed in this hour
+        var maxContentInHour: CGFloat = 0
+        
         // Check all windows that affect this hour
         for window in windows {
             let calendar = Calendar.current
@@ -135,54 +138,69 @@ class TimelineLayoutManager: ObservableObject {
             let windowStartMinute = calendar.component(.minute, from: window.startTime)
             let windowEndMinute = calendar.component(.minute, from: window.endTime)
             
-            // Calculate how much height this window needs
+            // Calculate total content height needed for this window
             let windowContentHeight = calculateWindowExpansion(window: window, viewModel: viewModel)
             
-            // Determine how this window affects this specific hour
+            // For multi-hour windows, we need to ensure the window fits within its time bounds
             if windowStartHour == hour && windowEndHour == hour {
                 // Window is entirely within this hour
-                let startFraction = CGFloat(windowStartMinute) / 60.0
-                let endFraction = CGFloat(windowEndMinute) / 60.0
-                let windowDuration = endFraction - startFraction
-                
-                // The window needs at least its content height
-                // Calculate what hour height would be needed to fit this window
-                let neededHourHeight = windowContentHeight / max(windowDuration, 0.1)
-                requiredHeight = max(requiredHeight, neededHourHeight)
+                maxContentInHour = max(maxContentInHour, windowContentHeight)
                 
             } else if windowStartHour == hour {
                 // Window starts in this hour but extends beyond
-                let startFraction = CGFloat(windowStartMinute) / 60.0
-                let remainingFraction = 1.0 - startFraction
+                // We need to fit the entire window starting from its position in this hour
+                let startMinuteFraction = CGFloat(windowStartMinute) / 60.0
                 
-                // Calculate proportional height needed in this hour
-                if windowEndHour > hour {
-                    // Multi-hour window - distribute height proportionally
-                    let totalHours = CGFloat(windowEndHour - windowStartHour) + 
-                                   (CGFloat(windowEndMinute) / 60.0) - 
-                                   (CGFloat(windowStartMinute) / 60.0)
-                    let thisHourPortion = remainingFraction / max(totalHours, 0.1)
-                    let neededHeight = (windowContentHeight * thisHourPortion) / remainingFraction
-                    requiredHeight = max(requiredHeight, neededHeight)
+                // Calculate total duration of window in hours
+                let totalDurationHours = window.endTime.timeIntervalSince(window.startTime) / 3600.0
+                
+                // If window spans multiple hours, we don't want to compress it too much
+                // Instead, expand this hour proportionally
+                if totalDurationHours > 1.0 {
+                    // For multi-hour windows, allocate space proportionally
+                    let remainingMinutesInHour = 60.0 - CGFloat(windowStartMinute)
+                    let proportionInThisHour = remainingMinutesInHour / (totalDurationHours * 60.0)
+                    let contentForThisHour = windowContentHeight * proportionInThisHour
+                    
+                    // But ensure we have at least enough space to show the window header
+                    let minRequiredHeight = max(contentForThisHour, 80) // Minimum for header + some content
+                    maxContentInHour = max(maxContentInHour, minRequiredHeight)
                 } else {
-                    // Window fits within hour time-wise but may need more space
-                    let neededHeight = windowContentHeight / remainingFraction
-                    requiredHeight = max(requiredHeight, neededHeight)
+                    // Single hour window that crosses hour boundary
+                    maxContentInHour = max(maxContentInHour, windowContentHeight)
                 }
                 
             } else if windowEndHour == hour && windowStartHour < hour {
                 // Window ends in this hour but started earlier
-                let endFraction = CGFloat(windowEndMinute) / 60.0
-                
-                // This hour only needs to accommodate the ending portion
-                // The window's main height is handled by its starting hour
-                // Just ensure minimum space
-                requiredHeight = max(requiredHeight, baseHourHeight)
+                // Middle hours of multi-hour windows get proportional space
+                if hour > windowStartHour && hour < windowEndHour {
+                    // This is a middle hour in a multi-hour window
+                    let totalDurationHours = window.endTime.timeIntervalSince(window.startTime) / 3600.0
+                    let contentForThisHour = windowContentHeight / totalDurationHours
+                    maxContentInHour = max(maxContentInHour, contentForThisHour)
+                } else {
+                    // Final hour of window - minimal space needed
+                    maxContentInHour = max(maxContentInHour, 40)
+                }
+            }
+            
+            // For any window that spans this hour, ensure minimum visibility
+            let hourStart = calendar.date(bySettingHour: hour, minute: 0, second: 0, of: window.startTime)!
+            let hourEnd = calendar.date(byAdding: .hour, value: 1, to: hourStart)!
+            
+            if window.startTime < hourEnd && window.endTime > hourStart {
+                // Window overlaps this hour
+                maxContentInHour = max(maxContentInHour, 40) // Minimum visibility
             }
         }
         
+        // If we have content in this hour, ensure the hour is tall enough
+        if maxContentInHour > 0 {
+            requiredHeight = max(requiredHeight, maxContentInHour + 20) // Add padding
+        }
+        
         // Ensure reasonable bounds
-        return min(max(requiredHeight, baseHourHeight), baseHourHeight * 8)
+        return min(max(requiredHeight, baseHourHeight), baseHourHeight * 4)
     }
     
     private func calculateWindowExpansion(
