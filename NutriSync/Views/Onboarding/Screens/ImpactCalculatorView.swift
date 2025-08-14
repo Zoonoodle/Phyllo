@@ -23,24 +23,23 @@ struct ImpactCalculatorView: View {
     }
     
     var body: some View {
-        VStack(spacing: 0) {
-            // Back button
-            HStack {
-                Button {
-                    viewModel.previousScreen()
-                } label: {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 20))
-                        .foregroundColor(.white.opacity(0.6))
-                        .frame(width: 44, height: 44)
+        OnboardingScreenBase(
+            viewModel: viewModel,
+            showBack: true,
+            nextTitle: showImpact ? "Let's fix this" : "Calculate Impact",
+            nextAction: {
+                if !showImpact {
+                    withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                        showImpact = true
+                    }
+                } else {
+                    viewModel.nextScreen()
                 }
-                Spacer()
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 16)
-            
-            Spacer()
-                .frame(height: 40)
+        ) {
+            VStack(spacing: 0) {
+                Spacer()
+                    .frame(height: 80)
             
             // Title
             Text("How's your current energy level?")
@@ -119,32 +118,9 @@ struct ImpactCalculatorView: View {
                 }
             }
             
-            Spacer()
-            
-            // Continue button
-            Button {
-                if !showImpact {
-                    withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
-                        showImpact = true
-                    }
-                } else {
-                    viewModel.nextScreen()
-                }
-            } label: {
-                Text(showImpact ? "Let's fix this" : "Calculate Impact")
-                    .font(.body)
-                    .fontWeight(.semibold)
-                    .foregroundColor(Color(hex: "0A0A0A"))
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 56)
-                    .background(Color(hex: showImpact ? "00D26A" : "00D26A"))
-                    .cornerRadius(28)
+                Spacer()
             }
-            .padding(.horizontal, 24)
-            .padding(.bottom, 48)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(hex: "0A0A0A"))
     }
     
     private var energyEmoji: String {

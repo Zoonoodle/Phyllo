@@ -356,6 +356,10 @@ struct OnboardingScreenView: View {
                 ImpactCalculatorView(viewModel: viewModel)
             case .goodNews:
                 GoodNewsView(viewModel: viewModel)
+            case .basicInfo:
+                BasicInfoView(viewModel: viewModel)
+            case .bodyMetrics:
+                BodyMetricsView(viewModel: viewModel)
             default:
                 // Placeholder for other screens
                 Text("Screen: \(String(describing: screen))")

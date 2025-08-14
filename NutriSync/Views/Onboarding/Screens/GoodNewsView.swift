@@ -20,28 +20,33 @@ struct GoodNewsView: View {
     }
     
     var body: some View {
-        VStack(spacing: 0) {
-            // Progress indicator animation
-            if animateElements {
-                HStack(spacing: 12) {
-                    ForEach(0..<3) { index in
-                        Circle()
-                            .fill(Color.white)
-                            .frame(width: 8, height: 8)
-                            .scaleEffect(animateElements ? 1 : 0)
-                            .animation(
-                                .spring(response: 0.5, dampingFraction: 0.6)
-                                .delay(Double(index) * 0.1),
-                                value: animateElements
-                            )
+        OnboardingScreenBase(
+            viewModel: viewModel,
+            showBack: true,
+            nextTitle: "Show Me How"
+        ) {
+            VStack(spacing: 0) {
+                // Progress indicator animation
+                if animateElements {
+                    HStack(spacing: 12) {
+                        ForEach(0..<3) { index in
+                            Circle()
+                                .fill(Color.white)
+                                .frame(width: 8, height: 8)
+                                .scaleEffect(animateElements ? 1 : 0)
+                                .animation(
+                                    .spring(response: 0.5, dampingFraction: 0.6)
+                                    .delay(Double(index) * 0.1),
+                                    value: animateElements
+                                )
+                        }
                     }
+                    .padding(.top, 60)
+                    .padding(.bottom, 40)
+                } else {
+                    Spacer()
+                        .frame(height: 108)
                 }
-                .padding(.top, 60)
-                .padding(.bottom, 40)
-            } else {
-                Spacer()
-                    .frame(height: 108)
-            }
             
             // Title
             VStack(spacing: 8) {
@@ -96,35 +101,15 @@ struct GoodNewsView: View {
                     .animation(.easeOut(duration: 0.6).delay(1.5), value: animateElements)
             }
             
-            Spacer()
-            
-            // Continue button
-            Button {
-                viewModel.nextScreen()
-            } label: {
-                Text("Show Me How")
-                    .font(.body)
-                    .fontWeight(.semibold)
-                    .foregroundColor(Color(hex: "0A0A0A"))
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 56)
-                    .background(Color(hex: "00D26A"))
-                    .cornerRadius(28)
+                Spacer()
             }
-            .padding(.horizontal, 24)
-            .padding(.bottom, 48)
-            .opacity(animateElements ? 1 : 0)
-            .offset(y: animateElements ? 0 : 20)
-            .animation(.spring(response: 0.6, dampingFraction: 0.7).delay(1.6), value: animateElements)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(hex: "0A0A0A"))
-        .onAppear {
-            animateElements = true
-            
-            // Animate the number counting up
-            withAnimation(.easeOut(duration: 1.8).delay(0.6)) {
-                numberValue = max(85, daysGained) // Minimum 85 days
+            .onAppear {
+                animateElements = true
+                
+                // Animate the number counting up
+                withAnimation(.easeOut(duration: 1.8).delay(0.6)) {
+                    numberValue = max(85, daysGained) // Minimum 85 days
+                }
             }
         }
     }

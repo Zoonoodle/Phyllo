@@ -29,10 +29,10 @@ Following Opal's powerful call-to-action approach and MacroFactor's organized se
 ## 🎨 **Design System**
 
 ### **Colors**
-- **Background**: Pure black (#000000)
-- **Cards**: white.opacity(0.03)
+- **Background**: Dark gray (#0A0A0A) - matching Schedule view
+- **Cards**: white.opacity(0.03) with subtle borders
 - **Primary Text**: white
-- **Secondary Text**: white.opacity(0.7)
+- **Secondary Text**: white.opacity(0.5-0.6)
 - **Accent**: Bright green (#00D26A) - used sparingly
 - **Section Progress**: Gray dots, green for current/completed
 

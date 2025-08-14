@@ -14,7 +14,9 @@ struct OnboardingPreviewView: View {
         ("Permissions", AnyView(PermissionsView(viewModel: OnboardingViewModel()))),
         ("Welcome", AnyView(WelcomeView(viewModel: OnboardingViewModel()))),
         ("Impact Calculator", AnyView(ImpactCalculatorView(viewModel: OnboardingViewModel()))),
-        ("Good News", AnyView(GoodNewsView(viewModel: OnboardingViewModel())))
+        ("Good News", AnyView(GoodNewsView(viewModel: OnboardingViewModel()))),
+        ("Basic Info", AnyView(BasicInfoView(viewModel: OnboardingViewModel()))),
+        ("Body Metrics", AnyView(BodyMetricsView(viewModel: OnboardingViewModel())))
     ]
     
     var body: some View {

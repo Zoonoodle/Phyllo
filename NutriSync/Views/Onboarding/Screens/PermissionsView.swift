@@ -14,80 +14,71 @@ struct PermissionsView: View {
     @State private var healthGranted = false
     
     var body: some View {
-        VStack(spacing: 0) {
-            Spacer()
-                .frame(height: 60)
-            
-            // App icon
-            Image(systemName: "leaf.circle.fill")
-                .font(.system(size: 80))
-                .foregroundColor(Color(hex: "00D26A"))
-                .padding(.bottom, 32)
-            
-            // Title
-            Text("NutriSync needs your permission to:")
-                .font(.title2)
-                .fontWeight(.semibold)
-                .foregroundColor(.white)
-                .multilineTextAlignment(.center)
-                .padding(.bottom, 32)
-            
-            // Permission list
-            VStack(spacing: 20) {
-                PermissionRow(
-                    icon: "camera.fill",
-                    title: "Camera",
-                    description: "For meal scanning",
-                    isGranted: $cameraGranted
-                )
-                
-                PermissionRow(
-                    icon: "bell.fill",
-                    title: "Notifications",
-                    description: "For meal window reminders",
-                    isGranted: $notificationGranted
-                )
-                
-                PermissionRow(
-                    icon: "heart.text.square.fill",
-                    title: "Health Data",
-                    description: "Optional, for Apple Health sync",
-                    isGranted: $healthGranted
-                )
+        OnboardingScreenBase(
+            viewModel: viewModel,
+            showBack: false,
+            nextTitle: "Continue",
+            nextAction: {
+                // Request permissions then continue
+                viewModel.nextScreen()
             }
-            .padding(.horizontal, 24)
-            
-            Spacer()
-            
-            // Action buttons
-            VStack(spacing: 16) {
-                Button {
-                    // Request permissions
-                    viewModel.nextScreen()
-                } label: {
-                    Text("Allow Access")
-                        .font(.body)
-                        .fontWeight(.semibold)
-                        .foregroundColor(Color(hex: "0A0A0A"))
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 56)
-                        .background(Color(hex: "00D26A"))
-                        .cornerRadius(28)
-                }
+        ) {
+            VStack(spacing: 0) {
+                Spacer()
+                    .frame(height: 60)
                 
+                // App icon
+                Image(systemName: "leaf.circle.fill")
+                    .font(.system(size: 80))
+                    .foregroundColor(Color(hex: "00D26A"))
+                    .padding(.bottom, 32)
+                
+                // Title
+                Text("NutriSync needs your permission to:")
+                    .font(.title2)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.center)
+                    .padding(.bottom, 32)
+                
+                // Permission list
+                VStack(spacing: 20) {
+                    PermissionRow(
+                        icon: "camera.fill",
+                        title: "Camera",
+                        description: "For meal scanning",
+                        isGranted: $cameraGranted
+                    )
+                    
+                    PermissionRow(
+                        icon: "bell.fill",
+                        title: "Notifications",
+                        description: "For meal window reminders",
+                        isGranted: $notificationGranted
+                    )
+                    
+                    PermissionRow(
+                        icon: "heart.text.square.fill",
+                        title: "Health Data",
+                        description: "Optional, for Apple Health sync",
+                        isGranted: $healthGranted
+                    )
+                }
+                .padding(.horizontal, 24)
+                
+                Spacer()
+                
+                // Skip link
                 Button {
                     viewModel.nextScreen()
                 } label: {
                     Text("Maybe Later")
-                        .font(.body)
+                        .font(.callout)
                         .foregroundColor(.white.opacity(0.5))
+                        .padding(.bottom, 16)
                 }
             }
-            .padding(.horizontal, 24)
-            .padding(.bottom, 48)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(hex: "0A0A0A"))
     }
 }
 
