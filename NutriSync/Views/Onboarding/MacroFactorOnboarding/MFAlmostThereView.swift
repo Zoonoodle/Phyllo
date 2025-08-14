@@ -1,0 +1,112 @@
+//
+//  MFAlmostThereView.swift
+//  NutriSync
+//
+//  MacroFactor Replica Screen 12
+//
+
+import SwiftUI
+
+struct MFAlmostThereView: View {
+    var body: some View {
+        VStack(spacing: 0) {
+            // Title
+            HStack {
+                Text("Almost There")
+                    .font(.system(size: 34, weight: .bold))
+                Spacer()
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 60)
+            .padding(.bottom, 32)
+            
+            // Progress icons
+            HStack(spacing: 0) {
+                // Profile icon
+                ProgressIcon(icon: "person.fill", isActive: true, isCompleted: true)
+                    .overlay(
+                        Image(systemName: "line.diagonal")
+                            .font(.system(size: 12))
+                            .foregroundColor(.gray)
+                            .rotationEffect(.degrees(-45))
+                            .offset(x: 12, y: -8),
+                        alignment: .topTrailing
+                    )
+                
+                ProgressLine(isActive: true)
+                
+                // Shield icon
+                ProgressIcon(icon: "shield.fill", isActive: true, isCompleted: true)
+                    .overlay(
+                        Image(systemName: "line.diagonal")
+                            .font(.system(size: 12))
+                            .foregroundColor(.gray)
+                            .rotationEffect(.degrees(-45))
+                            .offset(x: 12, y: -8),
+                        alignment: .topTrailing
+                    )
+                
+                ProgressLine(isActive: true)
+                
+                // Target icon
+                ProgressIcon(icon: "target", isActive: true, isCompleted: true)
+                    .overlay(
+                        Image(systemName: "line.diagonal")
+                            .font(.system(size: 12))
+                            .foregroundColor(.gray)
+                            .rotationEffect(.degrees(-45))
+                            .offset(x: 12, y: -8),
+                        alignment: .topTrailing
+                    )
+                
+                ProgressLine(isActive: true)
+                
+                // Graph icon (current)
+                ProgressIcon(icon: "chart.line.uptrend.xyaxis", isActive: true, isCompleted: false)
+                
+                ProgressLine(isActive: false)
+                
+                // Food icon
+                ProgressIcon(icon: "fork.knife", isActive: false, isCompleted: false)
+            }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 60)
+            
+            // Content
+            VStack(alignment: .leading, spacing: 24) {
+                Text("Program")
+                    .font(.system(size: 24, weight: .semibold))
+                
+                Text("We will now create a macro program based on your information. It will dynamically adapt to your energy expenditure every week. Don't worry – you can always change the program or manually create one later.")
+                    .font(.system(size: 17))
+                    .foregroundColor(.gray)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(.horizontal, 20)
+            
+            Spacer()
+            
+            // Continue button
+            Button {
+                // Continue action
+            } label: {
+                Text("Go to Program Design")
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 50)
+                    .background(Color.black)
+                    .cornerRadius(25)
+            }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 34)
+        }
+        .background(Color.white)
+    }
+}
+
+struct MFAlmostThereView_Previews: PreviewProvider {
+    static var previews: some View {
+        MFAlmostThereView()
+    }
+}

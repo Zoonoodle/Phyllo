@@ -17,7 +17,16 @@ struct MFOnboardingPreview: View {
         ("Activity", AnyView(MFActivityLevelView())),
         ("Expenditure", AnyView(MFExpenditureView())),
         ("Not to Worry", AnyView(MFNotToWorryView())),
-        ("Health Disclaimer", AnyView(MFHealthDisclaimerView()))
+        ("Health Disclaimer", AnyView(MFHealthDisclaimerView())),
+        ("Goal Intro", AnyView(MFGoalSettingIntroView())),
+        ("Goal Selection", AnyView(MFGoalSelectionView())),
+        ("Target Weight", AnyView(MFTargetWeightView())),
+        ("Weight Loss Rate", AnyView(MFWeightLossRateView())),
+        ("Almost There", AnyView(MFAlmostThereView())),
+        ("Diet Preference", AnyView(MFDietPreferenceView())),
+        ("Calorie Floor", AnyView(MFCalorieFloorView())),
+        ("Training Plan", AnyView(MFTrainingPlanView())),
+        ("Calorie Distribution", AnyView(MFCalorieDistributionView()))
     ]
     
     var body: some View {
