@@ -9,7 +9,7 @@
 - [ ] Set up app metadata (name, description, keywords, categories)
 - [ ] Prepare app icons (1024x1024 for App Store)
 - [ ] Create screenshots for required device sizes
-- [ ] Update Bundle Identifier in Xcode (currently: com.Phyllo.Phyllo, suggest: com.yourcompany.nutrisync)
+- [ ] Update Bundle Identifier in Xcode (currently: com.NutriSync.NutriSync, suggest: com.yourcompany.nutrisync)
 - [ ] Configure version number (1.0.0) and build number (1)
 
 ### 2. **Missing Privacy Permissions** 🔐 ✅
@@ -27,7 +27,7 @@ Add to Info.plist:
 - [ ] **Push notifications** - Complete implementation (currently not functional)
 
 ### 4. **App Configuration** ⚙️
-- [ ] Set proper Bundle ID (com.yourcompany.phyllo)
+- [ ] Set proper Bundle ID (com.yourcompany.nutriSync)
 - [ ] Increment version number (1.0.0) and build number
 - [ ] Configure app capabilities in Xcode:
   - Push Notifications

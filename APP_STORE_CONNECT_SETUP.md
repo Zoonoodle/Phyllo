@@ -43,8 +43,8 @@
 
 ## Step 3: Update Xcode Project Settings
 
-1. Open Phyllo.xcodeproj in Xcode (will rename to NutriSync.xcodeproj later)
-2. Select the project → Target "Phyllo" (will rename to "NutriSync" later)
+1. Open NutriSync.xcodeproj in Xcode (will rename to NutriSync.xcodeproj later)
+2. Select the project → Target "NutriSync" (will rename to "NutriSync" later)
 3. Go to **Signing & Capabilities** tab
 4. Update:
    - **Team**: Select your developer team

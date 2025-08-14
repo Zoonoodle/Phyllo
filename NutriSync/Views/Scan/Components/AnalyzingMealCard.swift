@@ -1,0 +1,432 @@
+//
+//  AnalyzingMealCard.swift
+//  NutriSync
+//
+//  Created on 7/29/25.
+//
+
+import SwiftUI
+
+struct AnalyzingMealCard: View {
+    let timestamp: Date
+    let metadata: AnalysisMetadata?
+    @ObservedObject private var agent = MealAnalysisAgent.shared
+    @State private var dotsAnimation = false
+    @State private var currentMessageIndex = 0
+    @State private var messageTimer: Timer?
+    @State private var showMetadata = false
+    
+    let messages = [
+        "Analyzing your meal...",
+        "Detecting ingredients...",
+        "Calculating nutrition...",
+        "Processing image...",
+        "Finalizing results..."
+    ]
+    
+    var body: some View {
+        HStack(spacing: 16) {
+            // Loading indicator placeholder (where emoji would be)
+            ZStack {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color.white.opacity(0.05))
+                    .frame(width: 50, height: 50)
+                
+                HStack(spacing: 4) {
+                    ForEach(0..<3) { index in
+                        Circle()
+                            .fill(Color.nutriSyncAccent)
+                            .frame(width: 8, height: 8)
+                            .scaleEffect(dotsAnimation ? 1.0 : 0.5)
+                            .opacity(dotsAnimation ? 1.0 : 0.3)
+                            .animation(
+                                Animation.easeInOut(duration: 0.8)
+                                    .repeatForever()
+                                    .delay(Double(index) * 0.2),
+                                value: dotsAnimation
+                            )
+                    }
+                }
+            }
+            
+            // Meal info (loading state)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(agent.currentTool?.displayName ?? messages[currentMessageIndex])
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(.white)
+                    .animation(.easeInOut(duration: 0.3), value: agent.currentTool)
+                    .animation(.easeInOut(duration: 0.3), value: currentMessageIndex)
+                
+                HStack(spacing: 8) {
+                    Text("Analyzing")
+                        .font(.system(size: 14))
+                        .foregroundColor(.white.opacity(0.7))
+                    
+                    Text("•")
+                        .foregroundColor(.white.opacity(0.3))
+                    
+                    Text(timeString(from: timestamp))
+                        .font(.system(size: 14))
+                        .foregroundColor(.white.opacity(0.7))
+                }
+                
+                // Tool progress indicator or metadata
+                if let metadata = metadata {
+                    // Show completed analysis metadata
+                    VStack(alignment: .leading, spacing: 4) {
+                        // Complexity badge
+                        HStack(spacing: 6) {
+                            Image(systemName: metadata.complexity.icon)
+                                .font(.system(size: 10))
+                                .foregroundColor(.nutriSyncAccent)
+                            
+                            Text(metadata.complexity.displayName)
+                                .font(.system(size: 11, weight: .medium))
+                                .foregroundColor(.nutriSyncAccent)
+                            
+                            if !metadata.toolsUsed.isEmpty {
+                                Text("•")
+                                    .foregroundColor(.white.opacity(0.3))
+                                
+                                Text("\(metadata.toolsUsed.count) tool\(metadata.toolsUsed.count == 1 ? "" : "s")")
+                                    .font(.system(size: 11))
+                                    .foregroundColor(.white.opacity(0.6))
+                            }
+                        }
+                        
+                        // Tools used badges
+                        if !metadata.toolsUsed.isEmpty {
+                            HStack(spacing: 4) {
+                                ForEach(metadata.toolsUsed, id: \.self) { tool in
+                                    HStack(spacing: 3) {
+                                        Image(systemName: tool.icon)
+                                            .font(.system(size: 9))
+                                        Text(tool.displayName)
+                                            .font(.system(size: 9))
+                                    }
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 2)
+                                    .background(Color(hex: tool.color).opacity(0.2))
+                                    .foregroundColor(Color(hex: tool.color))
+                                    .cornerRadius(4)
+                                }
+                            }
+                        }
+                    }
+                    .transition(.scale.combined(with: .opacity))
+                } else if agent.isUsingTools, agent.currentTool != nil {
+                    HStack(spacing: 6) {
+                        Image(systemName: agent.currentTool?.iconName ?? "sparkle")
+                            .font(.system(size: 11))
+                            .foregroundColor(.nutriSyncAccent)
+                        
+                        Text(agent.toolProgress)
+                            .font(.system(size: 12))
+                            .foregroundColor(.nutriSyncAccent.opacity(0.8))
+                            .lineLimit(1)
+                    }
+                    .transition(.move(edge: .leading).combined(with: .opacity))
+                } else {
+                    // Shimmer placeholder for macro data
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(Color.white.opacity(0.1))
+                        .frame(width: 120, height: 12)
+                        .shimmer()
+                }
+            }
+            
+            Spacer()
+            
+            // Loading spinner instead of chevron
+            ProgressView()
+                .progressViewStyle(CircularProgressViewStyle(tint: .white.opacity(0.3)))
+                .scaleEffect(0.8)
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color.white.opacity(0.03))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .strokeBorder(Color.nutriSyncAccent.opacity(0.3), lineWidth: 1)
+                )
+        )
+        .onAppear {
+            dotsAnimation = true
+            startMessageRotation()
+        }
+        .onDisappear {
+            messageTimer?.invalidate()
+        }
+    }
+    
+    private func timeString(from date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.timeStyle = .short
+        return formatter.string(from: date)
+    }
+    
+    private func startMessageRotation() {
+        messageTimer = Timer.scheduledTimer(withTimeInterval: 2.5, repeats: true) { _ in
+            withAnimation(.easeInOut(duration: 0.3)) {
+                currentMessageIndex = (currentMessageIndex + 1) % messages.count
+            }
+        }
+    }
+}
+
+// Timeline version with smaller design
+struct AnalyzingMealRow: View {
+    let timestamp: Date
+    let metadata: AnalysisMetadata?
+    @ObservedObject private var agent = MealAnalysisAgent.shared
+    @State private var dotsAnimation = false
+    @State private var currentMessageIndex = 0
+    @State private var messageTimer: Timer?
+    
+    let messages = [
+        "Analyzing meal...",
+        "Processing...",
+        "Calculating...",
+        "Almost done..."
+    ]
+    
+    var body: some View {
+        HStack(spacing: 12) {
+            // Time
+            Text(timeFormatter.string(from: timestamp))
+                .font(.system(size: 11))
+                .foregroundColor(.white.opacity(0.5))
+                .frame(width: 35)
+            
+            // Loading dots instead of emoji
+            HStack(spacing: 3) {
+                ForEach(0..<3) { index in
+                    Circle()
+                        .fill(Color.nutriSyncAccent)
+                        .frame(width: 6, height: 6)
+                        .scaleEffect(dotsAnimation ? 1.0 : 0.5)
+                        .opacity(dotsAnimation ? 1.0 : 0.3)
+                        .animation(
+                            Animation.easeInOut(duration: 0.8)
+                                .repeatForever()
+                                .delay(Double(index) * 0.2),
+                            value: dotsAnimation
+                        )
+                }
+            }
+            .frame(width: 20)
+            
+            // Meal info
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 4) {
+                    if let metadata = metadata {
+                        // Show completed analysis badge
+                        Image(systemName: metadata.complexity.icon)
+                            .font(.system(size: 10))
+                            .foregroundColor(.nutriSyncAccent)
+                        
+                        Text(metadata.complexity.displayName)
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.white)
+                            .lineLimit(1)
+                    } else if agent.isUsingTools, agent.currentTool != nil {
+                        Image(systemName: agent.currentTool?.iconName ?? "sparkle")
+                            .font(.system(size: 10))
+                            .foregroundColor(.nutriSyncAccent)
+                        
+                        Text(agent.currentTool?.displayName ?? messages[currentMessageIndex])
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.white)
+                            .lineLimit(1)
+                            .animation(.easeInOut(duration: 0.3), value: agent.currentTool)
+                    } else {
+                        Text(messages[currentMessageIndex])
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.white)
+                            .lineLimit(1)
+                            .animation(.easeInOut(duration: 0.3), value: currentMessageIndex)
+                    }
+                }
+                
+                // Show tools or shimmer
+                if let metadata = metadata, !metadata.toolsUsed.isEmpty {
+                    HStack(spacing: 3) {
+                        ForEach(metadata.toolsUsed.prefix(2), id: \.self) { tool in
+                            Image(systemName: tool.icon)
+                                .font(.system(size: 9))
+                                .foregroundColor(Color(hex: tool.color))
+                        }
+                        if metadata.toolsUsed.count > 2 {
+                            Text("+\(metadata.toolsUsed.count - 2)")
+                                .font(.system(size: 9))
+                                .foregroundColor(.white.opacity(0.5))
+                        }
+                    }
+                } else {
+                    // Shimmer for macros
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(Color.white.opacity(0.1))
+                        .frame(width: 100, height: 11)
+                        .shimmer()
+                }
+            }
+            
+            Spacer()
+            
+            // Loading spinner
+            ProgressView()
+                .progressViewStyle(CircularProgressViewStyle(tint: .white.opacity(0.3)))
+                .scaleEffect(0.6)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color.nutriSyncBackground)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.white.opacity(0.03))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .strokeBorder(Color.nutriSyncAccent.opacity(0.3), lineWidth: 1)
+                )
+        )
+        .onAppear {
+            dotsAnimation = true
+            startMessageRotation()
+        }
+        .onDisappear {
+            messageTimer?.invalidate()
+        }
+    }
+    
+    private var timeFormatter: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "h:mm"
+        return formatter
+    }
+    
+    private func startMessageRotation() {
+        messageTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { _ in
+            withAnimation(.easeInOut(duration: 0.3)) {
+                currentMessageIndex = (currentMessageIndex + 1) % messages.count
+            }
+        }
+    }
+}
+
+// Shimmer effect modifier
+struct ShimmerModifier: ViewModifier {
+    @State private var phase: CGFloat = 0
+    
+    func body(content: Content) -> some View {
+        content
+            .overlay(
+                LinearGradient(
+                    gradient: Gradient(colors: [
+                        Color.white.opacity(0),
+                        Color.white.opacity(0.1),
+                        Color.white.opacity(0)
+                    ]),
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+                .offset(x: phase * 200 - 100)
+                .mask(content)
+            )
+            .onAppear {
+                withAnimation(
+                    Animation.linear(duration: 1.5)
+                        .repeatForever(autoreverses: false)
+                ) {
+                    phase = 1
+                }
+            }
+    }
+}
+
+extension View {
+    func shimmer() -> some View {
+        modifier(ShimmerModifier())
+    }
+}
+
+#Preview("Window Card") {
+    ZStack {
+        Color.nutriSyncBackground.ignoresSafeArea()
+        
+        VStack(spacing: 20) {
+            // Standard analyzing
+            AnalyzingMealCard(timestamp: Date(), metadata: nil)
+                .padding()
+            
+            // With metadata - restaurant
+            AnalyzingMealCard(
+                timestamp: Date(),
+                metadata: AnalysisMetadata(
+                    toolsUsed: [.brandSearch, .deepAnalysis],
+                    complexity: .restaurant,
+                    analysisTime: 6.5,
+                    confidence: 0.95,
+                    brandDetected: "Chipotle",
+                    ingredientCount: 8
+                )
+            )
+            .padding()
+            
+            // With metadata - complex
+            AnalyzingMealCard(
+                timestamp: Date(),
+                metadata: AnalysisMetadata(
+                    toolsUsed: [.deepAnalysis, .nutritionLookup],
+                    complexity: .complex,
+                    analysisTime: 4.2,
+                    confidence: 0.82,
+                    brandDetected: nil,
+                    ingredientCount: 12
+                )
+            )
+            .padding()
+        }
+    }
+}
+
+#Preview("Timeline Row") {
+    ZStack {
+        Color.nutriSyncBackground.ignoresSafeArea()
+        
+        VStack(spacing: 20) {
+            AnalyzingMealRow(timestamp: Date(), metadata: nil)
+                .padding()
+            
+            // With metadata
+            AnalyzingMealRow(
+                timestamp: Date(),
+                metadata: AnalysisMetadata(
+                    toolsUsed: [.brandSearch],
+                    complexity: .restaurant,
+                    analysisTime: 5.2,
+                    confidence: 0.92,
+                    brandDetected: "Starbucks",
+                    ingredientCount: 5
+                )
+            )
+            .padding()
+            
+            // Preview of final state
+            let mockMeal = LoggedMeal(
+                name: "Chicken Salad",
+                calories: 450,
+                protein: 35,
+                carbs: 20,
+                fat: 25,
+                timestamp: Date()
+            )
+            MealRow(meal: mockMeal)
+                .padding()
+        }
+    }
+}
+

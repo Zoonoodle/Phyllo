@@ -1,4 +1,4 @@
-# Firebase Packages Required for Phyllo
+# Firebase Packages Required for NutriSync
 
 ## Package URL
 Add this single package to your Xcode project:
@@ -58,7 +58,7 @@ For Apple authentication (mentioned in your auth handler URL):
 
 Based on your project settings, your bundle ID is:
 ```
-com.Phyllo.Phyllo
+com.NutriSync.NutriSync
 ```
 
 Make sure this matches in:
@@ -76,7 +76,7 @@ The Firebase SDK will automatically handle most configurations, but for Apple Si
     <dict>
         <key>CFBundleURLSchemes</key>
         <array>
-            <string>com.Phyllo.Phyllo</string>
+            <string>com.NutriSync.NutriSync</string>
         </array>
     </dict>
 </array>

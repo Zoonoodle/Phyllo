@@ -300,7 +300,7 @@ The meal analysis system uses a sophisticated multi-tool agent that automaticall
 - Dynamic Type supported
 
 ### **Components**
-- **PhylloCard**: Rounded corners (20px), subtle blur
+- **NutriSyncCard**: Rounded corners (20px), subtle blur
 - **CustomTabBar**: Floating design with haptic feedback
 - **TimelineHourRow**: Dynamic height based on content
 - **NudgeContainer**: Spring animations, backdrop blur
@@ -443,14 +443,14 @@ The meal analysis system uses a sophisticated multi-tool agent that automaticall
 
 ```bash
 # Build and test
-xcodebuild -scheme Phyllo -sdk iphonesimulator
-xcodebuild test -scheme Phyllo -destination 'platform=iOS Simulator,name=iPhone 16 Pro'
+xcodebuild -scheme NutriSync -sdk iphonesimulator
+xcodebuild test -scheme NutriSync -destination 'platform=iOS Simulator,name=iPhone 16 Pro'
 
 # Git (handled automatically by Claude Code)
 git add -A && git commit -m "type: message" && git push
 
 # Project navigation
-open Phyllo.xcodeproj
+open NutriSync.xcodeproj
 ```
 
 ### **Common Tasks**

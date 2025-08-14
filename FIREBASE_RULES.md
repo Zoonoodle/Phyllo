@@ -1,4 +1,4 @@
-# Firebase Security Rules for Phyllo
+# Firebase Security Rules for NutriSync
 
 ## Firestore Security Rules
 
@@ -74,13 +74,13 @@ service firebase.storage {
 ## Setup Instructions
 
 1. **Enable Firestore:**
-   - Go to https://console.firebase.google.com/project/phyllo-9cc5a/firestore
+   - Go to https://console.firebase.google.com/project/nutriSync-9cc5a/firestore
    - Click "Create database"
    - Choose "Start in test mode" for now
    - Select your preferred location (us-central1 is recommended)
 
 2. **Enable Storage:**
-   - Go to https://console.firebase.google.com/project/phyllo-9cc5a/storage
+   - Go to https://console.firebase.google.com/project/nutriSync-9cc5a/storage
    - Click "Get started"
    - Choose "Start in test mode" for now
    - Select the same location as Firestore
@@ -91,9 +91,9 @@ service firebase.storage {
    - Click "Publish" for each
 
 4. **Enable Required APIs in Google Cloud Console:**
-   - Firestore API: https://console.cloud.google.com/apis/library/firestore.googleapis.com?project=phyllo-9cc5a
-   - Storage API: https://console.cloud.google.com/apis/library/storage-component.googleapis.com?project=phyllo-9cc5a
-   - Cloud Resource Manager API: https://console.cloud.google.com/apis/library/cloudresourcemanager.googleapis.com?project=phyllo-9cc5a
+   - Firestore API: https://console.cloud.google.com/apis/library/firestore.googleapis.com?project=nutriSync-9cc5a
+   - Storage API: https://console.cloud.google.com/apis/library/storage-component.googleapis.com?project=nutriSync-9cc5a
+   - Cloud Resource Manager API: https://console.cloud.google.com/apis/library/cloudresourcemanager.googleapis.com?project=nutriSync-9cc5a
 
 ## Important Notes
 

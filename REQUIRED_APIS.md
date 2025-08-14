@@ -1,16 +1,16 @@
-# Required Google Cloud APIs for Phyllo
+# Required Google Cloud APIs for NutriSync
 
 ## Essential APIs (Must Enable)
 
 ### 1. ✅ Firestore API
 - **Status**: Already enabled
 - **Purpose**: Database for meals, windows, user data
-- **Link**: https://console.cloud.google.com/apis/library/firestore.googleapis.com?project=phyllo-9cc5a
+- **Link**: https://console.cloud.google.com/apis/library/firestore.googleapis.com?project=nutriSync-9cc5a
 
 ### 2. ✅ Cloud Storage API  
 - **Status**: Already enabled
 - **Purpose**: Store meal photos temporarily
-- **Link**: https://console.cloud.google.com/apis/library/storage-component.googleapis.com?project=phyllo-9cc5a
+- **Link**: https://console.cloud.google.com/apis/library/storage-component.googleapis.com?project=nutriSync-9cc5a
 
 ### 3. 🔴 Firebase AI Logic API
 - **Status**: NEEDS ENABLING
@@ -31,15 +31,15 @@
 
 ### 6. Firebase Authentication
 - **Purpose**: User login/signup (Phase 8)
-- **Link**: https://console.firebase.google.com/project/phyllo-9cc5a/authentication
+- **Link**: https://console.firebase.google.com/project/nutriSync-9cc5a/authentication
 
 ### 7. Cloud Functions
 - **Purpose**: Server-side logic
-- **Link**: https://console.cloud.google.com/apis/library/cloudfunctions.googleapis.com?project=phyllo-9cc5a
+- **Link**: https://console.cloud.google.com/apis/library/cloudfunctions.googleapis.com?project=nutriSync-9cc5a
 
 ### 8. Firebase Cloud Messaging
 - **Purpose**: Push notifications
-- **Link**: https://console.firebase.google.com/project/phyllo-9cc5a/messaging
+- **Link**: https://console.firebase.google.com/project/nutriSync-9cc5a/messaging
 
 ## Quick Enable All Required
 

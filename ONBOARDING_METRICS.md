@@ -1,4 +1,4 @@
-# Phyllo Onboarding Data Collection Requirements
+# NutriSync Onboarding Data Collection Requirements
 
 ## Essential Metrics for Optimal App Function
 

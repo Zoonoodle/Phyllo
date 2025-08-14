@@ -1,4 +1,4 @@
-# Phyllo Backend Implementation Plan
+# NutriSync Backend Implementation Plan
 ## Comprehensive Roadmap for Firebase + Vertex AI Integration
 
 **Version:** 1.0  
@@ -9,7 +9,7 @@
 
 ## 🎯 Executive Summary
 
-This document outlines the complete backend transformation of Phyllo from a mock-data prototype to a production-ready nutrition intelligence platform. The implementation follows a phased approach with developer dashboard simulation capabilities maintained throughout.
+This document outlines the complete backend transformation of NutriSync from a mock-data prototype to a production-ready nutrition intelligence platform. The implementation follows a phased approach with developer dashboard simulation capabilities maintained throughout.
 
 ### Key Decisions:
 - **AI:** Vertex AI SDK with Gemini 2.5 Flash only (no Cloud Functions)
@@ -205,7 +205,7 @@ class VertexAIService {
     init() {
         // Initialize Vertex AI SDK
         let vertexAI = VertexAI(
-            projectId: "phyllo-nutrition",
+            projectId: "nutriSync-nutrition",
             location: "us-central1"
         )
         
@@ -897,4 +897,4 @@ service cloud.firestore {
 
 ---
 
-This plan provides a complete roadmap for transforming Phyllo from a mock-data prototype to a production-ready nutrition intelligence platform. Each phase builds on the previous one, allowing for iterative development and continuous testing through the developer dashboard.
+This plan provides a complete roadmap for transforming NutriSync from a mock-data prototype to a production-ready nutrition intelligence platform. Each phase builds on the previous one, allowing for iterative development and continuous testing through the developer dashboard.

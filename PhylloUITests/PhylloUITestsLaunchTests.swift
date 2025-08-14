@@ -1,13 +1,13 @@
 //
-//  PhylloUITestsLaunchTests.swift
-//  PhylloUITests
+//  NutriSyncUITestsLaunchTests.swift
+//  NutriSyncUITests
 //
 //  Created by Brennen Price on 7/27/25.
 //
 
 import XCTest
 
-final class PhylloUITestsLaunchTests: XCTestCase {
+final class NutriSyncUITestsLaunchTests: XCTestCase {
 
     override class var runsForEachTargetApplicationUIConfiguration: Bool {
         true

@@ -1,4 +1,4 @@
-# Firebase Setup Guide for Phyllo
+# Firebase Setup Guide for NutriSync
 
 ## Prerequisites
 
@@ -7,7 +7,7 @@ Before running the app with Firebase integration, you need to:
 ### 1. Create Firebase Project
 
 1. Go to [Firebase Console](https://console.firebase.google.com/)
-2. Click "Create Project" and name it "phyllo-nutrition" (or your preferred name)
+2. Click "Create Project" and name it "nutriSync-nutrition" (or your preferred name)
 3. Enable Google Analytics (optional)
 
 ### 2. Add iOS App to Firebase
@@ -15,7 +15,7 @@ Before running the app with Firebase integration, you need to:
 1. In Firebase Console, click "Add app" and select iOS
 2. Enter your bundle ID (find it in Xcode project settings)
 3. Download `GoogleService-Info.plist`
-4. **Add `GoogleService-Info.plist` to your Xcode project** (drag it into the Phyllo folder)
+4. **Add `GoogleService-Info.plist` to your Xcode project** (drag it into the NutriSync folder)
 
 ### 3. Enable Required Firebase Services
 
@@ -54,7 +54,7 @@ In Firebase Console, enable:
 
 ### 5. Update Project Configuration
 
-1. Open `Phyllo/Services/AI/VertexAIService.swift`
+1. Open `NutriSync/Services/AI/VertexAIService.swift`
 2. Verify the model name is set to "gemini-2.5-flash"
 
 ### 6. Install Dependencies
