@@ -2,7 +2,7 @@
 //  MFCalorieFloorView.swift
 //  NutriSync
 //
-//  MacroFactor Replica Screen 14
+//  MacroFactor Replica Screen 14 - Dark Theme
 //
 
 import SwiftUI
@@ -26,6 +26,7 @@ struct MFCalorieFloorView: View {
             // Title
             Text("What calorie floor do you prefer?")
                 .font(.system(size: 28, weight: .bold))
+                .foregroundColor(.white)
                 .multilineTextAlignment(.leading)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 20)
@@ -55,9 +56,9 @@ struct MFCalorieFloorView: View {
                 } label: {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 20, weight: .medium))
-                        .foregroundColor(.gray)
+                        .foregroundColor(.white)
                         .frame(width: 44, height: 44)
-                        .background(Color(UIColor.systemGray6))
+                        .background(Color.white.opacity(0.1))
                         .clipShape(Circle())
                 }
                 
@@ -72,17 +73,17 @@ struct MFCalorieFloorView: View {
                         Image(systemName: "chevron.right")
                             .font(.system(size: 14, weight: .semibold))
                     }
-                    .foregroundColor(.white)
+                    .foregroundColor(Color(hex: "0A0A0A"))
                     .padding(.horizontal, 24)
                     .frame(height: 44)
-                    .background(Color.black)
+                    .background(Color.white)
                     .cornerRadius(22)
                 }
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 34)
         }
-        .background(Color.white)
+        .background(Color(hex: "0A0A0A"))
     }
 }
 
@@ -99,7 +100,7 @@ struct CalorieFloorOption: View {
                 // Icon
                 Image(systemName: icon)
                     .font(.system(size: 24))
-                    .foregroundColor(.black)
+                    .foregroundColor(.white)
                     .frame(width: 30, height: 30)
                     .padding(.top, 20)
                 
@@ -107,11 +108,11 @@ struct CalorieFloorOption: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text(title)
                         .font(.system(size: 20, weight: .semibold))
-                        .foregroundColor(.black)
+                        .foregroundColor(.white)
                     
                     Text(description)
                         .font(.system(size: 15))
-                        .foregroundColor(.gray)
+                        .foregroundColor(.white.opacity(0.6))
                         .multilineTextAlignment(.leading)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -121,10 +122,10 @@ struct CalorieFloorOption: View {
                 Spacer()
             }
             .padding(.horizontal, 20)
-            .background(Color.white)
+            .background(Color.white.opacity(0.03))
             .overlay(
                 RoundedRectangle(cornerRadius: 16)
-                    .stroke(isSelected ? Color.black : Color(UIColor.systemGray4), lineWidth: isSelected ? 3 : 1)
+                    .stroke(isSelected ? Color.white : Color.white.opacity(0.2), lineWidth: isSelected ? 3 : 1)
             )
             .cornerRadius(16)
         }

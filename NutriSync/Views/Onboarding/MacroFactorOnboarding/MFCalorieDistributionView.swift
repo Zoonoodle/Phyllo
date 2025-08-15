@@ -2,7 +2,7 @@
 //  MFCalorieDistributionView.swift
 //  NutriSync
 //
-//  MacroFactor Replica Screen 16
+//  MacroFactor Replica Screen 16 - Dark Theme
 //
 
 import SwiftUI
@@ -26,6 +26,7 @@ struct MFCalorieDistributionView: View {
             // Title
             Text("How would you like to distribute Calories throughout the week?")
                 .font(.system(size: 28, weight: .bold))
+                .foregroundColor(.white)
                 .multilineTextAlignment(.leading)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 20)
@@ -34,7 +35,7 @@ struct MFCalorieDistributionView: View {
             // Subtitle
             Text("Select your preference for calorie distribution throughout the week.")
                 .font(.system(size: 17))
-                .foregroundColor(.gray)
+                .foregroundColor(.white.opacity(0.6))
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 20)
                 .padding(.bottom, 40)
@@ -63,9 +64,9 @@ struct MFCalorieDistributionView: View {
                 } label: {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 20, weight: .medium))
-                        .foregroundColor(.gray)
+                        .foregroundColor(.white)
                         .frame(width: 44, height: 44)
-                        .background(Color(UIColor.systemGray6))
+                        .background(Color.white.opacity(0.1))
                         .clipShape(Circle())
                 }
                 
@@ -80,17 +81,17 @@ struct MFCalorieDistributionView: View {
                         Image(systemName: "chevron.right")
                             .font(.system(size: 14, weight: .semibold))
                     }
-                    .foregroundColor(.white)
+                    .foregroundColor(Color(hex: "0A0A0A"))
                     .padding(.horizontal, 24)
                     .frame(height: 44)
-                    .background(Color.black)
+                    .background(Color.white)
                     .cornerRadius(22)
                 }
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 34)
         }
-        .background(Color.white)
+        .background(Color(hex: "0A0A0A"))
     }
 }
 
@@ -107,7 +108,7 @@ struct CalorieDistributionOption: View {
                 // Icon
                 Image(systemName: icon)
                     .font(.system(size: 24))
-                    .foregroundColor(.black)
+                    .foregroundColor(.white)
                     .frame(width: 30, height: 30)
                     .padding(.top, 20)
                 
@@ -115,11 +116,11 @@ struct CalorieDistributionOption: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text(title)
                         .font(.system(size: 20, weight: .semibold))
-                        .foregroundColor(.black)
+                        .foregroundColor(.white)
                     
                     Text(description)
                         .font(.system(size: 15))
-                        .foregroundColor(.gray)
+                        .foregroundColor(.white.opacity(0.6))
                         .multilineTextAlignment(.leading)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -129,10 +130,10 @@ struct CalorieDistributionOption: View {
                 Spacer()
             }
             .padding(.horizontal, 20)
-            .background(Color.white)
+            .background(Color.white.opacity(0.03))
             .overlay(
                 RoundedRectangle(cornerRadius: 16)
-                    .stroke(isSelected ? Color.black : Color(UIColor.systemGray4), lineWidth: isSelected ? 3 : 1)
+                    .stroke(isSelected ? Color.white : Color.white.opacity(0.2), lineWidth: isSelected ? 3 : 1)
             )
             .cornerRadius(16)
         }

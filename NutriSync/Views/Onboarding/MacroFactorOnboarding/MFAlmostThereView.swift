@@ -2,7 +2,7 @@
 //  MFAlmostThereView.swift
 //  NutriSync
 //
-//  MacroFactor Replica Screen 12
+//  MacroFactor Replica Screen 12 - Dark Theme
 //
 
 import SwiftUI
@@ -14,6 +14,7 @@ struct MFAlmostThereView: View {
             HStack {
                 Text("Almost There")
                     .font(.system(size: 34, weight: .bold))
+                    .foregroundColor(.white)
                 Spacer()
             }
             .padding(.horizontal, 20)
@@ -27,7 +28,7 @@ struct MFAlmostThereView: View {
                     .overlay(
                         Image(systemName: "line.diagonal")
                             .font(.system(size: 12))
-                            .foregroundColor(.gray)
+                            .foregroundColor(.white.opacity(0.5))
                             .rotationEffect(.degrees(-45))
                             .offset(x: 12, y: -8),
                         alignment: .topTrailing
@@ -40,7 +41,7 @@ struct MFAlmostThereView: View {
                     .overlay(
                         Image(systemName: "line.diagonal")
                             .font(.system(size: 12))
-                            .foregroundColor(.gray)
+                            .foregroundColor(.white.opacity(0.5))
                             .rotationEffect(.degrees(-45))
                             .offset(x: 12, y: -8),
                         alignment: .topTrailing
@@ -53,7 +54,7 @@ struct MFAlmostThereView: View {
                     .overlay(
                         Image(systemName: "line.diagonal")
                             .font(.system(size: 12))
-                            .foregroundColor(.gray)
+                            .foregroundColor(.white.opacity(0.5))
                             .rotationEffect(.degrees(-45))
                             .offset(x: 12, y: -8),
                         alignment: .topTrailing
@@ -76,10 +77,11 @@ struct MFAlmostThereView: View {
             VStack(alignment: .leading, spacing: 24) {
                 Text("Program")
                     .font(.system(size: 24, weight: .semibold))
+                    .foregroundColor(.white)
                 
                 Text("We will now create a macro program based on your information. It will dynamically adapt to your energy expenditure every week. Don't worry – you can always change the program or manually create one later.")
                     .font(.system(size: 17))
-                    .foregroundColor(.gray)
+                    .foregroundColor(.white.opacity(0.6))
                     .fixedSize(horizontal: false, vertical: true)
             }
             .padding(.horizontal, 20)
@@ -92,16 +94,16 @@ struct MFAlmostThereView: View {
             } label: {
                 Text("Go to Program Design")
                     .font(.system(size: 17, weight: .semibold))
-                    .foregroundColor(.white)
+                    .foregroundColor(Color(hex: "0A0A0A"))
                     .frame(maxWidth: .infinity)
                     .frame(height: 50)
-                    .background(Color.black)
+                    .background(Color.white)
                     .cornerRadius(25)
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 34)
         }
-        .background(Color.white)
+        .background(Color(hex: "0A0A0A"))
     }
 }
 

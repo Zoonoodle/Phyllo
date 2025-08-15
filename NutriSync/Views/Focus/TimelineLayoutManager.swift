@@ -165,12 +165,13 @@ class TimelineLayoutManager: ObservableObject {
                     let hourFraction = overlapDuration / 3600.0 // How much of the hour this window uses
                     
                     if hourFraction > 0 {
-                        var neededHourHeight = hourFractionOfContent / hourFraction
-                        
-                        // For active empty windows, limit expansion to prevent visual overflow
-                        if window.isActive && viewModel.mealsInWindow(window).isEmpty {
-                            neededHourHeight = min(neededHourHeight, baseHourHeight * 2.5)
-                        }
+                        // Calculate needed height more conservatively
+                        // Don't let a single window expand an hour too much
+                        let maxExpansionFactor: CGFloat = window.isActive ? 2.0 : 1.5
+                        let neededHourHeight = min(
+                            hourFractionOfContent / hourFraction,
+                            baseHourHeight * maxExpansionFactor
+                        )
                         
                         requiredHeight = max(requiredHeight, neededHourHeight)
                     }
@@ -178,8 +179,8 @@ class TimelineLayoutManager: ObservableObject {
             }
         }
         
-        // Ensure reasonable bounds - allow more expansion for content-heavy hours
-        return min(max(requiredHeight, baseHourHeight), baseHourHeight * 6)
+        // Ensure reasonable bounds - limit expansion to prevent visual issues
+        return min(max(requiredHeight, baseHourHeight), baseHourHeight * 3)
     }
     
     private func calculateWindowExpansion(
@@ -196,13 +197,14 @@ class TimelineLayoutManager: ObservableObject {
         
         // Add space for window insights section based on state
         if window.isActive {
-            if hasMeals || hasAnalyzingMeals {
-                // Active with meals - just show the meals
-                contentHeight += 10 // Small buffer
+            // For active windows with no meals, allocate space for expanded insights section
+            // This includes: purpose insight, remaining macros, and suggested meals
+            if mealCount == 0 && !hasAnalyzingMeals {
+                // Expanded state with full insights section visible
+                contentHeight += 150 // Space for divider + purpose + macros + suggestions + padding
             } else {
-                // Active but empty - needs space for insights and suggestions
-                // Now that insights are always shown, we need proper space
-                contentHeight += 60 // Insights text, macros, suggestions
+                // Collapsed state when meals are present
+                contentHeight += 20 // Just minimal space for transition
             }
         }
         
@@ -274,9 +276,9 @@ class TimelineLayoutManager: ObservableObject {
         // Calculate content height needed
         let contentHeight = calculateWindowExpansion(window: window, viewModel: viewModel)
         
-        // Use content height to ensure all content is visible
-        // The hour heights have been adjusted to accommodate this
-        let finalHeight = contentHeight
+        // The final height should be the time-based height, not the content height
+        // The hour heights have already been adjusted to accommodate the content
+        let finalHeight = timeBasedHeight
         return WindowLayout(
             window: window,
             yPosition: yPosition,

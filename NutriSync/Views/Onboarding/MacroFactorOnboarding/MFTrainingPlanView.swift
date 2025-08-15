@@ -2,7 +2,7 @@
 //  MFTrainingPlanView.swift
 //  NutriSync
 //
-//  MacroFactor Replica Screen 15
+//  MacroFactor Replica Screen 15 - Dark Theme
 //
 
 import SwiftUI
@@ -28,6 +28,7 @@ struct MFTrainingPlanView: View {
             // Title
             Text("What training will you do during this program?")
                 .font(.system(size: 28, weight: .bold))
+                .foregroundColor(.white)
                 .multilineTextAlignment(.leading)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 20)
@@ -36,7 +37,7 @@ struct MFTrainingPlanView: View {
             // Subtitle
             Text("Choose the training you plan to do during this program, if any.")
                 .font(.system(size: 17))
-                .foregroundColor(.gray)
+                .foregroundColor(.white.opacity(0.6))
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 20)
                 .padding(.bottom, 40)
@@ -64,9 +65,9 @@ struct MFTrainingPlanView: View {
                 } label: {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 20, weight: .medium))
-                        .foregroundColor(.gray)
+                        .foregroundColor(.white)
                         .frame(width: 44, height: 44)
-                        .background(Color(UIColor.systemGray6))
+                        .background(Color.white.opacity(0.1))
                         .clipShape(Circle())
                 }
                 
@@ -81,17 +82,17 @@ struct MFTrainingPlanView: View {
                         Image(systemName: "chevron.right")
                             .font(.system(size: 14, weight: .semibold))
                     }
-                    .foregroundColor(.gray)
+                    .foregroundColor(.white)
                     .padding(.horizontal, 24)
                     .frame(height: 44)
-                    .background(Color(UIColor.systemGray6))
+                    .background(Color.white.opacity(0.1))
                     .cornerRadius(22)
                 }
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 34)
         }
-        .background(Color.white)
+        .background(Color(hex: "0A0A0A"))
     }
 }
 
@@ -107,22 +108,22 @@ struct TrainingOption: View {
                 // Icon
                 Image(systemName: icon)
                     .font(.system(size: 20))
-                    .foregroundColor(.black)
+                    .foregroundColor(.white)
                     .frame(width: 24)
                 
                 // Title
                 Text(title)
                     .font(.system(size: 18))
-                    .foregroundColor(.black)
+                    .foregroundColor(.white)
                 
                 Spacer()
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 20)
-            .background(Color.white)
+            .background(Color.white.opacity(0.03))
             .overlay(
                 RoundedRectangle(cornerRadius: 16)
-                    .stroke(isSelected ? Color.black : Color(UIColor.systemGray4), lineWidth: isSelected ? 3 : 1)
+                    .stroke(isSelected ? Color.white : Color.white.opacity(0.2), lineWidth: isSelected ? 3 : 1)
             )
             .cornerRadius(16)
         }

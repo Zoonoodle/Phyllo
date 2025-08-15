@@ -2,7 +2,7 @@
 //  MFNotToWorryView.swift
 //  NutriSync
 //
-//  MacroFactor Replica Screen 6
+//  MacroFactor Replica Screen 6 - Dark Theme
 //
 
 import SwiftUI
@@ -21,28 +21,30 @@ struct MFNotToWorryView: View {
                     // Title
                     Text("Not to worry!")
                         .font(.system(size: 28, weight: .bold))
+                        .foregroundColor(.white)
                         .padding(.bottom, 8)
                     
                     // Subtitle
                     Text("MacroFactor will monitor and fine-tune your estimated expenditure over time. This is just a starting point.")
                         .font(.system(size: 17))
-                        .foregroundColor(.gray)
+                        .foregroundColor(.white.opacity(0.6))
                         .padding(.bottom, 20)
                     
                     // Week 1
                     HStack(alignment: .top, spacing: 16) {
                         Circle()
-                            .fill(Color.black)
+                            .fill(Color.white)
                             .frame(width: 8, height: 8)
                             .padding(.top, 8)
                         
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Week 1")
                                 .font(.system(size: 20, weight: .semibold))
+                                .foregroundColor(.white)
                             
                             Text("MacroFactor will use an expenditure estimate of 1805 kcal to create your first program.")
                                 .font(.system(size: 17))
-                                .foregroundColor(.gray)
+                                .foregroundColor(.white.opacity(0.6))
                                 .fixedSize(horizontal: false, vertical: true)
                         }
                     }
@@ -51,17 +53,18 @@ struct MFNotToWorryView: View {
                     // Week 2
                     HStack(alignment: .top, spacing: 16) {
                         Circle()
-                            .fill(Color.black)
+                            .fill(Color.white)
                             .frame(width: 8, height: 8)
                             .padding(.top, 8)
                         
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Week 2")
                                 .font(.system(size: 20, weight: .semibold))
+                                .foregroundColor(.white)
                             
                             Text("After you log eight consecutive days of nutrition and weight data, our algorithm will start calibrating this estimate based on how your weight is responding to your caloric intake.")
                                 .font(.system(size: 17))
-                                .foregroundColor(.gray)
+                                .foregroundColor(.white.opacity(0.6))
                                 .fixedSize(horizontal: false, vertical: true)
                         }
                     }
@@ -70,17 +73,18 @@ struct MFNotToWorryView: View {
                     // Week 3 and beyond
                     HStack(alignment: .top, spacing: 16) {
                         Circle()
-                            .fill(Color.black)
+                            .fill(Color.white)
                             .frame(width: 8, height: 8)
                             .padding(.top, 8)
                         
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Week 3 and beyond")
                                 .font(.system(size: 20, weight: .semibold))
+                                .foregroundColor(.white)
                             
                             Text("Our algorithm will get your expenditure estimate dialed in without any need for activity tracking. Energy expenditure tends to change over time, but MacroFactor will continue to adjust and refine your expenditure estimate to keep you on track with your goal.")
                                 .font(.system(size: 17))
-                                .foregroundColor(.gray)
+                                .foregroundColor(.white.opacity(0.6))
                                 .fixedSize(horizontal: false, vertical: true)
                         }
                     }
@@ -97,7 +101,7 @@ struct MFNotToWorryView: View {
                 } label: {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 20, weight: .medium))
-                        .foregroundColor(.black)
+                        .foregroundColor(.white)
                         .frame(width: 44, height: 44)
                 }
                 
@@ -112,17 +116,17 @@ struct MFNotToWorryView: View {
                         Image(systemName: "chevron.right")
                             .font(.system(size: 14, weight: .semibold))
                     }
-                    .foregroundColor(.white)
+                    .foregroundColor(Color(hex: "0A0A0A"))
                     .padding(.horizontal, 24)
                     .frame(height: 44)
-                    .background(Color.black)
+                    .background(Color.white)
                     .cornerRadius(22)
                 }
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 34)
         }
-        .background(Color.white)
+        .background(Color(hex: "0A0A0A"))
     }
 }
 

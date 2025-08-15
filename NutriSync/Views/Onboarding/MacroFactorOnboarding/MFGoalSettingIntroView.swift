@@ -2,7 +2,7 @@
 //  MFGoalSettingIntroView.swift
 //  NutriSync
 //
-//  MacroFactor Replica Screen 8
+//  MacroFactor Replica Screen 8 - Dark Theme
 //
 
 import SwiftUI
@@ -14,6 +14,7 @@ struct MFGoalSettingIntroView: View {
             HStack {
                 Text("Goal Setting")
                     .font(.system(size: 34, weight: .bold))
+                    .foregroundColor(.white)
                 Spacer()
             }
             .padding(.horizontal, 20)
@@ -27,7 +28,7 @@ struct MFGoalSettingIntroView: View {
                     .overlay(
                         Image(systemName: "line.diagonal")
                             .font(.system(size: 12))
-                            .foregroundColor(.gray)
+                            .foregroundColor(.white.opacity(0.5))
                             .rotationEffect(.degrees(-45))
                             .offset(x: 12, y: -8),
                         alignment: .topTrailing
@@ -40,7 +41,7 @@ struct MFGoalSettingIntroView: View {
                     .overlay(
                         Image(systemName: "line.diagonal")
                             .font(.system(size: 12))
-                            .foregroundColor(.gray)
+                            .foregroundColor(.white.opacity(0.5))
                             .rotationEffect(.degrees(-45))
                             .offset(x: 12, y: -8),
                         alignment: .topTrailing
@@ -68,10 +69,11 @@ struct MFGoalSettingIntroView: View {
             VStack(alignment: .leading, spacing: 24) {
                 Text("Goal")
                     .font(.system(size: 24, weight: .semibold))
+                    .foregroundColor(.white)
                 
                 Text("MacroFactor's targets will be customized to keep you on track with the goal you specify. Don't worry – you can update your goal any time.")
                     .font(.system(size: 17))
-                    .foregroundColor(.gray)
+                    .foregroundColor(.white.opacity(0.6))
                     .fixedSize(horizontal: false, vertical: true)
             }
             .padding(.horizontal, 20)
@@ -84,16 +86,16 @@ struct MFGoalSettingIntroView: View {
             } label: {
                 Text("Go to Goal Setup")
                     .font(.system(size: 17, weight: .semibold))
-                    .foregroundColor(.white)
+                    .foregroundColor(Color(hex: "0A0A0A"))
                     .frame(maxWidth: .infinity)
                     .frame(height: 50)
-                    .background(Color.black)
+                    .background(Color.white)
                     .cornerRadius(25)
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 34)
         }
-        .background(Color.white)
+        .background(Color(hex: "0A0A0A"))
     }
 }
 

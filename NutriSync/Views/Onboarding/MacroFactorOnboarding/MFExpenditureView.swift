@@ -2,7 +2,7 @@
 //  MFExpenditureView.swift
 //  NutriSync
 //
-//  MacroFactor Replica Screen 5
+//  MacroFactor Replica Screen 5 - Dark Theme
 //
 
 import SwiftUI
@@ -21,6 +21,7 @@ struct MFExpenditureView: View {
             // Title
             Text("We estimated your initial expenditure.")
                 .font(.system(size: 28, weight: .bold))
+                .foregroundColor(.white)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 40)
                 .padding(.bottom, 80)
@@ -28,17 +29,19 @@ struct MFExpenditureView: View {
             // Calorie display
             Text("\(expenditure) kcal")
                 .font(.system(size: 60, weight: .light))
+                .foregroundColor(.white)
                 .padding(.bottom, 40)
             
             // Question
             Text("Does this look right to you?")
                 .font(.system(size: 22))
+                .foregroundColor(.white)
                 .padding(.bottom, 12)
             
             // Description
             Text("Expenditure is the number of calories you would need to consume to maintain your current weight.")
                 .font(.system(size: 17))
-                .foregroundColor(.gray)
+                .foregroundColor(.white.opacity(0.6))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 40)
             
@@ -55,10 +58,10 @@ struct MFExpenditureView: View {
                         Image(systemName: "chevron.right")
                             .font(.system(size: 14, weight: .medium))
                     }
-                    .foregroundColor(.gray)
+                    .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .frame(height: 50)
-                    .background(Color(UIColor.systemGray6))
+                    .background(Color.white.opacity(0.1))
                     .cornerRadius(25)
                 }
                 
@@ -71,10 +74,10 @@ struct MFExpenditureView: View {
                         Image(systemName: "chevron.right")
                             .font(.system(size: 14, weight: .medium))
                     }
-                    .foregroundColor(.gray)
+                    .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .frame(height: 50)
-                    .background(Color(UIColor.systemGray6))
+                    .background(Color.white.opacity(0.1))
                     .cornerRadius(25)
                 }
                 
@@ -87,10 +90,10 @@ struct MFExpenditureView: View {
                         Image(systemName: "chevron.right")
                             .font(.system(size: 14, weight: .semibold))
                     }
-                    .foregroundColor(.white)
+                    .foregroundColor(Color(hex: "0A0A0A"))
                     .frame(maxWidth: .infinity)
                     .frame(height: 50)
-                    .background(Color.black)
+                    .background(Color.white)
                     .cornerRadius(25)
                 }
             }
@@ -104,9 +107,9 @@ struct MFExpenditureView: View {
                 } label: {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 20, weight: .medium))
-                        .foregroundColor(.gray)
+                        .foregroundColor(.white)
                         .frame(width: 44, height: 44)
-                        .background(Color(UIColor.systemGray6))
+                        .background(Color.white.opacity(0.1))
                         .clipShape(Circle())
                 }
                 .padding(.leading, 20)
@@ -115,7 +118,7 @@ struct MFExpenditureView: View {
             }
             .padding(.bottom, 34)
         }
-        .background(Color.white)
+        .background(Color(hex: "0A0A0A"))
     }
 }
 

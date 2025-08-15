@@ -2,7 +2,7 @@
 //  MFBodyFatLevelView.swift
 //  NutriSync
 //
-//  MacroFactor Replica Screen 1
+//  MacroFactor Replica Screen 1 - Dark Theme
 //
 
 import SwiftUI
@@ -33,6 +33,7 @@ struct MFBodyFatLevelView: View {
             // Title
             Text("What is your body fat level?")
                 .font(.system(size: 28, weight: .bold))
+                .foregroundColor(.white)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 20)
                 .padding(.bottom, 12)
@@ -40,7 +41,7 @@ struct MFBodyFatLevelView: View {
             // Subtitle
             Text("Do not worry about being too precise. A visual assessment is sufficient.")
                 .font(.system(size: 17))
-                .foregroundColor(.gray)
+                .foregroundColor(.white.opacity(0.6))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 40)
                 .padding(.bottom, 32)
@@ -72,7 +73,7 @@ struct MFBodyFatLevelView: View {
                 } label: {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 20, weight: .medium))
-                        .foregroundColor(.black)
+                        .foregroundColor(.white)
                         .frame(width: 44, height: 44)
                 }
                 
@@ -87,17 +88,17 @@ struct MFBodyFatLevelView: View {
                         Image(systemName: "chevron.right")
                             .font(.system(size: 14, weight: .semibold))
                     }
-                    .foregroundColor(.white)
+                    .foregroundColor(Color(hex: "0A0A0A"))
                     .padding(.horizontal, 24)
                     .frame(height: 44)
-                    .background(Color.black)
+                    .background(Color.white)
                     .cornerRadius(22)
                 }
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 34)
         }
-        .background(Color.white)
+        .background(Color(hex: "0A0A0A"))
     }
 }
 
@@ -112,24 +113,24 @@ struct BodyFatOption: View {
             VStack(spacing: 8) {
                 ZStack {
                     Circle()
-                        .fill(isSelected ? Color.black : Color(UIColor.systemGray6))
+                        .fill(isSelected ? Color.white : Color.white.opacity(0.1))
                         .frame(width: 100, height: 100)
                     
                     // Placeholder for body silhouette
                     Image(systemName: "person.fill")
                         .font(.system(size: 40))
-                        .foregroundColor(isSelected ? .white : .gray)
+                        .foregroundColor(isSelected ? Color(hex: "0A0A0A") : .white.opacity(0.5))
                     
                     if isSelected {
                         Image(systemName: "checkmark")
                             .font(.system(size: 24, weight: .bold))
-                            .foregroundColor(.white)
+                            .foregroundColor(Color(hex: "0A0A0A"))
                     }
                 }
                 
                 Text(percentage)
                     .font(.system(size: 15))
-                    .foregroundColor(.black)
+                    .foregroundColor(.white)
             }
         }
     }
@@ -144,15 +145,15 @@ struct MFProgressBar: View {
             ForEach(1...totalSteps, id: \.self) { step in
                 if step == 1 {
                     Rectangle()
-                        .fill(step <= currentStep ? Color.black : Color(UIColor.systemGray5))
+                        .fill(step <= currentStep ? Color.white : Color.white.opacity(0.2))
                         .frame(height: 3)
                 } else {
                     HStack(spacing: 6) {
                         Rectangle()
-                            .fill(Color(UIColor.systemGray5))
+                            .fill(Color.white.opacity(0.2))
                             .frame(width: 3, height: 3)
                         Rectangle()
-                            .fill(step <= currentStep ? Color.black : Color(UIColor.systemGray5))
+                            .fill(step <= currentStep ? Color.white : Color.white.opacity(0.2))
                             .frame(height: 3)
                     }
                 }

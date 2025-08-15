@@ -2,7 +2,7 @@
 //  MFHealthDisclaimerView.swift
 //  NutriSync
 //
-//  MacroFactor Replica Screen 7
+//  MacroFactor Replica Screen 7 - Dark Theme
 //
 
 import SwiftUI
@@ -17,6 +17,7 @@ struct MFHealthDisclaimerView: View {
             HStack {
                 Text("Notice")
                     .font(.system(size: 34, weight: .bold))
+                    .foregroundColor(.white)
                 Spacer()
             }
             .padding(.horizontal, 20)
@@ -30,7 +31,7 @@ struct MFHealthDisclaimerView: View {
                     .overlay(
                         Image(systemName: "line.diagonal")
                             .font(.system(size: 12))
-                            .foregroundColor(.gray)
+                            .foregroundColor(.white.opacity(0.5))
                             .rotationEffect(.degrees(-45))
                             .offset(x: 12, y: -8),
                         alignment: .topTrailing
@@ -63,10 +64,11 @@ struct MFHealthDisclaimerView: View {
                 VStack(alignment: .leading, spacing: 24) {
                     Text("Health Disclaimer")
                         .font(.system(size: 24, weight: .semibold))
+                        .foregroundColor(.white)
                     
                     Text("MacroFactor provides educational health information based on your input, not medical advice or personalized counseling. Always consult a healthcare professional before making significant health decisions, such as changes to your diet or exercise routine. Understand and accept the risks involved with using the app, including dietary and physical activity changes. You are responsible for your health decisions and should seek professional guidance when necessary.")
                         .font(.system(size: 17))
-                        .foregroundColor(.gray)
+                        .foregroundColor(.white.opacity(0.6))
                         .fixedSize(horizontal: false, vertical: true)
                     
                     // Checkboxes
@@ -98,50 +100,21 @@ struct MFHealthDisclaimerView: View {
             } label: {
                 Text("Accept and Continue")
                     .font(.system(size: 17, weight: .medium))
-                    .foregroundColor(bothAccepted ? .black : .gray)
+                    .foregroundColor(bothAccepted ? Color(hex: "0A0A0A") : .white.opacity(0.5))
                     .frame(maxWidth: .infinity)
                     .frame(height: 50)
-                    .background(bothAccepted ? Color(UIColor.systemGray5) : Color(UIColor.systemGray6))
+                    .background(bothAccepted ? Color.white : Color.white.opacity(0.1))
                     .cornerRadius(25)
             }
             .disabled(!bothAccepted)
             .padding(.horizontal, 20)
             .padding(.bottom, 34)
         }
-        .background(Color.white)
+        .background(Color(hex: "0A0A0A"))
     }
     
     private var bothAccepted: Bool {
         acceptHealthDisclaimer && acceptPrivacyNotice
-    }
-}
-
-struct ProgressIcon: View {
-    let icon: String
-    let isActive: Bool
-    let isCompleted: Bool
-    
-    var body: some View {
-        ZStack {
-            Circle()
-                .fill(isActive ? Color.black : Color(UIColor.systemGray5))
-                .frame(width: 36, height: 36)
-            
-            Image(systemName: icon)
-                .font(.system(size: 16))
-                .foregroundColor(.white)
-        }
-    }
-}
-
-struct ProgressLine: View {
-    let isActive: Bool
-    
-    var body: some View {
-        Rectangle()
-            .fill(isActive ? Color.black : Color(UIColor.systemGray5))
-            .frame(height: 2)
-            .frame(maxWidth: .infinity)
     }
 }
 
@@ -157,12 +130,12 @@ struct CheckboxRow: View {
             Button(action: { isChecked.toggle() }) {
                 ZStack {
                     Circle()
-                        .stroke(Color(UIColor.systemGray4), lineWidth: 2)
+                        .stroke(Color.white.opacity(0.4), lineWidth: 2)
                         .frame(width: 24, height: 24)
                     
                     if isChecked {
                         Circle()
-                            .fill(Color.black)
+                            .fill(Color.white)
                             .frame(width: 16, height: 16)
                     }
                 }
@@ -172,7 +145,7 @@ struct CheckboxRow: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(text)
                     .font(.system(size: 17))
-                    .foregroundColor(.black)
+                    .foregroundColor(.white)
                 
                 Text(linkText)
                     .font(.system(size: 17))

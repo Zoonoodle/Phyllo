@@ -2,7 +2,7 @@
 //  MFTargetWeightView.swift
 //  NutriSync
 //
-//  MacroFactor Replica Screen 10
+//  MacroFactor Replica Screen 10 - Dark Theme
 //
 
 import SwiftUI
@@ -23,6 +23,7 @@ struct MFTargetWeightView: View {
             // Title
             Text("What weight would you like to get to?")
                 .font(.system(size: 28, weight: .bold))
+                .foregroundColor(.white)
                 .multilineTextAlignment(.leading)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 20)
@@ -33,10 +34,10 @@ struct MFTargetWeightView: View {
                 VStack(spacing: 8) {
                     Text("\(currentWeight) \(selectedUnit)")
                         .font(.system(size: 17))
-                        .foregroundColor(.gray)
+                        .foregroundColor(.white.opacity(0.6))
                     
                     Rectangle()
-                        .fill(Color.gray.opacity(0.3))
+                        .fill(Color.white.opacity(0.3))
                         .frame(height: 1)
                 }
                 .frame(maxWidth: .infinity)
@@ -44,12 +45,13 @@ struct MFTargetWeightView: View {
                 VStack(spacing: 16) {
                     TextField("", text: $targetWeight)
                         .font(.system(size: 32, weight: .medium))
+                        .foregroundColor(.white)
                         .multilineTextAlignment(.center)
                         .keyboardType(.numberPad)
                     
                     Text(selectedUnit)
                         .font(.system(size: 24))
-                        .foregroundColor(.black)
+                        .foregroundColor(.white)
                 }
                 .frame(maxWidth: .infinity)
                 
@@ -60,9 +62,9 @@ struct MFTargetWeightView: View {
                 } label: {
                     Image(systemName: "arrow.left.arrow.right")
                         .font(.system(size: 20))
-                        .foregroundColor(.gray)
+                        .foregroundColor(.white)
                         .frame(width: 44, height: 44)
-                        .background(Color(UIColor.systemGray6))
+                        .background(Color.white.opacity(0.1))
                         .clipShape(Circle())
                 }
             }
@@ -77,9 +79,9 @@ struct MFTargetWeightView: View {
                 } label: {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 20, weight: .medium))
-                        .foregroundColor(.gray)
+                        .foregroundColor(.white)
                         .frame(width: 44, height: 44)
-                        .background(Color(UIColor.systemGray6))
+                        .background(Color.white.opacity(0.1))
                         .clipShape(Circle())
                 }
                 
@@ -94,17 +96,17 @@ struct MFTargetWeightView: View {
                         Image(systemName: "chevron.right")
                             .font(.system(size: 14, weight: .semibold))
                     }
-                    .foregroundColor(.white)
+                    .foregroundColor(Color(hex: "0A0A0A"))
                     .padding(.horizontal, 24)
                     .frame(height: 44)
-                    .background(Color.black)
+                    .background(Color.white)
                     .cornerRadius(22)
                 }
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 34)
         }
-        .background(Color.white)
+        .background(Color(hex: "0A0A0A"))
         .onTapGesture {
             hideKeyboard()
         }

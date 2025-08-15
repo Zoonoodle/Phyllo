@@ -2,7 +2,7 @@
 //  MFExerciseFrequencyView.swift
 //  NutriSync
 //
-//  MacroFactor Replica Screen 3
+//  MacroFactor Replica Screen 3 - Dark Theme
 //
 
 import SwiftUI
@@ -28,6 +28,7 @@ struct MFExerciseFrequencyView: View {
             // Title
             Text("How often do you exercise?")
                 .font(.system(size: 28, weight: .bold))
+                .foregroundColor(.white)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 20)
                 .padding(.bottom, 12)
@@ -35,7 +36,7 @@ struct MFExerciseFrequencyView: View {
             // Subtitle
             Text("Choose the number of recreational sports, cardio, or resistance training sessions you do per week.")
                 .font(.system(size: 17))
-                .foregroundColor(.gray)
+                .foregroundColor(.white.opacity(0.6))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 40)
                 .padding(.bottom, 40)
@@ -63,7 +64,7 @@ struct MFExerciseFrequencyView: View {
                 } label: {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 20, weight: .medium))
-                        .foregroundColor(.black)
+                        .foregroundColor(.white)
                         .frame(width: 44, height: 44)
                 }
                 
@@ -78,17 +79,17 @@ struct MFExerciseFrequencyView: View {
                         Image(systemName: "chevron.right")
                             .font(.system(size: 14, weight: .semibold))
                     }
-                    .foregroundColor(.white)
+                    .foregroundColor(Color(hex: "0A0A0A"))
                     .padding(.horizontal, 24)
                     .frame(height: 44)
-                    .background(Color.black)
+                    .background(Color.white)
                     .cornerRadius(22)
                 }
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 34)
         }
-        .background(Color.white)
+        .background(Color(hex: "0A0A0A"))
     }
 }
 
@@ -103,21 +104,21 @@ struct ExerciseFrequencyOption: View {
             HStack(spacing: 16) {
                 Image(systemName: icon)
                     .font(.system(size: 20))
-                    .foregroundColor(.black)
+                    .foregroundColor(.white)
                     .frame(width: 24)
                 
                 Text(text)
                     .font(.system(size: 18))
-                    .foregroundColor(.black)
+                    .foregroundColor(.white)
                 
                 Spacer()
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 20)
-            .background(Color.white)
+            .background(Color.white.opacity(0.03))
             .overlay(
                 RoundedRectangle(cornerRadius: 16)
-                    .stroke(isSelected ? Color.black : Color(UIColor.systemGray4), lineWidth: isSelected ? 3 : 1)
+                    .stroke(isSelected ? Color.white : Color.white.opacity(0.2), lineWidth: isSelected ? 3 : 1)
             )
             .cornerRadius(16)
         }

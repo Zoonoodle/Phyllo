@@ -2,7 +2,7 @@
 //  MFActivityLevelView.swift
 //  NutriSync
 //
-//  MacroFactor Replica Screen 4
+//  MacroFactor Replica Screen 4 - Dark Theme
 //
 
 import SwiftUI
@@ -27,6 +27,7 @@ struct MFActivityLevelView: View {
             // Title
             Text("How active are you?")
                 .font(.system(size: 28, weight: .bold))
+                .foregroundColor(.white)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 20)
                 .padding(.bottom, 12)
@@ -34,7 +35,7 @@ struct MFActivityLevelView: View {
             // Subtitle
             Text("Select your level of daily physical activity outside of exercise (during work, leisure time, etc).")
                 .font(.system(size: 17))
-                .foregroundColor(.gray)
+                .foregroundColor(.white.opacity(0.6))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 40)
                 .padding(.bottom, 40)
@@ -63,9 +64,9 @@ struct MFActivityLevelView: View {
                 } label: {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 20, weight: .medium))
-                        .foregroundColor(.gray)
+                        .foregroundColor(.white)
                         .frame(width: 44, height: 44)
-                        .background(Color(UIColor.systemGray6))
+                        .background(Color.white.opacity(0.1))
                         .clipShape(Circle())
                 }
                 
@@ -80,17 +81,17 @@ struct MFActivityLevelView: View {
                         Image(systemName: "chevron.right")
                             .font(.system(size: 14, weight: .semibold))
                     }
-                    .foregroundColor(.white)
+                    .foregroundColor(Color(hex: "0A0A0A"))
                     .padding(.horizontal, 24)
                     .frame(height: 44)
-                    .background(Color.black)
+                    .background(Color.white)
                     .cornerRadius(22)
                 }
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 34)
         }
-        .background(Color.white)
+        .background(Color(hex: "0A0A0A"))
     }
 }
 
@@ -106,28 +107,28 @@ struct ActivityLevelOption: View {
             HStack(alignment: .top, spacing: 16) {
                 Image(systemName: icon)
                     .font(.system(size: 24))
-                    .foregroundColor(.black)
+                    .foregroundColor(.white)
                     .frame(width: 30, alignment: .center)
                     .padding(.top, 4)
                 
                 VStack(alignment: .leading, spacing: 8) {
                     Text(title)
                         .font(.system(size: 20, weight: .semibold))
-                        .foregroundColor(.black)
+                        .foregroundColor(.white)
                     
                     Text(description)
                         .font(.system(size: 15))
-                        .foregroundColor(.gray)
+                        .foregroundColor(.white.opacity(0.6))
                         .multilineTextAlignment(.leading)
                 }
                 
                 Spacer()
             }
             .padding(20)
-            .background(Color.white)
+            .background(Color.white.opacity(0.03))
             .overlay(
                 RoundedRectangle(cornerRadius: 16)
-                    .stroke(isSelected ? Color.black : Color(UIColor.systemGray4), lineWidth: isSelected ? 3 : 1)
+                    .stroke(isSelected ? Color.white : Color.white.opacity(0.2), lineWidth: isSelected ? 3 : 1)
             )
             .cornerRadius(16)
         }
