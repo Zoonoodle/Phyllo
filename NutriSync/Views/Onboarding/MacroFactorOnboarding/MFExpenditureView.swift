@@ -90,7 +90,7 @@ struct MFExpenditureView: View {
                         Image(systemName: "chevron.right")
                             .font(.system(size: 14, weight: .semibold))
                     }
-                    .foregroundColor(Color(hex: "0A0A0A"))
+                    .foregroundColor(Color.nutriSyncBackground)
                     .frame(maxWidth: .infinity)
                     .frame(height: 50)
                     .background(Color.white)
@@ -118,7 +118,7 @@ struct MFExpenditureView: View {
             }
             .padding(.bottom, 34)
         }
-        .background(Color(hex: "0A0A0A"))
+        .background(Color.nutriSyncBackground)
     }
 }
 

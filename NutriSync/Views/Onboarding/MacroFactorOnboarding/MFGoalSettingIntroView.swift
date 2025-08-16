@@ -86,7 +86,7 @@ struct MFGoalSettingIntroView: View {
             } label: {
                 Text("Go to Goal Setup")
                     .font(.system(size: 17, weight: .semibold))
-                    .foregroundColor(Color(hex: "0A0A0A"))
+                    .foregroundColor(Color.nutriSyncBackground)
                     .frame(maxWidth: .infinity)
                     .frame(height: 50)
                     .background(Color.white)
@@ -95,7 +95,7 @@ struct MFGoalSettingIntroView: View {
             .padding(.horizontal, 20)
             .padding(.bottom, 34)
         }
-        .background(Color(hex: "0A0A0A"))
+        .background(Color.nutriSyncBackground)
     }
 }
 

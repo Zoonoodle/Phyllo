@@ -91,7 +91,7 @@ struct MFGoalSelectionView: View {
             .padding(.horizontal, 20)
             .padding(.bottom, 34)
         }
-        .background(Color(hex: "0A0A0A"))
+        .background(Color.nutriSyncBackground)
     }
 }
 

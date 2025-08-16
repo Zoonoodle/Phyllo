@@ -74,7 +74,7 @@ struct MFDietPreferenceView: View {
                         Image(systemName: "chevron.right")
                             .font(.system(size: 14, weight: .semibold))
                     }
-                    .foregroundColor(Color(hex: "0A0A0A"))
+                    .foregroundColor(Color.nutriSyncBackground)
                     .padding(.horizontal, 24)
                     .frame(height: 44)
                     .background(Color.white)
@@ -84,7 +84,7 @@ struct MFDietPreferenceView: View {
             .padding(.horizontal, 20)
             .padding(.bottom, 34)
         }
-        .background(Color(hex: "0A0A0A"))
+        .background(Color.nutriSyncBackground)
     }
 }
 

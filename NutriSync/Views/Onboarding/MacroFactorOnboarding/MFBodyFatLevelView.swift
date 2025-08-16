@@ -88,7 +88,7 @@ struct MFBodyFatLevelView: View {
                         Image(systemName: "chevron.right")
                             .font(.system(size: 14, weight: .semibold))
                     }
-                    .foregroundColor(Color(hex: "0A0A0A"))
+                    .foregroundColor(Color.nutriSyncBackground)
                     .padding(.horizontal, 24)
                     .frame(height: 44)
                     .background(Color.white)
@@ -98,7 +98,7 @@ struct MFBodyFatLevelView: View {
             .padding(.horizontal, 20)
             .padding(.bottom, 34)
         }
-        .background(Color(hex: "0A0A0A"))
+        .background(Color.nutriSyncBackground)
     }
 }
 
@@ -119,12 +119,12 @@ struct BodyFatOption: View {
                     // Placeholder for body silhouette
                     Image(systemName: "person.fill")
                         .font(.system(size: 40))
-                        .foregroundColor(isSelected ? Color(hex: "0A0A0A") : .white.opacity(0.5))
+                        .foregroundColor(isSelected ? Color.nutriSyncBackground : .white.opacity(0.5))
                     
                     if isSelected {
                         Image(systemName: "checkmark")
                             .font(.system(size: 24, weight: .bold))
-                            .foregroundColor(Color(hex: "0A0A0A"))
+                            .foregroundColor(Color.nutriSyncBackground)
                     }
                 }
                 

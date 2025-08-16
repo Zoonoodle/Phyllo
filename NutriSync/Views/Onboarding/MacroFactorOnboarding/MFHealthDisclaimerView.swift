@@ -100,7 +100,7 @@ struct MFHealthDisclaimerView: View {
             } label: {
                 Text("Accept and Continue")
                     .font(.system(size: 17, weight: .medium))
-                    .foregroundColor(bothAccepted ? Color(hex: "0A0A0A") : .white.opacity(0.5))
+                    .foregroundColor(bothAccepted ? Color.nutriSyncBackground : .white.opacity(0.5))
                     .frame(maxWidth: .infinity)
                     .frame(height: 50)
                     .background(bothAccepted ? Color.white : Color.white.opacity(0.1))
@@ -110,7 +110,7 @@ struct MFHealthDisclaimerView: View {
             .padding(.horizontal, 20)
             .padding(.bottom, 34)
         }
-        .background(Color(hex: "0A0A0A"))
+        .background(Color.nutriSyncBackground)
     }
     
     private var bothAccepted: Bool {
