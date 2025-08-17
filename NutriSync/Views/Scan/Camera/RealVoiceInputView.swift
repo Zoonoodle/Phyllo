@@ -19,6 +19,7 @@ struct RealVoiceInputView: View {
     @State private var transcribedText = ""
     @State private var showPermissionAlert = false
     @State private var permissionStatus = SFSpeechRecognizerAuthorizationStatus.notDetermined
+    @State private var showTips = false
     
     // Speech recognition properties
     @State private var speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
@@ -49,7 +50,7 @@ struct RealVoiceInputView: View {
                 // Top info icon
                 HStack {
                     Spacer()
-                    Button(action: {}) {
+                    Button(action: { showTips.toggle() }) {
                         Image(systemName: "info.circle")
                             .font(.system(size: 22))
                             .foregroundColor(.white.opacity(0.6))
@@ -58,8 +59,11 @@ struct RealVoiceInputView: View {
                 }
                 .padding(.top, 60)
                 
-                // Transcribed text
-                if !transcribedText.isEmpty {
+                // Instructional content or transcribed text
+                if transcribedText.isEmpty && !isListening {
+                    instructionalContent
+                        .transition(.opacity.combined(with: .scale(0.95)))
+                } else if !transcribedText.isEmpty {
                     ScrollView {
                         Text(transcribedText)
                             .font(.system(size: 18, weight: .medium))
@@ -74,6 +78,7 @@ struct RealVoiceInputView: View {
                     }
                     .frame(maxHeight: 150)
                     .padding(.horizontal)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
                 }
                 
                 Spacer()
@@ -109,6 +114,9 @@ struct RealVoiceInputView: View {
             }
         } message: {
             Text("Please enable speech recognition in Settings to describe your meal with voice.")
+        }
+        .sheet(isPresented: $showTips) {
+            tipsSheet
         }
     }
     
@@ -247,6 +255,182 @@ struct RealVoiceInputView: View {
                 }
             }
         }
+    }
+    
+    private var instructionalContent: some View {
+        VStack(spacing: 24) {
+            // Title
+            Text("Describe Your Meal")
+                .font(.system(size: 28, weight: .semibold))
+                .foregroundColor(.white)
+            
+            // Instructions
+            VStack(spacing: 16) {
+                Text("For the most accurate nutrition data:")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(.white.opacity(0.9))
+                
+                VStack(alignment: .leading, spacing: 12) {
+                    instructionItem(
+                        icon: "tag.fill",
+                        text: "Mention brand names",
+                        example: "\"Starbucks venti iced coffee\""
+                    )
+                    
+                    instructionItem(
+                        icon: "scalemass.fill",
+                        text: "Include portion sizes",
+                        example: "\"Large bowl of pasta\" or \"8 oz steak\""
+                    )
+                    
+                    instructionItem(
+                        icon: "list.bullet",
+                        text: "List all ingredients you know",
+                        example: "\"Salad with chicken, avocado, and ranch\""
+                    )
+                }
+                .padding(.horizontal, 20)
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 24)
+            .background(
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(Color.black.opacity(0.3))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 20)
+                            .strokeBorder(Color.white.opacity(0.1), lineWidth: 1)
+                    )
+            )
+            .padding(.horizontal, 20)
+        }
+        .animation(.easeOut(duration: 0.3), value: isListening)
+    }
+    
+    private func instructionItem(icon: String, text: String, example: String) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 16))
+                .foregroundColor(.green)
+                .frame(width: 20)
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text(text)
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundColor(.white)
+                
+                Text(example)
+                    .font(.system(size: 13))
+                    .foregroundColor(.white.opacity(0.6))
+                    .italic()
+            }
+            
+            Spacer()
+        }
+    }
+    
+    private var tipsSheet: some View {
+        NavigationView {
+            ZStack {
+                Color.black.ignoresSafeArea()
+                
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 24) {
+                        // Header
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Voice Description Tips")
+                                .font(.system(size: 32, weight: .bold))
+                                .foregroundColor(.white)
+                            
+                            Text("Get the most accurate nutrition analysis")
+                                .font(.system(size: 16))
+                                .foregroundColor(.white.opacity(0.7))
+                        }
+                        .padding(.bottom, 8)
+                        
+                        // Tips sections
+                        tipSection(
+                            title: "🏷️ Brand Names Matter",
+                            description: "Our AI can search for exact nutrition data from restaurants and brands.",
+                            examples: [
+                                "\"McDonald's Big Mac with medium fries\"",
+                                "\"Chipotle chicken burrito bowl\"",
+                                "\"Trader Joe's cauliflower gnocchi\""
+                            ]
+                        )
+                        
+                        tipSection(
+                            title: "📏 Be Specific About Portions",
+                            description: "The more specific you are about amounts, the more accurate the analysis.",
+                            examples: [
+                                "\"12 oz ribeye steak\" instead of \"steak\"",
+                                "\"2 cups of brown rice\" instead of \"rice\"",
+                                "\"Half an avocado\" instead of \"avocado\""
+                            ]
+                        )
+                        
+                        tipSection(
+                            title: "🥗 List All Ingredients",
+                            description: "Don't forget sauces, dressings, and cooking methods.",
+                            examples: [
+                                "\"Grilled chicken Caesar salad with croutons and parmesan\"",
+                                "\"Scrambled eggs cooked in butter with cheddar cheese\"",
+                                "\"Whole wheat pasta with marinara sauce and olive oil\""
+                            ]
+                        )
+                        
+                        tipSection(
+                            title: "🎯 Why This Helps",
+                            description: "When you mention brands or restaurants, our AI automatically searches for official nutrition data. For homemade meals, detailed descriptions help estimate portions and identify all ingredients.",
+                            examples: []
+                        )
+                    }
+                    .padding()
+                }
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") {
+                        showTips = false
+                    }
+                    .foregroundColor(.green)
+                }
+            }
+        }
+    }
+    
+    private func tipSection(title: String, description: String, examples: [String]) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(title)
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundColor(.white)
+            
+            Text(description)
+                .font(.system(size: 15))
+                .foregroundColor(.white.opacity(0.8))
+                .fixedSize(horizontal: false, vertical: true)
+            
+            if !examples.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    ForEach(examples, id: \.self) { example in
+                        HStack(alignment: .top, spacing: 8) {
+                            Text("•")
+                                .foregroundColor(.green)
+                            Text(example)
+                                .font(.system(size: 14))
+                                .foregroundColor(.white.opacity(0.6))
+                                .italic()
+                        }
+                    }
+                }
+                .padding(.leading, 8)
+            }
+        }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color.white.opacity(0.03))
+        )
     }
     
     // MARK: - Helper Methods

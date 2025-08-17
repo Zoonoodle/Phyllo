@@ -29,6 +29,7 @@ class NudgeManager: ObservableObject {
         case missedWindow(window: MealWindow)
         case activeWindowReminder(window: MealWindow, timeRemaining: Int)
         case postMealCheckIn(meal: LoggedMeal)
+        case voiceInputTips
         
         var id: String {
             switch self {
@@ -44,6 +45,8 @@ class NudgeManager: ObservableObject {
                 return "reminder_\(window.id)"
             case .postMealCheckIn(let meal):
                 return "postmeal_checkin_\(meal.id)"
+            case .voiceInputTips:
+                return "voice_input_tips"
             }
         }
         
@@ -53,7 +56,7 @@ class NudgeManager: ObservableObject {
                 return .critical
             case .activeWindowReminder, .postMealCheckIn:
                 return .prominent
-            case .mealLoggedCelebration, .firstTimeTutorial:
+            case .mealLoggedCelebration, .firstTimeTutorial, .voiceInputTips:
                 return .gentle
             }
         }
@@ -220,7 +223,7 @@ class NudgeManager: ObservableObject {
     
     private func shouldPermanentlyDismiss(_ nudge: NudgeType) -> Bool {
         switch nudge {
-        case .firstTimeTutorial, .mealLoggedCelebration:
+        case .firstTimeTutorial, .mealLoggedCelebration, .voiceInputTips:
             return true
         case .morningCheckIn, .missedWindow, .activeWindowReminder, .postMealCheckIn:
             return false // Can reappear

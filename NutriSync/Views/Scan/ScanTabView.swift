@@ -320,12 +320,12 @@ struct ScanTabView: View {
                 }
             }
         } else if selectedMode == .voice {
-            // For voice-only mode, start analyzing immediately
+            // For voice-only mode, show voice input
             captureAnimation = false
             Task { @MainActor in
-                DebugLogger.shared.ui("Starting voice-only analysis")
+                DebugLogger.shared.ui("Starting voice-only capture")
             }
-            simulateAIProcessing()
+            showVoiceInput = true
         } else {
             // For barcode, start analyzing
             captureAnimation = false

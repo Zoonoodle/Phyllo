@@ -41,6 +41,22 @@ class MealCaptureService: ObservableObject {
             DebugLogger.shared.mealAnalysis("Starting meal analysis - Image: \(image != nil), Voice: \(voiceTranscript != nil), Barcode: \(barcode != nil)")
         }
         
+        // Validate that we have at least one input
+        let hasImage = image != nil
+        let hasVoice = voiceTranscript != nil && !voiceTranscript!.isEmpty
+        let hasBarcode = barcode != nil && !barcode!.isEmpty
+        
+        if !hasImage && !hasVoice && !hasBarcode {
+            Task { @MainActor in
+                DebugLogger.shared.error("Cannot analyze meal without any input (no image, voice, or barcode)")
+            }
+            throw NSError(
+                domain: "MealCaptureService",
+                code: 400,
+                userInfo: [NSLocalizedDescriptionKey: "Cannot analyze meal without any input. Please capture a photo, provide a voice description, or scan a barcode."]
+            )
+        }
+        
         // Find the best window for this meal
         Task { @MainActor in
             DebugLogger.shared.dataProvider("Fetching current windows")
