@@ -294,9 +294,7 @@ struct RealVoiceInputView: View {
         recognitionRequest.requiresOnDeviceRecognition = false
         
         // Start recognition task
-        recognitionTask = speechRecognizer?.recognitionTask(with: recognitionRequest) { [weak self] result, error in
-            guard let self = self else { return }
-            
+        recognitionTask = speechRecognizer?.recognitionTask(with: recognitionRequest) { result, error in
             if let result = result {
                 self.transcribedText = result.bestTranscription.formattedString
             }
@@ -310,11 +308,11 @@ struct RealVoiceInputView: View {
         let inputNode = audioEngine.inputNode
         let recordingFormat = inputNode.outputFormat(forBus: 0)
         
-        inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { [weak self] buffer, _ in
-            self?.recognitionRequest?.append(buffer)
+        inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { buffer, _ in
+            self.recognitionRequest?.append(buffer)
             
             // Update audio levels based on actual audio
-            self?.updateRealAudioLevels(from: buffer)
+            self.updateRealAudioLevels(from: buffer)
         }
         
         // Start audio engine
