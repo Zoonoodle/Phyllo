@@ -107,6 +107,15 @@ struct NudgeContainer: View {
                     )
                     .zIndex(10001)
                     .transition(.opacity.combined(with: .scale(scale: 0.9)))
+                    
+                case .voiceInputTips:
+                    VoiceInputTipsNudge(
+                        onDismiss: {
+                            nudgeManager.dismissCurrentNudge()
+                        }
+                    )
+                    .zIndex(10001)
+                    .transition(.opacity.combined(with: .scale(scale: 0.9)))
                 }
             }
         }
