@@ -23,6 +23,8 @@ struct ScanTabView: View {
     @State private var lastCompletedMeal: LoggedMeal?
     @State private var showImagePicker = false
     @State private var analysisResult: MealAnalysisResult?
+    @State private var capturePhotoTrigger = false
+    @State private var voiceTranscript: String?
     @StateObject private var clarificationManager = ClarificationManager.shared
     @StateObject private var mealCaptureService = MealCaptureService.shared
     
@@ -49,8 +51,11 @@ struct ScanTabView: View {
                 Color.black.ignoresSafeArea()
                 
                 // Camera preview layer
-                CameraPreviewView()
-                    .ignoresSafeArea()
+                CameraView(
+                    capturedImage: $capturedImage,
+                    capturePhoto: $capturePhotoTrigger
+                )
+                .ignoresSafeArea()
                 
                 // Scanner overlay
                 ScannerOverlayView()
@@ -163,13 +168,12 @@ struct ScanTabView: View {
                 .ignoresSafeArea(.keyboard)
             }
             .fullScreenCover(isPresented: $showVoiceInput) {
-                VoiceInputView()
-                    .onDisappear {
-                        if !showVoiceInput {
-                            // Voice input completed, start analyzing
-                            simulateAIProcessing()
-                        }
-                    }
+                VoiceInputView(capturedImage: capturedImage) { transcript in
+                    voiceTranscript = transcript
+                    showVoiceInput = false
+                    // Voice input completed, start analyzing
+                    simulateAIProcessing()
+                }
             }
             .sheet(isPresented: $showQuickLog) {
                 QuickLogView()
@@ -301,28 +305,34 @@ struct ScanTabView: View {
             captureAnimation = true
         }
         
-        // Simulate capture and navigate to voice input
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            captureAnimation = false
-            if selectedMode == .photo {
-                // For photo mode, show voice input overlay
-                Task { @MainActor in
-                    DebugLogger.shared.ui("Showing voice input overlay")
+        if selectedMode == .photo {
+            // Trigger actual photo capture
+            capturePhotoTrigger = true
+            
+            // Check for captured image after a brief delay
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                captureAnimation = false
+                if capturedImage != nil {
+                    Task { @MainActor in
+                        DebugLogger.shared.ui("Photo captured, showing voice input overlay")
+                    }
+                    showVoiceInput = true
                 }
-                showVoiceInput = true
-            } else if selectedMode == .voice {
-                // For voice-only mode, start analyzing immediately
-                Task { @MainActor in
-                    DebugLogger.shared.ui("Starting voice-only analysis")
-                }
-                simulateAIProcessing()
-            } else {
-                // For barcode, start analyzing
-                Task { @MainActor in
-                    DebugLogger.shared.ui("Starting barcode analysis")
-                }
-                simulateAIProcessing()
             }
+        } else if selectedMode == .voice {
+            // For voice-only mode, start analyzing immediately
+            captureAnimation = false
+            Task { @MainActor in
+                DebugLogger.shared.ui("Starting voice-only analysis")
+            }
+            simulateAIProcessing()
+        } else {
+            // For barcode, start analyzing
+            captureAnimation = false
+            Task { @MainActor in
+                DebugLogger.shared.ui("Starting barcode analysis")
+            }
+            simulateAIProcessing()
         }
     }
     
@@ -337,7 +347,7 @@ struct ScanTabView: View {
                 // Start analyzing meal with real or mock AI
                 let analyzingMeal = try await mealCaptureService.startMealAnalysis(
                     image: capturedImage,
-                    voiceTranscript: nil // TODO: Add voice transcript support
+                    voiceTranscript: voiceTranscript
                 )
                 
                 Task { @MainActor in
@@ -348,6 +358,10 @@ struct ScanTabView: View {
                 
                 await MainActor.run {
                     currentAnalyzingMeal = analyzingMeal
+                    
+                    // Reset capture state
+                    capturedImage = nil
+                    voiceTranscript = nil
                     
                     // Navigate to timeline and scroll to analyzing meal
                     Task { @MainActor in

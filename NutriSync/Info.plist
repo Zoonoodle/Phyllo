@@ -12,6 +12,8 @@
 	<string>NutriSync writes nutrition data to Health to track your dietary intake alongside other health metrics.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>NutriSync uses the microphone for voice descriptions of meals to improve analysis accuracy.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>NutriSync uses speech recognition to convert your voice descriptions to text for meal logging.</string>
 	<key>NSUserNotificationsUsageDescription</key>
 	<string>NutriSync sends timely reminders for your meal windows and check-ins to help you stay on track with your nutrition goals.</string>
 	<key>UIBackgroundModes</key>
