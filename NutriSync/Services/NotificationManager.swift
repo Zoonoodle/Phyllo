@@ -459,7 +459,7 @@ enum NotificationType {
 
 // MARK: - UNUserNotificationCenterDelegate
 
-extension NotificationManager: @preconcurrency UNUserNotificationCenterDelegate {
+extension NotificationManager: UNUserNotificationCenterDelegate {
     
     // Handle notifications when app is in foreground
     nonisolated func userNotificationCenter(

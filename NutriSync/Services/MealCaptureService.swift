@@ -223,20 +223,65 @@ class MealCaptureService: ObservableObject {
                     
                 } else if let voiceTranscript = voiceTranscript {
                     // Voice-only analysis
-                    // TODO: Implement voice-only analysis
-                    let mockResult = createMockVoiceResult(transcript: voiceTranscript)
-                    let savedMeal = try await dataProvider.completeAnalyzingMeal(
-                        id: analyzingMeal.id.uuidString,
-                        result: mockResult
+                    Task { @MainActor in
+                        DebugLogger.shared.mealAnalysis("Processing voice-only analysis")
+                    }
+                    
+                    // Use VertexAI for voice-only analysis
+                    let (result, analysisMetadata) = try await analyzeWithAI(
+                        image: nil,
+                        voiceTranscript: voiceTranscript,
+                        analyzingMeal: analyzingMeal
                     )
                     
-                    // Post notification with the completed meal
-                    await MainActor.run {
-                        NotificationCenter.default.post(
-                            name: .mealAnalysisCompleted,
-                            object: analyzingMeal,
-                            userInfo: ["result": mockResult, "savedMeal": savedMeal]
+                    // Check if clarification is needed
+                    if !result.clarifications.isEmpty {
+                        Task { @MainActor in
+                            DebugLogger.shared.mealAnalysis("Clarification needed with \(result.clarifications.count) questions")
+                        }
+                        // Complete the meal in data provider
+                        let savedMeal = try await dataProvider.completeAnalyzingMeal(
+                            id: analyzingMeal.id.uuidString,
+                            result: result
                         )
+                        
+                        // Store metadata for celebration nudge
+                        storeAnalysisMetadata(analysisMetadata, for: savedMeal.id)
+                        
+                        // Post notification with clarification
+                        await MainActor.run {
+                            NotificationCenter.default.post(
+                                name: .mealAnalysisClarificationNeeded,
+                                object: analyzingMeal,
+                                userInfo: ["result": result, "savedMeal": savedMeal, "metadata": analysisMetadata as Any]
+                            )
+                        }
+                    } else {
+                        // Complete analysis without clarification
+                        var savedMeal = try await dataProvider.completeAnalyzingMeal(
+                            id: analyzingMeal.id.uuidString,
+                            result: result
+                        )
+                        
+                        // Store metadata for celebration nudge
+                        storeAnalysisMetadata(analysisMetadata, for: savedMeal.id)
+                        
+                        Task { @MainActor in
+                            DebugLogger.shared.success("Voice-only meal analysis completed: \(result.mealName)")
+                            DebugLogger.shared.notification("Posting mealAnalysisCompleted notification")
+                        }
+                        
+                        // Schedule post-meal check-in reminder
+                        await notificationManager.schedulePostMealCheckIn(for: savedMeal)
+                        
+                        // Post notification with the completed meal
+                        await MainActor.run {
+                            NotificationCenter.default.post(
+                                name: .mealAnalysisCompleted,
+                                object: analyzingMeal,
+                                userInfo: ["result": result, "savedMeal": savedMeal, "metadata": analysisMetadata as Any]
+                            )
+                        }
                     }
                 }
                 
@@ -267,7 +312,7 @@ class MealCaptureService: ObservableObject {
     
     /// Analyze meal with AI
     private func analyzeWithAI(
-        image: UIImage,
+        image: UIImage?,
         voiceTranscript: String?,
         analyzingMeal: AnalyzingMeal
     ) async throws -> (MealAnalysisResult, AnalysisMetadata?) {

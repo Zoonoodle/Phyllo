@@ -54,18 +54,31 @@ class VertexAIService: ObservableObject {
             analysisProgress = 1.0
         }
         
-        // Compress image
-        Task { @MainActor in
-            DebugLogger.shared.mealAnalysis("Compressing image for analysis")
-        }
-        guard let imageData = compressImage(request.image) else {
+        // Compress image if provided
+        var imageData: Data? = nil
+        if let image = request.image {
             Task { @MainActor in
-                DebugLogger.shared.error("Image compression failed")
+                DebugLogger.shared.mealAnalysis("Compressing image for analysis")
             }
-            throw AnalysisError.imageCompressionFailed
-        }
-        Task { @MainActor in
-            DebugLogger.shared.info("Image compressed to \(imageData.count / 1024)KB")
+            imageData = compressImage(image)
+            if imageData == nil {
+                Task { @MainActor in
+                    DebugLogger.shared.error("Image compression failed")
+                }
+                throw AnalysisError.imageCompressionFailed
+            }
+            Task { @MainActor in
+                DebugLogger.shared.info("Image compressed to \((imageData?.count ?? 0) / 1024)KB")
+            }
+        } else if request.voiceTranscript != nil {
+            Task { @MainActor in
+                DebugLogger.shared.mealAnalysis("Voice-only analysis - no image to compress")
+            }
+        } else {
+            Task { @MainActor in
+                DebugLogger.shared.error("No image or voice transcript provided")
+            }
+            throw AnalysisError.noInputProvided
         }
         
         analysisProgress = 0.2
@@ -127,6 +140,57 @@ class VertexAIService: ObservableObject {
         
         let voiceInfo = request.voiceTranscript.map { "VOICE DESCRIPTION: \($0)" } ?? ""
         
+        // Voice-only analysis
+        if request.image == nil, let voiceTranscript = request.voiceTranscript {
+            return """
+            You are an expert nutritionist analyzing a meal based on a voice description.
+            
+            USER CONTEXT:
+            - Goal: \(request.userContext.primaryGoal.displayName)
+            - Daily Targets: \(request.userContext.dailyMacros)
+            - \(windowInfo)
+            
+            VOICE DESCRIPTION: \(voiceTranscript)
+            
+            ANALYZE THE DESCRIBED MEAL AND PROVIDE:
+            
+            1. MEAL IDENTIFICATION
+               - Parse the voice description carefully for brands, portion sizes, and ingredients
+               - Name: [concise meal name based on description]
+               - Confidence: [0.7-0.95] - based on description clarity
+               - If a brand/restaurant is mentioned, set brandDetected and consider requesting tools
+            
+            2. NUTRITION ESTIMATION
+               - Use standard portions if not specified
+               - For branded items, provide typical nutrition data
+               - Be accurate with common items (e.g., "cup of coffee with cream" = ~50 cal)
+            
+            3. CLARIFICATIONS
+               - Ask about missing portion sizes
+               - Ask about preparation methods if unclear
+               - Ask about specific ingredients if generic
+            
+            OUTPUT FORMAT - STRICT JSON:
+            {
+              "mealName": "Descriptive name based on voice input",
+              "confidence": 0.8,
+              "ingredients": [
+                {"name": "ingredient", "amount": "1", "unit": "cup", "foodGroup": "category"}
+              ],
+              "nutrition": {
+                "calories": 50,
+                "protein": 0.5,
+                "carbs": 1.0,
+                "fat": 5.0
+              },
+              "micronutrients": [],
+              "clarifications": [],
+              "requestedTools": ["brand_search"] // if brand mentioned
+            }
+            """
+        }
+        
+        // Image-based analysis (with optional voice)
         return """
         You are an expert nutritionist analyzing a meal photo for precise tracking.
         
@@ -239,35 +303,34 @@ class VertexAIService: ObservableObject {
         """
     }
     
-    private func callGeminiAI(prompt: String, imageData: Data) async throws -> MealAnalysisResult {
+    private func callGeminiAI(prompt: String, imageData: Data?) async throws -> MealAnalysisResult {
         analysisProgress = 0.4
         
-        // Upload image to Firebase Storage temporarily
-        let imagePath = "temp_meal_images/\(UUID().uuidString).jpg"
-        let imageRef = storage.reference().child(imagePath)
+        var imageRef: StorageReference? = nil
         
-        Task { @MainActor in
-            DebugLogger.shared.firebase("Uploading image to Firebase Storage: \(imagePath)")
-        }
-        
-        let metadata = StorageMetadata()
-        metadata.contentType = "image/jpeg"
-        
-        // Upload with automatic deletion after 24 hours
-        metadata.customMetadata = ["deleteAfter": String(Date().addingTimeInterval(86400).timeIntervalSince1970)]
-        
-        _ = try await imageRef.putDataAsync(imageData, metadata: metadata)
-        Task { @MainActor in
-            DebugLogger.shared.success("Image uploaded to Firebase Storage")
+        // Handle image upload if provided
+        if let imageData = imageData {
+            // Upload image to Firebase Storage temporarily
+            let imagePath = "temp_meal_images/\(UUID().uuidString).jpg"
+            imageRef = storage.reference().child(imagePath)
+            
+            Task { @MainActor in
+                DebugLogger.shared.firebase("Uploading image to Firebase Storage: \(imagePath)")
+            }
+            
+            let metadata = StorageMetadata()
+            metadata.contentType = "image/jpeg"
+            
+            // Upload with automatic deletion after 24 hours
+            metadata.customMetadata = ["deleteAfter": String(Date().addingTimeInterval(86400).timeIntervalSince1970)]
+            
+            _ = try await imageRef!.putDataAsync(imageData, metadata: metadata)
+            Task { @MainActor in
+                DebugLogger.shared.success("Image uploaded to Firebase Storage")
+            }
         }
         
         analysisProgress = 0.5
-        
-        // Create multi-modal prompt with image
-        let imageContent = InlineDataPart(data: imageData, mimeType: "image/jpeg")
-        let textContent = prompt
-        
-        analysisProgress = 0.6
         
         // Generate content using Firebase AI (Gemini)
         Task { @MainActor in
@@ -275,7 +338,18 @@ class VertexAIService: ObservableObject {
         }
         let aiStart = Date()
         
-        let response = try await model.generateContent(imageContent, textContent)
+        let response: GenerateContentResponse
+        if let imageData = imageData {
+            // Multi-modal prompt with image
+            let imageContent = InlineDataPart(data: imageData, mimeType: "image/jpeg")
+            let textContent = prompt
+            analysisProgress = 0.6
+            response = try await model.generateContent(imageContent, textContent)
+        } else {
+            // Text-only prompt for voice-only analysis
+            analysisProgress = 0.6
+            response = try await model.generateContent(prompt)
+        }
         
         Task { @MainActor in
             let elapsed = Date().timeIntervalSince(aiStart)
@@ -311,10 +385,12 @@ class VertexAIService: ObservableObject {
             throw AnalysisError.invalidResponse
         }
         
-        // Schedule image deletion
-        Task {
-            try? await Task.sleep(nanoseconds: 86_400_000_000_000) // 24 hours
-            try? await imageRef.delete()
+        // Schedule image deletion if uploaded
+        if let imageRef = imageRef {
+            Task {
+                try? await Task.sleep(nanoseconds: 86_400_000_000_000) // 24 hours
+                try? await imageRef.delete()
+            }
         }
         
         do {
@@ -485,11 +561,14 @@ class VertexAIService: ObservableObject {
         case invalidResponse
         case networkError(String)
         case quotaExceeded
+        case noInputProvided
         
         var errorDescription: String? {
             switch self {
             case .imageCompressionFailed:
                 return "Failed to process the image"
+            case .noInputProvided:
+                return "No image or voice description provided"
             case .invalidResponse:
                 return "Invalid response from AI service"
             case .networkError(let message):

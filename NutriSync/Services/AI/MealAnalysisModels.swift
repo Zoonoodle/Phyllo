@@ -5,7 +5,7 @@ import UIKit
 // Shared models for AI meal analysis
 
 struct MealAnalysisRequest {
-    let image: UIImage
+    let image: UIImage?
     let voiceTranscript: String?
     let userContext: UserNutritionContext
     let mealWindow: MealWindow?

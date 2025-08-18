@@ -124,13 +124,6 @@ struct NameInputView: View {
     }
 }
 
-// Helper to hide keyboard
-extension View {
-    func hideKeyboard() {
-        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-    }
-}
-
 #Preview {
     NameInputView(viewModel: OnboardingViewModel())
 }
