@@ -267,13 +267,13 @@ struct RealVoiceInputView: View {
     }
     
     private var instructionalContent: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: 20) {
             // Title
             Text("Describe Your Meal")
                 .font(.system(size: 28, weight: .semibold))
                 .foregroundColor(.white)
             
-            // Instructions
+            // Instructions box
             VStack(spacing: 16) {
                 Text("For the most accurate nutrition data:")
                     .font(.system(size: 16, weight: .medium))
@@ -298,10 +298,8 @@ struct RealVoiceInputView: View {
                         example: "\"Salad with chicken, avocado, and ranch\""
                     )
                 }
-                .padding(.horizontal, 20)
             }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 24)
+            .padding(20)
             .background(
                 RoundedRectangle(cornerRadius: 20)
                     .fill(Color.black.opacity(0.3))
@@ -310,8 +308,8 @@ struct RealVoiceInputView: View {
                             .strokeBorder(Color.white.opacity(0.1), lineWidth: 1)
                     )
             )
-            .padding(.horizontal, 20)
         }
+        .padding(.horizontal, 20)
         .animation(.easeOut(duration: 0.3), value: isListening)
     }
     

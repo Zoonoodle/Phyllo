@@ -55,6 +55,7 @@ enum MFOnboardingSection: String, CaseIterable {
 struct MFOnboardingFlow {
     static let sections: [MFOnboardingSection: [String]] = [
         .basics: [
+            "Basic Info",
             "Weight",
             "Body Fat",
             "Exercise",

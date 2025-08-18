@@ -11,7 +11,16 @@ struct MFOnboardingPreview: View {
     @State private var selectedScreen = 0
     
     let screens = [
+        // Section Intros & Full Flow (at the beginning for easy access)
+        ("Full Onboarding", AnyView(MFOnboardingCoordinator())),
+        ("Section Nav", AnyView(MFSectionIntroView(
+            section: .basics,
+            completedSections: [],
+            onContinue: {}
+        ))),
+        
         // Basics
+        ("Basic Info", AnyView(MFBasicInfoView())),
         ("Weight", AnyView(MFWeightView())),
         ("Body Fat", AnyView(MFBodyFatLevelView())),
         ("Exercise", AnyView(MFExerciseFrequencyView())),
@@ -34,25 +43,13 @@ struct MFOnboardingPreview: View {
         ("Training Plan", AnyView(MFTrainingPlanView())),
         ("Calorie Floor", AnyView(MFCalorieFloorView())),
         ("Calorie Distribution", AnyView(MFCalorieDistributionView())),
-        
-        // Meal Timing (New)
         ("Sleep Schedule", AnyView(MFSleepScheduleView())),
         ("Meal Frequency", AnyView(MFMealFrequencyView())),
         ("Breakfast Habit", AnyView(MFBreakfastHabitView())),
         ("Eating Window", AnyView(MFEatingWindowView())),
         
         // Finish
-        ("Review Program", AnyView(MFReviewProgramView())),
-        
-        // Section Intros
-        ("Section Nav", AnyView(MFSectionIntroView(
-            section: .basics,
-            completedSections: [],
-            onContinue: {}
-        ))),
-        
-        // Full Flow
-        ("Full Onboarding", AnyView(MFOnboardingCoordinator()))
+        ("Review Program", AnyView(MFReviewProgramView()))
     ]
     
     var body: some View {
