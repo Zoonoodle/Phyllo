@@ -46,7 +46,7 @@ struct RealVoiceInputView: View {
                 .ignoresSafeArea()
             
             // Main content
-            VStack(spacing: 0) {
+            VStack(spacing: 20) {
                 // Top info icon
                 HStack {
                     Spacer()
@@ -57,11 +57,12 @@ struct RealVoiceInputView: View {
                             .padding()
                     }
                 }
-                .padding(.top, 60)
+                .padding(.top, 40)
                 
                 // Instructional content or transcribed text
                 if transcribedText.isEmpty && !isListening {
                     instructionalContent
+                        .padding(.top, 10)
                         .transition(.opacity.combined(with: .scale(0.95)))
                 } else if !transcribedText.isEmpty {
                     ScrollView {
@@ -81,16 +82,16 @@ struct RealVoiceInputView: View {
                     .transition(.opacity.combined(with: .move(edge: .top)))
                 }
                 
-                Spacer()
+                Spacer(minLength: 20)
                 
                 // Central listening indicator
                 listeningIndicator
                 
-                Spacer()
+                Spacer(minLength: 20)
                 
                 // Bottom controls
                 bottomControls
-                    .padding(.bottom, 50)
+                    .padding(.bottom, 40)
             }
         }
         .preferredColorScheme(.dark)
@@ -302,10 +303,10 @@ struct RealVoiceInputView: View {
             .padding(20)
             .background(
                 RoundedRectangle(cornerRadius: 20)
-                    .fill(Color.black.opacity(0.3))
+                    .fill(Color.black.opacity(0.5))
                     .overlay(
                         RoundedRectangle(cornerRadius: 20)
-                            .strokeBorder(Color.white.opacity(0.1), lineWidth: 1)
+                            .strokeBorder(Color.white.opacity(0.15), lineWidth: 1)
                     )
             )
         }
@@ -324,11 +325,13 @@ struct RealVoiceInputView: View {
                 Text(text)
                     .font(.system(size: 15, weight: .medium))
                     .foregroundColor(.white)
+                    .fixedSize(horizontal: false, vertical: true)
                 
                 Text(example)
                     .font(.system(size: 13))
                     .foregroundColor(.white.opacity(0.6))
                     .italic()
+                    .fixedSize(horizontal: false, vertical: true)
             }
             
             Spacer()
