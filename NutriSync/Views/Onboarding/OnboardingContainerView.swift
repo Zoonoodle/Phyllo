@@ -137,7 +137,10 @@ enum OnboardingScreen: CaseIterable {
     case goodNews
     
     // Profile Section
-    case basicInfo
+    case nameInput
+    case birthday
+    case gender
+    case height
     case bodyMetrics
     case bodyComposition
     
@@ -165,7 +168,7 @@ enum OnboardingScreen: CaseIterable {
         switch self {
         case .permissions, .welcome, .impactCalculator, .goodNews:
             return .welcome
-        case .basicInfo, .bodyMetrics, .bodyComposition:
+        case .nameInput, .birthday, .gender, .height, .bodyMetrics, .bodyComposition:
             return .profile
         case .primaryGoal, .weightGoal, .secondaryGoals:
             return .goals
@@ -356,8 +359,14 @@ struct OnboardingScreenView: View {
                 ImpactCalculatorView(viewModel: viewModel)
             case .goodNews:
                 GoodNewsView(viewModel: viewModel)
-            case .basicInfo:
-                BasicInfoView(viewModel: viewModel)
+            case .nameInput:
+                NameInputView(viewModel: viewModel)
+            case .birthday:
+                BirthdayPickerViewWrapper(viewModel: viewModel)
+            case .gender:
+                GenderSelectionViewWrapper(viewModel: viewModel)
+            case .height:
+                HeightPickerViewWrapper(viewModel: viewModel)
             case .bodyMetrics:
                 BodyMetricsView(viewModel: viewModel)
             default:
