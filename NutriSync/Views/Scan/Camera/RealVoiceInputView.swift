@@ -46,7 +46,7 @@ struct RealVoiceInputView: View {
                 .ignoresSafeArea()
             
             // Main content
-            VStack(spacing: 20) {
+            VStack(spacing: 16) {
                 // Top info icon
                 HStack {
                     Spacer()
@@ -54,16 +54,17 @@ struct RealVoiceInputView: View {
                         Image(systemName: "info.circle")
                             .font(.system(size: 22))
                             .foregroundColor(.white.opacity(0.6))
-                            .padding()
+                            .padding(12)
                     }
                 }
-                .padding(.top, 40)
                 
                 // Instructional content or transcribed text
                 if transcribedText.isEmpty && !isListening {
-                    instructionalContent
-                        .padding(.top, 10)
-                        .transition(.opacity.combined(with: .scale(0.95)))
+                    ScrollView {
+                        instructionalContent
+                    }
+                    .frame(maxHeight: 220)
+                    .transition(.opacity.combined(with: .scale(0.95)))
                 } else if !transcribedText.isEmpty {
                     ScrollView {
                         Text(transcribedText)
@@ -82,18 +83,20 @@ struct RealVoiceInputView: View {
                     .transition(.opacity.combined(with: .move(edge: .top)))
                 }
                 
-                Spacer(minLength: 20)
+                Spacer(minLength: 10)
                 
                 // Central listening indicator
                 listeningIndicator
                 
-                Spacer(minLength: 20)
+                Spacer(minLength: 10)
                 
                 // Bottom controls
                 bottomControls
-                    .padding(.bottom, 40)
+                    .padding(.bottom, 20)
             }
+            .padding(.top, 60) // For safe area
         }
+        .ignoresSafeArea(edges: .bottom)
         .preferredColorScheme(.dark)
         .onAppear {
             checkSpeechAuthorization()
@@ -157,13 +160,13 @@ struct RealVoiceInputView: View {
     }
     
     private var listeningIndicator: some View {
-        VStack(spacing: 40) {
+        VStack(spacing: 30) {
             // Main circle with waveform
             ZStack {
                 // Outer pulse circle
                 Circle()
                     .fill(Color.white.opacity(0.1))
-                    .frame(width: 280, height: 280)
+                    .frame(width: 220, height: 220)
                     .scaleEffect(circleScale)
                     .onAppear {
                         withAnimation(.easeInOut(duration: 2).repeatForever(autoreverses: true)) {
@@ -174,33 +177,33 @@ struct RealVoiceInputView: View {
                 // Main white circle
                 Circle()
                     .fill(Color.white)
-                    .frame(width: 240, height: 240)
+                    .frame(width: 180, height: 180)
                     .shadow(color: .black.opacity(0.3), radius: 20, y: 10)
                 
                 // Waveform inside circle
                 if isListening && !isPaused {
-                    HStack(spacing: 8) {
+                    HStack(spacing: 6) {
                         ForEach(0..<5) { index in
                             Capsule()
                                 .fill(Color.black)
-                                .frame(width: 6, height: audioLevels[index] * 60)
+                                .frame(width: 5, height: audioLevels[index] * 45)
                                 .animation(.spring(response: 0.3), value: audioLevels[index])
                         }
                     }
                 } else if isPaused {
                     Image(systemName: "pause.fill")
-                        .font(.system(size: 60))
+                        .font(.system(size: 45))
                         .foregroundColor(.black)
                 } else {
                     Image(systemName: "mic.fill")
-                        .font(.system(size: 60))
+                        .font(.system(size: 45))
                         .foregroundColor(.black)
                 }
             }
             
             // Status text
             Text(isPaused ? "Paused" : (isListening ? "Listening" : "Tap to start"))
-                .font(.system(size: 24, weight: .medium))
+                .font(.system(size: 20, weight: .medium))
                 .foregroundColor(.white)
         }
         .onTapGesture {
@@ -220,27 +223,8 @@ struct RealVoiceInputView: View {
     }
     
     private var bottomControls: some View {
-        HStack(spacing: 120) {
-            // Done button
-            Button(action: {
-                stopRecording()
-                onComplete?(transcribedText)
-                dismiss()
-            }) {
-                ZStack {
-                    Circle()
-                        .fill(Color.green.opacity(0.2))
-                        .frame(width: 60, height: 60)
-                    
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 24, weight: .medium))
-                        .foregroundColor(.green)
-                }
-            }
-            .opacity(isListening ? 1 : 0.3)
-            .disabled(!isListening)
-            
-            // Voice level indicator (middle)
+        VStack(spacing: 24) {
+            // Voice level indicator
             HStack(spacing: 4) {
                 ForEach(0..<4) { index in
                     Circle()
@@ -249,38 +233,72 @@ struct RealVoiceInputView: View {
                 }
             }
             
-            // Cancel button
-            Button(action: { 
-                stopRecording()
-                dismiss() 
-            }) {
-                ZStack {
-                    Circle()
-                        .fill(Color.red.opacity(0.2))
-                        .frame(width: 60, height: 60)
-                    
-                    Image(systemName: "xmark")
-                        .font(.system(size: 24, weight: .medium))
-                        .foregroundColor(.red)
+            // Control buttons
+            HStack(spacing: 20) {
+                // Cancel button
+                Button(action: { 
+                    stopRecording()
+                    dismiss() 
+                }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 18, weight: .medium))
+                        Text("Cancel")
+                            .font(.system(size: 16, weight: .medium))
+                    }
+                    .foregroundColor(.white.opacity(0.8))
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 14)
+                    .background(
+                        RoundedRectangle(cornerRadius: 30)
+                            .fill(Color.white.opacity(0.1))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 30)
+                                    .strokeBorder(Color.white.opacity(0.2), lineWidth: 1)
+                            )
+                    )
                 }
+                
+                // Done button
+                Button(action: {
+                    stopRecording()
+                    onComplete?(transcribedText)
+                    dismiss()
+                }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 18, weight: .medium))
+                        Text(transcribedText.isEmpty ? "Done" : "Analyze Meal")
+                            .font(.system(size: 16, weight: .semibold))
+                    }
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 14)
+                    .background(
+                        RoundedRectangle(cornerRadius: 30)
+                            .fill(Color.green)
+                            .opacity(isListening || !transcribedText.isEmpty ? 1 : 0.3)
+                    )
+                }
+                .disabled(!isListening && transcribedText.isEmpty)
             }
         }
     }
     
     private var instructionalContent: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 16) {
             // Title
             Text("Describe Your Meal")
-                .font(.system(size: 28, weight: .semibold))
+                .font(.system(size: 26, weight: .semibold))
                 .foregroundColor(.white)
             
             // Instructions box
-            VStack(spacing: 16) {
+            VStack(spacing: 12) {
                 Text("For the most accurate nutrition data:")
-                    .font(.system(size: 16, weight: .medium))
+                    .font(.system(size: 15, weight: .medium))
                     .foregroundColor(.white.opacity(0.9))
                 
-                VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: 10) {
                     instructionItem(
                         icon: "tag.fill",
                         text: "Mention brand names",
@@ -300,7 +318,7 @@ struct RealVoiceInputView: View {
                     )
                 }
             }
-            .padding(20)
+            .padding(16)
             .background(
                 RoundedRectangle(cornerRadius: 20)
                     .fill(Color.black.opacity(0.5))
@@ -315,20 +333,20 @@ struct RealVoiceInputView: View {
     }
     
     private func instructionItem(icon: String, text: String, example: String) -> some View {
-        HStack(alignment: .top, spacing: 12) {
+        HStack(alignment: .top, spacing: 10) {
             Image(systemName: icon)
-                .font(.system(size: 16))
+                .font(.system(size: 14))
                 .foregroundColor(.green)
-                .frame(width: 20)
+                .frame(width: 18)
             
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(text)
-                    .font(.system(size: 15, weight: .medium))
+                    .font(.system(size: 14, weight: .medium))
                     .foregroundColor(.white)
                     .fixedSize(horizontal: false, vertical: true)
                 
                 Text(example)
-                    .font(.system(size: 13))
+                    .font(.system(size: 12))
                     .foregroundColor(.white.opacity(0.6))
                     .italic()
                     .fixedSize(horizontal: false, vertical: true)
