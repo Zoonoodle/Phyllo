@@ -532,4 +532,5 @@ extension Notification.Name {
     static let mealAnalysisStarted = Notification.Name("mealAnalysisStarted")
     static let mealAnalysisCompleted = Notification.Name("mealAnalysisCompleted")
     static let mealAnalysisFailed = Notification.Name("mealAnalysisFailed")
+    static let mealAnalysisClarificationNeeded = Notification.Name("mealAnalysisClarificationNeeded")
 }
