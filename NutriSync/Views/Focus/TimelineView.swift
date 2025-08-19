@@ -53,6 +53,13 @@ struct TimelineView: View {
     @State private var currentTime = Date()
     @Environment(\.isPreview) private var isPreview
     
+    // Morning check-in state
+    @State private var showMorningCheckIn = false
+    @State private var currentCheckInStep = 1
+    @State private var wakeTime = Date()
+    @State private var sleepQuality: MorningCheckIn.SleepQuality?
+    @State private var selectedFocuses: Set<MorningCheckIn.DayFocus> = []
+    
     // Animation states
     @State private var animatingMeal: LoggedMeal?
     @State private var animationStartPosition: CGPoint = .zero
@@ -83,7 +90,15 @@ struct TimelineView: View {
     
     var body: some View {
         if viewModel.mealWindows.isEmpty && viewModel.morningCheckIn == nil {
-            NoWindowsView()
+            if showMorningCheckIn {
+                // Show inline morning check-in flow
+                morningCheckInFlow
+            } else {
+                // Show initial NoWindowsView
+                NoWindowsView(onContinue: {
+                    showMorningCheckIn = true
+                })
+            }
         } else {
             ScrollViewReader { proxy in
                 buildTimeline(proxy: proxy)
@@ -445,6 +460,163 @@ struct TimelineView: View {
         }
     }
     
+    // MARK: - Morning Check-In Flow
+    private var morningCheckInFlow: some View {
+        VStack(spacing: 0) {
+            // Progress bar at top
+            VStack(spacing: 16) {
+                HStack {
+                    Button(action: handleCheckInBack) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 20, weight: .medium))
+                            .foregroundColor(.white)
+                            .frame(width: 44, height: 44)
+                    }
+                    
+                    Spacer()
+                    
+                    Button(action: { 
+                        showMorningCheckIn = false
+                        currentCheckInStep = 1
+                    }) {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundColor(.nutriSyncTextSecondary)
+                            .frame(width: 44, height: 44)
+                    }
+                }
+                .padding(.horizontal, 4)
+                
+                // Progress bar
+                SegmentedProgressBar(currentStep: currentCheckInStep, totalSteps: 4)
+                    .padding(.horizontal, 24)
+            }
+            .padding(.top, 50) // Safe area padding
+            
+            // Content based on step
+            Group {
+                switch currentCheckInStep {
+                case 1:
+                    WelcomeCheckInView(onContinue: handleCheckInNext)
+                        .transition(.asymmetric(
+                            insertion: .move(edge: .trailing).combined(with: .opacity),
+                            removal: .move(edge: .leading).combined(with: .opacity)
+                        ))
+                case 2:
+                    WakeTimeSelectionView(
+                        wakeTime: $wakeTime,
+                        onContinue: handleCheckInNext
+                    )
+                    .transition(.asymmetric(
+                        insertion: .move(edge: .trailing).combined(with: .opacity),
+                        removal: .move(edge: .leading).combined(with: .opacity)
+                    ))
+                case 3:
+                    SleepQualityView(
+                        selectedQuality: $sleepQuality,
+                        onContinue: handleCheckInNext
+                    )
+                    .transition(.asymmetric(
+                        insertion: .move(edge: .trailing).combined(with: .opacity),
+                        removal: .move(edge: .leading).combined(with: .opacity)
+                    ))
+                case 4:
+                    DayFocusSelectionView(
+                        selectedFocuses: $selectedFocuses,
+                        onContinue: completeCheckIn
+                    )
+                    .transition(.asymmetric(
+                        insertion: .move(edge: .trailing).combined(with: .opacity),
+                        removal: .move(edge: .leading).combined(with: .opacity)
+                    ))
+                default:
+                    EmptyView()
+                }
+            }
+            .animation(.easeInOut(duration: 0.3), value: currentCheckInStep)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.nutriSyncBackground)
+    }
+    
+    private func handleCheckInBack() {
+        guard currentCheckInStep > 1 else {
+            showMorningCheckIn = false
+            currentCheckInStep = 1
+            return
+        }
+        
+        withAnimation {
+            currentCheckInStep -= 1
+        }
+    }
+    
+    private func handleCheckInNext() {
+        guard currentCheckInStep < 4 else { return }
+        
+        withAnimation {
+            currentCheckInStep += 1
+        }
+    }
+    
+    private func completeCheckIn() {
+        guard let quality = sleepQuality else { return }
+        
+        let checkIn = MorningCheckIn(
+            date: Date(),
+            wakeTime: wakeTime,
+            sleepQuality: quality,
+            dayFocus: selectedFocuses,
+            morningMood: nil
+        )
+        
+        CheckInManager.shared.saveMorningCheckIn(checkIn)
+
+        // Bridge to data layer so windows are regenerated based on check-in
+        Task {
+            let provider = DataSourceProvider.shared.provider
+            let today = Date()
+            // Map UI check-in to data model used by generation
+            let sleepQuality10 = quality.rawValue * 2 // scale 1-5 → 2-10
+            let estimatedSleepHours: Double = {
+                switch quality {
+                case .terrible: return 3
+                case .poor: return 5
+                case .fair: return 6.5
+                case .good: return 8
+                case .excellent: return 9
+                }
+            }()
+            let planned = selectedFocuses.map { $0.rawValue }
+            let dataCheckIn = MorningCheckInData(
+                date: today,
+                wakeTime: wakeTime,
+                sleepQuality: sleepQuality10,
+                sleepDuration: estimatedSleepHours * 3600,
+                energyLevel: max(1, min(5, quality.rawValue + 1)),
+                plannedActivities: planned,
+                hungerLevel: 3
+            )
+            do {
+                try await provider.saveMorningCheckIn(dataCheckIn)
+                let profile = try await provider.getUserProfile() ?? UserProfile.defaultProfile
+                _ = try await provider.generateDailyWindows(for: today, profile: profile, checkIn: dataCheckIn)
+            } catch {
+                print("❌ Failed to persist morning check-in or generate windows: \(error)")
+            }
+        }
+        
+        // Haptic feedback for completion
+        let notification = UINotificationFeedbackGenerator()
+        notification.prepare()
+        notification.notificationOccurred(.success)
+        
+        // Reset state
+        withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+            showMorningCheckIn = false
+            currentCheckInStep = 1
+        }
+    }
     
 }
 

@@ -9,9 +9,9 @@ import SwiftUI
 
 struct NoWindowsView: View {
     @StateObject private var nudgeManager = NudgeManager.shared
-    @State private var showMorningCheckIn = false
     @State private var showContent = false
     @State private var animateText = false
+    var onContinue: (() -> Void)? = nil
     
     var body: some View {
         VStack(spacing: 0) {
@@ -57,7 +57,7 @@ struct NoWindowsView: View {
                 HStack {
                     Spacer()
                     Button(action: {
-                        showMorningCheckIn = true
+                        onContinue?()
                     }) {
                         ZStack {
                             Circle()
@@ -84,9 +84,6 @@ struct NoWindowsView: View {
                 showContent = true
                 animateText = true
             }
-        }
-        .sheet(isPresented: $showMorningCheckIn) {
-            MorningCheckInView()
         }
     }
 }
