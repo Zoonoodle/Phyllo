@@ -401,13 +401,13 @@ extension MealAnalysisAgent {
             let searchResult = try await vertexAI.performToolAnalysis(
                 tool: .brandSearch,
                 prompt: searchPrompt,
-                imageData: request.image.jpegData(compressionQuality: 0.8)
+                imageData: request.image?.jpegData(compressionQuality: 0.8)
             )
             
             DebugLogger.shared.info("Brand analysis response: \(searchResult.prefix(500))...")
             
             // Try to parse as MealAnalysisResult directly
-            if let data = searchResult.data(using: .utf8) {
+            if let data = searchResult.data(using: String.Encoding.utf8) {
                 do {
                     var result = try JSONDecoder().decode(MealAnalysisResult.self, from: data)
                     DebugLogger.shared.success("Successfully parsed brand-specific result")
@@ -495,7 +495,7 @@ extension MealAnalysisAgent {
         - Any clarifications still needed
         """
         
-        let imageData = try? await compressImageForAnalysis(request.image)
+        let imageData = request.image != nil ? try? await compressImageForAnalysis(request.image!) : nil
         
         let analysisResult = try await vertexAI.performToolAnalysis(
             tool: .deepAnalysis,
