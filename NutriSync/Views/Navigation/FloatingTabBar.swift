@@ -19,7 +19,7 @@ struct FloatingTabBar: View {
                 )
             }
         }
-        .frame(width: 200, height: 56) // Fixed width to prevent resizing
+        .frame(width: 180, height: 56) // Fixed width to prevent resizing
         .background(
             RoundedRectangle(cornerRadius: 28) // 35 * 0.8
                 .fill(Color(red: 0.11, green: 0.11, blue: 0.12))
