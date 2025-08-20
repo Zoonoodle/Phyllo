@@ -14,7 +14,7 @@ class NutritionDashboardViewModel: ObservableObject {
     // MARK: - Published Properties
     @Published var todaysMeals: [LoggedMeal] = []
     @Published var mealWindows: [MealWindow] = []
-    @Published var morningCheckIn: MorningCheckInData?
+    @Published var morningCheckIn: MorningCheckIn?
     @Published var postMealCheckIns: [PostMealCheckIn] = []
     @Published var userProfile: UserProfile = UserProfile.defaultProfile
     @Published var isLoading = false
@@ -56,6 +56,10 @@ class NutritionDashboardViewModel: ObservableObject {
             }
         }
         observations.append(windowsToken)
+    }
+    
+    func loadData() async {
+        await loadInitialData()
     }
     
     private func loadInitialData() async {
@@ -118,6 +122,10 @@ class NutritionDashboardViewModel: ObservableObject {
         userProfile.dailyCarbTarget
     }
     
+    var dailyCarbsTarget: Int {  // Alias for compatibility
+        dailyCarbTarget
+    }
+    
     var dailyFatTarget: Int {
         userProfile.dailyFatTarget
     }
@@ -125,6 +133,20 @@ class NutritionDashboardViewModel: ObservableObject {
     var windowsRemaining: Int {
         let now = Date()
         return mealWindows.filter { $0.endTime > now }.count
+    }
+    
+    var currentWindow: MealWindow? {
+        let now = Date()
+        return mealWindows.first { window in
+            window.startTime <= now && window.endTime > now
+        }
+    }
+    
+    var nextWindow: MealWindow? {
+        let now = Date()
+        return mealWindows.first { window in
+            window.startTime > now
+        }
     }
     
     var activeWindow: MealWindow? {
@@ -201,18 +223,16 @@ class NutritionDashboardViewModel: ObservableObject {
                 icon: "exclamationmark.triangle.fill",
                 iconColor: .orange,
                 title: "Low Protein Alert",
-                message: "You're behind on protein today. Consider a protein-rich dinner.",
-                type: .warning
+                message: "You're behind on protein today. Consider a protein-rich dinner."
             ))
         }
         
-        if let lastCheckIn = postMealCheckIns.last, lastCheckIn.energyLevel >= 4 {
+        if let lastCheckIn = postMealCheckIns.last, lastCheckIn.energyLevel.rawValue >= 4 {
             insights.append(NutritionInsight(
                 icon: "bolt.fill",
                 iconColor: .green,
                 title: "Great Energy!",
-                message: "Your last meal gave you excellent energy. Remember this combination!",
-                type: .positive
+                message: "Your last meal gave you excellent energy. Remember this combination!"
             ))
         }
         
@@ -278,9 +298,110 @@ class NutritionDashboardViewModel: ObservableObject {
     var weekNutrientValues: [Double] { [70, 75, 80, 72, 78, 74, 82] } // Mock for now
     var weekAdherenceValues: [Double] { [80, 85, 78, 82, 88, 75, 90] } // Mock for now
     
+    var totalWindows: Int { mealWindows.count }
+    
+    var windowsHit: Int {
+        // Count windows that have at least one meal
+        mealWindows.filter { window in
+            mealsInWindow(window).count > 0
+        }.count
+    }
+    
+    var formattedDate: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "EEEE, MMMM d"
+        return formatter.string(from: Date())
+    }
+    
+    var todayScore: Int {
+        // Calculate a simple score based on progress
+        let calorieScore = min(Double(totalCalories) / Double(dailyCalorieTarget), 1.0) * 25
+        let proteinScore = min(Double(totalProtein) / Double(dailyProteinTarget), 1.0) * 25
+        let windowScore = Double(windowsHit) / Double(max(totalWindows, 1)) * 25
+        let checkInScore = Double(checkInsCompleted) / 4.0 * 25
+        return Int(calorieScore + proteinScore + windowScore + checkInScore)
+    }
+    
+    var todayWindows: [MealWindow] { mealWindows }
+    
+    var totalPercentage: Int {
+        // Overall percentage of daily goals
+        let caloriePercent = Double(totalCalories) / Double(dailyCalorieTarget) * 100
+        let proteinPercent = Double(totalProtein) / Double(dailyProteinTarget) * 100
+        let carbPercent = Double(totalCarbs) / Double(dailyCarbTarget) * 100
+        let fatPercent = Double(totalFat) / Double(dailyFatTarget) * 100
+        return Int((caloriePercent + proteinPercent + carbPercent + fatPercent) / 4)
+    }
+    
+    var nutrientsStatus: String {
+        let hitCount = nutrientsHit
+        if hitCount >= 25 { return "Excellent" }
+        else if hitCount >= 20 { return "Great" }
+        else if hitCount >= 15 { return "Good" }
+        else if hitCount >= 10 { return "Fair" }
+        else { return "Needs Focus" }
+    }
+    
+    var currentWindowStatus: (mainText: String, subText: String, progress: Double) {
+        guard let currentWindow = currentWindow else {
+            if let nextWindow = nextWindow {
+                let timeUntil = nextWindow.startTime.timeIntervalSince(Date())
+                let hoursUntil = Int(timeUntil / 3600)
+                let minutesUntil = Int((timeUntil.truncatingRemainder(dividingBy: 3600)) / 60)
+                return ("Next window", "in \(hoursUntil)h \(minutesUntil)m", 0)
+            }
+            return ("No active window", "All windows complete", 1.0)
+        }
+        
+        let elapsed = Date().timeIntervalSince(currentWindow.startTime)
+        let total = currentWindow.endTime.timeIntervalSince(currentWindow.startTime)
+        let progress = elapsed / total
+        let remaining = currentWindow.endTime.timeIntervalSince(Date())
+        let minutesRemaining = Int(remaining / 60)
+        
+        return (currentWindow.title, "\(minutesRemaining) min remaining", progress)
+    }
+    
+    var dailyCalorieProgress: Double {
+        Double(totalCalories) / Double(dailyCalorieTarget)
+    }
+    
+    var fastingTime: String {
+        guard let lastMeal = todaysMeals.last else { return "0h 0m" }
+        let timeSince = Date().timeIntervalSince(lastMeal.timestamp)
+        let hours = Int(timeSince / 3600)
+        let minutes = Int((timeSince.truncatingRemainder(dividingBy: 3600)) / 60)
+        return "\(hours)h \(minutes)m"
+    }
+    
+    var fastingStatus: String {
+        guard let lastMeal = todaysMeals.last else { return "No meals logged" }
+        let timeSince = Date().timeIntervalSince(lastMeal.timestamp)
+        let hours = timeSince / 3600
+        
+        if hours < 2 { return "Digesting" }
+        else if hours < 8 { return "Early Fast" }
+        else if hours < 12 { return "Moderate Fast" }
+        else if hours < 16 { return "Deep Fast" }
+        else { return "Extended Fast" }
+    }
+    
+    var fastingProgress: Double {
+        // Progress towards a 16-hour fast
+        guard let lastMeal = todaysMeals.last else { return 0 }
+        let timeSince = Date().timeIntervalSince(lastMeal.timestamp)
+        let hours = timeSince / 3600
+        return min(hours / 16.0, 1.0)
+    }
+    
+    var nextWindowName: String {
+        nextWindow?.title ?? "No upcoming windows"
+    }
+    
     // MARK: - Supporting Types
     
-    struct NutritionInsight {
+    struct NutritionInsight: Identifiable {
+        let id = UUID()
         let icon: String
         let iconColor: Color
         let title: String
@@ -292,7 +413,8 @@ class NutritionDashboardViewModel: ObservableObject {
         }
     }
     
-    struct NutrientInfo {
+    struct NutrientInfo: Identifiable {
+        let id = UUID()
         let name: String
         let current: Double
         let target: Double

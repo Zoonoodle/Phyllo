@@ -22,9 +22,7 @@ struct NutritionDashboardInsightsView: View {
             }
             
             // Generate insights button
-            if !insightsEngine.isGenerating {
-                generateInsightsButton
-            }
+            generateInsightsButton
         }
     }
     
@@ -58,9 +56,8 @@ struct NutritionDashboardInsightsView: View {
     
     private var generateInsightsButton: some View {
         Button(action: { 
-            Task {
-                await insightsEngine.generateInsights()
-            }
+            // Insights are generated automatically by the ViewModel
+            // This button is just a placeholder for now
         }) {
             HStack {
                 Image(systemName: "wand.and.stars")
