@@ -21,7 +21,7 @@ struct DayFocusSelectionView: View {
     ]
     
     var body: some View {
-        VStack(spacing: 32) {
+        VStack(spacing: 0) {
             // Header
             VStack(spacing: 12) {
                 Text("What's your main focus for today?")
@@ -33,6 +33,8 @@ struct DayFocusSelectionView: View {
                     .font(.system(size: 15))
                     .foregroundColor(.nutriSyncTextSecondary)
             }
+            .padding(.horizontal, 32)
+            .padding(.top, 24)  // Consistent with other check-in views
             
             // Focus grid
             LazyVGrid(columns: columns, spacing: 20) {

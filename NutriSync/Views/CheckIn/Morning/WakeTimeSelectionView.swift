@@ -10,6 +10,7 @@ import SwiftUI
 struct WakeTimeSelectionView: View {
     @Binding var wakeTime: Date
     let onContinue: () -> Void
+    var onBack: (() -> Void)? = nil
     
     @State private var selectedHour = 7
     @State private var selectedMinute = 0
@@ -52,7 +53,7 @@ struct WakeTimeSelectionView: View {
                     .offset(y: animateTitle ? 0 : 20)
             }
             .padding(.horizontal, 32)
-            .padding(.top, 60)
+            .padding(.top, 24)  // Reduced from 60 for inline display
             .animation(.easeOut(duration: 0.6).delay(0.2), value: animateTitle)
             
             // Selected time display
@@ -129,9 +130,25 @@ struct WakeTimeSelectionView: View {
             
             Spacer()
             
-            // Continue button
+            // Bottom navigation buttons
             HStack {
+                if let onBack = onBack {
+                    Button(action: onBack) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 20, weight: .medium))
+                            .foregroundColor(.white)
+                            .frame(width: 56, height: 56)
+                            .background(
+                                Circle()
+                                    .fill(Color.white.opacity(0.06))
+                            )
+                    }
+                    .opacity(animateGrid ? 1.0 : 0)
+                    .scaleEffect(animateGrid ? 1.0 : 0.8)
+                }
+                
                 Spacer()
+                
                 CheckInButton("", style: .minimal, action: onContinue)
                     .opacity(animateGrid ? 1.0 : 0)
                     .scaleEffect(animateGrid ? 1.0 : 0.8)

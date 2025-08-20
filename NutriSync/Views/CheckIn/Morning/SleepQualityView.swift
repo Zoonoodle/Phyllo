@@ -25,7 +25,7 @@ struct SleepQualityView: View {
     }
     
     var body: some View {
-        VStack(spacing: 32) {
+        VStack(spacing: 0) {
             // Header
             VStack(spacing: 12) {
                 Text("How many hours did you sleep?")
@@ -43,6 +43,8 @@ struct SleepQualityView: View {
                     .opacity(showContent ? 1.0 : 0)
                     .offset(y: showContent ? 0 : 20)
             }
+            .padding(.horizontal, 32)
+            .padding(.top, 24)  // Consistent with WakeTimeSelectionView
             .animation(.easeOut(duration: 0.6), value: showContent)
             
             Spacer()

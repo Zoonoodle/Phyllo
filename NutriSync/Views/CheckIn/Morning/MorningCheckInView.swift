@@ -37,6 +37,7 @@ struct MorningCheckInView: View {
                                 .foregroundColor(.white)
                                 .frame(width: 44, height: 44)
                         }
+                        .opacity(currentStep == 2 ? 0 : 1)
                         
                         Spacer()
                         
@@ -46,6 +47,7 @@ struct MorningCheckInView: View {
                                 .foregroundColor(.nutriSyncTextSecondary)
                                 .frame(width: 44, height: 44)
                         }
+                        .opacity(currentStep == 2 ? 0 : 1)
                     }
                     
                     // Progress bar
@@ -68,7 +70,8 @@ struct MorningCheckInView: View {
                         case 2:
                             WakeTimeSelectionView(
                                 wakeTime: $wakeTime,
-                                onContinue: handleNextStep
+                                onContinue: handleNextStep,
+                                onBack: handleBack
                             )
                             .transition(.asymmetric(
                                 insertion: .move(edge: .trailing).combined(with: .opacity),

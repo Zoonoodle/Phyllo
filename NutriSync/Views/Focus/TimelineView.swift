@@ -55,7 +55,7 @@ struct TimelineView: View {
     
     // Morning check-in state
     @State private var showMorningCheckIn = false
-    @State private var currentCheckInStep = 1
+    @State private var currentCheckInStep = 2  // Start at step 2 to skip duplicate welcome
     @State private var wakeTime = Date()
     @State private var sleepQuality: MorningCheckIn.SleepQuality?
     @State private var selectedFocuses: Set<MorningCheckIn.DayFocus> = []
@@ -463,45 +463,33 @@ struct TimelineView: View {
     // MARK: - Morning Check-In Flow
     private var morningCheckInFlow: some View {
         VStack(spacing: 0) {
-            // Progress bar at top
-            VStack(spacing: 16) {
-                HStack {
-                    Button(action: handleCheckInBack) {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 20, weight: .medium))
-                            .foregroundColor(.white)
-                            .frame(width: 44, height: 44)
-                    }
-                    
-                    Spacer()
-                    
-                    Button(action: { 
-                        showMorningCheckIn = false
-                        currentCheckInStep = 1
-                    }) {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 16, weight: .medium))
-                            .foregroundColor(.nutriSyncTextSecondary)
-                            .frame(width: 44, height: 44)
-                    }
+            // Header without progress bar
+            HStack {
+                Button(action: handleCheckInBack) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 20, weight: .medium))
+                        .foregroundColor(.white)
+                        .frame(width: 44, height: 44)
                 }
-                .padding(.horizontal, 4)
                 
-                // Progress bar
-                SegmentedProgressBar(currentStep: currentCheckInStep, totalSteps: 4)
-                    .padding(.horizontal, 24)
+                Spacer()
+                
+                Button(action: { 
+                    showMorningCheckIn = false
+                    currentCheckInStep = 2  // Reset to step 2
+                }) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundColor(.nutriSyncTextSecondary)
+                        .frame(width: 44, height: 44)
+                }
             }
+            .padding(.horizontal, 4)
             .padding(.top, 50) // Safe area padding
             
             // Content based on step
             Group {
                 switch currentCheckInStep {
-                case 1:
-                    WelcomeCheckInView(onContinue: handleCheckInNext)
-                        .transition(.asymmetric(
-                            insertion: .move(edge: .trailing).combined(with: .opacity),
-                            removal: .move(edge: .leading).combined(with: .opacity)
-                        ))
                 case 2:
                     WakeTimeSelectionView(
                         wakeTime: $wakeTime,
@@ -540,9 +528,9 @@ struct TimelineView: View {
     }
     
     private func handleCheckInBack() {
-        guard currentCheckInStep > 1 else {
+        guard currentCheckInStep > 2 else {
             showMorningCheckIn = false
-            currentCheckInStep = 1
+            currentCheckInStep = 2
             return
         }
         
