@@ -28,6 +28,9 @@ struct MorningCheckInView: View {
             
             VStack(spacing: 0) {
                 // Content
+                Spacer()
+                    .frame(height: 60)
+                
                 if showContent {
                     Group {
                         switch currentStep {
@@ -139,73 +142,6 @@ struct MorningCheckInView: View {
         // Dismiss with celebration
         withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
             dismiss()
-        }
-    }
-}
-
-// MARK: - Welcome View
-struct WelcomeCheckInView: View {
-    let onContinue: () -> Void
-    @State private var showContent = false
-    @State private var animateText = false
-    
-    var body: some View {
-        VStack(spacing: 0) {
-            // Welcome text at top
-            VStack(spacing: 16) {
-                Text("Good morning!")
-                    .font(.system(size: 32, weight: .bold))
-                    .foregroundColor(.white)
-                    .opacity(animateText ? 1.0 : 0)
-                    .offset(y: animateText ? 0 : 20)
-                
-                Text("Let's start your day with a quick check-in to optimize your nutrition plan.")
-                    .font(.system(size: 16))
-                    .foregroundColor(.nutriSyncTextSecondary)
-                    .multilineTextAlignment(.center)
-                    .lineSpacing(4)
-                    .opacity(animateText ? 1.0 : 0)
-                    .offset(y: animateText ? 0 : 20)
-            }
-            .padding(.horizontal, 32)
-      
-            .animation(.easeOut(duration: 0.6).delay(0.3), value: animateText)
-            
-            Spacer()
-            
-            // Coffee steam animation in center
-            CoffeeSteamAnimation()
-                .scaleEffect(showContent ? 1.0 : 0.8)
-                .opacity(showContent ? 1.0 : 0)
-                .animation(.spring(response: 0.8, dampingFraction: 0.6), value: showContent)
-            
-            Spacer()
-            
-            // Bottom section
-            VStack(spacing: 40) {
-                // Text under coffee
-                Text("Takes less than 15 seconds")
-                    .font(.system(size: 14))
-                    .foregroundColor(.nutriSyncTextTertiary)
-                    .opacity(animateText ? 1.0 : 0)
-                
-                // Continue button aligned to right
-                HStack {
-                    Spacer()
-                    CheckInButton("", style: .minimal, action: onContinue)
-                        .opacity(animateText ? 1.0 : 0)
-                        .scaleEffect(animateText ? 1.0 : 0.8)
-                }
-            }
-            .padding(.bottom, 60)
-            .animation(.spring(response: 0.5, dampingFraction: 0.7).delay(0.5), value: animateText)
-        }
-        .padding(.horizontal, 24)
-        .onAppear {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                showContent = true
-                animateText = true
-            }
         }
     }
 }
