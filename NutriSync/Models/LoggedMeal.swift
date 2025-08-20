@@ -19,6 +19,10 @@ enum FoodGroup: String, CaseIterable {
     case sauce = "Sauce"
     case other = "Other"
     
+    static func fromString(_ string: String) -> FoodGroup {
+        return FoodGroup(rawValue: string) ?? .other
+    }
+    
     var color: Color {
         switch self {
         case .protein: return Color(hex: "E94B3C") // Soft red

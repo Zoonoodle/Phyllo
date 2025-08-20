@@ -7,12 +7,15 @@
 
 import Foundation
 import FirebaseAI
+import UIKit
 
 /// Service for parsing retrospective meal descriptions and distributing to windows
 @MainActor
 class RetrospectiveMealParser {
     static let shared = RetrospectiveMealParser()
     private let model: GenerativeModel
+    private let mealAnalysisAgent = MealAnalysisAgent.shared
+    private let dataProvider = DataSourceProvider.shared.provider
     
     private init() {
         // Initialize Firebase AI service
@@ -34,41 +37,111 @@ class RetrospectiveMealParser {
         )
     }
     
-    /// Parse a natural language description of meals into structured meal data
+    /// Parse a natural language description of meals into structured meal data with advanced AI analysis
     func parseMealsFromDescription(_ description: String, missedWindows: [MealWindow]) async throws -> [LoggedMeal] {
         DebugLogger.shared.mealAnalysis("Parsing retrospective meals: \(description)")
         
+        // First, parse the description to identify individual meals
+        let parsedMeals = try await parseIndividualMeals(description, missedWindows: missedWindows)
+        
+        // Then, analyze each meal with the advanced AI agent for accurate nutrition
+        var analyzedMeals: [LoggedMeal] = []
+        
+        // Get user context for analysis
+        let userProfile = try await dataProvider.getUserProfile() ?? UserProfile.defaultProfile
+        let context = UserNutritionContext(
+            primaryGoal: userProfile.primaryGoal,
+            dailyCalorieTarget: userProfile.dailyCalorieTarget,
+            dailyProteinTarget: userProfile.dailyProteinTarget,
+            dailyCarbTarget: userProfile.dailyCarbTarget,
+            dailyFatTarget: userProfile.dailyFatTarget
+        )
+        
+        for (index, parsedMeal) in parsedMeals.enumerated() {
+            DebugLogger.shared.mealAnalysis("Analyzing meal \(index + 1): \(parsedMeal.name)")
+            
+            // Create analysis request for each meal
+            let request = MealAnalysisRequest(
+                image: nil, // No image for retrospective
+                voiceTranscript: parsedMeal.name, // Use the meal description
+                userContext: context,
+                mealWindow: parsedMeal.windowId != nil ? missedWindows.first(where: { $0.id == parsedMeal.windowId }) : nil
+            )
+            
+            do {
+                // Use the advanced AI agent for accurate analysis
+                let (analysisResult, metadata) = try await mealAnalysisAgent.analyzeMealWithTools(request)
+                
+                // Create LoggedMeal from analysis result
+                var meal = LoggedMeal(
+                    name: analysisResult.mealName,
+                    calories: analysisResult.nutrition.calories,
+                    protein: Int(analysisResult.nutrition.protein),
+                    carbs: Int(analysisResult.nutrition.carbs),
+                    fat: Int(analysisResult.nutrition.fat),
+                    timestamp: parsedMeal.timestamp
+                )
+                
+                // Preserve window assignment
+                meal.windowId = parsedMeal.windowId
+                
+                // Add ingredients if available
+                meal.ingredients = analysisResult.ingredients.map { ingredient in
+                    MealIngredient(
+                        name: ingredient.name,
+                        quantity: Double(ingredient.amount) ?? 1.0,
+                        unit: ingredient.unit,
+                        foodGroup: FoodGroup.fromString(ingredient.foodGroup)
+                    )
+                }
+                
+                // Add micronutrients as dictionary
+                for micro in analysisResult.micronutrients {
+                    meal.micronutrients[micro.name] = micro.amount
+                }
+                
+                analyzedMeals.append(meal)
+                
+                DebugLogger.shared.success("Analyzed meal: \(meal.name) - \(meal.calories) cal")
+                
+            } catch {
+                DebugLogger.shared.error("Failed to analyze meal \(parsedMeal.name): \(error)")
+                // Use the basic parsed meal as fallback
+                analyzedMeals.append(parsedMeal)
+            }
+        }
+        
+        return analyzedMeals
+    }
+    
+    /// Parse description into individual meals first
+    private func parseIndividualMeals(_ description: String, missedWindows: [MealWindow]) async throws -> [LoggedMeal] {
         // Build context about missed windows for better meal assignment
         let windowContext = buildWindowContext(missedWindows)
         
         // Create the prompt for Gemini
         let prompt = """
-        Parse the following meal description into individual meals with estimated nutrition.
+        Parse the following meal description into individual meals.
         The user missed these meal windows today: \(windowContext)
         
         User's description: "\(description)"
         
         Instructions:
         1. Identify each distinct meal mentioned
-        2. Estimate realistic calories and macros for each meal
-        3. Assign an appropriate meal type (breakfast, lunch, dinner, snack)
-        4. Consider typical portion sizes and restaurant vs home-cooked meals
+        2. Extract the meal name/description exactly as mentioned
+        3. Assign an appropriate meal type based on the description
+        4. Map meals to the appropriate windows based on meal type and timing clues
         
         Return a JSON array with this structure:
         [
           {
-            "name": "Meal name",
+            "name": "Exact meal description from user",
             "mealType": "breakfast|lunch|dinner|snack",
-            "calories": 500,
-            "protein": 30,
-            "carbs": 50,
-            "fat": 20,
-            "confidence": 0.85,
-            "reasoning": "Brief explanation of nutrition estimates"
+            "windowIndex": 0
           }
         ]
         
-        Be realistic with portions and nutrition. Restaurant meals are typically larger.
+        Extract meals in the order they appear in the description.
         """
         
         do {
@@ -81,7 +154,7 @@ class RetrospectiveMealParser {
                 return fallbackParsing(description, missedWindows: missedWindows)
             }
             
-            let meals = try parseJSONResponse(responseText, missedWindows: missedWindows)
+            let meals = try parseSimpleJSONResponse(responseText, missedWindows: missedWindows)
             
             DebugLogger.shared.success("Parsed \(meals.count) meals from description")
             return meals
@@ -118,9 +191,9 @@ class RetrospectiveMealParser {
         }
     }
     
-    /// Parse JSON response from Gemini
-    private func parseJSONResponse(_ response: String, missedWindows: [MealWindow]) throws -> [LoggedMeal] {
-        // Extract JSON from response (Gemini sometimes adds explanation text)
+    /// Parse simple JSON response for meal identification
+    private func parseSimpleJSONResponse(_ response: String, missedWindows: [MealWindow]) throws -> [LoggedMeal] {
+        // Extract JSON from response
         guard let jsonStart = response.firstIndex(of: "["),
               let jsonEnd = response.lastIndex(of: "]") else {
             throw ParseError.invalidJSON
@@ -132,19 +205,22 @@ class RetrospectiveMealParser {
         }
         
         let decoder = JSONDecoder()
-        let parsedMeals = try decoder.decode([ParsedMeal].self, from: data)
+        let parsedMeals = try decoder.decode([SimpleParsedMeal].self, from: data)
         
-        // Convert to LoggedMeal and assign to windows
-        return parsedMeals.enumerated().compactMap { index, parsed in
-            guard index < missedWindows.count else { return nil }
+        // Convert to LoggedMeal with basic nutrition (will be updated by AI agent)
+        return parsedMeals.compactMap { parsed in
+            let windowIndex = parsed.windowIndex ?? 0
+            guard windowIndex < missedWindows.count else { return nil }
             
-            let window = missedWindows[index]
+            let window = missedWindows[windowIndex]
+            
+            // Create basic meal - nutrition will be updated by AI agent
             var meal = LoggedMeal(
                 name: parsed.name,
-                calories: parsed.calories,
-                protein: parsed.protein,
-                carbs: parsed.carbs,
-                fat: parsed.fat,
+                calories: 400, // Placeholder
+                protein: 20,   // Placeholder
+                carbs: 40,     // Placeholder
+                fat: 15,       // Placeholder
                 timestamp: window.startTime.addingTimeInterval(1800) // 30 min into window
             )
             meal.windowId = window.id
@@ -246,6 +322,12 @@ class RetrospectiveMealParser {
 }
 
 // MARK: - Supporting Types
+
+private struct SimpleParsedMeal: Codable {
+    let name: String
+    let mealType: String
+    let windowIndex: Int?
+}
 
 private struct ParsedMeal: Codable {
     let name: String
