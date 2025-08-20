@@ -191,7 +191,7 @@ struct NutritionDashboardTodayView: View {
     private var dailyCalorieTarget: Int { viewModel.dailyCalorieTarget }
     private var checkInsCompleted: Int { viewModel.checkInsCompleted }
     private var nutrientsHit: Int { viewModel.nutrientsHit }
-    private var topNutrients: [NutrientInfo] { viewModel.topNutrients }
+    private var topNutrients: [NutritionDashboardViewModel.NutrientInfo] { viewModel.topNutrients }
 }
 
 // MARK: - Supporting Components
@@ -312,20 +312,14 @@ struct MacroProgressRow: View {
 }
 
 struct NutrientRow: View {
-    let nutrient: NutrientInfo
-    @State private var isExpanded = false
-    
-    private var nutrientBenefits: (icon: String, benefits: [String]) {
-        nutrient.benefitsInfo
-    }
+    let nutrient: NutritionDashboardViewModel.NutrientInfo
     
     var body: some View {
         VStack(spacing: 0) {
-            Button(action: { withAnimation { isExpanded.toggle() } }) {
                 HStack {
                     HStack(spacing: 12) {
                         // Nutrient icon
-                        Image(systemName: nutrientBenefits.icon)
+                        Image(systemName: "leaf.fill")
                             .font(.system(size: 16))
                             .foregroundColor(nutrient.color)
                             .frame(width: 24)
@@ -335,7 +329,7 @@ struct NutrientRow: View {
                                 .font(.system(size: 14, weight: .medium))
                                 .foregroundColor(.white)
                             
-                            Text("\(nutrient.amount, specifier: "%.1f")\(nutrient.unit) • \(nutrient.percentRDA)% RDA")
+                            Text("\(nutrient.current, specifier: "%.1f")\(nutrient.unit) • \(Int(nutrient.percentage * 100))% RDA")
                                 .font(.system(size: 12))
                                 .foregroundColor(.white.opacity(0.5))
                         }
@@ -346,43 +340,17 @@ struct NutrientRow: View {
                     // Status indicator
                     HStack(spacing: 4) {
                         Circle()
-                            .fill(nutrient.statusColor)
+                            .fill(nutrient.percentage >= 0.8 ? Color.green : nutrient.percentage >= 0.5 ? Color.yellow : Color.red)
                             .frame(width: 6, height: 6)
                         
-                        Text(nutrient.status)
+                        Text(nutrient.percentage >= 0.8 ? "Good" : nutrient.percentage >= 0.5 ? "Fair" : "Low")
                             .font(.system(size: 11))
-                            .foregroundColor(nutrient.statusColor)
-                        
-                        Image(systemName: "chevron.down")
-                            .font(.system(size: 10))
-                            .foregroundColor(.white.opacity(0.3))
-                            .rotationEffect(.degrees(isExpanded ? 180 : 0))
+                            .foregroundColor(nutrient.percentage >= 0.8 ? Color.green : nutrient.percentage >= 0.5 ? Color.yellow : Color.red)
                     }
                 }
                 .padding(.vertical, 12)
                 .padding(.horizontal, 16)
-            }
-            .buttonStyle(PlainButtonStyle())
             
-            if isExpanded {
-                VStack(alignment: .leading, spacing: 8) {
-                    ForEach(nutrientBenefits.benefits, id: \.self) { benefit in
-                        HStack(alignment: .top, spacing: 8) {
-                            Circle()
-                                .fill(nutrient.color.opacity(0.3))
-                                .frame(width: 4, height: 4)
-                                .offset(y: 6)
-                            
-                            Text(benefit)
-                                .font(.system(size: 12))
-                                .foregroundColor(.white.opacity(0.6))
-                        }
-                    }
-                }
-                .padding(.horizontal, 16)
-                .padding(.bottom, 12)
-                .padding(.leading, 36)
-            }
         }
         .background(
             RoundedRectangle(cornerRadius: 12)

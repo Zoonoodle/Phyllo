@@ -88,7 +88,6 @@ struct NutritionDashboardInsightsView: View {
 
 struct InsightCard: View {
     let insight: NutritionDashboardViewModel.NutritionInsight
-    @State private var isExpanded = false
     
     private var insightIcon: String {
         switch insight.type {
@@ -125,17 +124,10 @@ struct InsightCard: View {
                     Text(insight.message)
                         .font(.system(size: 14))
                         .foregroundColor(.white.opacity(0.7))
-                        .lineLimit(isExpanded ? nil : 2)
+                        .lineLimit(2)
                 }
                 
                 Spacer()
-                
-                Button(action: { withAnimation { isExpanded.toggle() } }) {
-                    Image(systemName: "chevron.down")
-                        .font(.system(size: 12))
-                        .foregroundColor(.white.opacity(0.3))
-                        .rotationEffect(.degrees(isExpanded ? 180 : 0))
-                }
             }
             
         }

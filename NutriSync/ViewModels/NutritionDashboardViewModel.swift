@@ -230,6 +230,54 @@ class NutritionDashboardViewModel: ObservableObject {
         return nutrients.sorted { $0.percentage > $1.percentage }
     }
     
+    // MARK: - Additional Dashboard Properties
+    
+    var checkInsCompleted: Int {
+        return (morningCheckIn != nil ? 1 : 0) + postMealCheckIns.count
+    }
+    
+    var nutrientsHit: Int {
+        // Count nutrients that are at least 80% of target
+        return topNutrients.filter { $0.percentage >= 0.8 }.count
+    }
+    
+    var timingPercentage: Double {
+        // Calculate based on meals eaten within windows
+        guard !mealWindows.isEmpty else { return 0 }
+        let mealsInWindows = todaysMeals.filter { meal in
+            mealWindows.contains { window in
+                meal.timestamp >= window.startTime && meal.timestamp <= window.endTime
+            }
+        }
+        return Double(mealsInWindows.count) / Double(max(todaysMeals.count, 1)) * 100
+    }
+    
+    var nutrientPercentage: Double {
+        // Average percentage of all nutrient targets
+        let avgPercentage = topNutrients.map { $0.percentage }.reduce(0, +) / Double(max(topNutrients.count, 1))
+        return avgPercentage * 100
+    }
+    
+    var adherencePercentage: Double {
+        // Windows used vs total windows
+        let windowsUsed = mealWindows.filter { window in
+            mealsInWindow(window).count > 0
+        }.count
+        return Double(windowsUsed) / Double(max(mealWindows.count, 1)) * 100
+    }
+    
+    // MARK: - Week View Properties
+    
+    var weekAverageScore: Int { 75 } // Mock for now
+    var weekScoreValues: [Double] { [65, 78, 82, 75, 80, 72, 85] } // Mock for now
+    var daysLogged: Int { 6 } // Mock for now
+    var weekAverageCalories: Int { 1850 } // Mock for now
+    var weekWindowAdherence: Double { 82.5 } // Mock for now
+    var weekNutrientsAverage: Int { 24 } // Mock for now
+    var weekTimingValues: [Double] { [75, 80, 85, 78, 82, 79, 88] } // Mock for now
+    var weekNutrientValues: [Double] { [70, 75, 80, 72, 78, 74, 82] } // Mock for now
+    var weekAdherenceValues: [Double] { [80, 85, 78, 82, 88, 75, 90] } // Mock for now
+    
     // MARK: - Supporting Types
     
     struct NutritionInsight {
