@@ -201,18 +201,16 @@ class NutritionDashboardViewModel: ObservableObject {
                 icon: "exclamationmark.triangle.fill",
                 iconColor: .orange,
                 title: "Low Protein Alert",
-                message: "You're behind on protein today. Consider a protein-rich dinner.",
-                type: .warning
+                message: "You're behind on protein today. Consider a protein-rich dinner."
             ))
         }
         
-        if let lastCheckIn = postMealCheckIns.last, lastCheckIn.energyLevel >= 4 {
+        if let lastCheckIn = postMealCheckIns.last, lastCheckIn.energyLevel.rawValue >= 4 {
             insights.append(NutritionInsight(
                 icon: "bolt.fill",
                 iconColor: .green,
                 title: "Great Energy!",
-                message: "Your last meal gave you excellent energy. Remember this combination!",
-                type: .positive
+                message: "Your last meal gave you excellent energy. Remember this combination!"
             ))
         }
         
