@@ -544,7 +544,7 @@ struct ParsedMealWithTiming: Identifiable {
     let id = UUID()
     let name: String
     let description: String
-    let suggestedWindow: MealWindow?
+    var suggestedWindow: MealWindow?
     var assignedWindow: MealWindow?
 }
 

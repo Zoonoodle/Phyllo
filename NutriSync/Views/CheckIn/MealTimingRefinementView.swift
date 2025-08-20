@@ -311,7 +311,7 @@ struct WindowSelectionButton: View {
 }
 
 #Preview {
-    @State var parsedMeals = [
+    @Previewable @State var parsedMeals = [
         ParsedMealWithTiming(
             name: "Scrambled eggs and toast",
             description: "scrambled eggs and toast",
