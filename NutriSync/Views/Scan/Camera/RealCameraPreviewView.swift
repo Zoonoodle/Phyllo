@@ -80,14 +80,20 @@ struct RealCameraPreviewView: UIViewRepresentable {
     
     func updateUIView(_ uiView: UIView, context: Context) {
         if capturePhoto {
-            capturePhoto = false
-            
-            guard let photoOutput = context.coordinator.photoOutput else { return }
+            guard let photoOutput = context.coordinator.photoOutput else { 
+                capturePhoto = false
+                return 
+            }
             
             let settings = AVCapturePhotoSettings()
             settings.flashMode = .auto
             
             photoOutput.capturePhoto(with: settings, delegate: context.coordinator)
+            
+            // Reset the trigger after a small delay to ensure the capture is initiated
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                capturePhoto = false
+            }
         }
         
         // Update preview layer frame on orientation changes

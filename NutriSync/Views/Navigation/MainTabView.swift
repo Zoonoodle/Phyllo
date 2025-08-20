@@ -65,7 +65,7 @@ struct MainTabView: View {
             VStack {
                 Spacer()
                 FloatingTabBar(selectedTab: $selectedTab)
-                    .padding(.bottom, 17)
+                    .padding(.bottom, 40)
             }
         }
         .ignoresSafeArea()

@@ -309,14 +309,18 @@ struct ScanTabView: View {
             // Trigger actual photo capture
             capturePhotoTrigger = true
             
-            // Check for captured image after a brief delay
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            // Check for captured image after a longer delay to ensure capture completes
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                 captureAnimation = false
                 if capturedImage != nil {
                     Task { @MainActor in
                         DebugLogger.shared.ui("Photo captured, showing voice input overlay")
                     }
                     showVoiceInput = true
+                } else {
+                    Task { @MainActor in
+                        DebugLogger.shared.ui("Photo capture failed - no image received")
+                    }
                 }
             }
         } else if selectedMode == .voice {

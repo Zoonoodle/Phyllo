@@ -15,59 +15,23 @@ struct MorningCheckInView: View {
     @State private var currentStep = 1
     @State private var wakeTime = Date()
     @State private var sleepQuality: MorningCheckIn.SleepQuality?
-    @State private var selectedFocuses: Set<MorningCheckIn.DayFocus> = []
     
     // Animation states
     @State private var showContent = false
     @State private var isTransitioning = false
     
-    private let totalSteps = 4
+    private let totalSteps = 2
     
     var body: some View {
         ZStack {
             Color.nutriSyncBackground.ignoresSafeArea()
             
             VStack(spacing: 0) {
-                // Header with progress
-                VStack(spacing: 16) {
-                    HStack {
-                        Button(action: handleBack) {
-                            Image(systemName: "chevron.left")
-                                .font(.system(size: 20, weight: .medium))
-                                .foregroundColor(.white)
-                                .frame(width: 44, height: 44)
-                        }
-                        .opacity(currentStep == 2 ? 0 : 1)
-                        
-                        Spacer()
-                        
-                        Button(action: { dismiss() }) {
-                            Image(systemName: "xmark")
-                                .font(.system(size: 16, weight: .medium))
-                                .foregroundColor(.nutriSyncTextSecondary)
-                                .frame(width: 44, height: 44)
-                        }
-                        .opacity(currentStep == 2 ? 0 : 1)
-                    }
-                    
-                    // Progress bar
-                    SegmentedProgressBar(currentStep: currentStep, totalSteps: totalSteps)
-                        .padding(.horizontal, 20)
-                }
-                .padding(.horizontal, 4)
-                .padding(.top, 8)
-                
                 // Content
                 if showContent {
                     Group {
                         switch currentStep {
                         case 1:
-                            WelcomeCheckInView(onContinue: handleNextStep)
-                                .transition(.asymmetric(
-                                    insertion: .move(edge: .trailing).combined(with: .opacity),
-                                    removal: .move(edge: .leading).combined(with: .opacity)
-                                ))
-                        case 2:
                             WakeTimeSelectionView(
                                 wakeTime: $wakeTime,
                                 onContinue: handleNextStep,
@@ -77,18 +41,9 @@ struct MorningCheckInView: View {
                                 insertion: .move(edge: .trailing).combined(with: .opacity),
                                 removal: .move(edge: .leading).combined(with: .opacity)
                             ))
-                        case 3:
+                        case 2:
                             SleepQualityView(
                                 selectedQuality: $sleepQuality,
-                                onContinue: handleNextStep
-                            )
-                            .transition(.asymmetric(
-                                insertion: .move(edge: .trailing).combined(with: .opacity),
-                                removal: .move(edge: .leading).combined(with: .opacity)
-                            ))
-                        case 4:
-                            DayFocusSelectionView(
-                                selectedFocuses: $selectedFocuses,
                                 onContinue: completeCheckIn
                             )
                             .transition(.asymmetric(
@@ -136,7 +91,7 @@ struct MorningCheckInView: View {
             date: Date(),
             wakeTime: wakeTime,
             sleepQuality: quality,
-            dayFocus: selectedFocuses,
+            dayFocus: [],
             morningMood: nil
         )
         
@@ -157,7 +112,7 @@ struct MorningCheckInView: View {
                 case .excellent: return 9
                 }
             }()
-            let planned = selectedFocuses.map { $0.rawValue }
+            let planned: [String] = []
             let dataCheckIn = MorningCheckInData(
                 date: today,
                 wakeTime: wakeTime,
@@ -213,7 +168,7 @@ struct WelcomeCheckInView: View {
                     .offset(y: animateText ? 0 : 20)
             }
             .padding(.horizontal, 32)
-            .padding(.top, 60)
+      
             .animation(.easeOut(duration: 0.6).delay(0.3), value: animateText)
             
             Spacer()
