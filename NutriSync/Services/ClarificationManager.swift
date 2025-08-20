@@ -8,6 +8,7 @@
 import Foundation
 import SwiftUI
 
+@MainActor
 class ClarificationManager: ObservableObject {
     static let shared = ClarificationManager()
     

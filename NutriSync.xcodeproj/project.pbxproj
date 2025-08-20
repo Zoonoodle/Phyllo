@@ -8,7 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		4CE40C362E41689C0018C722 /* FirebaseAI in Frameworks */ = {isa = PBXBuildFile; productRef = 4CE40C352E41689C0018C722 /* FirebaseAI */; };
-		4CE40C382E41689C0018C722 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 4CE40C372E41689C0018C722 /* FirebaseAnalytics */; };
 		4CE40C3A2E41689C0018C722 /* FirebaseAppCheck in Frameworks */ = {isa = PBXBuildFile; productRef = 4CE40C392E41689C0018C722 /* FirebaseAppCheck */; };
 		4CE40C3C2E41689C0018C722 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 4CE40C3B2E41689C0018C722 /* FirebaseAuth */; };
 		4CE40C3E2E41689C0018C722 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 4CE40C3D2E41689C0018C722 /* FirebaseFirestore */; };
@@ -61,7 +60,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				4CE40C382E41689C0018C722 /* FirebaseAnalytics in Frameworks */,
 				4CE40C3A2E41689C0018C722 /* FirebaseAppCheck in Frameworks */,
 				4CE40C362E41689C0018C722 /* FirebaseAI in Frameworks */,
 				4CE40C3E2E41689C0018C722 /* FirebaseFirestore in Frameworks */,
@@ -128,7 +126,6 @@
 			name = NutriSync;
 			packageProductDependencies = (
 				4CE40C352E41689C0018C722 /* FirebaseAI */,
-				4CE40C372E41689C0018C722 /* FirebaseAnalytics */,
 				4CE40C392E41689C0018C722 /* FirebaseAppCheck */,
 				4CE40C3B2E41689C0018C722 /* FirebaseAuth */,
 				4CE40C3D2E41689C0018C722 /* FirebaseFirestore */,
@@ -628,11 +625,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 4CE40C342E41689C0018C722 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseAI;
-		};
-		4CE40C372E41689C0018C722 /* FirebaseAnalytics */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 4CE40C342E41689C0018C722 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
-			productName = FirebaseAnalytics;
 		};
 		4CE40C392E41689C0018C722 /* FirebaseAppCheck */ = {
 			isa = XCSwiftPackageProductDependency;

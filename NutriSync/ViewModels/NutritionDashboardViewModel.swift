@@ -188,4 +188,72 @@ class NutritionDashboardViewModel: ObservableObject {
     func caloriesConsumedInWindow(_ window: MealWindow) -> Int {
         mealsInWindow(window).reduce(0) { $0 + $1.calories }
     }
+    
+    // MARK: - Dashboard Specific Properties
+    
+    var insights: [NutritionInsight] {
+        // Generate insights based on current data
+        var insights: [NutritionInsight] = []
+        
+        // Example insights
+        if totalProtein < dailyProteinTarget / 2 && windowsRemaining <= 1 {
+            insights.append(NutritionInsight(
+                icon: "exclamationmark.triangle.fill",
+                iconColor: .orange,
+                title: "Low Protein Alert",
+                message: "You're behind on protein today. Consider a protein-rich dinner.",
+                type: .warning
+            ))
+        }
+        
+        if let lastCheckIn = postMealCheckIns.last, lastCheckIn.energyLevel >= 4 {
+            insights.append(NutritionInsight(
+                icon: "bolt.fill",
+                iconColor: .green,
+                title: "Great Energy!",
+                message: "Your last meal gave you excellent energy. Remember this combination!",
+                type: .positive
+            ))
+        }
+        
+        return insights
+    }
+    
+    var topNutrients: [NutrientInfo] {
+        // Return top micronutrients for the day
+        let nutrients = [
+            NutrientInfo(name: "Vitamin D", current: 12, target: 20, unit: "μg", color: .orange),
+            NutrientInfo(name: "Iron", current: 8, target: 18, unit: "mg", color: .red),
+            NutrientInfo(name: "Calcium", current: 600, target: 1000, unit: "mg", color: .white),
+            NutrientInfo(name: "Vitamin B12", current: 1.8, target: 2.4, unit: "μg", color: .purple)
+        ]
+        return nutrients.sorted { $0.percentage > $1.percentage }
+    }
+    
+    // MARK: - Supporting Types
+    
+    struct NutritionInsight {
+        let icon: String
+        let iconColor: Color
+        let title: String
+        let message: String
+        let type: InsightType = .suggestion
+        
+        enum InsightType {
+            case positive, warning, suggestion, trend
+        }
+    }
+    
+    struct NutrientInfo {
+        let name: String
+        let current: Double
+        let target: Double
+        let unit: String
+        let color: Color
+        
+        var percentage: Double {
+            guard target > 0 else { return 0 }
+            return min(current / target, 1.0)
+        }
+    }
 }

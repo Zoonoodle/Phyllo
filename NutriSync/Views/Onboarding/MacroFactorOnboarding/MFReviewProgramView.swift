@@ -56,21 +56,21 @@ struct MFReviewProgramView: View {
                         
                         // Key insights
                         VStack(spacing: 16) {
-                            InsightCard(
+                            MFInsightCard(
                                 icon: "sun.max.fill",
                                 iconColor: .orange,
                                 title: "Circadian Aligned",
                                 description: "Your eating window aligns with peak insulin sensitivity for optimal metabolism"
                             )
                             
-                            InsightCard(
+                            MFInsightCard(
                                 icon: "clock.fill",
                                 iconColor: .nutriSyncAccent,
                                 title: "16:8 Fasting Schedule",
                                 description: "8-hour eating window promotes metabolic flexibility and cellular repair"
                             )
                             
-                            InsightCard(
+                            MFInsightCard(
                                 icon: "moon.stars.fill",
                                 iconColor: .purple,
                                 title: "Sleep Optimized",
@@ -240,7 +240,7 @@ struct LegendItem: View {
 }
 
 // MARK: - Insight Card
-struct InsightCard: View {
+struct MFInsightCard: View {
     let icon: String
     let iconColor: Color
     let title: String
