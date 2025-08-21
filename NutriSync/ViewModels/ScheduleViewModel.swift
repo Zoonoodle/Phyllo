@@ -481,8 +481,7 @@ extension ScheduleViewModel {
         // Update in database
         do {
             try await dataProvider.updateWindow(updatedWindow)
-            // Refresh windows to ensure consistency
-            await refreshWindows()
+            // Windows will update automatically via observation
         } catch {
             print("❌ Failed to mark window as fasted: \(error)")
             // Revert local change on failure
