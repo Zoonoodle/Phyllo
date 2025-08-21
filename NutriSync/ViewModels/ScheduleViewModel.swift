@@ -463,6 +463,36 @@ extension ScheduleViewModel {
         }
     }
     
+    /// Mark a single window as fasted
+    func markWindowAsFasted(windowId: UUID) async {
+        guard let windowIndex = mealWindows.firstIndex(where: { $0.id == windowId }) else {
+            print("❌ Window not found with id: \(windowId)")
+            return
+        }
+        
+        var updatedWindow = mealWindows[windowIndex]
+        updatedWindow.isMarkedAsFasted = true
+        
+        // Update locally first for immediate UI feedback
+        await MainActor.run {
+            mealWindows[windowIndex] = updatedWindow
+        }
+        
+        // Update in database
+        do {
+            try await dataProvider.updateWindow(updatedWindow)
+            // Refresh windows to ensure consistency
+            await refreshWindows()
+        } catch {
+            print("❌ Failed to mark window as fasted: \(error)")
+            // Revert local change on failure
+            await MainActor.run {
+                updatedWindow.isMarkedAsFasted = false
+                mealWindows[windowIndex] = updatedWindow
+            }
+        }
+    }
+    
     /// Update user profile
     func updateUserProfile(_ profile: UserProfile) async {
         do {

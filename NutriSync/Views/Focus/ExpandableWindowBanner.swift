@@ -135,6 +135,11 @@ struct ExpandableWindowBanner: View {
     // Optional fixed banner height so the card can exactly represent the time span on the timeline
     let bannerHeight: CGFloat?
     
+    // State for missed window actions
+    @State private var showMissedWindowActions = false
+    @State private var showSimplifiedMealLogging = false
+    @State private var selectedMissedWindow: MealWindow?
+    
     // Add analyzing meals for this window - only if scanned within window time
     private var analyzingMealsInWindow: [AnalyzingMeal] {
         viewModel.analyzingMeals.filter { meal in
@@ -442,14 +447,41 @@ struct ExpandableWindowBanner: View {
         // Apply fixed height if provided so the background and content expand to match duration
         .frame(minHeight: nil, idealHeight: bannerHeight, maxHeight: bannerHeight, alignment: .top)
         .onTapGesture {
-            withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
-                selectedWindow = window
-                showWindowDetail = true
+            // Check if this is a missed window
+            if case .missed = windowStatus {
+                showMissedWindowActions = true
+            } else {
+                // Normal behavior for other windows
+                withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+                    selectedWindow = window
+                    showWindowDetail = true
+                }
             }
         }
         .onAppear {
             withAnimation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true)) {
                 pulseAnimation = true
+            }
+        }
+        .sheet(isPresented: $showMissedWindowActions) {
+            MissedWindowActionSheet(
+                window: window,
+                viewModel: viewModel,
+                isPresented: $showMissedWindowActions,
+                showSimplifiedMealLogging: $showSimplifiedMealLogging,
+                selectedMissedWindow: $selectedMissedWindow
+            )
+            .presentationDetents([.medium])
+            .presentationDragIndicator(.hidden)
+            .presentationBackground(Color.nutriSyncElevated)
+        }
+        .sheet(isPresented: $showSimplifiedMealLogging) {
+            if let missedWindow = selectedMissedWindow {
+                SimplifiedMealLoggingView(
+                    window: missedWindow,
+                    viewModel: viewModel,
+                    isPresented: $showSimplifiedMealLogging
+                )
             }
         }
     }

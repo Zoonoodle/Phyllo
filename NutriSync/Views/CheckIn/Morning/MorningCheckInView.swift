@@ -29,7 +29,7 @@ struct MorningCheckInView: View {
             VStack(spacing: 0) {
                 // Content
                 Spacer()
-                    .frame(height: 60)
+                    .frame(height: 0)
                 
                 if showContent {
                     Group {

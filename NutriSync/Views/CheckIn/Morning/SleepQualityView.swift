@@ -27,7 +27,7 @@ struct SleepQualityView: View {
     var body: some View {
         VStack(spacing: 0) {
             // Header
-            VStack(spacing: 12) {
+            VStack(spacing: 0) {
                 Text("How many hours did you sleep?")
                     .font(.system(size: 28, weight: .bold))
                     .foregroundColor(.white)
