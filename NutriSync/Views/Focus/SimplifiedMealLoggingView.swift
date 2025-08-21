@@ -23,6 +23,9 @@ struct SimplifiedMealLoggingView: View {
     @State private var isRecording = false
     @State private var voiceDescription = ""
     
+    // Service references
+    @StateObject private var mealCaptureService = MealCaptureService.shared
+    
     var body: some View {
         NavigationView {
             ZStack {
@@ -210,52 +213,50 @@ struct SimplifiedMealLoggingView: View {
         
         Task {
             do {
+                var mealImage: UIImage? = nil
+                var voiceNote: String? = nil
+                
                 if let photoItem = selectedPhotoItem {
                     // Handle photo-based meal logging
                     if let data = try? await photoItem.loadTransferable(type: Data.self),
                        let image = UIImage(data: data) {
-                        // Create analyzing meal
-                        let analyzingMeal = AnalyzingMeal(
-                            timestamp: window.startTime,
-                            windowId: window.id
-                        )
-                        viewModel.addAnalyzingMeal(analyzingMeal)
-                        
-                        // Analyze the meal
-                        await MealCaptureService.shared.analyzeMeal(
-                            image: image,
-                            voiceNote: voiceDescription.isEmpty ? nil : voiceDescription,
-                            timestamp: window.startTime,
-                            analyzingMealId: analyzingMeal.id
-                        )
-                        
-                        isPresented = false
+                        mealImage = image
+                        voiceNote = voiceDescription.isEmpty ? nil : voiceDescription
                     }
                 } else {
                     // Handle text/voice-based meal logging
-                    let description = voiceDescription.isEmpty ? mealDescription : voiceDescription
-                    
-                    // Create analyzing meal
-                    let analyzingMeal = AnalyzingMeal(
-                        timestamp: window.startTime,
-                        windowId: window.id
-                    )
-                    viewModel.addAnalyzingMeal(analyzingMeal)
-                    
-                    // Analyze the meal with description only
-                    await MealCaptureService.shared.analyzeMeal(
-                        image: nil,
-                        voiceNote: description,
-                        timestamp: window.startTime,
-                        analyzingMealId: analyzingMeal.id
-                    )
-                    
+                    voiceNote = voiceDescription.isEmpty ? mealDescription : voiceDescription
+                }
+                
+                // Start meal analysis using the service with the window's timestamp
+                // This ensures the meal is assigned to the correct missed window
+                let analyzingMeal = try await mealCaptureService.startMealAnalysis(
+                    image: mealImage,
+                    voiceTranscript: voiceNote,
+                    timestamp: window.startTime
+                )
+                
+                // The analyzing meal will be assigned to the appropriate window by the service
+                // based on the current time, but we need to update it to use our specific window
+                // This is handled by the window assignment logic in MealCaptureService
+                
+                // Navigate back
+                await MainActor.run {
                     isPresented = false
                 }
+                
+                // Navigate to timeline to show the analyzing meal
+                NotificationCenter.default.post(
+                    name: .switchToTimelineWithScroll,
+                    object: analyzingMeal
+                )
+                
             } catch {
-                errorMessage = "Failed to log meal: \(error.localizedDescription)"
-                showError = true
-                isProcessing = false
+                await MainActor.run {
+                    errorMessage = "Failed to log meal: \(error.localizedDescription)"
+                    showError = true
+                    isProcessing = false
+                }
             }
         }
     }

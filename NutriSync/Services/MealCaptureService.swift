@@ -35,7 +35,8 @@ class MealCaptureService: ObservableObject {
     func startMealAnalysis(
         image: UIImage?,
         voiceTranscript: String? = nil,
-        barcode: String? = nil
+        barcode: String? = nil,
+        timestamp: Date? = nil
     ) async throws -> AnalyzingMeal {
         Task { @MainActor in
             DebugLogger.shared.mealAnalysis("Starting meal analysis - Image: \(image != nil), Voice: \(voiceTranscript != nil), Barcode: \(barcode != nil)")
@@ -61,9 +62,10 @@ class MealCaptureService: ObservableObject {
         Task { @MainActor in
             DebugLogger.shared.dataProvider("Fetching current windows")
         }
-        let currentDate = timeProvider.currentTime
-        let currentWindows = try await dataProvider.getWindows(for: currentDate)
-        let now = currentDate
+        let mealTimestamp = timestamp ?? timeProvider.currentTime
+        let windowsDate = Calendar.current.startOfDay(for: mealTimestamp)
+        let currentWindows = try await dataProvider.getWindows(for: windowsDate)
+        let now = mealTimestamp
         
         // Debug logging for window assignment
         Task { @MainActor in
