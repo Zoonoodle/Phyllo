@@ -45,21 +45,18 @@ struct NutriSyncApp: App {
     }
     
     private func configureDataProvider() {
-        // Check if we should use mock data
-        let useMockData = ProcessInfo.processInfo.arguments.contains("--use-mock-data")
-        
         // Check if Firebase is configured
         let firebaseConfigured = Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist") != nil
         
-        if useMockData || !firebaseConfigured {
-            // Use mock data provider
-            DataSourceProvider.shared.configure(with: MockDataProvider())
-            print("📊 Using Mock Data Provider")
-        } else {
-            // Use Firebase data provider
-            DataSourceProvider.shared.configure(with: FirebaseDataProvider())
-            print("🔥 Using Firebase Data Provider")
+        if !firebaseConfigured {
+            print("⚠️ Firebase not configured - GoogleService-Info.plist not found")
+            // Could implement a basic in-memory provider here if needed
+            // For now, we'll still configure with Firebase and let it handle errors
         }
+        
+        // Always use Firebase data provider now that mock is removed
+        DataSourceProvider.shared.configure(with: FirebaseDataProvider())
+        print("🔥 Using Firebase Data Provider")
     }
     
     private func configureNotifications() {

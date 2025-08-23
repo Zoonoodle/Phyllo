@@ -264,13 +264,9 @@ class FirebaseDataProvider: DataProvider {
             DebugLogger.shared.dataProvider("Generating daily windows for date: \(date)")
         }
         
-        // Use proper window generation service
-        let windowGenerator = WindowGenerationService.shared
-        let windows = windowGenerator.generateWindows(
-            for: date,
-            profile: profile,
-            checkIn: checkIn
-        )
+        // Temporary simple window generation until AI service is implemented
+        // This creates a basic 3-window schedule
+        let windows = generateBasicWindows(for: date, profile: profile)
         
         Task { @MainActor in
             DebugLogger.shared.dataProvider("Generated \(windows.count) windows")
@@ -647,6 +643,75 @@ class FirebaseDataProvider: DataProvider {
         Task { @MainActor in
             DebugLogger.shared.success("Successfully cleared ALL Firebase data for user: \(currentUserId)")
         }
+    }
+    
+    // MARK: - Helper Methods
+    
+    private func generateBasicWindows(for date: Date, profile: UserProfile) -> [MealWindow] {
+        let calendar = Calendar.current
+        let startOfDay = calendar.startOfDay(for: date)
+        
+        // Calculate total daily calories and macros
+        let totalCalories = profile.dailyCalorieTarget
+        let totalProtein = profile.proteinTarget
+        let totalCarbs = profile.carbsTarget
+        let totalFat = profile.fatTarget
+        
+        // Create 3 basic windows: Morning, Afternoon, Evening
+        var windows: [MealWindow] = []
+        
+        // Morning window (8 AM - 12 PM) - 30% of calories
+        let morningStart = calendar.date(byAdding: .hour, value: 8, to: startOfDay)!
+        let morningEnd = calendar.date(byAdding: .hour, value: 12, to: startOfDay)!
+        windows.append(MealWindow(
+            startTime: morningStart,
+            endTime: morningEnd,
+            targetCalories: Int(Double(totalCalories) * 0.3),
+            targetMacros: MacroTargets(
+                protein: Int(Double(totalProtein) * 0.3),
+                carbs: Int(Double(totalCarbs) * 0.35),
+                fat: Int(Double(totalFat) * 0.25)
+            ),
+            purpose: .sustainedEnergy,
+            flexibility: .flexible,
+            dayDate: startOfDay
+        ))
+        
+        // Afternoon window (12 PM - 5 PM) - 40% of calories
+        let afternoonStart = morningEnd
+        let afternoonEnd = calendar.date(byAdding: .hour, value: 17, to: startOfDay)!
+        windows.append(MealWindow(
+            startTime: afternoonStart,
+            endTime: afternoonEnd,
+            targetCalories: Int(Double(totalCalories) * 0.4),
+            targetMacros: MacroTargets(
+                protein: Int(Double(totalProtein) * 0.4),
+                carbs: Int(Double(totalCarbs) * 0.35),
+                fat: Int(Double(totalFat) * 0.4)
+            ),
+            purpose: .sustainedEnergy,
+            flexibility: .flexible,
+            dayDate: startOfDay
+        ))
+        
+        // Evening window (5 PM - 9 PM) - 30% of calories
+        let eveningStart = afternoonEnd
+        let eveningEnd = calendar.date(byAdding: .hour, value: 21, to: startOfDay)!
+        windows.append(MealWindow(
+            startTime: eveningStart,
+            endTime: eveningEnd,
+            targetCalories: Int(Double(totalCalories) * 0.3),
+            targetMacros: MacroTargets(
+                protein: Int(Double(totalProtein) * 0.3),
+                carbs: Int(Double(totalCarbs) * 0.3),
+                fat: Int(Double(totalFat) * 0.35)
+            ),
+            purpose: .recovery,
+            flexibility: .flexible,
+            dayDate: startOfDay
+        ))
+        
+        return windows
     }
 }
 

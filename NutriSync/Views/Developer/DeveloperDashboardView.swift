@@ -2,17 +2,14 @@
 //  DeveloperDashboardView.swift
 //  NutriSync
 //
-//  Created on 7/27/25.
+//  Simplified version without MockDataManager
 //
 
 import SwiftUI
 import FirebaseFirestore
 
 struct DeveloperDashboardView: View {
-    @StateObject private var mockData = MockDataManager.shared
     @State private var selectedTab = 0
-    @State private var isClearing = false
-    @State private var showClearConfirmation = false
     @Environment(\.dismiss) var dismiss
     
     var body: some View {
@@ -24,35 +21,14 @@ struct DeveloperDashboardView: View {
                     // Custom Tab Bar
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 20) {
-                            DashboardTab(title: "Goals", icon: "target", isSelected: selectedTab == 0) {
+                            DashboardTab(title: "Data Viewer", icon: "doc.text", isSelected: selectedTab == 0) {
                                 selectedTab = 0
                             }
-                            DashboardTab(title: "Mock Meals", icon: "fork.knife", isSelected: selectedTab == 1) {
+                            DashboardTab(title: "Debug Logs", icon: "ladybug.fill", isSelected: selectedTab == 1) {
                                 selectedTab = 1
                             }
-                            DashboardTab(title: "Time Control", icon: "clock", isSelected: selectedTab == 2) {
+                            DashboardTab(title: "Firebase", icon: "flame", isSelected: selectedTab == 2) {
                                 selectedTab = 2
-                            }
-                            DashboardTab(title: "Profile", icon: "person.fill", isSelected: selectedTab == 3) {
-                                selectedTab = 3
-                            }
-                            DashboardTab(title: "Data Viewer", icon: "doc.text", isSelected: selectedTab == 4) {
-                                selectedTab = 4
-                            }
-                            DashboardTab(title: "Nudges", icon: "bell.badge", isSelected: selectedTab == 5) {
-                                selectedTab = 5
-                            }
-                            DashboardTab(title: "Debug Logs", icon: "ladybug.fill", isSelected: selectedTab == 6) {
-                                selectedTab = 6
-                            }
-                            DashboardTab(title: "Notifications", icon: "bell.circle", isSelected: selectedTab == 7) {
-                                selectedTab = 7
-                            }
-                            DashboardTab(title: "Windows Editor", icon: "calendar.badge.plus", isSelected: selectedTab == 8) {
-                                selectedTab = 8
-                            }
-                            DashboardTab(title: "Windows Ops", icon: "arrow.triangle.2.circlepath", isSelected: selectedTab == 9) {
-                                selectedTab = 9
                             }
                         }
                         .padding(.horizontal)
@@ -64,25 +40,11 @@ struct DeveloperDashboardView: View {
                         VStack(spacing: 20) {
                             switch selectedTab {
                             case 0:
-                                GoalsTabView()
-                            case 1:
-                                MockMealsTabView()
-                            case 2:
-                                TimeControlTabView()
-                            case 3:
-                                ProfileTabView()
-                            case 4:
                                 DataViewerTabView()
-                            case 5:
-                                NudgesDebugTabView()
-                            case 6:
+                            case 1:
                                 DebugLogView()
-                            case 7:
-                                NotificationsDebugTabView()
-                            case 8:
-                                WindowsEditorTabView()
-                            case 9:
-                                WindowsOpsTabView()
+                            case 2:
+                                FirebaseTabView()
                             default:
                                 EmptyView()
                             }
@@ -130,189 +92,40 @@ struct DashboardTab: View {
     }
 }
 
-// MARK: - Goals Tab
-struct GoalsTabView: View {
-    @StateObject private var mockData = MockDataManager.shared
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            // Primary Goal
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Primary Goal")
-                    .font(.headline)
-                    .foregroundColor(.white)
-                
-                ForEach(NutritionGoal.defaultExamples, id: \.id) { goal in
-                    GoalSelectionRow(
-                        goal: goal,
-                        isSelected: mockData.userProfile.primaryGoal.id == goal.id
-                    ) {
-                        mockData.setPrimaryGoal(goal)
-                    }
-                }
-            }
-            .padding()
-            .background(Color.nutriSyncElevated)
-            .cornerRadius(16)
-            
-            // Secondary Goals
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Secondary Goals")
-                    .font(.headline)
-                    .foregroundColor(.white)
-                
-                ForEach(NutritionGoal.defaultExamples, id: \.id) { goal in
-                    GoalSelectionRow(
-                        goal: goal,
-                        isSelected: mockData.userGoals.contains(where: { $0.id == goal.id })
-                    ) {
-                        if mockData.userGoals.contains(where: { $0.id == goal.id }) {
-                            mockData.removeSecondaryGoal(goal)
-                        } else {
-                            mockData.addSecondaryGoal(goal)
-                        }
-                    }
-                }
-            }
-            .padding()
-            .background(Color.nutriSyncElevated)
-            .cornerRadius(16)
-        }
-    }
-}
-
-struct GoalSelectionRow: View {
-    let goal: NutritionGoal
-    let isSelected: Bool
-    let action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            HStack {
-                Image(systemName: goal.icon)
-                    .font(.system(size: 20))
-                    .foregroundColor(goal.color)
-                    .frame(width: 30)
-                
-                Text(goal.displayName)
-                    .font(.system(size: 16))
-                    .foregroundColor(.white)
-                
-                Spacer()
-                
-                if isSelected {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundColor(.nutriSyncAccent)
-                }
-            }
-            .padding(.vertical, 8)
-        }
-    }
-}
-
-// MARK: - Mock Meals Tab
-struct MockMealsTabView: View {
-    @StateObject private var mockData = MockDataManager.shared
-    @State private var showClearConfirmation = false
-    @State private var isClearing = false
-    @State private var totalFirebaseMeals = 0
-    
+// MARK: - Data Viewer Tab
+struct DataViewerTabView: View {
     private var dataProvider: DataProvider {
         DataSourceProvider.shared.provider
     }
     
+    @State private var todaysMeals: [LoggedMeal] = []
+    @State private var todaysWindows: [MealWindow] = []
+    @State private var isLoading = true
+    
     var body: some View {
         VStack(spacing: 20) {
-            // Data Management
-            VStack(spacing: 12) {
-                Text("All meals must be logged through the Scan tab")
-                    .font(.subheadline)
-                    .foregroundColor(.white.opacity(0.7))
-                    .multilineTextAlignment(.center)
-                    .padding()
-                
-                Button(action: {
-                    showClearConfirmation = true
-                }) {
-                    HStack {
-                        if isClearing {
-                            ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                                .scaleEffect(0.8)
-                        } else {
-                            Image(systemName: "trash.fill")
-                        }
-                        Text("Clear All Meals")
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color.red.opacity(isClearing ? 0.5 : 0.8))
-                    .foregroundColor(.white)
-                    .cornerRadius(12)
-                }
-                .disabled(isClearing)
-                .confirmationDialog("Clear All Meals", isPresented: $showClearConfirmation) {
-                    Button("Clear ALL Meals from Firebase", role: .destructive) {
-                        clearAllMeals()
-                    }
-                    Button("Cancel", role: .cancel) {}
-                } message: {
-                    Text("This will permanently delete ALL meals from Firebase (not just today's) and all mock data. This action cannot be undone.")
-                }
-            }
-            
-            // Firebase Stats
+            // Today's Meals
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
-                    Text("Firebase Database")
+                    Text("Today's Meals")
                         .font(.headline)
                         .foregroundColor(.white)
                     
                     Spacer()
                     
-                    if totalFirebaseMeals > 0 {
-                        Text("\(totalFirebaseMeals) total meals")
-                            .font(.subheadline)
-                            .foregroundColor(.orange)
-                    }
-                    
-                    Button(action: fetchFirebaseStats) {
-                        Image(systemName: "arrow.clockwise")
-                            .font(.system(size: 14))
-                            .foregroundColor(.white.opacity(0.7))
-                    }
-                }
-                
-                Text("All meals across all dates in Firebase")
-                    .font(.caption)
-                    .foregroundColor(.white.opacity(0.5))
-            }
-            .padding()
-            .background(Color.nutriSyncElevated)
-            .cornerRadius(16)
-            
-            // Current Meals
-            VStack(alignment: .leading, spacing: 12) {
-                HStack {
-                    Text("Today's Mock Meals")
-                        .font(.headline)
-                        .foregroundColor(.white)
-                    
-                    Spacer()
-                    
-                    Text("\(mockData.todaysMeals.count) meals")
+                    Text("\(todaysMeals.count) meals")
                         .font(.subheadline)
                         .foregroundColor(.white.opacity(0.5))
                 }
                 
-                if mockData.todaysMeals.isEmpty {
+                if todaysMeals.isEmpty {
                     Text("No meals logged yet")
                         .font(.subheadline)
                         .foregroundColor(.white.opacity(0.5))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 40)
                 } else {
-                    ForEach(mockData.todaysMeals) { meal in
+                    ForEach(todaysMeals) { meal in
                         HStack {
                             VStack(alignment: .leading) {
                                 Text(meal.name)
@@ -340,82 +153,151 @@ struct MockMealsTabView: View {
             .background(Color.nutriSyncElevated)
             .cornerRadius(16)
             
-            // Nutrition Summary
-            VStack(spacing: 8) {
+            // Today's Windows
+            VStack(alignment: .leading, spacing: 12) {
                 HStack {
-                    Text("Calories:")
+                    Text("Today's Windows")
+                        .font(.headline)
+                        .foregroundColor(.white)
+                    
                     Spacer()
-                    Text("\(mockData.todaysCaloriesConsumed)")
+                    
+                    Text("\(todaysWindows.count) windows")
+                        .font(.subheadline)
+                        .foregroundColor(.white.opacity(0.5))
                 }
-                HStack {
-                    Text("Protein:")
-                    Spacer()
-                    Text("\(mockData.todaysProteinConsumed)g")
-                }
-                HStack {
-                    Text("Carbs:")
-                    Spacer()
-                    Text("\(mockData.todaysCarbsConsumed)g")
-                }
-                HStack {
-                    Text("Fat:")
-                    Spacer()
-                    Text("\(mockData.todaysFatConsumed)g")
+                
+                if todaysWindows.isEmpty {
+                    Text("No windows generated yet")
+                        .font(.subheadline)
+                        .foregroundColor(.white.opacity(0.5))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 40)
+                } else {
+                    ForEach(todaysWindows) { window in
+                        HStack {
+                            VStack(alignment: .leading) {
+                                Text(window.title)
+                                    .font(.system(size: 16, weight: .medium))
+                                    .foregroundColor(.white)
+                                
+                                Text("\(window.targetCalories) cal target")
+                                    .font(.caption)
+                                    .foregroundColor(.white.opacity(0.7))
+                            }
+                            
+                            Spacer()
+                            
+                            Text("\(window.startTime, formatter: timeFormatter) - \(window.endTime, formatter: timeFormatter)")
+                                .font(.caption)
+                                .foregroundColor(.white.opacity(0.5))
+                        }
+                        .padding()
+                        .background(Color.nutriSyncSurface)
+                        .cornerRadius(12)
+                    }
                 }
             }
-            .font(.system(size: 14))
-            .foregroundColor(.white.opacity(0.8))
             .padding()
             .background(Color.nutriSyncElevated)
             .cornerRadius(16)
         }
         .onAppear {
-            fetchFirebaseStats()
+            loadData()
         }
     }
     
-    private func clearAllMeals() {
-        isClearing = true
-        
+    private func loadData() {
         Task {
             do {
-                // Clear mock data
-                await MainActor.run {
-                    mockData.clearAllMeals()
-                }
-                
-                // Clear ALL Firebase meals, not just today's
-                // Query all meals without date filter
-                let snapshot = try await Firestore.firestore()
-                    .collection("users")
-                    .document("dev_user_001")
-                    .collection("meals")
-                    .getDocuments()
+                let meals = try await dataProvider.getMeals(for: Date())
+                let windows = try await dataProvider.getWindows(for: Date())
                 
                 await MainActor.run {
-                    DebugLogger.shared.firebase("Found \(snapshot.documents.count) total meals in Firebase to delete")
-                }
-                
-                // Delete each meal
-                for doc in snapshot.documents {
-                    try await Firestore.firestore()
-                        .collection("users")
-                        .document("dev_user_001")
-                        .collection("meals")
-                        .document(doc.documentID)
-                        .delete()
-                }
-                
-                await MainActor.run {
-                    isClearing = false
-                    DebugLogger.shared.success("Cleared \(snapshot.documents.count) meals from Firebase and all mock data")
+                    self.todaysMeals = meals.sorted { $0.timestamp < $1.timestamp }
+                    self.todaysWindows = windows.sorted { $0.startTime < $1.startTime }
+                    self.isLoading = false
                 }
             } catch {
+                print("Error loading data: \(error)")
                 await MainActor.run {
-                    isClearing = false
-                    DebugLogger.shared.error("Failed to clear meals: \(error)")
+                    self.isLoading = false
                 }
             }
+        }
+    }
+}
+
+// MARK: - Firebase Tab
+struct FirebaseTabView: View {
+    @State private var totalMeals = 0
+    @State private var isClearing = false
+    @State private var showClearConfirmation = false
+    
+    var body: some View {
+        VStack(spacing: 20) {
+            // Firebase Stats
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Text("Firebase Database")
+                        .font(.headline)
+                        .foregroundColor(.white)
+                    
+                    Spacer()
+                    
+                    if totalMeals > 0 {
+                        Text("\(totalMeals) total meals")
+                            .font(.subheadline)
+                            .foregroundColor(.orange)
+                    }
+                    
+                    Button(action: fetchFirebaseStats) {
+                        Image(systemName: "arrow.clockwise")
+                            .font(.system(size: 14))
+                            .foregroundColor(.white.opacity(0.7))
+                    }
+                }
+                
+                Text("All meals across all dates in Firebase")
+                    .font(.caption)
+                    .foregroundColor(.white.opacity(0.5))
+            }
+            .padding()
+            .background(Color.nutriSyncElevated)
+            .cornerRadius(16)
+            
+            // Clear Data Button
+            Button(action: {
+                showClearConfirmation = true
+            }) {
+                HStack {
+                    if isClearing {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            .scaleEffect(0.8)
+                    } else {
+                        Image(systemName: "trash.fill")
+                    }
+                    Text("Clear All Firebase Data")
+                }
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(Color.red.opacity(isClearing ? 0.5 : 0.8))
+                .foregroundColor(.white)
+                .cornerRadius(12)
+            }
+            .disabled(isClearing)
+            .confirmationDialog("Clear All Data", isPresented: $showClearConfirmation) {
+                Button("Clear ALL Data from Firebase", role: .destructive) {
+                    clearAllData()
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("This will permanently delete ALL data from Firebase. This action cannot be undone.")
+            }
+        }
+        .onAppear {
+            fetchFirebaseStats()
         }
     }
     
@@ -429,1201 +311,176 @@ struct MockMealsTabView: View {
                     .getDocuments()
                 
                 await MainActor.run {
-                    totalFirebaseMeals = snapshot.documents.count
+                    totalMeals = snapshot.documents.count
                 }
             } catch {
-                await MainActor.run {
-                    DebugLogger.shared.error("Failed to fetch Firebase stats: \(error)")
-                }
+                print("Error fetching stats: \(error)")
             }
         }
     }
     
-    private var timeFormatter: DateFormatter {
-        let formatter = DateFormatter()
-        formatter.timeStyle = .short
-        return formatter
-    }
-}
-
-// MARK: - Time Control Tab
-struct TimeControlTabView: View {
-    @StateObject private var mockData = MockDataManager.shared
-    @State private var selectedHour = 12
-    @State private var isClearing = false
-    @State private var showClearConfirmation = false
-    
-    var body: some View {
-        VStack(spacing: 20) {
-            // Current Time Display
-            VStack(spacing: 8) {
-                Text("Simulated Time")
-                    .font(.headline)
-                    .foregroundColor(.white.opacity(0.7))
-                
-                Text(mockData.currentSimulatedTime, formatter: timeFormatter)
-                    .font(.system(size: 36, weight: .medium))
-                    .foregroundColor(.nutriSyncAccent)
-            }
-            .frame(maxWidth: .infinity)
-            .padding()
-            .background(Color.nutriSyncElevated)
-            .cornerRadius(16)
-            
-            // Time Picker
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Set Time")
-                    .font(.headline)
-                    .foregroundColor(.white)
-                
-                Picker("Hour", selection: $selectedHour) {
-                    ForEach(0..<24) { hour in
-                        Text("\(hour):00")
-                            .tag(hour)
-                    }
-                }
-                .pickerStyle(WheelPickerStyle())
-                .frame(height: 150)
-                
-                Button(action: {
-                    mockData.simulateTime(hour: selectedHour)
-                }) {
-                    Text("Set Time")
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.nutriSyncAccent)
-                        .foregroundColor(.black)
-                        .cornerRadius(12)
-                }
-            }
-            .padding()
-            .background(Color.nutriSyncElevated)
-            .cornerRadius(16)
-            
-            // Quick Time Buttons
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Quick Jump")
-                    .font(.headline)
-                    .foregroundColor(.white)
-                
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                    TimeButton(label: "Morning", hour: 7) {
-                        mockData.simulateDayProgress(hour: 7)
-                    }
-                    TimeButton(label: "Noon", hour: 12) {
-                        mockData.simulateDayProgress(hour: 12)
-                    }
-                    TimeButton(label: "Afternoon", hour: 15) {
-                        mockData.simulateDayProgress(hour: 15)
-                    }
-                    TimeButton(label: "Evening", hour: 19) {
-                        mockData.simulateDayProgress(hour: 19)
-                    }
-                }
-            }
-            .padding()
-            .background(Color.nutriSyncElevated)
-            .cornerRadius(16)
-            
-            // Day Controls
-            HStack(spacing: 12) {
-                Button(action: {
-                    mockData.resetDay()
-                }) {
-                    Label("Reset Day (7 AM)", systemImage: "sunrise.fill")
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.orange.opacity(0.8))
-                        .foregroundColor(.white)
-                        .cornerRadius(12)
-                }
-                
-                Button(action: {
-                    mockData.completeMorningCheckIn()
-                }) {
-                    Label("Complete Check-In", systemImage: "checkmark.circle.fill")
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.nutriSyncAccent)
-                        .foregroundColor(.black)
-                        .cornerRadius(12)
-                }
-            }
-            
-            // Firebase Data Management
-            VStack(spacing: 12) {
-                Text("Firebase Data")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.top, 8)
-                
-                Button(action: {
-                    showClearConfirmation = true
-                }) {
-                    Label("Clear All Firebase Data", systemImage: "trash.fill")
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.red.opacity(0.8))
-                        .foregroundColor(.white)
-                        .cornerRadius(12)
-                }
-                .alert("Clear All Firebase Data?", isPresented: $showClearConfirmation) {
-                    Button("Cancel", role: .cancel) { }
-                    Button("Clear All Data", role: .destructive) {
-                        clearFirebaseData()
-                    }
-                } message: {
-                    Text("This will permanently delete ALL data from Firebase including meals, windows, check-ins, and analytics. This action cannot be undone.")
-                }
-                .disabled(isClearing)
-                .opacity(isClearing ? 0.6 : 1.0)
-                
-                if isClearing {
-                    HStack {
-                        ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                            .scaleEffect(0.8)
-                        Text("Clearing Firebase data...")
-                            .font(.caption)
-                            .foregroundColor(.white.opacity(0.7))
-                    }
-                    .padding(.top, 4)
-                }
-            }
-        }
-    }
-    
-    private var timeFormatter: DateFormatter {
-        let formatter = DateFormatter()
-        formatter.timeStyle = .medium
-        formatter.dateStyle = .short
-        return formatter
-    }
-    
-    private func clearFirebaseData() {
+    private func clearAllData() {
         isClearing = true
         
         Task {
             do {
-                // Get the data provider (should be Firebase in production)
-                let dataProvider = DataSourceProvider.shared.provider
+                // Clear all meals
+                let mealsSnapshot = try await Firestore.firestore()
+                    .collection("users")
+                    .document("dev_user_001")
+                    .collection("meals")
+                    .getDocuments()
                 
-                // Clear all data
-                try await dataProvider.clearAllUserData()
+                for doc in mealsSnapshot.documents {
+                    try await doc.reference.delete()
+                }
+                
+                // Clear all windows
+                let windowsSnapshot = try await Firestore.firestore()
+                    .collection("users")
+                    .document("dev_user_001")
+                    .collection("windows")
+                    .getDocuments()
+                
+                for doc in windowsSnapshot.documents {
+                    try await doc.reference.delete()
+                }
                 
                 await MainActor.run {
                     isClearing = false
-                    // Reset mock data to match Firebase state
-                    mockData.resetDay()
+                    totalMeals = 0
+                    DebugLogger.shared.success("Cleared all Firebase data")
                 }
             } catch {
                 await MainActor.run {
                     isClearing = false
-                    print("❌ Error clearing Firebase data: \(error)")
+                    DebugLogger.shared.error("Failed to clear data: \(error)")
                 }
             }
         }
     }
 }
 
-struct TimeButton: View {
-    let label: String
-    let hour: Int
+// MARK: - Debug Log View
+struct DebugLogView: View {
+    @ObservedObject var logger = DebugLogger.shared
+    @State private var selectedCategory: DebugCategory? = nil
+    
+    var body: some View {
+        VStack(spacing: 16) {
+            // Category Filter
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 12) {
+                    FilterChip(
+                        title: "All",
+                        isSelected: selectedCategory == nil,
+                        action: { selectedCategory = nil }
+                    )
+                    
+                    ForEach(DebugCategory.allCases, id: \.self) { category in
+                        FilterChip(
+                            title: category.displayName,
+                            isSelected: selectedCategory == category,
+                            color: category.color,
+                            action: { selectedCategory = category }
+                        )
+                    }
+                }
+            }
+            
+            // Log Entries
+            ScrollView {
+                LazyVStack(spacing: 8) {
+                    ForEach(filteredLogs) { log in
+                        DebugLogRow(log: log)
+                    }
+                }
+            }
+            .background(Color.nutriSyncElevated)
+            .cornerRadius(16)
+        }
+    }
+    
+    private var filteredLogs: [DebugLog] {
+        if let category = selectedCategory {
+            return logger.logs.filter { $0.category == category }
+        }
+        return logger.logs
+    }
+}
+
+struct FilterChip: View {
+    let title: String
+    let isSelected: Bool
+    var color: Color = .white
     let action: () -> Void
     
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 4) {
-                Text(label)
-                    .font(.system(size: 14, weight: .medium))
-                Text("\(hour):00")
-                    .font(.caption)
-                    .foregroundColor(.white.opacity(0.7))
-            }
-            .frame(maxWidth: .infinity)
-            .padding()
-            .background(Color.nutriSyncSurface)
-            .foregroundColor(.white)
-            .cornerRadius(12)
-        }
-    }
-}
-
-// MARK: - Profile Tab
-struct ProfileTabView: View {
-    @StateObject private var mockData = MockDataManager.shared
-    
-    var body: some View {
-        VStack(spacing: 20) {
-            // Activity Level
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Activity Level")
-                    .font(.headline)
-                    .foregroundColor(.white)
-                
-                ForEach(ActivityLevel.allCases, id: \.self) { level in
-                    Button(action: {
-                        mockData.updateActivityLevel(level)
-                    }) {
-                        HStack {
-                            Text(level.rawValue)
-                                .foregroundColor(.white)
-                            Spacer()
-                            if mockData.userProfile.activityLevel == level {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .foregroundColor(.nutriSyncAccent)
-                            }
-                        }
-                        .padding(.vertical, 8)
-                    }
-                }
-            }
-            .padding()
-            .background(Color.nutriSyncElevated)
-            .cornerRadius(16)
-            
-            // Work Schedule - Commented out as these properties are removed from UserProfile
-            /*
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Work Schedule")
-                    .font(.headline)
-                    .foregroundColor(.white)
-                
-                ForEach(WorkSchedule.allCases, id: \.self) { schedule in
-                    Button(action: {
-                        mockData.updateWorkSchedule(schedule)
-                    }) {
-                        HStack {
-                            Text(schedule.rawValue)
-                                .foregroundColor(.white)
-                            Spacer()
-                            if mockData.userProfile.workSchedule == schedule {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .foregroundColor(.nutriSyncAccent)
-                            }
-                        }
-                        .padding(.vertical, 8)
-                    }
-                }
-            }
-            .padding()
-            .background(Color.nutriSyncElevated)
-            .cornerRadius(16)
-            */
-            
-            // Meal Preferences - Commented out as these properties are removed from UserProfile
-            /*
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Preferred Meal Count")
-                    .font(.headline)
-                    .foregroundColor(.white)
-                
-                HStack {
-                    ForEach(3...6, id: \.self) { count in
-                        Button(action: {
-                            mockData.updateMealCount(count)
-                        }) {
-                            Text("\(count)")
-                                .font(.system(size: 16, weight: .medium))
-                                .frame(width: 50, height: 50)
-                                .background(mockData.userProfile.preferredMealCount == count ? Color.nutriSyncAccent : Color.nutriSyncSurface)
-                                .foregroundColor(mockData.userProfile.preferredMealCount == count ? .black : .white)
-                                .clipShape(Circle())
-                        }
-                    }
-                }
-            }
-            .padding()
-            .background(Color.nutriSyncElevated)
-            .cornerRadius(16)
-            
-            // Fasting Protocol
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Fasting Protocol")
-                    .font(.headline)
-                    .foregroundColor(.white)
-                
-                ForEach(FastingProtocol.allCases, id: \.self) { fasting in
-                    Button(action: {
-                        mockData.updateFastingProtocol(fasting)
-                    }) {
-                        HStack {
-                            Text(fasting.rawValue)
-                                .foregroundColor(.white)
-                            Spacer()
-                            if mockData.userProfile.intermittentFastingPreference == fasting {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .foregroundColor(.nutriSyncAccent)
-                            }
-                        }
-                        .padding(.vertical, 8)
-                    }
-                }
-                
-                Button(action: {
-                    mockData.updateFastingProtocol(nil)
-                }) {
-                    HStack {
-                        Text("No Fasting")
-                            .foregroundColor(.white)
-                        Spacer()
-                        if mockData.userProfile.intermittentFastingPreference == nil {
-                            Image(systemName: "checkmark.circle.fill")
-                                .foregroundColor(.nutriSyncAccent)
-                        }
-                    }
-                    .padding(.vertical, 8)
-                }
-            }
-            .padding()
-            .background(Color.nutriSyncElevated)
-            .cornerRadius(16)
-            */
-        }
-    }
-}
-
-// MARK: - Data Viewer Tab
-struct DataViewerTabView: View {
-    @StateObject private var mockData = MockDataManager.shared
-    
-    var body: some View {
-        VStack(spacing: 20) {
-            // Current State
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Current State")
-                    .font(.headline)
-                    .foregroundColor(.white)
-                
-                Group {
-                    DataRow(label: "Primary Goal", value: mockData.userProfile.primaryGoal.displayName)
-                    DataRow(label: "Secondary Goals", value: "\(mockData.userGoals.count)")
-                    DataRow(label: "Meal Windows", value: "\(mockData.mealWindows.count)")
-                    DataRow(label: "Windows Remaining", value: "\(mockData.windowsRemaining)")
-                    DataRow(label: "Active Window", value: mockData.activeWindow?.purpose.rawValue ?? "None")
-                    DataRow(label: "Meals Logged", value: "\(mockData.todaysMeals.count)")
-                    DataRow(label: "Morning Check-In", value: mockData.morningCheckIn != nil ? "Complete" : "Pending")
-                }
-            }
-            .padding()
-            .background(Color.nutriSyncElevated)
-            .cornerRadius(16)
-            
-            // Windows
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Today's Windows")
-                    .font(.headline)
-                    .foregroundColor(.white)
-                
-                if mockData.mealWindows.isEmpty {
-                    Text("No windows generated")
-                        .font(.subheadline)
-                        .foregroundColor(.white.opacity(0.5))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 20)
-                } else {
-                    ForEach(mockData.mealWindows) { window in
-                        VStack(alignment: .leading, spacing: 4) {
-                            HStack {
-                                Image(systemName: window.purpose.icon)
-                                    .foregroundColor(window.purpose.color)
-                                Text(window.purpose.rawValue)
-                                    .font(.system(size: 14, weight: .medium))
-                                    .foregroundColor(.white)
-                                Spacer()
-                                if window.isActive {
-                                    Text("ACTIVE")
-                                        .font(.caption)
-                                        .foregroundColor(.black)
-                                        .padding(.horizontal, 8)
-                                        .padding(.vertical, 2)
-                                        .background(Color.nutriSyncAccent)
-                                        .cornerRadius(4)
-                                }
-                            }
-                            Text(window.formattedTimeRange)
-                                .font(.caption)
-                                .foregroundColor(.white.opacity(0.7))
-                            Text("\(window.targetCalories) cal • P: \(window.targetMacros.protein)g • C: \(window.targetMacros.carbs)g • F: \(window.targetMacros.fat)g")
-                                .font(.caption)
-                                .foregroundColor(.white.opacity(0.5))
-                        }
-                        .padding()
-                        .background(Color.nutriSyncSurface)
-                        .cornerRadius(12)
-                    }
-                }
-            }
-            .padding()
-            .background(Color.nutriSyncElevated)
-            .cornerRadius(16)
-            
-            // Reset Button
-            Button(action: {
-                mockData.resetToDefaults()
-            }) {
-                Label("Reset All Data", systemImage: "arrow.counterclockwise")
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color.red.opacity(0.8))
-                    .foregroundColor(.white)
-                    .cornerRadius(12)
-            }
-        }
-    }
-}
-
-// MARK: - Windows Editor Tab
-struct WindowsEditorTabView: View {
-    @StateObject private var mockData = MockDataManager.shared
-    @State private var selection: UUID?
-    @State private var editingStart: Date = Date()
-    @State private var editingEnd: Date = Date().addingTimeInterval(3600)
-    @State private var isSaving = false
-
-    private var provider: DataProvider { DataSourceProvider.shared.provider }
-
-    var body: some View {
-        VStack(spacing: 16) {
-            if mockData.mealWindows.isEmpty {
-                Text("No windows today. Generate first from Time Control or Goals tab.")
-                    .foregroundColor(.white.opacity(0.6))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            } else {
-                ForEach(mockData.mealWindows) { window in
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack {
-                            Image(systemName: window.purpose.icon)
-                                .foregroundColor(window.purpose.color)
-                            Text(window.purpose.rawValue)
-                                .font(.system(size: 15, weight: .medium))
-                                .foregroundColor(.white)
-                            Spacer()
-                            Text(window.formattedTimeRange)
-                                .font(.caption)
-                                .foregroundColor(.white.opacity(0.6))
-                        }
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            selection = window.id
-                            editingStart = window.startTime
-                            editingEnd = window.endTime
-                        }
-
-                        if selection == window.id {
-                            VStack(alignment: .leading, spacing: 8) {
-                                DatePicker("Start", selection: $editingStart, displayedComponents: .hourAndMinute)
-                                    .labelsHidden()
-                                    .tint(.nutriSyncAccent)
-                                DatePicker("End", selection: $editingEnd, displayedComponents: .hourAndMinute)
-                                    .labelsHidden()
-                                    .tint(.nutriSyncAccent)
-                                Button(action: { Task { await save(window: window) } }) {
-                                    HStack {
-                                        if isSaving { ProgressView().tint(.black) }
-                                        Text(isSaving ? "Saving..." : "Save Window")
-                                    }
-                                    .frame(maxWidth: .infinity)
-                                    .padding()
-                                    .background(Color.nutriSyncAccent)
-                                    .foregroundColor(.black)
-                                    .cornerRadius(12)
-                                }
-                                .disabled(isSaving || editingEnd <= editingStart)
-                            }
-                            .padding(.top, 8)
-                        }
-                    }
-                    .padding()
-                    .background(Color.nutriSyncSurface)
-                    .cornerRadius(12)
-                }
-            }
-        }
-    }
-
-    private func save(window: MealWindow) async {
-        guard editingEnd > editingStart else { return }
-        await MainActor.run { isSaving = true }
-        let updated = MealWindow(
-            id: window.id,
-            startTime: editingStart,
-            endTime: editingEnd,
-            targetCalories: window.targetCalories,
-            targetMacros: window.targetMacros,
-            purpose: window.purpose,
-            flexibility: window.flexibility,
-            dayDate: window.dayDate,
-            adjustedCalories: window.adjustedCalories,
-            adjustedMacros: window.adjustedMacros,
-            redistributionReason: window.redistributionReason
-        )
-        do {
-            try await provider.updateWindow(updated)
-            await MainActor.run {
-                isSaving = false
-                selection = nil
-                // Update the mock cache to reflect immediately
-                if let idx = mockData.mealWindows.firstIndex(where: { $0.id == window.id }) {
-                    mockData.mealWindows[idx] = updated
-                }
-            }
-        } catch {
-            await MainActor.run { isSaving = false }
-        }
-    }
-}
-
-// MARK: - Windows Ops Tab (Regenerate Today)
-struct WindowsOpsTabView: View {
-    @State private var isWorking = false
-    @State private var message: String?
-    private var provider: DataProvider { DataSourceProvider.shared.provider }
-    
-    var body: some View {
-        VStack(spacing: 16) {
-            Button(action: { Task { await regenerateToday() } }) {
-                HStack {
-                    if isWorking { ProgressView().tint(.black) }
-                    Text(isWorking ? "Regenerating…" : "Regenerate Today's Windows")
-                }
-                .frame(maxWidth: .infinity)
-                .padding()
-                .background(Color.nutriSyncAccent)
-                .foregroundColor(.black)
+            Text(title)
+                .font(.caption)
+                .foregroundColor(isSelected ? .black : color)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(isSelected ? color : Color.clear)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(color, lineWidth: 1)
+                )
                 .cornerRadius(12)
-            }
-            .disabled(isWorking)
-            
-            if let message {
-                Text(message)
-                    .font(.footnote)
-                    .foregroundColor(.white.opacity(0.7))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-        }
-        .padding()
-        .background(Color.nutriSyncElevated)
-        .cornerRadius(16)
-    }
-    
-    private func regenerateToday() async {
-        await MainActor.run { isWorking = true; message = nil }
-        do {
-            let profile = try await provider.getUserProfile() ?? UserProfile.defaultProfile
-            let today = Date()
-            let checkIn = try await provider.getMorningCheckIn(for: today)
-            let windows = try await provider.generateDailyWindows(for: today, profile: profile, checkIn: checkIn)
-            await MainActor.run {
-                isWorking = false
-                message = "Generated \(windows.count) windows for today"
-            }
-        } catch {
-            await MainActor.run {
-                isWorking = false
-                message = "Failed: \(error.localizedDescription)"
-            }
         }
     }
 }
 
-struct DataRow: View {
-    let label: String
-    let value: String
+struct DebugLogRow: View {
+    let log: DebugLog
     
     var body: some View {
-        HStack {
-            Text(label)
-                .font(.system(size: 14))
-                .foregroundColor(.white.opacity(0.7))
+        HStack(alignment: .top, spacing: 8) {
+            Circle()
+                .fill(log.category.color)
+                .frame(width: 8, height: 8)
+                .padding(.top, 6)
+            
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text(log.category.displayName)
+                        .font(.caption2)
+                        .foregroundColor(log.category.color)
+                    
+                    Text(log.timestamp, formatter: debugTimeFormatter)
+                        .font(.caption2)
+                        .foregroundColor(.white.opacity(0.4))
+                }
+                
+                Text(log.message)
+                    .font(.system(size: 13, design: .monospaced))
+                    .foregroundColor(.white.opacity(0.8))
+            }
+            
             Spacer()
-            Text(value)
-                .font(.system(size: 14, weight: .medium))
-                .foregroundColor(.white)
         }
-        .padding(.vertical, 4)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(Color.black.opacity(0.3))
+        .cornerRadius(8)
     }
 }
 
-// MARK: - Nudges Debug Tab
-struct NudgesDebugTabView: View {
-    @StateObject private var nudgeManager = NudgeManager.shared
-    @StateObject private var mockData = MockDataManager.shared
-    
-    var body: some View {
-        VStack(spacing: 20) {
-            // Current Nudge State
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Current State")
-                    .font(.headline)
-                    .foregroundColor(.white)
-                
-                VStack(spacing: 8) {
-                    HStack {
-                        Text("Active Nudge")
-                            .font(.system(size: 14))
-                            .foregroundColor(.white.opacity(0.7))
-                        Spacer()
-                        Text(nudgeManager.activeNudge?.id ?? "None")
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(.white)
-                    }
-                    
-                    HStack {
-                        Text("Queued Nudges")
-                            .font(.system(size: 14))
-                            .foregroundColor(.white.opacity(0.7))
-                        Spacer()
-                        Text("\(nudgeManager.queuedNudges.count)")
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(.white)
-                    }
-                    
-                    HStack {
-                        Text("Dismissed Nudges")
-                            .font(.system(size: 14))
-                            .foregroundColor(.white.opacity(0.7))
-                        Spacer()
-                        Text("\(nudgeManager.dismissedNudges.count)")
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(.white)
-                    }
-                }
-            }
-            .padding()
-            .background(Color.nutriSyncElevated)
-            .cornerRadius(16)
-            
-            // Trigger Nudges
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Trigger Nudges")
-                    .font(.headline)
-                    .foregroundColor(.white)
-                VStack(spacing: 12) {
-                    // Tutorial
-                    Button(action: {
-                        nudgeManager.triggerTestNudge(.firstTimeTutorial(page: 1))
-                    }) {
-                        Label("Start Tutorial", systemImage: "sparkles")
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color.nutriSyncAccent)
-                            .foregroundColor(.black)
-                            .cornerRadius(12)
-                    }
-                    
-                    // Morning Check-In
-                    Button(action: {
-                        mockData.morningCheckIn = nil
-                        nudgeManager.triggerTestNudge(.morningCheckIn)
-                    }) {
-                        Label("Morning Check-In", systemImage: "sun.max.fill")
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color.orange)
-                            .foregroundColor(.black)
-                            .cornerRadius(12)
-                    }
-                    
-                    // Meal Celebration
-                    Button(action: {
-                        let testMeal = LoggedMeal(
-                            name: "Test Meal",
-                            calories: 450,
-                            protein: 30,
-                            carbs: 45,
-                            fat: 15,
-                            timestamp: Date()
-                        )
-                        let testMetadata = AnalysisMetadata(
-                            toolsUsed: [.brandSearch, .deepAnalysis],
-                            complexity: .restaurant,
-                            analysisTime: 5.8,
-                            confidence: 0.92,
-                            brandDetected: "Test Restaurant",
-                            ingredientCount: 8
-                        )
-                        nudgeManager.triggerTestNudge(.mealLoggedCelebration(meal: testMeal, metadata: testMetadata))
-                    }) {
-                        Label("Meal Celebration", systemImage: "checkmark.circle.fill")
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color.green)
-                            .foregroundColor(.black)
-                            .cornerRadius(12)
-                    }
-                    
-                    // Active Window
-                    Button(action: {
-                        if let window = mockData.mealWindows.first(where: { $0.isActive }) {
-                            nudgeManager.triggerTestNudge(.activeWindowReminder(window: window, timeRemaining: 45))
-                        }
-                    }) {
-                        Label("Active Window Reminder", systemImage: "clock.fill")
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color.blue)
-                            .foregroundColor(.white)
-                            .cornerRadius(12)
-                    }
-                    
-                    // Missed Window
-                    Button(action: {
-                        if let window = mockData.mealWindows.first(where: { $0.isPast }) {
-                            nudgeManager.triggerTestNudge(.missedWindow(window: window))
-                        }
-                    }) {
-                        Label("Missed Window", systemImage: "exclamationmark.triangle.fill")
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color.red)
-                            .foregroundColor(.white)
-                            .cornerRadius(12)
-                    }
-                }
-            }
-            .padding()
-            .background(Color.nutriSyncElevated)
-            .cornerRadius(16)
-            
-            // Reset Functions
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Reset Functions")
-                    .font(.headline)
-                    .foregroundColor(.white)
-                VStack(spacing: 12) {
-                    Button(action: {
-                        nudgeManager.resetAllNudges()
-                    }) {
-                        Label("Reset All Nudges", systemImage: "arrow.counterclockwise")
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color.nutriSyncSurface)
-                            .foregroundColor(.white)
-                            .cornerRadius(12)
-                    }
-                    
-                    Button(action: {
-                        UserDefaults.standard.set(false, forKey: "hasCompletedOnboarding")
-                        UserDefaults.standard.removeObject(forKey: "lastMorningNudgeDate")
-                    }) {
-                        Label("Reset Onboarding", systemImage: "person.crop.circle.badge.xmark")
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color.nutriSyncSurface)
-                            .foregroundColor(.white)
-                            .cornerRadius(12)
-                    }
-                }
-            }
-            .padding()
-            .background(Color.nutriSyncElevated)
-            .cornerRadius(16)
-        }
-    }
-}
+// MARK: - Formatters
+private let timeFormatter: DateFormatter = {
+    let formatter = DateFormatter()
+    formatter.timeStyle = .short
+    return formatter
+}()
 
-// MARK: - Notifications Debug Tab
-struct NotificationsDebugTabView: View {
-    @EnvironmentObject private var notificationManager: NotificationManager
-    @StateObject private var mockData = MockDataManager.shared
-    @State private var showingPermissionAlert = false
-    @State private var testNotificationDelay: Double = 5
-    
-    var body: some View {
-        VStack(spacing: 20) {
-            // Notification Status
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Notification Status")
-                    .font(.headline)
-                    .foregroundColor(.white)
-                
-                VStack(spacing: 8) {
-                    HStack {
-                        Text("Authorization")
-                            .font(.system(size: 14))
-                            .foregroundColor(.white.opacity(0.7))
-                        Spacer()
-                        Text(authorizationStatusText)
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(authorizationStatusColor)
-                    }
-                    
-                    HStack {
-                        Text("Pending Notifications")
-                            .font(.system(size: 14))
-                            .foregroundColor(.white.opacity(0.7))
-                        Spacer()
-                        Text("\(notificationManager.pendingNotificationCount)")
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(.white)
-                    }
-                }
-            }
-            .padding()
-            .background(Color.nutriSyncElevated)
-            .cornerRadius(16)
-            
-            // Test Notifications
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Test Notifications")
-                    .font(.headline)
-                    .foregroundColor(.white)
-                
-                // Delay Slider
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack {
-                        Text("Delay")
-                            .font(.system(size: 14))
-                            .foregroundColor(.white.opacity(0.7))
-                        Spacer()
-                        Text("\(Int(testNotificationDelay))s")
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(.white)
-                    }
-                    
-                    Slider(value: $testNotificationDelay, in: 1...60, step: 1)
-                        .tint(.nutriSyncAccent)
-                }
-                .padding(.bottom, 8)
-                
-                VStack(spacing: 12) {
-                    // Window Starting Soon
-                    Button(action: testWindowStartingSoon) {
-                        Label("Window Starting Soon", systemImage: "clock.badge.exclamationmark")
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color.blue)
-                            .foregroundColor(.white)
-                            .cornerRadius(12)
-                    }
-                    
-                    // Active Window Reminder
-                    Button(action: testActiveWindowReminder) {
-                        Label("Active Window Reminder", systemImage: "fork.knife.circle.fill")
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color.green)
-                            .foregroundColor(.white)
-                            .cornerRadius(12)
-                    }
-                    
-                    // Window Ending Alert
-                    Button(action: testWindowEndingAlert) {
-                        Label("Window Ending Alert", systemImage: "exclamationmark.triangle")
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color.orange)
-                            .foregroundColor(.white)
-                            .cornerRadius(12)
-                    }
-                    
-                    // Missed Window
-                    Button(action: testMissedWindow) {
-                        Label("Missed Window", systemImage: "xmark.circle.fill")
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color.red)
-                            .foregroundColor(.white)
-                            .cornerRadius(12)
-                    }
-                    
-                    // Morning Check-in
-                    Button(action: testMorningCheckIn) {
-                        Label("Morning Check-In", systemImage: "sunrise.fill")
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color.purple)
-                            .foregroundColor(.white)
-                            .cornerRadius(12)
-                    }
-                    
-                    // Post-Meal Check-in
-                    Button(action: testPostMealCheckIn) {
-                        Label("Post-Meal Check-In", systemImage: "checkmark.bubble")
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color.teal)
-                            .foregroundColor(.white)
-                            .cornerRadius(12)
-                    }
-                }
-            }
-            .padding()
-            .background(Color.nutriSyncElevated)
-            .cornerRadius(16)
-            
-            // Actions
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Actions")
-                    .font(.headline)
-                    .foregroundColor(.white)
-                
-                VStack(spacing: 12) {
-                    Button(action: requestPermission) {
-                        Label("Request Permission", systemImage: "bell.badge")
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color.nutriSyncAccent)
-                            .foregroundColor(.black)
-                            .cornerRadius(12)
-                    }
-                    .disabled(notificationManager.isAuthorized)
-                    
-                    Button(action: clearAllNotifications) {
-                        Label("Clear All Notifications", systemImage: "trash")
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color.nutriSyncSurface)
-                            .foregroundColor(.white)
-                            .cornerRadius(12)
-                    }
-                    
-                    Button(action: refreshNotificationStatus) {
-                        Label("Refresh Status", systemImage: "arrow.clockwise")
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color.nutriSyncSurface)
-                            .foregroundColor(.white)
-                            .cornerRadius(12)
-                    }
-                }
-            }
-            .padding()
-            .background(Color.nutriSyncElevated)
-            .cornerRadius(16)
-        }
-        .onAppear {
-            Task {
-                await notificationManager.checkAuthorizationStatus()
-                await notificationManager.getPendingNotificationCount()
-            }
-        }
-        .alert("Notifications Disabled", isPresented: $showingPermissionAlert) {
-            Button("Cancel", role: .cancel) { }
-            Button("Open Settings") {
-                if let url = URL(string: UIApplication.openSettingsURLString) {
-                    UIApplication.shared.open(url)
-                }
-            }
-        } message: {
-            Text("Please enable notifications in Settings to test notification features.")
-        }
-    }
-    
-    // MARK: - Computed Properties
-    
-    private var authorizationStatusText: String {
-        switch notificationManager.authorizationStatus {
-        case .notDetermined:
-            return "Not Determined"
-        case .denied:
-            return "Denied"
-        case .authorized:
-            return "Authorized"
-        case .provisional:
-            return "Provisional"
-        case .ephemeral:
-            return "Ephemeral"
-        @unknown default:
-            return "Unknown"
-        }
-    }
-    
-    private var authorizationStatusColor: Color {
-        switch notificationManager.authorizationStatus {
-        case .authorized, .provisional:
-            return .green
-        case .denied:
-            return .red
-        case .notDetermined:
-            return .orange
-        default:
-            return .white.opacity(0.7)
-        }
-    }
-    
-    // MARK: - Test Actions
-    
-    private func testWindowStartingSoon() {
-        guard notificationManager.isAuthorized else {
-            showingPermissionAlert = true
-            return
-        }
-        
-        // Create a test window that starts soon
-        let testWindow = MealWindow(
-            startTime: Date().addingTimeInterval(testNotificationDelay + 900), // 15 minutes after delay
-            endTime: Date().addingTimeInterval(testNotificationDelay + 4500), // 75 minutes after delay
-            targetCalories: 600,
-            targetMacros: MacroTargets(protein: 40, carbs: 60, fat: 20),
-            purpose: .sustainedEnergy,
-            flexibility: .moderate,
-            dayDate: Date()
-        )
-        
-        Task {
-            await notificationManager.scheduleTestNotification(
-                type: .windowStartingSoon(window: testWindow),
-                delay: testNotificationDelay
-            )
-            
-            DebugLogger.shared.notification("Scheduled test notification: Window Starting Soon (\(Int(testNotificationDelay))s delay)")
-        }
-    }
-    
-    private func testActiveWindowReminder() {
-        guard notificationManager.isAuthorized else {
-            showingPermissionAlert = true
-            return
-        }
-        
-        // Use current active window or create test
-        let testWindow = mockData.activeWindow ?? MealWindow(
-            startTime: Date().addingTimeInterval(-1800), // Started 30 minutes ago
-            endTime: Date().addingTimeInterval(1800), // Ends in 30 minutes
-            targetCalories: 600,
-            targetMacros: MacroTargets(protein: 40, carbs: 60, fat: 20),
-            purpose: .sustainedEnergy,
-            flexibility: .flexible,
-            dayDate: Date()
-        )
-        
-        Task {
-            await notificationManager.scheduleTestNotification(
-                type: .activeWindowReminder(window: testWindow, timeRemaining: 30),
-                delay: testNotificationDelay
-            )
-            
-            DebugLogger.shared.notification("Scheduled test notification: Active Window Reminder (\(Int(testNotificationDelay))s delay)")
-        }
-    }
-    
-    private func testWindowEndingAlert() {
-        guard notificationManager.isAuthorized else {
-            showingPermissionAlert = true
-            return
-        }
-        
-        let testWindow = MealWindow(
-            startTime: Date().addingTimeInterval(-3600), // Started 1 hour ago
-            endTime: Date().addingTimeInterval(testNotificationDelay + 900), // Ends 15 minutes after delay
-            targetCalories: 600,
-            targetMacros: MacroTargets(protein: 40, carbs: 60, fat: 20),
-            purpose: .sustainedEnergy,
-            flexibility: .moderate,
-            dayDate: Date()
-        )
-        
-        Task {
-            await notificationManager.scheduleTestNotification(
-                type: .windowEndingAlert(window: testWindow),
-                delay: testNotificationDelay
-            )
-            
-            DebugLogger.shared.notification("Scheduled test notification: Window Ending Alert (\(Int(testNotificationDelay))s delay)")
-        }
-    }
-    
-    private func testMissedWindow() {
-        guard notificationManager.isAuthorized else {
-            showingPermissionAlert = true
-            return
-        }
-        
-        let testWindow = MealWindow(
-            startTime: Date().addingTimeInterval(-7200), // Started 2 hours ago
-            endTime: Date().addingTimeInterval(-1800), // Ended 30 minutes ago
-            targetCalories: 400,
-            targetMacros: MacroTargets(protein: 30, carbs: 40, fat: 15),
-            purpose: .metabolicBoost,
-            flexibility: .strict,
-            dayDate: Date()
-        )
-        
-        Task {
-            await notificationManager.scheduleTestNotification(
-                type: .missedWindow(window: testWindow),
-                delay: testNotificationDelay
-            )
-            
-            DebugLogger.shared.notification("Scheduled test notification: Missed Window (\(Int(testNotificationDelay))s delay)")
-        }
-    }
-    
-    private func testMorningCheckIn() {
-        guard notificationManager.isAuthorized else {
-            showingPermissionAlert = true
-            return
-        }
-        
-        Task {
-            await notificationManager.scheduleTestNotification(
-                type: .morningCheckIn,
-                delay: testNotificationDelay
-            )
-            
-            DebugLogger.shared.notification("Scheduled test notification: Morning Check-In (\(Int(testNotificationDelay))s delay)")
-        }
-    }
-    
-    private func testPostMealCheckIn() {
-        guard notificationManager.isAuthorized else {
-            showingPermissionAlert = true
-            return
-        }
-        
-        // Create a test meal
-        let testMeal = LoggedMeal(
-            name: "Test Lunch",
-            calories: 550,
-            protein: 35,
-            carbs: 55,
-            fat: 18,
-            timestamp: Date().addingTimeInterval(-1800) // 30 minutes ago
-        )
-        
-        Task {
-            await notificationManager.scheduleTestNotification(
-                type: .postMealCheckIn(meal: testMeal),
-                delay: testNotificationDelay
-            )
-            
-            DebugLogger.shared.notification("Scheduled test notification: Post-Meal Check-In (\(Int(testNotificationDelay))s delay)")
-        }
-    }
-    
-    // MARK: - Actions
-    
-    private func requestPermission() {
-        Task {
-            let granted = await notificationManager.requestAuthorization()
-            if !granted {
-                showingPermissionAlert = true
-            }
-            await notificationManager.getPendingNotificationCount()
-        }
-    }
-    
-    private func clearAllNotifications() {
-        Task {
-            await notificationManager.clearAllNotifications()
-            await notificationManager.getPendingNotificationCount()
-            DebugLogger.shared.notification("Cleared all notifications")
-        }
-    }
-    
-    private func refreshNotificationStatus() {
-        Task {
-            await notificationManager.checkAuthorizationStatus()
-            await notificationManager.getPendingNotificationCount()
-            DebugLogger.shared.notification("Refreshed notification status")
-        }
-    }
-}
+private let debugTimeFormatter: DateFormatter = {
+    let formatter = DateFormatter()
+    formatter.dateFormat = "HH:mm:ss"
+    return formatter
+}()
 
 #Preview {
     DeveloperDashboardView()
-        .environmentObject(NotificationManager.shared)
+        .preferredColorScheme(.dark)
 }
