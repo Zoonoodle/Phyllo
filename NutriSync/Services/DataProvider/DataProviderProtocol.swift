@@ -234,6 +234,14 @@ extension MealWindow {
             "isMarkedAsFasted": isMarkedAsFasted
         ]
         
+        // Add AI-generated fields if present
+        if let name = name { data["name"] = name }
+        if let rationale = rationale { data["rationale"] = rationale }
+        if let foodSuggestions = foodSuggestions { data["foodSuggestions"] = foodSuggestions }
+        if let micronutrientFocus = micronutrientFocus { data["micronutrientFocus"] = micronutrientFocus }
+        if let tips = tips { data["tips"] = tips }
+        if let type = type { data["type"] = type }
+        
         if let adjustedCalories = adjustedCalories {
             data["adjustedCalories"] = adjustedCalories
         }
@@ -280,6 +288,14 @@ extension MealWindow {
             return nil
         }
         
+        // Parse AI-generated fields
+        let name = data["name"] as? String
+        let rationale = data["rationale"] as? String
+        let foodSuggestions = data["foodSuggestions"] as? [String]
+        let micronutrientFocus = data["micronutrientFocus"] as? [String]
+        let tips = data["tips"] as? [String]
+        let type = data["type"] as? String
+        
         // Create MealWindow with preserved ID from Firestore
         var window = MealWindow(
             id: id,  // Use the original ID from Firestore
@@ -293,7 +309,13 @@ extension MealWindow {
             ),
             purpose: purpose,
             flexibility: flexibility,
-            dayDate: dayDate
+            dayDate: dayDate,
+            name: name,
+            rationale: rationale,
+            foodSuggestions: foodSuggestions,
+            micronutrientFocus: micronutrientFocus,
+            tips: tips,
+            type: type
         )
         
         window.adjustedCalories = data["adjustedCalories"] as? Int

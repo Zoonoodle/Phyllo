@@ -78,6 +78,14 @@ struct MealWindow: Identifiable {
     let flexibility: WindowFlexibility
     let dayDate: Date // The day this window belongs to
     
+    // AI-generated fields
+    var name: String?
+    var rationale: String?
+    var foodSuggestions: [String]?
+    var micronutrientFocus: [String]?
+    var tips: [String]?
+    var type: String? // e.g., "regular", "pre-workout", etc.
+    
     // Adjusted values after redistribution
     var adjustedCalories: Int?
     var adjustedMacros: MacroTargets?
@@ -89,6 +97,11 @@ struct MealWindow: Identifiable {
     // Computed properties
     var duration: TimeInterval {
         endTime.timeIntervalSince(startTime)
+    }
+    
+    // Display name - uses AI-generated name or falls back to purpose
+    var displayName: String {
+        name ?? purpose.rawValue
     }
     
     // Get effective values (adjusted if available, otherwise original)
@@ -164,6 +177,12 @@ struct MealWindow: Identifiable {
         purpose: WindowPurpose,
         flexibility: WindowFlexibility,
         dayDate: Date,
+        name: String? = nil,
+        rationale: String? = nil,
+        foodSuggestions: [String]? = nil,
+        micronutrientFocus: [String]? = nil,
+        tips: [String]? = nil,
+        type: String? = nil,
         adjustedCalories: Int? = nil,
         adjustedMacros: MacroTargets? = nil,
         redistributionReason: WindowRedistributionManager.RedistributionReason? = nil,
@@ -177,6 +196,12 @@ struct MealWindow: Identifiable {
         self.purpose = purpose
         self.flexibility = flexibility
         self.dayDate = dayDate
+        self.name = name
+        self.rationale = rationale
+        self.foodSuggestions = foodSuggestions
+        self.micronutrientFocus = micronutrientFocus
+        self.tips = tips
+        self.type = type
         self.adjustedCalories = adjustedCalories
         self.adjustedMacros = adjustedMacros
         self.redistributionReason = redistributionReason

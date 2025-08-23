@@ -10,8 +10,14 @@ import SwiftUI
 struct WindowPurposeCard: View {
     let window: MealWindow
     
-    // Purpose-specific descriptions and tips
+    // Use AI-generated content if available, otherwise fall back to defaults
     private var purposeInfo: (description: String, tips: [String]) {
+        // If we have AI-generated content, use it
+        if let rationale = window.rationale, let tips = window.tips {
+            return (rationale, tips)
+        }
+        
+        // Otherwise fall back to hardcoded content
         switch window.purpose {
         case .sustainedEnergy:
             return (
@@ -101,7 +107,7 @@ struct WindowPurposeCard: View {
                         .font(.system(size: 24))
                         .foregroundColor(window.purpose.color)
                     
-                    Text(window.purpose.rawValue)
+                    Text(window.displayName)
                         .font(.system(size: 20, weight: .semibold))
                         .foregroundColor(.white)
                 }
@@ -111,6 +117,57 @@ struct WindowPurposeCard: View {
                     .font(.system(size: 14))
                     .foregroundColor(.white.opacity(0.7))
                     .lineSpacing(4)
+                
+                // Food Suggestions (if available)
+                if let foodSuggestions = window.foodSuggestions, !foodSuggestions.isEmpty {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Recommended Foods")
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundColor(.white)
+                        
+                        VStack(alignment: .leading, spacing: 8) {
+                            ForEach(foodSuggestions, id: \.self) { food in
+                                HStack(alignment: .top, spacing: 8) {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .font(.system(size: 14))
+                                        .foregroundColor(.nutriSyncAccent)
+                                    
+                                    Text(food)
+                                        .font(.system(size: 14))
+                                        .foregroundColor(.white.opacity(0.7))
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // Micronutrient Focus (if available)
+                if let micronutrients = window.micronutrientFocus, !micronutrients.isEmpty {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Micronutrient Focus")
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundColor(.white)
+                        
+                        HStack(spacing: 8) {
+                            ForEach(micronutrients, id: \.self) { nutrient in
+                                Text(nutrient.capitalized)
+                                    .font(.system(size: 12, weight: .medium))
+                                    .foregroundColor(.white)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 6)
+                                    .background(
+                                        Capsule()
+                                            .fill(window.purpose.color.opacity(0.2))
+                                            .overlay(
+                                                Capsule()
+                                                    .strokeBorder(window.purpose.color.opacity(0.5), lineWidth: 1)
+                                            )
+                                    )
+                            }
+                        }
+                    }
+                }
                 
                 // Tips section
                 VStack(alignment: .leading, spacing: 12) {

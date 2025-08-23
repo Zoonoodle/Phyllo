@@ -158,8 +158,14 @@ struct ExpandableWindowBanner: View {
     @State private var isExpanded = false
     @State private var pulseAnimation = false
     
-    // Smarter naming: categorize by time-of-day and disambiguate duplicates (Breakfast 2, Lunch 2, etc.)
+    // Use AI-generated name if available, otherwise categorize by time-of-day
     private var mealType: String {
+        // If window has an AI-generated name, use it
+        if let name = window.name {
+            return name
+        }
+        
+        // Otherwise use the default time-based naming
         let base = baseMealName(for: window.startTime)
         // Count prior windows with same base
         let priorSame = viewModel.mealWindows
