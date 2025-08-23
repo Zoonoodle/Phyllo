@@ -1038,11 +1038,11 @@ struct JumpToNowButton: View {
         Color.nutriSyncBackground.ignoresSafeArea()
         
         TimelineView(
+            viewModel: viewModel,
             selectedWindow: $selectedWindow,
             showWindowDetail: $showWindowDetail,
             animationNamespace: animationNamespace,
-            scrollToAnalyzingMeal: $scrollToAnalyzingMeal,
-            viewModel: viewModel
+            scrollToAnalyzingMeal: $scrollToAnalyzingMeal
         )
     }
 }

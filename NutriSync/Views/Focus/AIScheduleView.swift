@@ -180,7 +180,6 @@ struct AIScheduleView: View {
 @MainActor
 class AIScheduleViewModel: ObservableObject {
     // MARK: - Published Properties
-    @Published var dailyPlan: DailyPlan?
     @Published var isLoading = false
     @Published var errorMessage: String?
     

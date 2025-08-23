@@ -30,6 +30,12 @@ struct NutritionDashboardView: View {
         case now, today, week, insights
     }
     
+    enum RingSegment {
+        case timing
+        case nutrients
+        case adherence
+    }
+    
     struct RingAnimationState {
         var timingProgress: Double = 0
         var nutrientProgress: Double = 0
