@@ -418,22 +418,26 @@ struct ExpandableWindowBanner: View {
     var body: some View {
         // Container only; tap/drag handled by overlay layer wrapper
         VStack(spacing: 0) {
-            windowBannerContent
+            // Replace banner content with actions when showing missed actions
+            if case .missed = windowStatus, showInlineMissedActions {
+                missedWindowActionsContent
+                    .transition(.asymmetric(
+                        insertion: .opacity,
+                        removal: .opacity
+                    ))
+            } else {
+                windowBannerContent
+                    .transition(.asymmetric(
+                        insertion: .opacity,
+                        removal: .opacity
+                    ))
+            }
             
             // Show additional content for active windows when empty
             if window.isActive && meals.isEmpty && analyzingMealsInWindow.isEmpty {
                 windowInsightsSection
                     .padding(.horizontal, 14)
                     .padding(.vertical, 10)
-            }
-            
-            // Show inline missed window actions when expanded
-            if case .missed = windowStatus, showInlineMissedActions {
-                missedWindowActionsSection
-                    .transition(.asymmetric(
-                        insertion: .move(edge: .top).combined(with: .opacity),
-                        removal: .opacity
-                    ))
             }
             
             // Remove spacer - let content determine height naturally
@@ -908,35 +912,43 @@ struct ExpandableWindowBanner: View {
     }
     
     @ViewBuilder
-    private var missedWindowActionsSection: some View {
-        VStack(spacing: 12) {
-            // Divider
-            Rectangle()
-                .fill(Color.white.opacity(0.1))
-                .frame(height: 1)
-                .padding(.horizontal, 14)
+    private var missedWindowActionsContent: some View {
+        ZStack {
+            // Background tap to dismiss
+            Color.clear
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                        showInlineMissedActions = false
+                    }
+                }
             
-            VStack(spacing: 10) {
-                // Log meal button
+            HStack(spacing: 0) {
+                // Log meal button (left side)
                 Button(action: {
                     selectedMissedWindow = window
                     showSimplifiedMealLogging = true
                     showInlineMissedActions = false
                 }) {
-                    HStack {
-                        Image(systemName: "camera.fill")
+                    HStack(spacing: 6) {
+                        Image(systemName: "text.badge.plus")
                             .font(.system(size: 14))
-                        Text("Log meal for this window")
-                            .font(.system(size: 14, weight: .medium))
+                        Text("Log meal")
+                            .font(.system(size: 13, weight: .medium))
                     }
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
-                    .background(Color.nutriSyncAccent)
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .foregroundColor(.white.opacity(0.85))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .contentShape(Rectangle())
                 }
+                .buttonStyle(PlainButtonStyle())
                 
-                // Mark as fasted button
+                // Vertical divider
+                Rectangle()
+                    .fill(Color.white.opacity(0.1))
+                    .frame(width: 1)
+                    .padding(.vertical, 16)
+                
+                // Mark as fasted button (right side)
                 Button(action: {
                     Task {
                         isProcessingFasting = true
@@ -945,32 +957,28 @@ struct ExpandableWindowBanner: View {
                         showInlineMissedActions = false
                     }
                 }) {
-                    HStack {
+                    HStack(spacing: 6) {
                         if isProcessingFasting {
                             ProgressView()
                                 .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                                .scaleEffect(0.7)
+                                .scaleEffect(0.6)
                         } else {
-                            Image(systemName: "moon.fill")
+                            Image(systemName: "clock.badge.xmark")
                                 .font(.system(size: 14))
                         }
                         Text("I was fasting")
-                            .font(.system(size: 14, weight: .medium))
+                            .font(.system(size: 13, weight: .medium))
                     }
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
-                    .background(Color.white.opacity(0.1))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 10)
-                            .strokeBorder(Color.white.opacity(0.2), lineWidth: 1)
-                    )
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .foregroundColor(.white.opacity(0.85))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .contentShape(Rectangle())
                 }
+                .buttonStyle(PlainButtonStyle())
                 .disabled(isProcessingFasting)
+                .opacity(isProcessingFasting ? 0.5 : 1.0)
             }
-            .padding(.horizontal, 14)
-            .padding(.bottom, 12)
+            .frame(height: 56) // Slightly smaller to match banner content
+            .padding(.horizontal, windowBannerPadding)
         }
     }
     
