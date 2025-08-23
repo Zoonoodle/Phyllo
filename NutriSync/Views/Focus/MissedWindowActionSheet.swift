@@ -2,9 +2,13 @@
 //  MissedWindowActionSheet.swift
 //  NutriSync
 //
-//  Created on 8/20/25.
+//  DEPRECATED: Replaced with inline UI in ExpandableWindowBanner
+//  This modal approach has been replaced with inline actions that appear
+//  directly within the missed window banner when tapped.
+//  Commented out on [2025-08-23] during UI improvement
 //
 
+/*
 import SwiftUI
 
 struct MissedWindowActionSheet: View {
@@ -164,3 +168,4 @@ struct MissedWindowActionSheet: View {
         }
     }
 }
+*/

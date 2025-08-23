@@ -137,8 +137,10 @@ struct ExpandableWindowBanner: View {
     
     // State for missed window actions
     @State private var showMissedWindowActions = false
+    @State private var showInlineMissedActions = false
     @State private var showSimplifiedMealLogging = false
     @State private var selectedMissedWindow: MealWindow?
+    @State private var isProcessingFasting = false
     
     // Add analyzing meals for this window - only if scanned within window time
     private var analyzingMealsInWindow: [AnalyzingMeal] {
@@ -425,6 +427,15 @@ struct ExpandableWindowBanner: View {
                     .padding(.vertical, 10)
             }
             
+            // Show inline missed window actions when expanded
+            if case .missed = windowStatus, showInlineMissedActions {
+                missedWindowActionsSection
+                    .transition(.asymmetric(
+                        insertion: .move(edge: .top).combined(with: .opacity),
+                        removal: .opacity
+                    ))
+            }
+            
             // Remove spacer - let content determine height naturally
             
             // Meals section (if any meals or analyzing)
@@ -449,7 +460,9 @@ struct ExpandableWindowBanner: View {
         .onTapGesture {
             // Check if this is a missed window
             if case .missed = windowStatus {
-                showMissedWindowActions = true
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                    showInlineMissedActions.toggle()
+                }
             } else {
                 // Normal behavior for other windows
                 withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
@@ -463,18 +476,7 @@ struct ExpandableWindowBanner: View {
                 pulseAnimation = true
             }
         }
-        .sheet(isPresented: $showMissedWindowActions) {
-            MissedWindowActionSheet(
-                window: window,
-                viewModel: viewModel,
-                isPresented: $showMissedWindowActions,
-                showSimplifiedMealLogging: $showSimplifiedMealLogging,
-                selectedMissedWindow: $selectedMissedWindow
-            )
-            .presentationDetents([.medium])
-            .presentationDragIndicator(.hidden)
-            .presentationBackground(Color.nutriSyncElevated)
-        }
+        // Removed old modal sheet - now using inline UI for missed windows
         .sheet(isPresented: $showSimplifiedMealLogging) {
             if let missedWindow = selectedMissedWindow {
                 SimplifiedMealLoggingView(
@@ -903,6 +905,73 @@ struct ExpandableWindowBanner: View {
             }
         }
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: windowStatus)
+    }
+    
+    @ViewBuilder
+    private var missedWindowActionsSection: some View {
+        VStack(spacing: 12) {
+            // Divider
+            Rectangle()
+                .fill(Color.white.opacity(0.1))
+                .frame(height: 1)
+                .padding(.horizontal, 14)
+            
+            VStack(spacing: 10) {
+                // Log meal button
+                Button(action: {
+                    selectedMissedWindow = window
+                    showSimplifiedMealLogging = true
+                    showInlineMissedActions = false
+                }) {
+                    HStack {
+                        Image(systemName: "camera.fill")
+                            .font(.system(size: 14))
+                        Text("Log meal for this window")
+                            .font(.system(size: 14, weight: .medium))
+                    }
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(Color.nutriSyncAccent)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                }
+                
+                // Mark as fasted button
+                Button(action: {
+                    Task {
+                        isProcessingFasting = true
+                        await viewModel.markWindowAsFasted(windowId: window.id)
+                        isProcessingFasting = false
+                        showInlineMissedActions = false
+                    }
+                }) {
+                    HStack {
+                        if isProcessingFasting {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                .scaleEffect(0.7)
+                        } else {
+                            Image(systemName: "moon.fill")
+                                .font(.system(size: 14))
+                        }
+                        Text("I was fasting")
+                            .font(.system(size: 14, weight: .medium))
+                    }
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(Color.white.opacity(0.1))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .strokeBorder(Color.white.opacity(0.2), lineWidth: 1)
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                }
+                .disabled(isProcessingFasting)
+            }
+            .padding(.horizontal, 14)
+            .padding(.bottom, 12)
+        }
     }
     
     private func getPurposeInsight() -> String {
