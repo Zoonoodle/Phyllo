@@ -1,541 +1,469 @@
-# NutriSync v1.0 - AI-Powered Nutrition Intelligence Platform
+# NutriSync (Phyllo) - AI-Powered Nutrition Coach
+## Development Guide & Technical Documentation
 
-**Project:** NutriSync - Smart Nutrition Coach with Meal Window Management  
-**Version:** 1.0 (Current Implementation)  
+**Project:** NutriSync - Intelligent Meal Window & Nutrition Tracking System  
 **Platform:** iOS 17+ (SwiftUI 6)  
-**Backend:** Firebase (Auth, Firestore, Functions, Storage, Analytics)  
-**AI Engine:** Google Gemini 2.0 Flash with Intelligent Agent Toolset  
-**MCP Tools:** Serena (Code Analysis) + Context7 (Documentation) + BraveSearch  
+**Backend:** Firebase (Firestore, Auth, Storage, Functions)  
+**AI Engine:** Google Vertex AI (Gemini Flash for meal analysis, Gemini Pro for window generation)  
+**Architecture:** MVVM with @Observable, Protocol-oriented services
 
 ---
 
-## 🚀 **Current Implementation Overview**
+## 🎯 Core Concept & Vision
 
-NutriSync is a nutrition tracking app built around **meal windows** - smart eating periods optimized for your goals. The app uses a timeline-based interface to visualize when you should eat throughout the day, with proactive nudges to keep you on track.
+NutriSync revolutionizes nutrition tracking by focusing on **meal window timing** rather than simple calorie counting. The app creates personalized eating schedules based on:
+- Individual circadian rhythms and sleep patterns
+- Specific nutrition goals (weight loss, muscle gain, performance, sleep optimization)
+- Real-world constraints (work schedule, workouts, social commitments)
+- Scientific research on nutrient timing and metabolic optimization
 
-### **Core Features Implemented**
-
-1. **Timeline-Based Schedule View** - Visual meal window management
-2. **Comprehensive Check-In System** - Morning and post-meal tracking
-3. **Smart Nudge System** - Proactive coaching and reminders
-4. **Advanced Meal Analysis** - AI-powered photo analysis with intelligent agent toolset
-5. **Momentum Analytics** - Progress tracking and insights with NutriSyncScore
-6. **Developer Dashboard** - Mock data management for testing
-7. **Micronutrient Intelligence** - 18+ tracked micronutrients with smart evaluation
-8. **Ingredient Tracking** - Full ingredient breakdown with food group categorization
-9. **Health Impact Petals** - Visual micronutrient health impact system
-10. **Intelligent Meal Analysis Agent** - Multi-tool AI system for accurate nutrition detection
+**Key Differentiator:** Instead of asking "what did you eat?", we optimize "when should you eat?" and adapt in real-time.
 
 ---
 
-## 🛠️ **Development Workflow (MUST FOLLOW)**
+## 🚀 Development Workflow (MANDATORY)
 
-### **Mandatory Build Testing**
-Whenever you add or change ANY code:
-1. ALWAYS run `xcodebuild` to ensure the project builds successfully
-2. Make sure its iPhone 16 Pro simulator, NOT iPhone 15
-3. If `xcodebuild` fails, try `swift build` as a fallback
-4. For long builds, save the build output to a log file and read it:
-   ```bash
-   xcodebuild > build_log.txt 2>&1
-   # Then read build_log.txt to check for errors
-   ```
-5. NEVER commit or finish a task without confirming the build succeeds
-6. Fix ALL build errors before marking any task as complete
-7. **ALWAYS delete build logs after reading them** - Clean up build_log.txt and any other temporary build files immediately after fixing errors or confirming build success
-
-### **Simplified Git Workflow**
-
-#### **Commit-Only Strategy**
-Since you're working solo and reviewing all changes, we use a simplified workflow:
-- Work directly on main branch
-- Claude Code ALWAYS commits after completing any feature/fix
-- Clear, descriptive commit messages
-- No branches, no PRs, no issues
-
-#### **Commit Message Format**
-```
-feat: Add new feature
-fix: Fix bug  
-refactor: Restructure code
-docs: Update documentation
-style: Format code
-test: Add tests
-chore: Update dependencies
-```
-
-#### **Claude Code Auto-Commit Rules**
-
-1. **After Every Feature/Fix:**
-   - Run xcodebuild to ensure it builds
-   - Commit ALL changes with descriptive message
-   - Push to GitHub automatically
-
-2. **Commit Examples:**
-   ```bash
-   git commit -m "feat: add morning check-in nudge"
-   git commit -m "fix: correct meal window timing calculation"
-   git commit -m "refactor: simplify timeline view structure"
-   ```
-
----
-
-## 🏗️ **Current Architecture**
-
-### **Navigation Structure (3 Tabs)**
-
-#### **1. Schedule Tab (Focus)**
-- **Timeline View**: Hour-by-hour view from 7 AM to 10 PM
-- **Meal Windows**: Visual blocks showing eating periods
-- **Current Time Marker**: Real-time position indicator
-- **Meal Logging**: Shows meals within their assigned windows
-- **Window Details**: Tap to expand and see window-specific nutrition targets
-
-#### **2. Momentum Tab**
-- **4-Card Grid Layout**:
-  - NutriSyncScore (overall nutrition score)
-  - Social Leaderboard
-  - Metrics & Goal Progress
-  - Weekly Momentum Trends
-- **Detailed Views**: Each card expands to full analytics
-
-#### **3. Scan Tab**
-- **Camera Preview**: Full-screen capture interface
-- **Mode Selector**: Photo, Voice, or Barcode scanning
-- **Quick Actions**: Recent meals and favorites
-- **Multi-Step Flow**:
-  1. Capture photo
-  2. Optional voice description
-  3. AI analysis with loading state
-  4. Clarification questions (if needed)
-  5. Comprehensive meal analysis with:
-     - Macronutrient breakdown
-     - Ingredient list with food groups
-     - Micronutrient details with progress bars
-     - Window-specific insights
-     - Health impact visualization
-
----
-
-## 📱 **Key Components**
-
-### **Meal Windows System**
-
-```swift
-struct MealWindow {
-    // Time-based eating periods with purpose
-    let startTime: Date
-    let endTime: Date
-    let purpose: WindowPurpose // pre-workout, post-workout, sustained energy, etc.
-    let targetCalories: Int
-    let targetMacros: MacroTargets
-    let flexibility: WindowFlexibility // strict, moderate, flexible
-}
-```
-
-**Window Generation Logic**:
-- Adapts to user goals (weight loss = 16:8 fasting)
-- Circadian optimization (last meal 3 hours before sleep)
-- Workout-aware scheduling
-- Dynamic redistribution when windows are missed
-
-### **Check-In System**
-
-**Morning Check-In**:
-- Wake time capture
-- Sleep quality (1-5 scale with emojis)
-- Daily focus selection (work, fitness, family, etc.)
-- Triggers meal window generation
-
-**Post-Meal Check-Ins**:
-- Energy levels (5 levels with colors)
-- Fullness scale (visual indicators)
-- Mood/focus tracking
-- Appears 30 minutes after meal logging
-
-### **Nudge System**
-
-```swift
-enum NudgeType {
-    case morningCheckIn           // Prompts morning routine
-    case activeWindowReminder     // "15 minutes left in lunch window"
-    case missedWindow            // "You missed your snack window"
-    case mealCelebration         // Positive reinforcement
-    case firstTimeTutorial       // Onboarding guidance
-}
-```
-
-**Nudge Behavior**:
-- Priority-based queuing
-- Smart timing (no nudges during sleep hours)
-- Dismissible with memory
-- Context-aware messaging
-
-### **Mock Data System**
-
-Developer dashboard allows:
-- Time simulation (jump to any time of day)
-- Instant meal generation with ingredients and micronutrients
-- Goal switching
-- Window redistribution testing
-- Check-in completion
-- Micronutrient data generation based on meal type
-
-### **Micronutrient Tracking System**
-
-**Core Features**:
-- 18+ micronutrients tracked with RDA values
-- Window-aware evaluation (e.g., iron for energy windows, magnesium for sleep)
-- Health impact scoring (0-10 scale)
-- Visual petal system showing nutrient impacts on:
-  - Energy levels
-  - Sleep quality
-  - Focus & cognition
-  - Recovery
-  - Immune function
-
-**Implementation**:
-```swift
-struct MicronutrientInfo {
-    let name: String
-    let dailyTarget: Double
-    let unit: String // mg, μg, g
-    let healthImpacts: [HealthCategory: Double] // 0-10 scale
-    let icon: String // SF Symbol
-}
-```
-
-### **Ingredient Tracking**
-
-**Food Group System**:
-- 8 food groups with color coding
-- Ingredient-level nutrition data
-- Visual chips in meal analysis
-- Nutrition breakdown by ingredient
-
-**Implementation**:
-```swift
-struct MealIngredient {
-    let name: String
-    let quantity: Double
-    let unit: String
-    let foodGroup: FoodGroup
-    // Optional nutrition per ingredient
-    var calories: Int?
-    var protein: Double?
-    var carbs: Double?
-    var fat: Double?
-}
-```
-
-### **Meal Analysis System**
-
-**Intelligent AI Agent Architecture**:
-The meal analysis system uses a sophisticated multi-tool agent that automatically enhances accuracy:
-
-1. **MealAnalysisAgent** - Orchestrates analysis tools based on content and confidence
-   - Monitors initial analysis confidence levels
-   - Detects 30+ restaurant/brand names (McDonald's, Starbucks, Chipotle, etc.)
-   - Triggers appropriate tools for deep analysis
-   - Shows subtle progress indicators during analysis
-
-2. **Analysis Tools**:
-   - **Brand Search**: Uses Gemini's web search to find official restaurant nutrition
-   - **Deep Analysis**: Multi-step ingredient breakdown for complex meals
-   - **Nutrition Lookup**: Verifies values against USDA and nutrition databases
-
-3. **Automatic Triggers**:
-   - Low confidence (<0.75) → Activates deep analysis
-   - Brand/restaurant detected → Searches official nutrition data
-   - Complex meals (>5 ingredients) → Component-by-component analysis
-   - Voice mentions brand → Automatic restaurant search
-
-4. **Performance**:
-   - Regular meals: 2-3 seconds (standard analysis)
-   - Restaurant meals: 6-8 seconds (with brand search)
-   - Results cached for 7 days to improve speed
-   - Seamless fallback if tools unavailable
-
-**Meal Analysis View** (Three-Tab Interface):
-1. **Nutrition Tab**:
-   - Calorie and macro overview
-   - Scrollable micronutrient list with progress bars
-   - Daily progress tracking
-   - Color-coded by nutrient type
-
-2. **Ingredients Tab**:
-   - Color-coded ingredient chips
-   - Horizontal scroll of nutrition cards
-   - Food group categorization
-   - Portion sizes and units
-
-3. **Insights Tab**:
-   - Window-specific micronutrient focus
-   - AI-generated meal insights
-   - Health impact visualization
-   - Contextual recommendations
-
----
-
-## 🎨 **Design System**
-
-### **Color Palette**
-- **Background**: Pure black (#000000) for OLED
-- **Elevated**: white.opacity(0.03) for cards
-- **Text Hierarchy**: 
-  - Primary: white
-  - Secondary: white.opacity(0.7)
-  - Tertiary: white.opacity(0.5)
-- **Accent**: Bright green (used sparingly <10%)
-- **Semantic Colors**:
-  - Energy windows: Teal
-  - Focus windows: Purple
-  - Recovery windows: Blue
-  - Workout windows: Orange
-
-### **Typography**
-- Headers: SF Pro Display
-- Body: SF Pro Text
-- Monospace: SF Mono (for time labels)
-- Dynamic Type supported
-
-### **Components**
-- **NutriSyncCard**: Rounded corners (20px), subtle blur
-- **CustomTabBar**: Floating design with haptic feedback
-- **TimelineHourRow**: Dynamic height based on content
-- **NudgeContainer**: Spring animations, backdrop blur
-
----
-
-## 🔍 **Data Models**
-
-### **Core Models**
-
-1. **UserGoals**: Primary/secondary goals, activity level, fasting protocols
-2. **MealWindow**: Time periods with nutrition targets and purposes
-3. **LoggedMeal**: Comprehensive meal with macros, micronutrients, ingredients, and image data
-   - Includes ingredient breakdown with food groups
-   - Tracks 18+ micronutrients per meal
-   - Stores meal photo for visual reference
-   - Links to meal window for context-aware analysis
-4. **CheckInData**: Morning and post-meal check-ins
-5. **MicronutrientData**: 18+ tracked micronutrients with RDA values and health impact ratings
-
-### **Computed Properties**
-- Window status (active/upcoming/past)
-- Time remaining in active windows
-- Meal-to-window assignments
-- Daily progress calculations
-
----
-
-## 🚀 **Features Not Yet Implemented**
-
-### **From Original Plan**
-- Advanced onboarding flow
-- Voice-first interactions
-- Wearable integrations
-- Restaurant menu scanning
-- Recipe generation
-- Social groups and challenges
-- Premium/Teams tiers
-- Grocery list automation
-- Offline mode
-- Siri Shortcuts
-
-### **Planned Enhancements**
-- Real Firebase integration
-- Push notifications
-- Apple Health sync
-- Barcode database
-- Food photo library
-- Weekly reports
-- Export functionality
-
----
-
-## 📊 **Current Metrics & Status**
-
-### **Implementation Status**
-- ✅ Core navigation and UI
-- ✅ Timeline-based meal windows
-- ✅ Advanced meal analysis with ingredients
-- ✅ Nudge system with contextual coaching
-- ✅ Check-in system (morning & post-meal)
-- ✅ Mock data with comprehensive meal generation
-- ✅ Micronutrient tracking with health impacts
-- ✅ Ingredient-level nutrition breakdown
-- ✅ Health impact petal visualizations
-- ✅ Window-aware micronutrient evaluation
-- ✅ Firebase backend (Auth, Firestore, Storage, Functions integrated)
-- ✅ Real Gemini AI integration with intelligent agent toolset
-- ⏳ Social features
-- ⏳ Apple Health integration
-
-### **Known Issues**
-- Camera capture uses photo library picker (not direct camera)
-- Social features show mock users only
-- Apple Health integration pending
-- Push notifications not implemented
-- Barcode scanning incomplete
-
----
-
-## 🛠️ **Development Priorities**
-
-### **Recently Completed** ✅
-1. Comprehensive micronutrient tracking
-2. Ingredient-level nutrition breakdown
-3. Health impact petal visualization
-4. Window-aware nutrient evaluation
-5. Enhanced meal analysis with 3-tab interface
-
-### **Immediate Next Steps**
-1. Implement actual camera capture (currently using photo library)
-2. Add user authentication flow
-3. Implement push notifications for nudges
-4. Connect social features with real users
-5. Add Apple Health integration
-
-### **Phase 2 Features**
-1. Apple Health integration
-2. Barcode scanning with OpenFoodFacts database
-3. Social leaderboards with real users
-4. Weekly micronutrient reports
-5. Food favorites and meal templates
-6. Export nutrition data functionality
-
-### **Phase 3 Polish**
-1. Advanced onboarding flow
-2. Premium tier with advanced insights
-3. Apple Watch companion app
-4. Home Screen widgets
-5. Siri Shortcuts integration
-6. Restaurant menu scanning
-
----
-
-## 💡 **Technical Decisions**
-
-### **Why Timeline View**
-- Visual representation of time-based eating
-- Natural mental model for meal planning
-- Easy to see conflicts and gaps
-- Familiar pattern from calendar apps
-
-### **Why Nudges**
-- Proactive vs reactive coaching
-- Non-intrusive reminders
-- Contextual guidance
-- Positive reinforcement
-
-### **Why Mock Data Manager**
-- Rapid prototyping
-- Consistent testing scenarios
-- Time simulation capabilities
-- Easy demo creation
-
----
-
-## 📝 **Claude Code Usage Guidelines**
-
-### **Key Commands**
-
+### Git & Version Control
 ```bash
-# Build and test
-xcodebuild -scheme NutriSync -sdk iphonesimulator
-xcodebuild test -scheme NutriSync -destination 'platform=iOS Simulator,name=iPhone 16 Pro'
+# ALWAYS work on main branch
+git status                                    # Check current state
+git add -A                                    # Stage all changes
+git commit -m "feat: description"            # Commit with clear message
+git push origin main                          # Push after EVERY feature/fix
 
-# Git (handled automatically by Claude Code)
-git add -A && git commit -m "type: message" && git push
-
-# Project navigation
-open NutriSync.xcodeproj
+# Commit message format:
+# feat: new feature implementation
+# fix: bug fix
+# refactor: code improvement
+# docs: documentation update
+# style: UI/formatting changes
+# test: test additions/modifications
 ```
 
-### **Common Tasks**
+### Build & Debug Strategy (Large Project Optimization)
+```bash
+# 1. After making changes, compile ONLY the edited files
+swiftc -parse -sdk $(xcrun --sdk iphonesimulator --show-sdk-path) \
+  -target arm64-apple-ios17.0 -import-objc-header NutriSync-Bridging-Header.h \
+  Path/To/EditedFile.swift
 
-**Add a new nudge type:**
-1. Update `NudgeType` enum in NudgeManager
-2. Create nudge view component
-3. Add trigger logic
-4. Test with time simulation
+# 2. Type-check for semantic validation
+xcrun swift-frontend -typecheck \
+  -sdk $(xcrun --sdk iphonesimulator --show-sdk-path) \
+  -target arm64-apple-ios17.0 -module-name NutriSync \
+  -import-objc-header NutriSync-Bridging-Header.h \
+  Path/To/EditedFile.swift
 
-**Modify meal windows:**
-1. Update `MealWindow` model if needed
-2. Adjust `WindowRedistributionManager`
-3. Test with developer dashboard
-4. Verify timeline display
+# 3. If all files compile, push to git
+git add -A && git commit -m "fix: compilation errors" && git push
 
-**Add new check-in:**
-1. Update `CheckInData` models
-2. Create UI in appropriate view
-3. Add to `CheckInManager`
-4. Test flow end-to-end
+# 4. Full build only when absolutely necessary (avoid due to timeouts)
+# Instead, rely on manual testing in Xcode
+```
 
-**Add new micronutrient:**
-1. Update `micronutrientDatabase` in DataProvider
-2. Add to `MicronutrientInfo` with health impacts
-3. Update mock data generation
-4. Add color and unit in FoodAnalysisView helpers
-
-**Modify ingredient tracking:**
-1. Update `MealIngredient` model if needed
-2. Add new food groups to `FoodGroup` enum
-3. Update ingredient generation in MockDataManager
-4. Test display in meal analysis view
-
----
-
-## 🎯 **Definition of Done**
-
-A feature is complete when:
-1. ✅ Code builds without warnings
-2. ✅ UI matches design system
-3. ✅ Animations are smooth (60fps)
-4. ✅ Error states handled
-5. ✅ Works with mock data
-6. ✅ Committed with descriptive message
+### Testing Protocol
+1. **Manual Testing**: Build and run in Xcode simulator
+2. **Screenshot Documentation**: Capture UI changes for review
+3. **Edge Case Testing**: 
+   - Midnight crossover scenarios
+   - Timezone changes
+   - Network failures
+   - Empty states
+4. **User Feedback Integration**: Implement based on screenshots/feedback
 
 ---
 
-## 🚀 **The Current NutriSync Experience**
+## 🏗 Architecture & Code Structure
 
-Users open NutriSync to see their personalized eating schedule for the day. Smart meal windows guide when to eat for optimal energy and goal achievement. The timeline view makes it easy to plan meals and stay on track. Gentle nudges provide coaching at the right moments. Progress tracking in Momentum tab keeps users motivated.
-
-**From timeline to transformation - NutriSync makes nutrition timing intelligent.** 🌱
-
----
-
-## 📋 **Quick Reference**
-
-### **File Structure**
+### Project Structure
 ```
 NutriSync/
-├── Views/
-│   ├── Focus/          # Timeline and window management
-│   ├── Momentum/       # Analytics and progress
-│   ├── Scan/          # Meal capture flow
-│   ├── Nudges/        # Coaching system
-│   └── CheckIn/       # User check-ins
-├── Models/            # Data structures
-├── Services/          # Business logic
-└── Developer/         # Testing tools
+├── Models/                 # Data structures
+│   ├── UserProfile.swift   # User settings, goals, preferences
+│   ├── MealWindow.swift    # Eating window definitions
+│   ├── LoggedMeal.swift    # Analyzed meal data
+│   └── CheckInData.swift   # Daily check-in responses
+├── Services/              
+│   ├── AI/                 # AI integration
+│   │   ├── VertexAIService.swift        # Gemini API wrapper
+│   │   └── MealAnalysisAgent.swift      # Meal photo analysis
+│   ├── DataProvider/       # Data layer abstraction
+│   │   ├── FirebaseDataProvider.swift   # Production data
+│   │   └── MockDataProvider.swift       # Development/testing
+│   ├── WindowGenerationService.swift     # AI window scheduling
+│   └── ClarificationManager.swift        # Follow-up questions
+├── ViewModels/             # Business logic
+├── Views/                  # SwiftUI components
+│   ├── Focus/              # Main dashboard tab
+│   ├── Momentum/           # Progress tracking tab
+│   ├── Scan/               # Meal capture tab
+│   └── CheckIn/            # Daily check-ins
+└── PhylloApp.swift         # App entry point
 ```
 
-### **Key Singletons**
-- `MockDataManager.shared` - Test data management
-- `TimeProvider.shared` - Time simulation
-- `NudgeManager.shared` - Nudge orchestration
-- `CheckInManager.shared` - Check-in tracking
-
-### **Testing Shortcuts**
-- Gear icon → Developer Dashboard
-- Time simulation for any scenario
-- Add meals instantly
-- Complete check-ins with one tap
-- Reset all data quickly
+### Key Design Patterns
+- **Protocol-Oriented**: `DataProviderProtocol` for Firebase/Mock switching
+- **@Observable**: Modern SwiftUI 6 state management
+- **Dependency Injection**: Services passed through environment
+- **Coordinator Pattern**: Complex flows like onboarding
+- **Repository Pattern**: Data access abstraction
 
 ---
 
-*This document reflects the current implementation as of August 2025. Features described in "not yet implemented" are planned but not built.*
+## 🔥 Firebase Integration
+
+### Current Priority: REMOVE ALL MOCK DATA
+```swift
+// ❌ OLD (Remove all instances)
+@StateObject private var dataProvider = MockDataManager.shared
+
+// ✅ NEW (Use everywhere)
+@EnvironmentObject private var dataProvider: FirebaseDataProvider
+```
+
+### Firestore Structure
+```javascript
+users/{userId}/
+  ├── profile/               // UserProfile document
+  ├── goals/                 // UserGoals document
+  ├── meals/{mealId}/        // LoggedMeal documents
+  ├── windows/{date}/        // Daily MealWindow array
+  ├── checkIns/{date}/       // Daily CheckInData
+  └── insights/{insightId}/  // AI-generated insights
+
+// Shared collections
+recipes/{recipeId}/          // Community recipes
+foodDatabase/{foodId}/       // Cached food items
+```
+
+### Security Rules
+```javascript
+// Basic security for nutrition app
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users can only access their own data
+    match /users/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Public read for shared content
+    match /recipes/{document=**} {
+      allow read: if request.auth != null;
+    }
+    
+    // Rate limiting for AI calls (Cloud Functions)
+    // Max 100 meal scans per day per user
+    // Max 10 window generations per day per user
+  }
+}
+```
+
+### Storage Rules (Meal Photos)
+```javascript
+// Auto-delete meal photos after 24 hours to save costs
+// Compress images to max 500KB before upload
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /users/{userId}/meals/{mealId}/{fileName} {
+      allow read, write: if request.auth != null && request.auth.uid == userId
+        && request.resource.size < 500 * 1024; // 500KB max
+    }
+  }
+}
+```
+
+---
+
+## 🤖 AI Integration & Cost Management
+
+### Gemini API Usage & Costs
+```swift
+// COST TARGETS:
+// - Meal Analysis: $0.01-0.03 per scan
+// - Window Generation: $0.01-0.03 per generation
+
+struct GeminiCostOptimization {
+    // Gemini Flash (for meal analysis)
+    static let flashInputCost = 0.075 / 1_000_000  // per token
+    static let flashOutputCost = 0.30 / 1_000_000   // per token
+    static let maxFlashTokens = 2000  // Limit response length
+    
+    // Gemini Pro (for complex window generation)
+    static let proInputCost = 0.50 / 1_000_000     // per token
+    static let proOutputCost = 1.50 / 1_000_000    // per token
+    static let maxProTokens = 1500    // Limit response length
+    
+    // Image compression before analysis
+    static let maxImageSize = 500_000  // 500KB compressed
+    static let jpegQuality: CGFloat = 0.7
+}
+
+// Optimize prompts for token efficiency
+extension MealAnalysisPrompt {
+    static let efficient = """
+    Analyze meal photo. Return JSON only:
+    {
+      "items": [{"name": "", "portion": "", "calories": 0, "protein": 0, "carbs": 0, "fat": 0}],
+      "confidence": 0.0-1.0,
+      "clarifications": ["question1", "question2"] // Max 2
+    }
+    """
+}
+```
+
+### Clarification System Rules
+- **Maximum 2 questions per meal scan**
+- **Priority order**: Protein type > Portion size > Cooking method > Ingredients
+- **Skip if confidence > 0.85**
+- **Learn from feedback**: Track thumbs up/down to improve prompts
+
+---
+
+## 🎨 UI/UX Guidelines
+
+### Design System
+```swift
+// Color Palette (Dark Theme)
+extension Color {
+    static let phylloBackground = Color(hex: "0a0a0a")      // Near black
+    static let phylloCard = Color.white.opacity(0.03)       // Subtle cards
+    static let phylloAccent = Color(hex: "10b981")          // Green (use sparingly 10-20%)
+    static let phylloText = Color.white                     // Primary text
+    static let phylloTextSecondary = Color.white.opacity(0.7)
+    static let phylloTextTertiary = Color.white.opacity(0.5)
+}
+
+// Component Standards
+struct PhylloDesignSystem {
+    static let cornerRadius: CGFloat = 16
+    static let padding: CGFloat = 16
+    static let spacing: CGFloat = 12
+    static let animation = Animation.spring(response: 0.4, dampingFraction: 0.8)
+}
+```
+
+### Three-Tab Navigation
+1. **Focus Tab** (Primary): Current window, upcoming meals, real-time progress
+2. **Momentum Tab**: Analytics, insights, weekly patterns
+3. **Scan Tab**: Camera/voice input for meal logging
+
+---
+
+## 🚧 Current Development Priorities
+
+### Phase 1: Firebase Migration (CURRENT)
+- [ ] Remove ALL MockDataManager dependencies (47+ files)
+- [ ] Implement FirebaseDataProvider for all data operations
+- [ ] Set up Firebase Auth with anonymous upgrade flow
+- [ ] Configure Firestore security rules
+- [ ] Test data persistence and sync
+
+### Phase 2: AI Window Generation Fixes
+- [ ] Handle midnight crossover edge cases
+- [ ] Implement timezone change detection
+- [ ] Fix redistribution logic for missed meals
+- [ ] Add workout-aware window timing
+- [ ] Optimize token usage for cost targets
+
+### Phase 3: UI Polish (WITH USER INPUT)
+- [ ] Refine Focus tab layout based on feedback
+- [ ] Improve animation transitions
+- [ ] Add haptic feedback for interactions
+- [ ] Implement proper loading states
+- [ ] Create empty state designs
+
+---
+
+## 📊 Key Features Implementation
+
+### Meal Window System
+```swift
+// Window Generation Logic
+struct WindowGenerationRules {
+    // Goal-specific patterns
+    static let patterns: [UserGoal: WindowPattern] = [
+        .loseWeight: .intermittentFasting(16, windows: 3),
+        .buildMuscle: .frequentFeeding(windows: 5-6),
+        .improvePerformance: .activityCentered,
+        .betterSleep: .circadianOptimized
+    ]
+    
+    // Window purposes (affects macro distribution)
+    enum WindowPurpose {
+        case preWorkout      // Higher carbs
+        case postWorkout     // High protein + carbs
+        case sustainedEnergy // Balanced macros
+        case recovery        // Protein focus
+        case metabolicBoost  // Lower carbs
+        case sleepOptimized  // Light, early timing
+    }
+}
+```
+
+### Check-In System
+```swift
+// Daily check-ins for pattern recognition
+struct CheckInSchedule {
+    static let checkIns = [
+        "morning": ["wakeTime", "sleepQuality", "dayFocus"],
+        "postMeal": ["energyLevel", "fullness", "mood"],
+        "evening": ["dailyReflection", "tomorrowPlans"],
+        "workout": ["timing", "intensity", "nutrition needs"]
+    ]
+}
+```
+
+---
+
+## 🧪 Testing & Quality Assurance
+
+### Manual Testing Checklist
+- [ ] New user onboarding flow (all paths)
+- [ ] Meal photo capture and analysis
+- [ ] Voice input transcription
+- [ ] Window generation for each goal type
+- [ ] Missed meal redistribution
+- [ ] Check-in completion
+- [ ] Offline mode handling
+- [ ] Push notification delivery
+
+### Edge Cases to Test
+- [ ] User changes timezone
+- [ ] Meal logged at 11:59 PM
+- [ ] Network failure during photo upload
+- [ ] Rapidly switching between tabs
+- [ ] Background app refresh
+- [ ] Low storage scenarios
+
+---
+
+## 📝 Documentation Requirements
+
+### When Adding Features
+1. **Update README.md** with feature description
+2. **Add inline comments** for complex logic
+3. **Document API changes** in service files
+4. **Update this CLAUDE.md** with architectural changes
+
+### Code Comment Standards
+```swift
+// ✅ GOOD: Explains WHY
+// Redistribute remaining macros to later windows when user 
+// misses a meal to maintain daily targets
+
+// ❌ BAD: Explains WHAT (obvious from code)
+// This function redistributes macros
+```
+
+---
+
+## 🚀 Performance Optimization
+
+### Current Issues & Solutions
+```swift
+// ISSUE: Build timeouts with 100+ files
+// SOLUTION: Use file-specific compilation (see Build Strategy above)
+
+// ISSUE: Memory usage with meal photos
+// SOLUTION: Compress before upload, release after analysis
+extension UIImage {
+    func compressed(quality: CGFloat = 0.7, maxSize: Int = 500_000) -> Data? {
+        // Implementation in Extensions/UIImage+Compression.swift
+    }
+}
+
+// ISSUE: Firestore read costs
+// SOLUTION: Aggressive local caching
+class FirestoreCacheManager {
+    static let mealCacheDuration: TimeInterval = 86400  // 24 hours
+    static let windowCacheDuration: TimeInterval = 3600 // 1 hour
+}
+```
+
+---
+
+## 🔐 Security & Privacy
+
+### Data Protection
+- **Minimal PII**: Only store necessary user data
+- **Photo Deletion**: Auto-remove after 24 hours
+- **Encryption**: Use Firebase's built-in encryption
+- **Anonymous Start**: Users can try without account
+
+### API Key Management
+```swift
+// Store in Firebase Remote Config or Environment
+enum APIKeys {
+    static var geminiAPIKey: String {
+        // Fetch from Firebase Remote Config
+        RemoteConfig.remoteConfig().configValue(forKey: "gemini_api_key").stringValue
+    }
+}
+```
+
+---
+
+## 📱 Device Support
+
+- **Minimum iOS**: 17.0
+- **Devices**: iPhone only (iPad later)
+- **Orientation**: Portrait only
+- **Offline Mode**: Limited (cached data only)
+
+---
+
+## 🎯 Success Metrics
+
+### Performance Targets
+- App launch: < 2 seconds
+- Meal analysis: < 10 seconds
+- Window generation: < 5 seconds
+- Clarification questions: ≤ 2 per meal
+- Crash rate: < 0.1%
+
+### User Experience Goals
+- Onboarding completion: > 90%
+- Daily active usage: > 70%
+- Meal logging accuracy: > 85% confidence
+- User satisfaction: > 4.5 stars
+
+---
+
+## 🛠 Quick Reference Commands
+
+```bash
+# Daily workflow
+git pull                                      # Start fresh
+# Make changes...
+swiftc -parse [edited files]                 # Quick syntax check
+git add -A && git commit -m "feat: X" && git push  # Ship it
+
+# Debug specific file
+xcrun swift-frontend -typecheck -sdk $(xcrun --sdk iphonesimulator --show-sdk-path) -target arm64-apple-ios17.0 -module-name NutriSync Path/To/File.swift
+
+# Find all mock data usage (to remove)
+grep -r "MockDataManager" --include="*.swift" .
+
+# Check Firebase usage
+grep -r "FirebaseDataProvider" --include="*.swift" .
+```
+
+---
+
+## 📞 Support & Resources
+
+- **Firebase Console**: https://console.firebase.google.com
+- **Vertex AI Console**: https://console.cloud.google.com/vertex-ai
+- **Apple Developer**: https://developer.apple.com/account
+- **SwiftUI Docs**: https://developer.apple.com/xcode/swiftui/
+
+---
+
+**Remember**: 
+1. Push after EVERY feature/change
+2. Compile edited files before pushing
+3. Remove mock data ASAP
+4. Keep costs under $0.03 per AI operation
+5. Manual test everything
+6. Document as you code
