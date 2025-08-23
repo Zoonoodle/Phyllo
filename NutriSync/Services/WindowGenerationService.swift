@@ -1,3 +1,8 @@
+// DEPRECATED: This file has been replaced by AIWindowGenerationService.swift
+// Commented out during cleanup due to merge conflicts and redundancy
+// Keep for reference only
+
+/*
 //
 //  WindowGenerationService.swift
 //  NutriSync
@@ -792,4 +797,4 @@ class WindowGenerationService {
             )
         ]
     }
-}
+}*/

@@ -1,3 +1,8 @@
+// DEPRECATED: This file is kept for reference only
+// Use AIScheduleView.swift instead
+// Commented out on [current date] during AI integration cleanup
+
+/*
 //
 //  ScheduleView.swift
 //  NutriSync
@@ -141,3 +146,4 @@ private extension Date {
     )
     .preferredColorScheme(.dark)
 }
+*/

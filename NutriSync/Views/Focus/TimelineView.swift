@@ -42,11 +42,24 @@ private struct WindowsRenderLayer: View {
     }
 }
 struct TimelineView: View {
+    @ObservedObject var viewModel: ScheduleViewModel
     @Binding var selectedWindow: MealWindow?
     @Binding var showWindowDetail: Bool
     let animationNamespace: Namespace.ID
     @Binding var scrollToAnalyzingMeal: AnalyzingMeal?
-    @ObservedObject var viewModel: ScheduleViewModel
+    
+    // Alternative init for AIScheduleView compatibility
+    init(viewModel: ScheduleViewModel,
+         selectedWindow: Binding<MealWindow?>,
+         showWindowDetail: Binding<Bool>,
+         animationNamespace: Namespace.ID,
+         scrollToAnalyzingMeal: Binding<AnalyzingMeal?> = .constant(nil)) {
+        self.viewModel = viewModel
+        self._selectedWindow = selectedWindow
+        self._showWindowDetail = showWindowDetail
+        self.animationNamespace = animationNamespace
+        self._scrollToAnalyzingMeal = scrollToAnalyzingMeal
+    }
     
     @StateObject private var timeProvider = TimeProvider.shared
     @StateObject private var layoutManager = TimelineLayoutManager()

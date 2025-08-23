@@ -39,7 +39,7 @@ struct MainTabView: View {
             
             // Tab content
             TabView(selection: $selectedTab) {
-                ScheduleView(
+                AIScheduleView(
                     showDeveloperDashboard: $showDeveloperDashboard,
                     scrollToAnalyzingMeal: $scrollToAnalyzingMeal
                 )

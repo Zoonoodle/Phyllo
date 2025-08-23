@@ -1,3 +1,8 @@
+// DEPRECATED: This file has been replaced by AIWindowGenerationService.swift
+// Commented out during cleanup due to merge conflicts and redundancy
+// Keep for reference only
+
+/*
 import Foundation
 
 // MARK: - Window Calculation Service
@@ -471,4 +476,4 @@ extension UserProfile {
         
         return sleepDate
     }
-}
+}*/
