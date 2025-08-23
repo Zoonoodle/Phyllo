@@ -177,7 +177,7 @@ struct DataViewerTabView: View {
                     ForEach(todaysWindows) { window in
                         HStack {
                             VStack(alignment: .leading) {
-                                Text(window.title)
+                                Text(window.purpose.rawValue)
                                     .font(.system(size: 16, weight: .medium))
                                     .foregroundColor(.white)
                                 

@@ -653,9 +653,9 @@ class FirebaseDataProvider: DataProvider {
         
         // Calculate total daily calories and macros
         let totalCalories = profile.dailyCalorieTarget
-        let totalProtein = profile.proteinTarget
-        let totalCarbs = profile.carbsTarget
-        let totalFat = profile.fatTarget
+        let totalProtein = profile.dailyProteinTarget
+        let totalCarbs = profile.dailyCarbTarget
+        let totalFat = profile.dailyFatTarget
         
         // Create 3 basic windows: Morning, Afternoon, Evening
         var windows: [MealWindow] = []
