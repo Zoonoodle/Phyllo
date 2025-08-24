@@ -204,8 +204,8 @@ struct TimelineView: View {
                     selectedWindow: $selectedWindow,
                     showWindowDetail: $showWindowDetail
                 )
-                // Align with the start of the timeline content (leave gutter for time labels)
-                .padding(EdgeInsets(top: 0, leading: 80, bottom: 0, trailing: 16))
+                // Align with the timeline content area - match hour row spacing
+                .padding(EdgeInsets(top: 0, leading: 68, bottom: 0, trailing: 16))
                 .frame(
                     maxWidth: .infinity,
                     maxHeight: calculateTotalLayoutHeight() + 100,
@@ -654,8 +654,8 @@ struct TimelineHourRow: View {
         HStack(alignment: .top, spacing: 12) {
             // Hour label - fixed position
             TimeLabel(hour: hour, isCurrent: isCurrentHour)
-                .frame(width: 48)
-                .padding(.leading, 20) // Increase left padding for time labels
+                .frame(width: 56)
+                .padding(.leading, 12) // Adjusted left padding for time labels
                 .zIndex(10) // Ensure time labels always sit above everything
             
             // Main content area
