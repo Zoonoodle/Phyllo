@@ -55,32 +55,21 @@ class ClarificationManager: ObservableObject {
             return true
         }
         
-        // Remove max 2-3 most relevant questions to avoid overwhelming users
-        if questions.count > 3 {
+        // Limit to max 4 most relevant questions to avoid overwhelming users
+        if questions.count > 4 {
             // Prioritize questions with clarificationType set (these are more specific)
             questions.sort { q1, q2 in
-                // Prioritize questions with clarification type
-                if q1.clarificationType != nil && q2.clarificationType == nil { return true }
-                if q1.clarificationType == nil && q2.clarificationType != nil { return false }
+                // Prioritize questions with non-empty clarification type
+                if !q1.clarificationType.isEmpty && q2.clarificationType.isEmpty { return true }
+                if q1.clarificationType.isEmpty && !q2.clarificationType.isEmpty { return false }
                 // Then prioritize questions with more options (more nuanced)
                 return q1.options.count > q2.options.count
             }
-            questions = Array(questions.prefix(3))
+            questions = Array(questions.prefix(4))
         }
         
-        // Validate each question has proper impact values
-        for i in 0..<questions.count {
-            var question = questions[i]
-            for j in 0..<question.options.count {
-                var option = question.options[j]
-                // Ensure all options have at least calorieImpact
-                if option.calorieImpact == nil {
-                    option.calorieImpact = 0
-                    question.options[j] = option
-                }
-            }
-            questions[i] = question
-        }
+        // No need to validate calorieImpact as it's non-optional
+        // All options already have calorieImpact set from the API
         
         return questions
     }

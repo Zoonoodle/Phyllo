@@ -244,6 +244,15 @@ struct ClarificationQuestionsView: View {
                                         onTap: {
                                             withAnimation(.spring(response: 0.3)) {
                                                 selectedOptions[currentQuestion.id] = option.id
+                                                
+                                                // Auto-advance after a brief delay (except on last question)
+                                                if currentQuestionIndex < questions.count - 1 {
+                                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                                                        withAnimation {
+                                                            currentQuestionIndex += 1
+                                                        }
+                                                    }
+                                                }
                                             }
                                         }
                                     )
@@ -337,30 +346,51 @@ struct ClarificationQuestionsView: View {
     }
     
     private var bottomButtons: some View {
-        VStack(spacing: 16) {
-            // Submit button
-            Button(action: submitAnswer) {
-                Text("Submit Answer")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundColor(selectedOptions[currentQuestion.id] != nil ? .white : .white.opacity(0.5))
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
+        HStack(spacing: 16) {
+            // Back button (if not on first question)
+            if currentQuestionIndex > 0 {
+                Button(action: goBack) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 14, weight: .semibold))
+                        Text("Back")
+                            .font(.system(size: 16, weight: .medium))
+                    }
+                    .foregroundColor(.white.opacity(0.6))
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 14)
                     .background(
-                        RoundedRectangle(cornerRadius: 16)
-                            .fill(selectedOptions[currentQuestion.id] != nil ? Color(hex: "15E065").opacity(0.08) : Color.white.opacity(0.03))
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color.white.opacity(0.05))
                             .overlay(
-                                RoundedRectangle(cornerRadius: 16)
-                                    .stroke(selectedOptions[currentQuestion.id] != nil ? Color(hex: "15E065").opacity(0.2) : Color.white.opacity(0.1), lineWidth: 1)
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(Color.white.opacity(0.1), lineWidth: 1)
                             )
                     )
+                }
             }
-            .disabled(selectedOptions[currentQuestion.id] == nil)
             
-            // Skip button
-            Button(action: skipQuestion) {
-                Text("I don't know")
-                    .font(.system(size: 17, weight: .medium))
-                    .foregroundColor(.white.opacity(0.5))
+            // Only show finish button on last question
+            if currentQuestionIndex == questions.count - 1 {
+                Button(action: completeClarification) {
+                    Text("Apply Adjustments")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(selectedOptions[currentQuestion.id] != nil ? .white : .white.opacity(0.5))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(selectedOptions[currentQuestion.id] != nil ? Color(hex: "15E065").opacity(0.08) : Color.white.opacity(0.03))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .stroke(selectedOptions[currentQuestion.id] != nil ? Color(hex: "15E065").opacity(0.2) : Color.white.opacity(0.1), lineWidth: 1)
+                                )
+                        )
+                }
+                .disabled(selectedOptions[currentQuestion.id] == nil)
+            } else {
+                // Empty spacer to keep back button on the left
+                Spacer()
             }
         }
         .padding(.horizontal, 20)
@@ -369,13 +399,9 @@ struct ClarificationQuestionsView: View {
     
     // MARK: - Actions
     
-    private func submitAnswer() {
-        if currentQuestionIndex < questions.count - 1 {
-            withAnimation {
-                currentQuestionIndex += 1
-            }
-        } else {
-            completeClarification()
+    private func goBack() {
+        withAnimation {
+            currentQuestionIndex = max(0, currentQuestionIndex - 1)
         }
     }
     

@@ -267,7 +267,7 @@ class VertexAIService: ObservableObject {
               • Oil used ONLY if visibly oily
             
             RULES:
-            - MAX 2-3 questions per meal
+            - MAX 3-4 questions per meal (prefer 3, use 4 only when necessary)
             - Each option MUST include calorieImpact
             - Skip obvious questions (don't ask about milk in black coffee)
             - Be specific to what you see/detect
