@@ -215,11 +215,20 @@ class ScheduleViewModel: ObservableObject {
                             DebugLogger.shared.success("Windows contain AI-generated content")
                         }
                     }
-                } else if morningCheckIn != nil {
-                    Task { @MainActor in
-                        DebugLogger.shared.warning("No windows found for today, generating windows based on check-in")
+                } else if let checkIn = morningCheckIn {
+                    // Only generate if check-in is from TODAY
+                    let calendar = Calendar.current
+                    if calendar.isDateInToday(checkIn.date) {
+                        Task { @MainActor in
+                            DebugLogger.shared.warning("No windows found for today, generating windows based on TODAY's check-in")
+                        }
+                        await generateDailyWindows()
+                    } else {
+                        Task { @MainActor in
+                            DebugLogger.shared.info("No windows generated - check-in is from a previous day (\(checkIn.date))")
+                            DebugLogger.shared.info("Waiting for TODAY's morning check-in before generating windows")
+                        }
                     }
-                    await generateDailyWindows()
                 } else {
                     Task { @MainActor in
                         DebugLogger.shared.info("No windows generated - waiting for morning check-in")
