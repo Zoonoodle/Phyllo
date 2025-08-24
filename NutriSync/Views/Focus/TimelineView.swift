@@ -172,7 +172,7 @@ struct TimelineView: View {
                                 .fill(Color.white.opacity(0.08))
                                 .frame(height: 1)
                                 .padding(.leading, 68) // Align with window banners
-                                .padding(.trailing, 16)
+                                .padding(.trailing, 24) // Increased right padding to prevent overflow
                             
                             TimelineHourRow(
                                 hour: hourLayout.hour,
@@ -205,7 +205,7 @@ struct TimelineView: View {
                     showWindowDetail: $showWindowDetail
                 )
                 // Align with the timeline content area - match hour row spacing
-                .padding(EdgeInsets(top: 0, leading: 68, bottom: 0, trailing: 16))
+                .padding(EdgeInsets(top: 0, leading: 68, bottom: 0, trailing: 24)) // Increased right padding
                 .frame(
                     maxWidth: .infinity,
                     maxHeight: calculateTotalLayoutHeight() + 100,
@@ -661,7 +661,7 @@ struct TimelineHourRow: View {
             // Main content area
             timelineContent
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.trailing, 16) // Reduce right padding to prevent overflow
+                .padding(.trailing, 24) // Consistent right padding with rest of timeline
         }
     }
     
@@ -952,7 +952,7 @@ struct CurrentTimeMarker: View {
                 endPoint: .trailing
             )
             .frame(height: 2)
-            .frame(maxWidth: .infinity)
+            .frame(maxWidth: 200) // Limit marker width to prevent overflow
             .shadow(color: markerColor.opacity(0.4), radius: 2, x: 0, y: 1)
             
             // Time text inline with the line

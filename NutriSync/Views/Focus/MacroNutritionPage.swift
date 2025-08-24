@@ -35,14 +35,14 @@ struct MacroNutritionPage: View {
     
     var body: some View {
         VStack(spacing: 24) {
-            // Title
+            // Title with safe area padding
             HStack {
                 Text("NutriSync Ring")
                     .font(.system(size: 18, weight: .semibold))
                     .foregroundColor(.white)
                 Spacer()
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, 24) // Increased horizontal padding
             
             // Calorie ring with more top padding
             ZStack {
@@ -77,7 +77,7 @@ struct MacroNutritionPage: View {
             }
             
             // Macro bars with proper padding
-            HStack(spacing: 20) {
+            HStack(spacing: 16) { // Reduced spacing for better fit
                 MacroProgressBar(
                     title: "Protein",
                     consumed: windowProteinConsumed,
@@ -99,9 +99,9 @@ struct MacroNutritionPage: View {
                     color: .blue
                 )
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, 24) // Consistent horizontal padding
         }
-        .padding(.top, 40)
+        .padding(.top, 60) // Increased top padding to avoid Dynamic Island
         .padding(.bottom, 34)
     }
 }
