@@ -115,12 +115,28 @@ class AIWindowGenerationService {
             - Hunger Level: \(checkIn.hungerLevel)/10
             - Planned Activities: \(checkIn.plannedActivities.joined(separator: ", "))
             """
+        } else {
+            // No check-in, use reasonable defaults
+            prompt += """
+            
+            ## Morning Check-In (Default - No check-in completed)
+            - Wake Time: 7:00 AM
+            - Sleep Quality: 7/10
+            - Energy Level: 3/5
+            - Hunger Level: 3/5
+            - Planned Activities: Regular work day
+            """
         }
+        
+        // Format today's date for the prompt
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withFullDate]
+        let todayString = formatter.string(from: date)
         
         prompt += """
         
         ## Requirements
-        Generate 4-6 meal windows optimized for the user's goal with:
+        Generate 4-6 meal windows for TODAY (\(todayString)) optimized for the user's goal with:
         1. Window timing based on circadian rhythm and user's schedule
         2. Personalized window names (not generic breakfast/lunch/dinner)
         3. Food suggestions (2-3 specific foods per window)
@@ -129,13 +145,16 @@ class AIWindowGenerationService {
         6. Rationale explaining why this window supports their goal
         7. Appropriate macro distribution based on window purpose
         
+        IMPORTANT: All times must be for TODAY \(todayString) in ISO8601 format with timezone.
+        Base the first window on the wake time provided, not a fixed hour.
+        
         Return as JSON array with this structure:
         {
             "windows": [
                 {
                     "name": "Morning Metabolic Primer",
-                    "startTime": "2025-08-24T07:00:00Z",
-                    "endTime": "2025-08-24T09:00:00Z",
+                    "startTime": "\(todayString)T07:00:00Z",
+                    "endTime": "\(todayString)T09:00:00Z",
                     "targetCalories": 450,
                     "targetProtein": 30,
                     "targetCarbs": 50,
