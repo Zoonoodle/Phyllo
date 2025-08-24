@@ -296,31 +296,42 @@ class FirebaseDataProvider: DataProvider {
         }
         
         Task { @MainActor in
-            DebugLogger.shared.dataProvider("No existing windows found. Generating basic windows for date: \(date)")
-            DebugLogger.shared.warning("Using basic window generation - AI service integration needed for rich content")
+            DebugLogger.shared.error("No existing windows found. Calling AI window generation service...")
+            DebugLogger.shared.warning("AI service is required - no fallback available")
         }
         
-        // Only generate basic windows if NO windows exist
-        // TODO: Replace with AI window generation service
-        let windows = generateBasicWindows(for: date, profile: profile)
-        
-        Task { @MainActor in
-            DebugLogger.shared.dataProvider("Generated \(windows.count) basic windows")
-        }
-
-        // Save all windows to Firestore
-        for window in windows {
+        // NO FALLBACK - AI generation is ALWAYS required
+        // Call the AI Window Generation Service
+        do {
+            let aiWindows = try await AIWindowGenerationService.shared.generateWindows(
+                for: profile,
+                checkIn: checkIn,
+                date: date
+            )
+            
             Task { @MainActor in
-                DebugLogger.shared.firebase("Saving window: \(window.purpose.rawValue) (\(window.startTime) - \(window.endTime))")
+                DebugLogger.shared.success("AI generated \(aiWindows.count) windows with rich content")
             }
-            try await saveWindow(window)
+            
+            // Save AI-generated windows to Firestore
+            for window in aiWindows {
+                Task { @MainActor in
+                    DebugLogger.shared.firebase("Saving AI window: \(window.name ?? window.purpose.rawValue)")
+                }
+                try await saveWindow(window)
+            }
+            
+            Task { @MainActor in
+                DebugLogger.shared.success("All \(aiWindows.count) AI windows saved to Firebase")
+            }
+            
+            return aiWindows
+        } catch {
+            Task { @MainActor in
+                DebugLogger.shared.error("AI window generation failed: \(error)")
+            }
+            throw error
         }
-        
-        Task { @MainActor in
-            DebugLogger.shared.success("All \(windows.count) windows saved to Firebase")
-        }
-        
-        return windows
     }
     
     func redistributeWindows(for date: Date) async throws {
@@ -667,72 +678,9 @@ class FirebaseDataProvider: DataProvider {
     
     // MARK: - Helper Methods
     
-    private func generateBasicWindows(for date: Date, profile: UserProfile) -> [MealWindow] {
-        let calendar = Calendar.current
-        let startOfDay = calendar.startOfDay(for: date)
-        
-        // Calculate total daily calories and macros
-        let totalCalories = profile.dailyCalorieTarget
-        let totalProtein = profile.dailyProteinTarget
-        let totalCarbs = profile.dailyCarbTarget
-        let totalFat = profile.dailyFatTarget
-        
-        // Create 3 basic windows: Morning, Afternoon, Evening
-        var windows: [MealWindow] = []
-        
-        // Morning window (8 AM - 12 PM) - 30% of calories
-        let morningStart = calendar.date(byAdding: .hour, value: 8, to: startOfDay)!
-        let morningEnd = calendar.date(byAdding: .hour, value: 12, to: startOfDay)!
-        windows.append(MealWindow(
-            startTime: morningStart,
-            endTime: morningEnd,
-            targetCalories: Int(Double(totalCalories) * 0.3),
-            targetMacros: MacroTargets(
-                protein: Int(Double(totalProtein) * 0.3),
-                carbs: Int(Double(totalCarbs) * 0.35),
-                fat: Int(Double(totalFat) * 0.25)
-            ),
-            purpose: .sustainedEnergy,
-            flexibility: .flexible,
-            dayDate: startOfDay
-        ))
-        
-        // Afternoon window (12 PM - 5 PM) - 40% of calories
-        let afternoonStart = morningEnd
-        let afternoonEnd = calendar.date(byAdding: .hour, value: 17, to: startOfDay)!
-        windows.append(MealWindow(
-            startTime: afternoonStart,
-            endTime: afternoonEnd,
-            targetCalories: Int(Double(totalCalories) * 0.4),
-            targetMacros: MacroTargets(
-                protein: Int(Double(totalProtein) * 0.4),
-                carbs: Int(Double(totalCarbs) * 0.35),
-                fat: Int(Double(totalFat) * 0.4)
-            ),
-            purpose: .sustainedEnergy,
-            flexibility: .flexible,
-            dayDate: startOfDay
-        ))
-        
-        // Evening window (5 PM - 9 PM) - 30% of calories
-        let eveningStart = afternoonEnd
-        let eveningEnd = calendar.date(byAdding: .hour, value: 21, to: startOfDay)!
-        windows.append(MealWindow(
-            startTime: eveningStart,
-            endTime: eveningEnd,
-            targetCalories: Int(Double(totalCalories) * 0.3),
-            targetMacros: MacroTargets(
-                protein: Int(Double(totalProtein) * 0.3),
-                carbs: Int(Double(totalCarbs) * 0.3),
-                fat: Int(Double(totalFat) * 0.35)
-            ),
-            purpose: .recovery,
-            flexibility: .flexible,
-            dayDate: startOfDay
-        ))
-        
-        return windows
-    }
+    // REMOVED: generateBasicWindows - NO FALLBACK ALLOWED
+    // All window generation MUST go through AI service
+    // This ensures we always provide rich, personalized content
 }
 
 // Removed duplicate ISO8601DateFormatter.yyyyMMdd extension (defined in NotificationManager)

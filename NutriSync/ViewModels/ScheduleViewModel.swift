@@ -320,7 +320,16 @@ class ScheduleViewModel: ObservableObject {
                 await notificationManager.scheduleMorningCheckInReminder(for: Date().addingTimeInterval(86400)) // Tomorrow
             }
         } catch {
-            errorMessage = "Failed to generate windows: \(error.localizedDescription)"
+            // Handle AI generation requirement
+            if (error as NSError).code == 1001 {
+                errorMessage = "AI window generation required. Please ensure windows are created through the AI service."
+                Task { @MainActor in
+                    DebugLogger.shared.error("⚠️ AI WINDOW GENERATION REQUIRED - No fallback available")
+                    DebugLogger.shared.warning("Windows must be generated through AI service with food suggestions and micronutrient focus")
+                }
+            } else {
+                errorMessage = "Failed to generate windows: \(error.localizedDescription)"
+            }
             print("❌ Failed to generate windows: \(error)")
             Task { @MainActor in
                 DebugLogger.shared.error("Window generation failed: \(error)")
