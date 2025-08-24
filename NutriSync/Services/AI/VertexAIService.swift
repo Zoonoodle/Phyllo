@@ -227,20 +227,50 @@ class VertexAIService: ObservableObject {
            - Focus on goal-relevant nutrients
            - Include vitamin/mineral name, amount, unit, and %RDA
            
-        5. CLARIFICATION NEEDS (IMPORTANT - BE PRACTICAL)
-            - RESTAURANT DETECTION: If you detect restaurant branding, packaging, or menu items:
-              • DO NOT ask about cooking methods (it's already prepared)
-              • DO NOT ask about oil/butter (restaurant standard)
-              • ONLY ask about: sauce types, drink sizes, customizations
-            - For HOME-COOKED meals, ask 2-4 targeted questions MAX:
-              • Cook fats (oil/butter amount), dressings/sauces amount
-              • Milk/base type for drinks; sweeteners added
-              • Cooking method (fried vs grilled vs baked)
-              • Portion tweaks (small/medium/large)
-            - Each option MUST include calorieImpact and optional proteinImpact/carbImpact/fatImpact
-            - Keep text short, neutral, and non-judgmental
-        
-        CRITICAL: For protein shakes/smoothies ALWAYS ask about protein type and milk type!
+        5. CLARIFICATION NEEDS (CONTEXT-AWARE - BE SMART!)
+            ANALYZE THE FOOD TYPE FIRST, then ask appropriate questions:
+            
+            🍔 RESTAURANT/BRANDED FOODS (McDonald's, Starbucks, etc):
+              • Size/portion (small/medium/large)
+              • Customizations (extra sauce, no cheese, etc)
+              • Drink specifics (size, milk type for coffee)
+              ❌ NEVER ask about: cooking oil, preparation method, added butter
+            
+            🥤 BEVERAGES & SHAKES:
+              • Protein powder type (whey/plant/casein) - if protein shake
+              • Milk/liquid base (whole/2%/almond/water)
+              • Sweeteners added (sugar/honey/none)
+              • Size (8oz/12oz/16oz)
+              ❌ NEVER ask about: cooking methods, oil/butter
+            
+            🍳 HOME-COOKED PROTEINS (steak, chicken, eggs):
+              • Cooking method (grilled/pan-fried/baked)
+              • Added fats ONLY if fried/sautéed (oil/butter amount)
+              • Portion size verification
+              • Marinades/seasonings with calories
+            
+            🥗 SALADS & VEGETABLES:
+              • Dressing type and amount
+              • Added toppings (cheese, nuts, croutons)
+              • Cooking method if cooked (steamed/roasted/sautéed)
+              ❌ Skip oil question for raw salads
+            
+            🍞 PACKAGED/BRANDED SNACKS:
+              • Serving size (1 pack/2 packs/handful)
+              • Flavor variant if impacts nutrition
+              ❌ NEVER ask about: preparation, cooking, added ingredients
+            
+            🍝 MIXED DISHES (pasta, stir-fry, casseroles):
+              • Portion size (cup/bowl/plate)
+              • Sauce type and amount
+              • Cheese/toppings added
+              • Oil used ONLY if visibly oily
+            
+            RULES:
+            - MAX 2-3 questions per meal
+            - Each option MUST include calorieImpact
+            - Skip obvious questions (don't ask about milk in black coffee)
+            - Be specific to what you see/detect
         
         6. TOOL REQUESTS (IMPORTANT - Help yourself be more accurate!)
            - If you see restaurant branding/packaging: set requestedTools: ["brandSearch"] and brandDetected: "restaurant name"
