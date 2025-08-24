@@ -85,7 +85,7 @@ struct WindowDetailOverlay: View {
                             .frame(width: 44, height: 44)
                     }
                 }
-                .padding(.horizontal, 32)
+                .padding(.horizontal, 16)
                 .padding(.top, 8)
                 .padding(.bottom, 16)
                 .background(Color.nutriSyncBackground)
@@ -96,7 +96,7 @@ struct WindowDetailOverlay: View {
                     VStack(spacing: 24) {
                         // Scrollable nutrition header
                         ScrollableNutritionHeader(window: window, currentPage: $currentPage, viewModel: viewModel)
-                            .padding(.horizontal, 32)
+                            .padding(.horizontal, 16)
                         
                         // Custom page indicator
                         HStack(spacing: 8) {
@@ -111,11 +111,11 @@ struct WindowDetailOverlay: View {
                         
                         // Logged foods section
                         WindowFoodsList(window: window, selectedMealId: $selectedMealId, viewModel: viewModel)
-                            .padding(.horizontal, 32)
+                            .padding(.horizontal, 16)
                         
                         // Window purpose section
                         WindowPurposeCard(window: window)
-                            .padding(.horizontal, 32)
+                            .padding(.horizontal, 16)
                             .padding(.bottom, 32)
                     }
                     .padding(.top)

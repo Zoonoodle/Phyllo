@@ -15,12 +15,15 @@ struct MorningCheckInView: View {
     @State private var currentStep = 1
     @State private var wakeTime = Date()
     @State private var sleepQuality: MorningCheckIn.SleepQuality?
+    @State private var energyLevel: Int = 3  // 1-5 scale
+    @State private var hungerLevel: Int = 3  // 1-5 scale
+    @State private var plannedActivities: [String] = []
     
     // Animation states
     @State private var showContent = false
     @State private var isTransitioning = false
     
-    private let totalSteps = 2
+    private let totalSteps = 5  // Increased from 2 to 5
     
     var body: some View {
         ZStack {

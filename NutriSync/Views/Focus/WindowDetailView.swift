@@ -43,7 +43,7 @@ struct WindowDetailView: View {
                             .padding(.bottom, 32)
                     }
                     .padding(.top)
-                    .padding(.horizontal, 32) // Add consistent horizontal padding to entire content
+                    .padding(.horizontal, 16) // Add consistent horizontal padding to entire content
                 }
             }
             .navigationTitle(windowTitle)

@@ -442,11 +442,11 @@ git add -A && git commit -m "feat: X" && git push  # Ship it
 # Debug specific file
 xcrun swift-frontend -typecheck -sdk $(xcrun --sdk iphonesimulator --show-sdk-path) -target arm64-apple-ios17.0 -module-name NutriSync Path/To/File.swift
 
-# Find all mock data usage (to remove)
-grep -r "MockDataManager" --include="*.swift" .
+# Find all mock data usage (to remove) - ALWAYS use ripgrep (rg)
+rg "MockDataManager" --type swift .
 
-# Check Firebase usage
-grep -r "FirebaseDataProvider" --include="*.swift" .
+# Check Firebase usage - ALWAYS use ripgrep (rg)
+rg "FirebaseDataProvider" --type swift .
 ```
 
 ---
