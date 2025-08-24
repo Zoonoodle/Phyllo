@@ -23,21 +23,25 @@ private struct WindowsRenderLayer: View {
     @Binding var showWindowDetail: Bool
 
     var body: some View {
-        ZStack(alignment: .topLeading) {
-            ForEach(windowLayouts, id: \.window.id) { layout in
-                ExpandableWindowBanner(
-                    window: layout.window,
-                    meals: viewModel.mealsInWindow(layout.window),
-                    selectedWindow: $selectedWindow,
-                    showWindowDetail: $showWindowDetail,
-                    animationNamespace: animationNamespace,
-                    viewModel: viewModel,
-                    bannerHeight: layout.height
-                )
-                .offset(y: layout.yPosition)
-                .animation(.spring(response: 0.4, dampingFraction: 0.8), value: layout.yPosition)
-                .animation(.spring(response: 0.4, dampingFraction: 0.8), value: layout.height)
+        GeometryReader { geometry in
+            ZStack(alignment: .topLeading) {
+                ForEach(windowLayouts, id: \.window.id) { layout in
+                    ExpandableWindowBanner(
+                        window: layout.window,
+                        meals: viewModel.mealsInWindow(layout.window),
+                        selectedWindow: $selectedWindow,
+                        showWindowDetail: $showWindowDetail,
+                        animationNamespace: animationNamespace,
+                        viewModel: viewModel,
+                        bannerHeight: layout.height
+                    )
+                    .frame(maxWidth: geometry.size.width) // Constrain banner width
+                    .offset(y: layout.yPosition)
+                    .animation(.spring(response: 0.4, dampingFraction: 0.8), value: layout.yPosition)
+                    .animation(.spring(response: 0.4, dampingFraction: 0.8), value: layout.height)
+                }
             }
+            .frame(width: geometry.size.width, height: geometry.size.height)
         }
     }
 }
@@ -208,8 +212,7 @@ struct TimelineView: View {
                 // Align with the start of the timeline content (leave gutter for time labels)
                 .padding(EdgeInsets(top: 0, leading: 68, bottom: 0, trailing: 32))
                 .frame(
-                    maxWidth: geometry.size.width,
-                    maxHeight: calculateTotalLayoutHeight() + 100,
+                    height: calculateTotalLayoutHeight() + 100,
                     alignment: .topLeading
                 )
                 .allowsHitTesting(true)
