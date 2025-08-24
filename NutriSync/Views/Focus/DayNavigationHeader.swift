@@ -172,7 +172,6 @@ struct MacroSummaryBar: View {
             )
         }
         .padding(.vertical, 6)
-        .padding(.horizontal, 12)
         .frame(maxWidth: .infinity)  // Constrain to available width
     }
 }
