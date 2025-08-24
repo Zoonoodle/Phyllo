@@ -161,8 +161,9 @@ struct TimelineView: View {
 
     @ViewBuilder
     private func buildTimeline(proxy: ScrollViewProxy) -> some View {
-        ScrollView(.vertical, showsIndicators: false) {
-            ZStack(alignment: .topLeading) {
+        GeometryReader { geometry in
+            ScrollView(.vertical, showsIndicators: false) {
+                ZStack(alignment: .topLeading) {
                 // Background hour grid with clean lines
                 VStack(spacing: 0) {
                     ForEach(calculatedHourLayouts, id: \.hour) { hourLayout in
@@ -215,6 +216,8 @@ struct TimelineView: View {
                 // Keep current time marker above banners
                 .zIndex(3)
             }
+            .frame(width: geometry.size.width) // Constrain ScrollView content to screen width
+        }
         }
         .onAppear {
             currentTime = timeProvider.currentTime

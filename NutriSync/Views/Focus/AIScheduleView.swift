@@ -51,6 +51,7 @@ struct AIScheduleView: View {
                             animationNamespace: animationNamespace,
                             scrollToAnalyzingMeal: $scrollToAnalyzingMeal
                         )
+                        .frame(maxWidth: .infinity) // Constrain width to prevent horizontal expansion
                         .opacity(showWindowDetail ? 0 : 1)
                     }
                 }
