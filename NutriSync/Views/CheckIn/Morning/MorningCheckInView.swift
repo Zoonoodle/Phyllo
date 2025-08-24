@@ -50,6 +50,33 @@ struct MorningCheckInView: View {
                         case 2:
                             SleepQualityView(
                                 selectedQuality: $sleepQuality,
+                                onContinue: handleNextStep
+                            )
+                            .transition(.asymmetric(
+                                insertion: .move(edge: .trailing).combined(with: .opacity),
+                                removal: .move(edge: .leading).combined(with: .opacity)
+                            ))
+                        case 3:
+                            EnergyLevelSelectionView(
+                                energyLevel: $energyLevel,
+                                onContinue: handleNextStep
+                            )
+                            .transition(.asymmetric(
+                                insertion: .move(edge: .trailing).combined(with: .opacity),
+                                removal: .move(edge: .leading).combined(with: .opacity)
+                            ))
+                        case 4:
+                            HungerLevelSelectionView(
+                                hungerLevel: $hungerLevel,
+                                onContinue: handleNextStep
+                            )
+                            .transition(.asymmetric(
+                                insertion: .move(edge: .trailing).combined(with: .opacity),
+                                removal: .move(edge: .leading).combined(with: .opacity)
+                            ))
+                        case 5:
+                            PlannedActivitiesView(
+                                selectedActivities: $plannedActivities,
                                 onContinue: completeCheckIn
                             )
                             .transition(.asymmetric(
@@ -102,15 +129,14 @@ struct MorningCheckInView: View {
             case .excellent: return 9
             }
         }()
-        let planned: [String] = []
         return MorningCheckInData(
             date: Date(),
             wakeTime: wakeTime,
             sleepQuality: sleepQuality10,
             sleepDuration: estimatedSleepHours * 3600,
-            energyLevel: max(1, min(5, quality.rawValue + 1)),
-            plannedActivities: planned,
-            hungerLevel: 3
+            energyLevel: energyLevel,  // Now collected from user
+            plannedActivities: plannedActivities,  // Now collected from user
+            hungerLevel: hungerLevel  // Now collected from user
         )
     }
     
