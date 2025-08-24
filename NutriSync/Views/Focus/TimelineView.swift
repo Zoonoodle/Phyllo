@@ -171,8 +171,8 @@ struct TimelineView: View {
                             Rectangle()
                                 .fill(Color.white.opacity(0.08))
                                 .frame(height: 1)
-                                .padding(.leading, 68) // Start after time label (8 + 48 + 12)
-                                .padding(.trailing, 32)
+                                .padding(.leading, 80) // Increase to push divider line further right
+                                .padding(.trailing, 16)
                             
                             TimelineHourRow(
                                 hour: hourLayout.hour,
@@ -205,7 +205,7 @@ struct TimelineView: View {
                     showWindowDetail: $showWindowDetail
                 )
                 // Align with the start of the timeline content (leave gutter for time labels)
-                .padding(EdgeInsets(top: 0, leading: 68, bottom: 0, trailing: 32))
+                .padding(EdgeInsets(top: 0, leading: 80, bottom: 0, trailing: 16))
                 .frame(
                     maxWidth: .infinity,
                     maxHeight: calculateTotalLayoutHeight() + 100,
@@ -655,13 +655,13 @@ struct TimelineHourRow: View {
             // Hour label - fixed position
             TimeLabel(hour: hour, isCurrent: isCurrentHour)
                 .frame(width: 48)
-                .padding(.leading, 8) // Small left padding
+                .padding(.leading, 20) // Increase left padding for time labels
                 .zIndex(10) // Ensure time labels always sit above everything
             
             // Main content area
             timelineContent
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.trailing, 32) // Keep right padding for content
+                .padding(.trailing, 16) // Reduce right padding to prevent overflow
         }
     }
     
