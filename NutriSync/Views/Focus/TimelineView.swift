@@ -173,7 +173,7 @@ struct TimelineView: View {
                                 .fill(Color.white.opacity(0.08))
                                 .frame(height: 1)
                                 .padding(.leading, 68) // Start after time label (8 + 48 + 12)
-                                .padding(.trailing, 16)
+                                .padding(.trailing, 32)
                             
                             TimelineHourRow(
                                 hour: hourLayout.hour,
@@ -206,9 +206,9 @@ struct TimelineView: View {
                     showWindowDetail: $showWindowDetail
                 )
                 // Align with the start of the timeline content (leave gutter for time labels)
-                .padding(EdgeInsets(top: 0, leading: 68, bottom: 0, trailing: 16))
+                .padding(EdgeInsets(top: 0, leading: 68, bottom: 0, trailing: 32))
                 .frame(
-                    maxWidth: .infinity,
+                    maxWidth: geometry.size.width,
                     maxHeight: calculateTotalLayoutHeight() + 100,
                     alignment: .topLeading
                 )
@@ -664,7 +664,7 @@ struct TimelineHourRow: View {
             // Main content area
             timelineContent
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.trailing, 16) // Keep right padding for content
+                .padding(.trailing, 32) // Keep right padding for content
         }
     }
     
