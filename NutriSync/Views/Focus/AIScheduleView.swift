@@ -21,6 +21,10 @@ struct AIScheduleView: View {
                 .ignoresSafeArea()
             
             VStack(spacing: 0) {
+                // Add safe area top padding
+                Color.clear
+                    .frame(height: 50)
+                
                 VStack(spacing: 2) {
                     // Day navigation header with integrated logo and settings
                     DayNavigationHeader(
