@@ -224,17 +224,38 @@ struct TimelineView: View {
         }
         .onAppear {
             currentTime = timeProvider.currentTime
-            // Scroll to first window or first hour
+            
+            // Determine best scroll position
             let targetHour: Int
-            if let firstWindow = viewModel.mealWindows.first {
+            let anchor: UnitPoint
+            
+            // If we have an active window, scroll to it
+            if let activeWindow = viewModel.activeWindow {
+                targetHour = Calendar.current.component(.hour, from: activeWindow.startTime)
+                anchor = .center
+            }
+            // Otherwise scroll to current time if it's within timeline hours
+            else if hours.contains(currentHour) {
+                targetHour = currentHour
+                anchor = .center
+            }
+            // Otherwise scroll to first window or first hour
+            else if let firstWindow = viewModel.mealWindows.first {
                 targetHour = Calendar.current.component(.hour, from: firstWindow.startTime)
+                anchor = .top
             } else if let firstHour = hours.first {
                 targetHour = firstHour
+                anchor = .top
             } else {
                 targetHour = currentHour
+                anchor = .top
             }
-            withAnimation {
-                proxy.scrollTo("hour-\(targetHour)", anchor: .top)
+            
+            // Delay slightly to ensure layout is ready
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                withAnimation {
+                    proxy.scrollTo("hour-\(targetHour)", anchor: anchor)
+                }
             }
         }
         .onReceive(timer) { _ in
