@@ -202,9 +202,20 @@ class ScheduleViewModel: ObservableObject {
             // Load morning check-in
             morningCheckIn = try await dataProvider.getMorningCheckIn(for: today)
             
-            // Generate windows only if morning check-in is completed
+            // Generate windows only if none exist AND morning check-in is completed
             if mealWindows.isEmpty {
-                if morningCheckIn != nil {
+                // Check if windows exist in Firebase but aren't loaded yet
+                let existingWindows = try await dataProvider.getWindows(for: today)
+                if !existingWindows.isEmpty {
+                    mealWindows = existingWindows
+                    Task { @MainActor in
+                        DebugLogger.shared.info("Loaded \(existingWindows.count) existing windows from Firebase")
+                        let hasAIContent = existingWindows.contains { $0.name != nil || $0.foodSuggestions != nil }
+                        if hasAIContent {
+                            DebugLogger.shared.success("Windows contain AI-generated content")
+                        }
+                    }
+                } else if morningCheckIn != nil {
                     Task { @MainActor in
                         DebugLogger.shared.warning("No windows found for today, generating windows based on check-in")
                     }
@@ -249,8 +260,21 @@ class ScheduleViewModel: ObservableObject {
             try await dataProvider.saveMorningCheckIn(checkIn)
             morningCheckIn = checkIn
             
-            // Generate windows based on check-in
-            await generateDailyWindows()
+            // Only generate windows if none exist (don't overwrite AI windows)
+            if mealWindows.isEmpty {
+                Task { @MainActor in
+                    DebugLogger.shared.info("No windows exist after check-in, generating new windows")
+                }
+                await generateDailyWindows()
+            } else {
+                Task { @MainActor in
+                    DebugLogger.shared.info("Windows already exist (\(mealWindows.count)). Preserving existing schedule.")
+                    let hasAIContent = mealWindows.contains { $0.name != nil || $0.foodSuggestions != nil }
+                    if hasAIContent {
+                        DebugLogger.shared.success("Preserving AI-generated windows with rich content")
+                    }
+                }
+            }
             
             // Optional redistribution after generation using current meals
             await redistributeWindows()

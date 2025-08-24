@@ -261,31 +261,51 @@ class FirebaseDataProvider: DataProvider {
     
     func generateDailyWindows(for date: Date, profile: UserProfile, checkIn: MorningCheckInData?) async throws -> [MealWindow] {
         Task { @MainActor in
-            DebugLogger.shared.dataProvider("Generating daily windows for date: \(date)")
+            DebugLogger.shared.dataProvider("Checking for existing windows before generation for date: \(date)")
         }
         
-        // Temporary simple window generation until AI service is implemented
-        // This creates a basic 3-window schedule
-        let windows = generateBasicWindows(for: date, profile: profile)
-        
-        Task { @MainActor in
-            DebugLogger.shared.dataProvider("Generated \(windows.count) windows")
-        }
-        // Phase 1 follow-up: clear existing windows for the day before saving new ones
+        // IMPORTANT: Check if windows already exist (especially AI-generated ones)
         let calendar = Calendar.current
         let startOfDay = calendar.startOfDay(for: date)
         let existing = try await userRef.collection("windows")
             .whereField("dayDate", isEqualTo: startOfDay)
             .getDocuments()
+        
+        // If windows already exist, return them instead of overwriting
         if !existing.documents.isEmpty {
-            let batch = db.batch()
-            for doc in existing.documents {
-                batch.deleteDocument(doc.reference)
-            }
-            try await batch.commit()
             Task { @MainActor in
-                DebugLogger.shared.firebase("Deleted \(existing.documents.count) existing windows for dayDate: \(startOfDay)")
+                DebugLogger.shared.info("Windows already exist for today (\(existing.documents.count) windows). Skipping generation.")
             }
+            
+            // Parse and return existing windows
+            let windows = existing.documents.compactMap { doc -> MealWindow? in
+                MealWindow.fromFirestore(doc.data())
+            }
+            
+            // Check if these are AI-generated windows (have name, foodSuggestions, etc.)
+            let hasAIContent = windows.contains { $0.name != nil || $0.foodSuggestions != nil }
+            Task { @MainActor in
+                if hasAIContent {
+                    DebugLogger.shared.success("Preserving existing AI-generated windows with rich content")
+                } else {
+                    DebugLogger.shared.warning("Existing windows lack AI content - consider regenerating with AI service")
+                }
+            }
+            
+            return windows
+        }
+        
+        Task { @MainActor in
+            DebugLogger.shared.dataProvider("No existing windows found. Generating basic windows for date: \(date)")
+            DebugLogger.shared.warning("Using basic window generation - AI service integration needed for rich content")
+        }
+        
+        // Only generate basic windows if NO windows exist
+        // TODO: Replace with AI window generation service
+        let windows = generateBasicWindows(for: date, profile: profile)
+        
+        Task { @MainActor in
+            DebugLogger.shared.dataProvider("Generated \(windows.count) basic windows")
         }
 
         // Save all windows to Firestore
