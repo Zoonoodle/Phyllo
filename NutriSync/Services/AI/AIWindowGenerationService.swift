@@ -6,13 +6,33 @@
 //
 
 import Foundation
-import FirebaseVertexAI
+import FirebaseAI
+import FirebaseFirestore
 
 /// Service responsible for generating personalized meal windows using AI
 class AIWindowGenerationService {
     static let shared = AIWindowGenerationService()
+    private let model: GenerativeModel
     
-    private init() {}
+    private init() {
+        // Initialize Firebase AI service
+        let ai = FirebaseAI.firebaseAI()
+        
+        // Configure generation parameters for structured JSON output
+        let config = GenerationConfig(
+            temperature: 0.8,  // Slightly creative for variety
+            topP: 0.95,
+            topK: 40,
+            maxOutputTokens: 4096,  // Larger for detailed windows
+            responseMIMEType: "application/json"
+        )
+        
+        // Use Gemini 2.0 Flash for fast, detailed responses
+        self.model = ai.generativeModel(
+            modelName: "gemini-2.0-flash-exp",
+            generationConfig: config
+        )
+    }
     
     /// Generate AI-powered meal windows with rich content
     /// - Parameters:
@@ -36,16 +56,31 @@ class AIWindowGenerationService {
         
         let prompt = buildPrompt(profile: profile, checkIn: checkIn, date: date)
         
-        // Placeholder for Gemini API integration
-        throw NSError(
-            domain: "AIWindowGeneration",
-            code: 2001,
-            userInfo: [
-                NSLocalizedDescriptionKey: "AI window generation not yet implemented",
-                NSLocalizedFailureReasonErrorKey: "Gemini API integration pending",
-                NSLocalizedRecoverySuggestionErrorKey: "Complete Gemini API integration for window generation"
-            ]
-        )
+        Task { @MainActor in
+            DebugLogger.shared.ai("Calling Gemini AI for window generation")
+            DebugLogger.shared.ai("User goal: \(profile.primaryGoal.displayName)")
+        }
+        
+        // Call Gemini AI
+        let response = try await model.generateContent(prompt)
+        
+        guard let text = response.text else {
+            Task { @MainActor in
+                DebugLogger.shared.error("No response text from Gemini")
+            }
+            throw NSError(
+                domain: "AIWindowGeneration",
+                code: 3001,
+                userInfo: [NSLocalizedDescriptionKey: "No response from AI"]
+            )
+        }
+        
+        Task { @MainActor in
+            DebugLogger.shared.ai("Received response from Gemini, parsing JSON...")
+        }
+        
+        // Parse the JSON response
+        return try parseAIResponse(text, for: date)
     }
     
     /// Build the prompt for AI window generation
@@ -129,10 +164,77 @@ class AIWindowGenerationService {
     
     /// Parse AI response into MealWindow objects
     private func parseAIResponse(_ response: String, for date: Date) throws -> [MealWindow] {
-        // TODO: Implement JSON parsing of Gemini response
-        // Convert AI-generated JSON into MealWindow objects
-        return []
+        guard let data = response.data(using: .utf8) else {
+            throw NSError(domain: "AIWindowGeneration", code: 3002, 
+                         userInfo: [NSLocalizedDescriptionKey: "Failed to convert response to data"])
+        }
+        
+        // Parse JSON
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        
+        do {
+            let aiResponse = try decoder.decode(AIWindowResponse.self, from: data)
+            
+            Task { @MainActor in
+                DebugLogger.shared.success("Parsed \(aiResponse.windows.count) windows from AI response")
+            }
+            
+            // Convert to MealWindow objects
+            let calendar = Calendar.current
+            let dayDate = calendar.startOfDay(for: date)
+            
+            return aiResponse.windows.map { window in
+                MealWindow(
+                    startTime: window.startTime,
+                    endTime: window.endTime,
+                    targetCalories: window.targetCalories,
+                    targetMacros: MacroTargets(
+                        protein: window.targetProtein,
+                        carbs: window.targetCarbs,
+                        fat: window.targetFat
+                    ),
+                    purpose: mapPurpose(window.purpose),
+                    flexibility: mapFlexibility(window.flexibility),
+                    dayDate: dayDate,
+                    name: window.name,
+                    rationale: window.rationale,
+                    foodSuggestions: window.foodSuggestions,
+                    micronutrientFocus: window.micronutrientFocus,
+                    tips: window.tips,
+                    type: window.type
+                )
+            }
+        } catch {
+            Task { @MainActor in
+                DebugLogger.shared.error("Failed to parse AI response: \(error)")
+                DebugLogger.shared.error("Response was: \(String(response.prefix(500)))")
+            }
+            throw error
+        }
     }
+}
+
+// MARK: - AI Response Models
+private struct AIWindowResponse: Codable {
+    let windows: [AIWindow]
+}
+
+private struct AIWindow: Codable {
+    let name: String
+    let startTime: Date
+    let endTime: Date
+    let targetCalories: Int
+    let targetProtein: Int
+    let targetCarbs: Int
+    let targetFat: Int
+    let purpose: String
+    let flexibility: String
+    let type: String
+    let rationale: String
+    let foodSuggestions: [String]
+    let micronutrientFocus: [String]
+    let tips: [String]
 }
 
 // MARK: - Purpose Mapping
