@@ -42,8 +42,8 @@ struct WindowDetailView: View {
                         WindowPurposeCard(window: window)
                             .padding(.bottom, 32)
                     }
-                    .padding(.top, 20) // Add top padding to avoid Dynamic Island
-                    .padding(.horizontal, 24) // Increased horizontal padding for better spacing
+                    .padding(.top)
+                    .padding(.horizontal, 32) // Add consistent horizontal padding to entire content
                 }
             }
             .navigationTitle(windowTitle)

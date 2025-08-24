@@ -171,8 +171,8 @@ struct TimelineView: View {
                             Rectangle()
                                 .fill(Color.white.opacity(0.08))
                                 .frame(height: 1)
-                                .padding(.leading, 68) // Align with window banners
-                                .padding(.trailing, 24) // Increased right padding to prevent overflow
+                                .padding(.leading, 68) // Start after time label (8 + 48 + 12)
+                                .padding(.trailing, 16)
                             
                             TimelineHourRow(
                                 hour: hourLayout.hour,
@@ -204,8 +204,8 @@ struct TimelineView: View {
                     selectedWindow: $selectedWindow,
                     showWindowDetail: $showWindowDetail
                 )
-                // Align with the timeline content area - match hour row spacing
-                .padding(EdgeInsets(top: 0, leading: 68, bottom: 0, trailing: 24)) // Increased right padding
+                // Align with the start of the timeline content (leave gutter for time labels)
+                .padding(EdgeInsets(top: 0, leading: 68, bottom: 0, trailing: 16))
                 .frame(
                     maxWidth: .infinity,
                     maxHeight: calculateTotalLayoutHeight() + 100,
@@ -661,7 +661,7 @@ struct TimelineHourRow: View {
             // Main content area
             timelineContent
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.trailing, 24) // Consistent right padding with rest of timeline
+                .padding(.trailing, 16) // Keep right padding for content
         }
     }
     
@@ -952,7 +952,7 @@ struct CurrentTimeMarker: View {
                 endPoint: .trailing
             )
             .frame(height: 2)
-            .frame(maxWidth: 200) // Limit marker width to prevent overflow
+            .frame(maxWidth: .infinity)
             .shadow(color: markerColor.opacity(0.4), radius: 2, x: 0, y: 1)
             
             // Time text inline with the line
