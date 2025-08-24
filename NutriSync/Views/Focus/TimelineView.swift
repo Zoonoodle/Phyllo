@@ -661,7 +661,7 @@ struct TimelineHourRow: View {
             // Main content area
             timelineContent
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.trailing, 24) // Keep right padding for content
+                .padding(.trailing, 16) // Keep right padding for content
         }
     }
     
