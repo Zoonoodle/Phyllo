@@ -89,6 +89,37 @@ class AIWindowGenerationService {
         checkIn: MorningCheckInData?,
         date: Date
     ) -> String {
+        // Get timezone information
+        let timeZone = TimeZone.current
+        let formatter = ISO8601DateFormatter()
+        formatter.timeZone = timeZone
+        formatter.formatOptions = [.withInternetDateTime, .withTimeZone]
+        
+        // Get wake time for today
+        let calendar = Calendar.current
+        let wakeTime: Date
+        let wakeTimeString: String
+        
+        if let checkIn = checkIn {
+            wakeTime = checkIn.wakeTime
+            // Format wake time as ISO8601 for today
+            let wakeComponents = calendar.dateComponents([.hour, .minute], from: checkIn.wakeTime)
+            let todayWakeTime = calendar.date(bySettingHour: wakeComponents.hour ?? 7, 
+                                               minute: wakeComponents.minute ?? 0, 
+                                               second: 0, 
+                                               of: date) ?? date
+            wakeTimeString = formatter.string(from: todayWakeTime)
+        } else {
+            // Default wake time: 7 AM today
+            let defaultWakeTime = calendar.date(bySettingHour: 7, minute: 0, second: 0, of: date) ?? date
+            wakeTime = defaultWakeTime
+            wakeTimeString = formatter.string(from: defaultWakeTime)
+        }
+        
+        // Calculate example window times based on actual wake time
+        let firstWindowStart = wakeTime.addingTimeInterval(60 * 60) // 1 hour after waking
+        let firstWindowEnd = firstWindowStart.addingTimeInterval(90 * 60) // 1.5 hour window
+        
         var prompt = """
         Generate a personalized meal window schedule for the following user:
         
@@ -109,7 +140,7 @@ class AIWindowGenerationService {
             prompt += """
             
             ## Morning Check-In
-            - Wake Time: \(formatTime(checkIn.wakeTime))
+            - Wake Time: \(wakeTimeString) (ISO8601 format)
             - Sleep Quality: \(checkIn.sleepQuality)/10
             - Energy Level: \(checkIn.energyLevel)/10
             - Hunger Level: \(checkIn.hungerLevel)/10
@@ -120,7 +151,7 @@ class AIWindowGenerationService {
             prompt += """
             
             ## Morning Check-In (Default - No check-in completed)
-            - Wake Time: 7:00 AM
+            - Wake Time: \(wakeTimeString) (ISO8601 format - 7:00 AM local time)
             - Sleep Quality: 7/10
             - Energy Level: 3/5
             - Hunger Level: 3/5
@@ -129,32 +160,36 @@ class AIWindowGenerationService {
         }
         
         // Format today's date for the prompt
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withFullDate]
-        let todayString = formatter.string(from: date)
+        let dateOnlyFormatter = ISO8601DateFormatter()
+        dateOnlyFormatter.formatOptions = [.withFullDate]
+        let todayString = dateOnlyFormatter.string(from: date)
         
         prompt += """
         
         ## Requirements
         Generate 4-6 meal windows for TODAY (\(todayString)) optimized for the user's goal with:
-        1. Window timing based on circadian rhythm and user's schedule
-        2. Personalized window names (not generic breakfast/lunch/dinner)
-        3. Food suggestions (2-3 specific foods per window)
-        4. Micronutrient focus (2-3 vitamins/minerals to prioritize)
-        5. Optimization tips (2-3 actionable tips)
-        6. Rationale explaining why this window supports their goal
-        7. Appropriate macro distribution based on window purpose
+        1. Window timing based on the WAKE TIME provided above (not fixed hours)
+        2. First meal window should start 30-90 minutes after wake time  
+        3. Space windows appropriately throughout the day (2-4 hours apart)
+        4. Last meal should be 2-3 hours before typical bedtime (assume 10-11 PM if not specified)
+        5. Personalized window names (not generic breakfast/lunch/dinner)
+        6. Food suggestions (2-3 specific foods per window)
+        7. Micronutrient focus (2-3 vitamins/minerals to prioritize)
+        8. Optimization tips (2-3 actionable tips)
+        9. Rationale explaining why this window supports their goal
+        10. Appropriate macro distribution based on window purpose
         
-        IMPORTANT: All times must be for TODAY \(todayString) in ISO8601 format with timezone.
-        Base the first window on the wake time provided, not a fixed hour.
+        CRITICAL: All times must be in ISO8601 format with the SAME timezone as the wake time above.
+        The first window should start relative to the wake time, not at a fixed hour.
+        Use the exact same timezone offset as shown in the wake time.
         
         Return as JSON array with this structure:
         {
             "windows": [
                 {
                     "name": "Morning Metabolic Primer",
-                    "startTime": "\(todayString)T07:00:00Z",
-                    "endTime": "\(todayString)T09:00:00Z",
+                    "startTime": "\(formatter.string(from: firstWindowStart))",
+                    "endTime": "\(formatter.string(from: firstWindowEnd))",
                     "targetCalories": 450,
                     "targetProtein": 30,
                     "targetCarbs": 50,

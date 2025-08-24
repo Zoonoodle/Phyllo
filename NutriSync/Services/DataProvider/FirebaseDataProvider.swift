@@ -334,6 +334,55 @@ class FirebaseDataProvider: DataProvider {
         }
     }
     
+    /// Clear existing windows and regenerate them with AI (useful for fixing incorrect windows)
+    func clearAndRegenerateWindows(for date: Date, profile: UserProfile, checkIn: MorningCheckInData?) async throws -> [MealWindow] {
+        Task { @MainActor in
+            DebugLogger.shared.warning("Clearing existing windows for regeneration...")
+        }
+        
+        // Clear existing windows for this date
+        let calendar = Calendar.current
+        let startOfDay = calendar.startOfDay(for: date)
+        let existing = try await userRef.collection("windows")
+            .whereField("dayDate", isEqualTo: startOfDay)
+            .getDocuments()
+        
+        // Delete all existing windows
+        for doc in existing.documents {
+            try await doc.reference.delete()
+        }
+        
+        Task { @MainActor in
+            DebugLogger.shared.info("Cleared \(existing.documents.count) existing windows")
+            DebugLogger.shared.info("Generating fresh windows with AI...")
+        }
+        
+        // Generate new windows with AI
+        do {
+            let aiWindows = try await AIWindowGenerationService.shared.generateWindows(
+                for: profile,
+                checkIn: checkIn,
+                date: date
+            )
+            
+            // Save all windows to Firebase
+            for window in aiWindows {
+                try await saveWindow(window)
+            }
+            
+            Task { @MainActor in
+                DebugLogger.shared.success("Generated and saved \(aiWindows.count) new AI windows")
+            }
+            
+            return aiWindows
+        } catch {
+            Task { @MainActor in
+                DebugLogger.shared.error("Failed to regenerate windows: \(error)")
+            }
+            throw error
+        }
+    }
+    
     func redistributeWindows(for date: Date) async throws {
         let windows = try await getWindows(for: date)
         let meals = try await getMeals(for: date)

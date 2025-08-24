@@ -233,6 +233,9 @@ struct FirebaseTabView: View {
     @State private var totalMeals = 0
     @State private var isClearing = false
     @State private var showClearConfirmation = false
+    @State private var isRegeneratingWindows = false
+    @State private var showRegenerateConfirmation = false
+    @State private var regenerateMessage = ""
     
     var body: some View {
         VStack(spacing: 20) {
@@ -265,6 +268,43 @@ struct FirebaseTabView: View {
             .padding()
             .background(Color.nutriSyncElevated)
             .cornerRadius(16)
+            
+            // Regenerate Windows Button
+            Button(action: {
+                showRegenerateConfirmation = true
+            }) {
+                HStack {
+                    if isRegeneratingWindows {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            .scaleEffect(0.8)
+                    } else {
+                        Image(systemName: "arrow.triangle.2.circlepath")
+                    }
+                    Text("Regenerate Today's Windows")
+                }
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(Color.orange.opacity(isRegeneratingWindows ? 0.5 : 0.8))
+                .foregroundColor(.white)
+                .cornerRadius(12)
+            }
+            .disabled(isRegeneratingWindows)
+            .confirmationDialog("Regenerate Windows", isPresented: $showRegenerateConfirmation) {
+                Button("Regenerate with AI", role: .destructive) {
+                    regenerateTodaysWindows()
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("This will delete today's meal windows and generate new ones with corrected timestamps based on your wake time.")
+            }
+            
+            if !regenerateMessage.isEmpty {
+                Text(regenerateMessage)
+                    .font(.caption)
+                    .foregroundColor(.green)
+                    .padding(.horizontal)
+            }
             
             // Clear Data Button
             Button(action: {
@@ -315,6 +355,60 @@ struct FirebaseTabView: View {
                 }
             } catch {
                 print("Error fetching stats: \(error)")
+            }
+        }
+    }
+    
+    private func regenerateTodaysWindows() {
+        isRegeneratingWindows = true
+        regenerateMessage = ""
+        
+        Task {
+            do {
+                // Get Firebase data provider
+                guard let firebaseProvider = DataSourceProvider.shared.provider as? FirebaseDataProvider else {
+                    throw NSError(domain: "DeveloperDashboard", code: 1, 
+                                userInfo: [NSLocalizedDescriptionKey: "Firebase provider not available"])
+                }
+                
+                // Get user profile and check-in data
+                guard let profile = try await firebaseProvider.getUserProfile() else {
+                    throw NSError(domain: "DeveloperDashboard", code: 2,
+                                userInfo: [NSLocalizedDescriptionKey: "User profile not found"])
+                }
+                
+                let checkIn = try await firebaseProvider.getMorningCheckIn(for: Date())
+                
+                // Clear and regenerate windows
+                let newWindows = try await firebaseProvider.clearAndRegenerateWindows(
+                    for: Date(),
+                    profile: profile,
+                    checkIn: checkIn
+                )
+                
+                await MainActor.run {
+                    isRegeneratingWindows = false
+                    regenerateMessage = "Successfully regenerated \(newWindows.count) windows with corrected timestamps"
+                    DebugLogger.shared.success("Regenerated \(newWindows.count) windows for today")
+                    
+                    // Clear message after 3 seconds
+                    Task {
+                        try? await Task.sleep(nanoseconds: 3_000_000_000)
+                        regenerateMessage = ""
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    isRegeneratingWindows = false
+                    regenerateMessage = "Failed: \(error.localizedDescription)"
+                    DebugLogger.shared.error("Failed to regenerate windows: \(error)")
+                    
+                    // Clear error message after 5 seconds
+                    Task {
+                        try? await Task.sleep(nanoseconds: 5_000_000_000)
+                        regenerateMessage = ""
+                    }
+                }
             }
         }
     }
