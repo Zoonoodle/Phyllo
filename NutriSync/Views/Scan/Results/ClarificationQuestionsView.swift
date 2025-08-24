@@ -299,6 +299,13 @@ struct ClarificationQuestionsView: View {
             }
             
             Spacer()
+            
+            // Skip all button
+            Button(action: completeClarification) {
+                Text("Skip")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(.white.opacity(0.5))
+            }
         }
         .padding(.horizontal, 20)
     }
