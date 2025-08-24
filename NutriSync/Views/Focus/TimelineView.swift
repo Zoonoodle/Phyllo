@@ -171,8 +171,8 @@ struct TimelineView: View {
                             Rectangle()
                                 .fill(Color.white.opacity(0.08))
                                 .frame(height: 1)
-                                .padding(.leading, 56) // Match the total space of time labels
-                                .padding(.trailing, 0)
+                                .padding(.leading, 68) // Align with window banners
+                                .padding(.trailing, 16)
                             
                             TimelineHourRow(
                                 hour: hourLayout.hour,
@@ -205,7 +205,7 @@ struct TimelineView: View {
                     showWindowDetail: $showWindowDetail
                 )
                 // Align with the timeline content area - match hour row spacing
-                .padding(EdgeInsets(top: 0, leading: 56, bottom: 0, trailing: 0))
+                .padding(EdgeInsets(top: 0, leading: 68, bottom: 0, trailing: 16))
                 .frame(
                     maxWidth: .infinity,
                     maxHeight: calculateTotalLayoutHeight() + 100,
@@ -215,7 +215,6 @@ struct TimelineView: View {
                 // Keep current time marker above banners
                 .zIndex(3)
             }
-            .padding(.horizontal, 16) // Add consistent horizontal padding to entire timeline
         }
         .onAppear {
             currentTime = timeProvider.currentTime
@@ -662,7 +661,7 @@ struct TimelineHourRow: View {
             // Main content area
             timelineContent
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.trailing, 0) // Remove trailing padding
+                .padding(.trailing, 16) // Reduce right padding to prevent overflow
         }
     }
     
