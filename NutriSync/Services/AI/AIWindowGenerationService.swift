@@ -225,13 +225,40 @@ class AIWindowGenerationService {
         
         // Parse JSON
         let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
+        
+        // Use a custom date decoding strategy that handles timezone properly
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withTimeZone]
+        
+        decoder.dateDecodingStrategy = .custom { decoder in
+            let container = try decoder.singleValueContainer()
+            let dateString = try container.decode(String.self)
+            
+            // Try parsing with full ISO8601 formatter first
+            if let date = formatter.date(from: dateString) {
+                return date
+            }
+            
+            // Fallback to basic ISO8601 if needed
+            let basicFormatter = ISO8601DateFormatter()
+            if let date = basicFormatter.date(from: dateString) {
+                return date
+            }
+            
+            throw DecodingError.dataCorruptedError(in: container, 
+                debugDescription: "Cannot decode date string \(dateString)")
+        }
         
         do {
             let aiResponse = try decoder.decode(AIWindowResponse.self, from: data)
             
             Task { @MainActor in
                 DebugLogger.shared.success("Parsed \(aiResponse.windows.count) windows from AI response")
+                for window in aiResponse.windows {
+                    DebugLogger.shared.info("AI Window: \(window.name)")
+                    DebugLogger.shared.info("  Start: \(window.startTime)")
+                    DebugLogger.shared.info("  End: \(window.endTime)")
+                }
             }
             
             // Convert to MealWindow objects

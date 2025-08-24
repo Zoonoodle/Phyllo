@@ -282,6 +282,17 @@ extension MealWindow {
         
         // Handle Firestore Timestamp conversion
         // Firestore returns Timestamp objects, not Date objects
+        let startTimeRaw = data["startTime"]
+        let endTimeRaw = data["endTime"]
+        
+        // Debug logging
+        if let startTimestamp = startTimeRaw as? FirebaseFirestore.Timestamp {
+            let startDate = startTimestamp.dateValue()
+            Task { @MainActor in
+                DebugLogger.shared.info("Firestore window start timestamp: seconds=\(startTimestamp.seconds), date=\(startDate)")
+            }
+        }
+        
         guard let startTime = (data["startTime"] as? FirebaseFirestore.Timestamp)?.dateValue() ?? (data["startTime"] as? Date),
               let endTime = (data["endTime"] as? FirebaseFirestore.Timestamp)?.dateValue() ?? (data["endTime"] as? Date),
               let dayDate = (data["dayDate"] as? FirebaseFirestore.Timestamp)?.dateValue() ?? (data["dayDate"] as? Date) else {

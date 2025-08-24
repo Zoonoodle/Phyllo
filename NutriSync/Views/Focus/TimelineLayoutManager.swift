@@ -232,8 +232,19 @@ class TimelineLayoutManager: ObservableObject {
         let endHour = calendar.component(.hour, from: window.endTime)
         let endMinute = calendar.component(.minute, from: window.endTime)
         
+        // Debug log to see what's happening
+        Task { @MainActor in
+            DebugLogger.shared.info("Window '\(window.displayName)' times:")
+            DebugLogger.shared.info("  Start: \(window.startTime) -> Hour: \(startHour):\(String(format: "%02d", startMinute))")
+            DebugLogger.shared.info("  End: \(window.endTime) -> Hour: \(endHour):\(String(format: "%02d", endMinute))")
+            DebugLogger.shared.info("  FormattedRange: \(window.formattedTimeRange)")
+        }
+        
         // Find the hour layout for the start hour
         guard let startHourLayout = hourLayouts.first(where: { $0.hour == startHour }) else {
+            Task { @MainActor in
+                DebugLogger.shared.warning("No hour layout found for hour \(startHour)")
+            }
             return WindowLayout(
                 window: window,
                 yPosition: 0,
