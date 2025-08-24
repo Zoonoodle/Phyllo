@@ -171,7 +171,7 @@ struct TimelineView: View {
                             Rectangle()
                                 .fill(Color.white.opacity(0.08))
                                 .frame(height: 1)
-                                .padding(.leading, 80) // Increase to push divider line further right
+                                .padding(.leading, 68) // Align with window banners
                                 .padding(.trailing, 16)
                             
                             TimelineHourRow(
@@ -654,8 +654,8 @@ struct TimelineHourRow: View {
         HStack(alignment: .top, spacing: 12) {
             // Hour label - fixed position
             TimeLabel(hour: hour, isCurrent: isCurrentHour)
-                .frame(width: 56)
-                .padding(.leading, 12) // Adjusted left padding for time labels
+                .frame(width: 48)
+                .padding(.leading, 8) // Consistent left padding
                 .zIndex(10) // Ensure time labels always sit above everything
             
             // Main content area

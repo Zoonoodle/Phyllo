@@ -52,7 +52,6 @@ struct AIScheduleView: View {
                 }
                 .frame(maxWidth: .infinity)
             }
-            .padding(.top, 50) // Add safe area padding to the container instead
         }
         .overlay(alignment: .center) {
             // Window detail overlay
