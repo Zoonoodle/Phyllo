@@ -128,6 +128,19 @@ struct AIScheduleView: View {
         .sheet(isPresented: $showMorningCheckIn) {
             MorningCheckInView()
         }
+        .onChange(of: showMorningCheckIn) { wasShowing, isShowing in
+            // When check-in sheet dismisses, show loading while windows generate
+            if wasShowing && !isShowing {
+                // User completed or dismissed check-in
+                viewModel.isGeneratingWindows = true
+                
+                // Monitor for windows to appear
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    // Start checking for windows
+                    checkForWindowGeneration()
+                }
+            }
+        }
     }
     
     // MARK: - Views
@@ -182,6 +195,26 @@ struct AIScheduleView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding()
+    }
+    
+    private func checkForWindowGeneration() {
+        // Check if windows have been generated
+        if !viewModel.mealWindows.isEmpty {
+            // Windows are ready, stop showing loading
+            viewModel.isGeneratingWindows = false
+        } else {
+            // Still waiting, check again in a moment
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                if viewModel.isGeneratingWindows {
+                    checkForWindowGeneration()
+                }
+            }
+            
+            // Timeout after 10 seconds
+            DispatchQueue.main.asyncAfter(deadline: .now() + 10) {
+                viewModel.isGeneratingWindows = false
+            }
+        }
     }
     
     private func checkForMissedMeals() {
