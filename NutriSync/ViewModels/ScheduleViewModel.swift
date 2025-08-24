@@ -118,11 +118,28 @@ class ScheduleViewModel: ObservableObject {
             return Array(5...22) // Default: 5 AM to 10 PM
         }
         
-        // If we have no windows and no meals, show current time range
+        // If we have no windows and no meals, show the full day range based on wake time
         if mealWindows.isEmpty && todaysMeals.isEmpty {
-            let currentHour = calendar.component(.hour, from: timeProvider.currentTime)
-            startHour = max(0, currentHour - 2)
-            endHour = min(23, currentHour + 8)
+            // If we have a morning check-in with wake time, use that
+            if let checkIn = morningCheckIn {
+                let wakeHour = calendar.component(.hour, from: checkIn.wakeTime)
+                startHour = max(0, wakeHour - 1) // Show 1 hour before wake
+                endHour = min(23, wakeHour + 15) // Show 15 hours after wake (typical day)
+            } else {
+                // No check-in, show a reasonable full day view
+                startHour = 6  // 6 AM
+                endHour = 22   // 10 PM
+            }
+        }
+        
+        // Debug logging
+        Task { @MainActor in
+            DebugLogger.shared.info("Timeline hours: \(startHour) to \(endHour)")
+            DebugLogger.shared.info("Windows: \(mealWindows.count), Meals: \(todaysMeals.count)")
+            if !mealWindows.isEmpty {
+                let firstWindow = mealWindows.sorted { $0.startTime < $1.startTime }.first!
+                DebugLogger.shared.info("First window starts at: \(firstWindow.formattedTimeRange)")
+            }
         }
         
         return Array(startHour...endHour)

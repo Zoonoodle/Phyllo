@@ -229,20 +229,43 @@ struct TimelineView: View {
             let targetHour: Int
             let anchor: UnitPoint
             
-            // If we have an active window, scroll to it
+            // Priority 1: If we have an active window, scroll to it
             if let activeWindow = viewModel.activeWindow {
                 targetHour = Calendar.current.component(.hour, from: activeWindow.startTime)
                 anchor = .center
             }
-            // Otherwise scroll to current time if it's within timeline hours
+            // Priority 2: If we have meal windows, scroll to show the context
+            // - If current time is before all windows, show first window
+            // - If current time is after all windows, show last window  
+            // - If current time is between windows, show current time
+            else if !viewModel.mealWindows.isEmpty {
+                let sortedWindows = viewModel.mealWindows.sorted { $0.startTime < $1.startTime }
+                let now = timeProvider.currentTime
+                
+                if let firstWindow = sortedWindows.first,
+                   now < firstWindow.startTime {
+                    // Before first window - show first window
+                    targetHour = Calendar.current.component(.hour, from: firstWindow.startTime)
+                    anchor = .top
+                } else if let lastWindow = sortedWindows.last,
+                          now > lastWindow.endTime {
+                    // After last window - show last window  
+                    targetHour = Calendar.current.component(.hour, from: lastWindow.startTime)
+                    anchor = .center
+                } else if hours.contains(currentHour) {
+                    // Current time is within windows range
+                    targetHour = currentHour
+                    anchor = .center
+                } else {
+                    // Fallback to first window
+                    targetHour = Calendar.current.component(.hour, from: sortedWindows.first!.startTime)
+                    anchor = .top
+                }
+            }
+            // Priority 3: No windows - scroll to current time or first hour
             else if hours.contains(currentHour) {
                 targetHour = currentHour
                 anchor = .center
-            }
-            // Otherwise scroll to first window or first hour
-            else if let firstWindow = viewModel.mealWindows.first {
-                targetHour = Calendar.current.component(.hour, from: firstWindow.startTime)
-                anchor = .top
             } else if let firstHour = hours.first {
                 targetHour = firstHour
                 anchor = .top
