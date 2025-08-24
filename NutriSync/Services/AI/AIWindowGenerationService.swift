@@ -57,8 +57,8 @@ class AIWindowGenerationService {
         let prompt = buildPrompt(profile: profile, checkIn: checkIn, date: date)
         
         Task { @MainActor in
-            DebugLogger.shared.ai("Calling Gemini AI for window generation")
-            DebugLogger.shared.ai("User goal: \(profile.primaryGoal.displayName)")
+            DebugLogger.shared.info("Calling Gemini AI for window generation")
+            DebugLogger.shared.info("User goal: \(profile.primaryGoal.displayName)")
         }
         
         // Call Gemini AI
@@ -76,7 +76,7 @@ class AIWindowGenerationService {
         }
         
         Task { @MainActor in
-            DebugLogger.shared.ai("Received response from Gemini, parsing JSON...")
+            DebugLogger.shared.info("Received response from Gemini, parsing JSON...")
         }
         
         // Parse the JSON response
