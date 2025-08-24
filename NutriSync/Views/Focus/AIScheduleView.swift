@@ -21,10 +21,6 @@ struct AIScheduleView: View {
                 .ignoresSafeArea()
             
             VStack(spacing: 0) {
-                // Add safe area padding at top
-                Color.clear
-                    .frame(height: 50)
-                
                 VStack(spacing: 2) {
                     // Day navigation header with integrated logo and settings
                     DayNavigationHeader(
@@ -38,7 +34,7 @@ struct AIScheduleView: View {
                     .opacity(showWindowDetail ? 0 : 1)
                     
                     // Content based on state
-                    if viewModel.legacyViewModel.isLoading {
+                    if viewModel.legacyViewModel.isLoading || !viewModel.hasLoadedInitialData {
                         loadingView
                     } else if viewModel.mealWindows.isEmpty {
                         emptyStateView
@@ -56,6 +52,7 @@ struct AIScheduleView: View {
                 }
                 .frame(maxWidth: .infinity)
             }
+            .padding(.top, 50) // Add safe area padding to the container instead
         }
         .overlay(alignment: .center) {
             // Window detail overlay
@@ -94,9 +91,32 @@ struct AIScheduleView: View {
             }
         }
         .onAppear {
-            checkForMissedMeals()
-            Task {
-                await viewModel.loadDailyPlan(for: selectedDate)
+            // Wait a moment for the legacyViewModel to initialize properly
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                checkForMissedMeals()
+            }
+            
+            // Mark as loaded once the legacyViewModel finishes loading
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                // Check if loading is complete
+                if !viewModel.legacyViewModel.isLoading {
+                    viewModel.hasLoadedInitialData = true
+                }
+            }
+            
+            // Only load daily plan if not already loading
+            if !viewModel.legacyViewModel.isLoading {
+                Task {
+                    await viewModel.loadDailyPlan(for: selectedDate)
+                }
+            }
+        }
+        .onChange(of: viewModel.legacyViewModel.isLoading) { _, newValue in
+            // When loading completes, mark initial data as loaded
+            if !newValue {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                    viewModel.hasLoadedInitialData = true
+                }
             }
         }
         .sheet(isPresented: $showMissedMealsRecovery) {
@@ -127,7 +147,7 @@ struct AIScheduleView: View {
     private var emptyStateView: some View {
         VStack(spacing: 24) {
             // Show loading indicator if still loading
-            if viewModel.legacyViewModel.isLoading {
+            if viewModel.legacyViewModel.isLoading || !viewModel.hasLoadedInitialData {
                 ProgressView()
                     .scaleEffect(1.2)
                 Text("Loading your schedule...")
@@ -182,6 +202,10 @@ class AIScheduleViewModel: ObservableObject {
     // MARK: - Published Properties
     @Published var isLoading = false
     @Published var errorMessage: String?
+    @Published var hasLoadedInitialData = false
+    
+    // Loading timeout timer
+    private var loadingTimeoutTimer: Timer?
     
     // Legacy view model for compatibility - use this as the source of truth
     let legacyViewModel = ScheduleViewModel()
@@ -221,8 +245,25 @@ class AIScheduleViewModel: ObservableObject {
     
     // MARK: - Initialization
     init() {
-        Task {
-            await loadDailyPlan(for: Date())
+        // Don't call loadDailyPlan here - let onAppear handle it
+        // This prevents duplicate loading and state conflicts
+        
+        // Start a timeout timer to ensure we don't get stuck loading forever
+        startLoadingTimeout()
+    }
+    
+    private func startLoadingTimeout() {
+        // Cancel any existing timer
+        loadingTimeoutTimer?.invalidate()
+        
+        // Start a new timer that will mark data as loaded after 5 seconds
+        loadingTimeoutTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: false) { _ in
+            Task { @MainActor in
+                if !self.hasLoadedInitialData {
+                    print("Loading timeout reached - marking as loaded")
+                    self.hasLoadedInitialData = true
+                }
+            }
         }
     }
     
@@ -232,9 +273,7 @@ class AIScheduleViewModel: ObservableObject {
         // The legacyViewModel already handles loading windows via its observations
         // We just need to check if a daily plan exists for additional metadata
         
-        isLoading = true
-        defer { isLoading = false }
-        
+        // Don't set our own loading state - rely on legacyViewModel.isLoading
         let dateString = ISO8601DateFormatter().string(from: Calendar.current.startOfDay(for: date))
         
         do {

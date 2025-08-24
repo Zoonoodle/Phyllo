@@ -30,15 +30,13 @@ struct WindowDetailOverlay: View {
                     )
                     .ignoresSafeArea(edges: animateContent ? .all : [])
                 
-                // Content
+                // Content with safe area handling
                 VStack(spacing: 0) {
-                // Safe area padding at top
-                Color.nutriSyncBackground
-                    .frame(height: 60)
-                    .ignoresSafeArea()
-                
-                // Custom header with back button, title, and menu
-                HStack {
+                    Spacer()
+                        .frame(height: geometry.safeAreaInsets.top)
+                    
+                    // Custom header with back button, title, and menu
+                    HStack {
                     // Back button
                     Button {
                         withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
@@ -127,6 +125,7 @@ struct WindowDetailOverlay: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+        .ignoresSafeArea()
         .onAppear {
             withAnimation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.1)) {
                 animateContent = true

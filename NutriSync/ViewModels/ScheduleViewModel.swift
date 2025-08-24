@@ -168,7 +168,6 @@ class ScheduleViewModel: ObservableObject {
     
     private func loadInitialData() async {
         isLoading = true
-        defer { isLoading = false }
         
         do {
             // Use current time from TimeProvider for consistency
@@ -236,7 +235,11 @@ class ScheduleViewModel: ObservableObject {
                 }
             }
             
+            // Set loading to false only after all operations complete
+            isLoading = false
+            
         } catch {
+            isLoading = false
             errorMessage = "Failed to load data: \(error.localizedDescription)"
             print("❌ Failed to load schedule data: \(error)")
         }
