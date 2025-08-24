@@ -106,7 +106,9 @@ class TimelineLayoutManager: ObservableObject {
     // MARK: - Private Methods
     
     private func hoursAffectedBy(window: MealWindow) -> [Int] {
-        let calendar = Calendar.current
+        // CRITICAL: Use local calendar with proper timezone
+        var calendar = Calendar.current
+        calendar.timeZone = TimeZone.current
         let startHour = calendar.component(.hour, from: window.startTime)
         let endHour = calendar.component(.hour, from: window.endTime)
         
@@ -129,7 +131,9 @@ class TimelineLayoutManager: ObservableObject {
         
         // Check all windows that affect this hour
         for window in windows {
-            let calendar = Calendar.current
+            // CRITICAL: Use local calendar with proper timezone
+            var calendar = Calendar.current
+            calendar.timeZone = TimeZone.current
             let windowStartHour = calendar.component(.hour, from: window.startTime)
             let windowEndHour = calendar.component(.hour, from: window.endTime)
             let windowStartMinute = calendar.component(.minute, from: window.startTime)
@@ -226,7 +230,11 @@ class TimelineLayoutManager: ObservableObject {
         viewModel: ScheduleViewModel
     ) -> WindowLayout {
         
-        let calendar = Calendar.current
+        // CRITICAL: Use local calendar with proper timezone
+        var calendar = Calendar.current
+        calendar.timeZone = TimeZone.current // Ensure we're using local timezone
+        
+        // Convert UTC dates to local timezone for hour extraction
         let startHour = calendar.component(.hour, from: window.startTime)
         let startMinute = calendar.component(.minute, from: window.startTime)
         let endHour = calendar.component(.hour, from: window.endTime)
@@ -235,8 +243,10 @@ class TimelineLayoutManager: ObservableObject {
         // Debug log to see what's happening
         Task { @MainActor in
             DebugLogger.shared.info("Window '\(window.displayName)' times:")
-            DebugLogger.shared.info("  Start: \(window.startTime) -> Hour: \(startHour):\(String(format: "%02d", startMinute))")
-            DebugLogger.shared.info("  End: \(window.endTime) -> Hour: \(endHour):\(String(format: "%02d", endMinute))")
+            DebugLogger.shared.info("  Start UTC: \(window.startTime)")
+            DebugLogger.shared.info("  Start Local Hour: \(startHour):\(String(format: "%02d", startMinute))")
+            DebugLogger.shared.info("  End UTC: \(window.endTime)")
+            DebugLogger.shared.info("  End Local Hour: \(endHour):\(String(format: "%02d", endMinute))")
             DebugLogger.shared.info("  FormattedRange: \(window.formattedTimeRange)")
         }
         

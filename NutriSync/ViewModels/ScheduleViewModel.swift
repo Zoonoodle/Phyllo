@@ -30,7 +30,9 @@ class ScheduleViewModel: ObservableObject {
     var timelineHours: [Int] {
         // Start with user's typical schedule if available
         let buffer = 1 // hour before/after
-        let calendar = Calendar.current
+        // CRITICAL: Use local calendar with proper timezone
+        var calendar = Calendar.current
+        calendar.timeZone = TimeZone.current
         
         // First, check morning check-in wake time
         var earliestHour: Int? = nil
