@@ -51,11 +51,11 @@ struct DayNavigationHeader: View {
                             .foregroundColor(.white.opacity(0.6))
                     }
                 }
-                .padding(.horizontal, 24)
+                .padding(.horizontal, 16)
                 
                 // Macro bars (MacroFactors style)
                 MacroSummaryBar(meals: meals, userProfile: userProfile)
-                    .padding(.horizontal, 24)
+                    .padding(.horizontal, 16)
             }
             .padding(.vertical, 6)
             
@@ -134,7 +134,7 @@ struct MacroSummaryBar: View {
     }
     
     var body: some View {
-        HStack(spacing: 12) {  // Reduced spacing
+        HStack(spacing: 8) {  // Further reduced spacing
             // Calories
             MacroProgressItem(
                 sfSymbol: "flame.fill",
@@ -226,7 +226,7 @@ struct MacroProgressItem: View {
             }
             .frame(height: 3)
         }
-        .frame(width: 70)  // Fixed width for each macro item
+        .frame(maxWidth: .infinity)  // Use flexible width instead of fixed
     }
 }
 
