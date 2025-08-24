@@ -34,7 +34,7 @@ struct AIScheduleView: View {
                     .opacity(showWindowDetail ? 0 : 1)
                     
                     // Content based on state
-                    if viewModel.legacyViewModel.isLoading || !viewModel.hasLoadedInitialData {
+                    if viewModel.legacyViewModel.isLoading || !viewModel.hasLoadedInitialData || viewModel.isGeneratingWindows {
                         loadingView
                     } else if viewModel.mealWindows.isEmpty {
                         emptyStateView
@@ -150,7 +150,7 @@ struct AIScheduleView: View {
             ProgressView()
                 .scaleEffect(1.2)
             
-            Text("Loading your personalized schedule...")
+            Text(viewModel.isGeneratingWindows ? "Generating your personalized schedule..." : "Loading your personalized schedule...")
                 .font(.subheadline)
                 .foregroundColor(.white.opacity(0.6))
         }
@@ -236,6 +236,7 @@ class AIScheduleViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var errorMessage: String?
     @Published var hasLoadedInitialData = false
+    @Published var isGeneratingWindows = false
     
     // Loading timeout timer
     private var loadingTimeoutTimer: Timer?
@@ -317,7 +318,7 @@ class AIScheduleViewModel: ObservableObject {
                 .document(dateString)
                 .getDocument()
             
-            if planDoc.exists, let data = planDoc.data() {
+            if planDoc.exists, let _ = planDoc.data() {
                 // Store daily plan data for future features
                 // The windows are already loaded by legacyViewModel
                 print("Daily plan exists for \(dateString)")
