@@ -44,9 +44,11 @@ struct MainTabView: View {
                     scrollToAnalyzingMeal: $scrollToAnalyzingMeal
                 )
                 .tag(0)
+                .ignoresSafeArea(edges: [.top, .bottom])
                 
                 NutritionDashboardView(showDeveloperDashboard: $showDeveloperDashboard)
                     .tag(1)
+                .ignoresSafeArea(edges: [.top, .bottom])
                 
                 ScanTabView(
                     showDeveloperDashboard: $showDeveloperDashboard,
@@ -54,8 +56,10 @@ struct MainTabView: View {
                     scrollToAnalyzingMeal: $scrollToAnalyzingMeal
                 )
                     .tag(2)
+                .ignoresSafeArea(edges: [.top, .bottom])
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
+            .ignoresSafeArea()
             
             // Floating tab bar overlay
             VStack {
@@ -64,6 +68,7 @@ struct MainTabView: View {
                     .padding(.bottom, 40)
             }
         }
+        .ignoresSafeArea()
         .onReceive(NotificationCenter.default.publisher(for: .switchToTimelineWithScroll)) { notification in
             Task { @MainActor in
                 DebugLogger.shared.notification("Received switchToTimelineWithScroll notification")
