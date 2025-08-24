@@ -32,16 +32,6 @@ class ScheduleViewModel: ObservableObject {
         let buffer = 1 // hour before/after
         let calendar = Calendar.current
         
-        // Debug: Log window times
-        if !mealWindows.isEmpty {
-            print("📅 Timeline Hours Debug:")
-            for window in mealWindows {
-                let startHour = calendar.component(.hour, from: window.startTime)
-                let endHour = calendar.component(.hour, from: window.endTime)
-                print("  Window: \(window.name ?? "Unnamed") - \(startHour):00 to \(endHour):00")
-            }
-        }
-        
         // First, check morning check-in wake time
         var earliestHour: Int? = nil
         if let checkIn = morningCheckIn {
@@ -135,7 +125,6 @@ class ScheduleViewModel: ObservableObject {
             endHour = min(23, currentHour + 8)
         }
         
-        print("🕰 Timeline showing hours \(startHour) to \(endHour)")
         return Array(startHour...endHour)
     }
     
