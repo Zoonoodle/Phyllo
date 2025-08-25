@@ -157,6 +157,10 @@ struct TimelineView: View {
         // Store layouts for use in view building
         calculatedHourLayouts = layouts.hours
         calculatedWindowLayouts = layouts.windows
+        
+        Task { @MainActor in
+            DebugLogger.shared.info("Updated layouts - hours: \(calculatedHourLayouts.map { $0.hour })")
+        }
     }
     
     @State private var calculatedHourLayouts: [TimelineLayoutManager.HourLayout] = []
@@ -232,6 +236,14 @@ struct TimelineView: View {
         .onAppear {
             currentTime = timeProvider.currentTime
             
+            Task { @MainActor in
+                DebugLogger.shared.warning("TimelineView.onAppear called")
+                DebugLogger.shared.info("Current time: \(currentTime)")
+                DebugLogger.shared.info("Hours array: \(hours)")
+                DebugLogger.shared.info("Calculated hour layouts count: \(calculatedHourLayouts.count)")
+                DebugLogger.shared.info("Windows count: \(viewModel.mealWindows.count)")
+            }
+            
             // Determine best scroll position
             let targetHour: Int
             let anchor: UnitPoint
@@ -241,32 +253,20 @@ struct TimelineView: View {
                 targetHour = Calendar.current.component(.hour, from: activeWindow.startTime)
                 anchor = .center
             }
-            // Priority 2: If we have meal windows, scroll to show the context
-            // - If current time is before all windows, show first window
-            // - If current time is after all windows, show last window  
-            // - If current time is between windows, show current time
+            // Priority 2: If we have meal windows, always scroll to first window for now (debugging)
             else if !viewModel.mealWindows.isEmpty {
                 let sortedWindows = viewModel.mealWindows.sorted { $0.startTime < $1.startTime }
-                let now = timeProvider.currentTime
                 
-                if let firstWindow = sortedWindows.first,
-                   now < firstWindow.startTime {
-                    // Before first window - show first window
-                    targetHour = Calendar.current.component(.hour, from: firstWindow.startTime)
+                // TEMPORARY: Always scroll to first window to debug positioning issue
+                if let firstWindow = sortedWindows.first {
+                    var calendar = Calendar.current
+                    calendar.timeZone = TimeZone.current
+                    targetHour = calendar.component(.hour, from: firstWindow.startTime)
                     anchor = .top
-                } else if let lastWindow = sortedWindows.last,
-                          now > lastWindow.endTime {
-                    // After last window - show last window  
-                    targetHour = Calendar.current.component(.hour, from: lastWindow.startTime)
-                    anchor = .center
-                } else if hours.contains(currentHour) {
-                    // Current time is within windows range
-                    targetHour = currentHour
-                    anchor = .center
-                } else {
-                    // Fallback to first window
-                    targetHour = Calendar.current.component(.hour, from: sortedWindows.first!.startTime)
-                    anchor = .top
+                    
+                    Task { @MainActor in
+                        DebugLogger.shared.warning("FORCED scroll to first window at hour \(targetHour)")
+                    }
                 }
             }
             // Priority 3: No windows - scroll to current time or first hour
