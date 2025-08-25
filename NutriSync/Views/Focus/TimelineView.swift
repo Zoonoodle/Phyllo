@@ -162,6 +162,7 @@ struct TimelineView: View {
     @State private var calculatedHourLayouts: [TimelineLayoutManager.HourLayout] = []
     @State private var calculatedWindowLayouts: [TimelineLayoutManager.WindowLayout] = []
     @State private var lastActiveWindowId: UUID?
+    @State private var hasScrolledToInitialPosition = false
 
     @ViewBuilder
     private func buildTimeline(proxy: ScrollViewProxy) -> some View {
@@ -202,13 +203,17 @@ struct TimelineView: View {
                 .frame(maxWidth: .infinity)
 
                 // Windows overlay layer using calculated layouts
-                WindowsRenderLayer(
-                    windowLayouts: calculatedWindowLayouts,
-                    animationNamespace: animationNamespace,
-                    viewModel: viewModel,
-                    selectedWindow: $selectedWindow,
-                    showWindowDetail: $showWindowDetail
-                )
+                // Only show after initial scroll to prevent visual jumping
+                if hasScrolledToInitialPosition {
+                    WindowsRenderLayer(
+                        windowLayouts: calculatedWindowLayouts,
+                        animationNamespace: animationNamespace,
+                        viewModel: viewModel,
+                        selectedWindow: $selectedWindow,
+                        showWindowDetail: $showWindowDetail
+                    )
+                    .transition(.opacity)
+                }
                 // Align with the start of the timeline content (leave gutter for time labels)
                 .padding(EdgeInsets(top: 0, leading: 68, bottom: 0, trailing: 32))
                 .frame(
@@ -278,6 +283,17 @@ struct TimelineView: View {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 withAnimation {
                     proxy.scrollTo("hour-\(targetHour)", anchor: anchor)
+                }
+                
+                // Debug log the scroll target
+                Task { @MainActor in
+                    DebugLogger.shared.info("Initial scroll to hour \(targetHour) with anchor \(anchor)")
+                    DebugLogger.shared.info("Available hour IDs: \(hours.map { "hour-\($0)" })")
+                }
+                
+                // Mark that we've scrolled to initial position
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    hasScrolledToInitialPosition = true
                 }
             }
         }

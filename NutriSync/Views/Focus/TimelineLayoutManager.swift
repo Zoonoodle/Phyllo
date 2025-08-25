@@ -254,6 +254,7 @@ class TimelineLayoutManager: ObservableObject {
         guard let startHourLayout = hourLayouts.first(where: { $0.hour == startHour }) else {
             Task { @MainActor in
                 DebugLogger.shared.warning("No hour layout found for hour \(startHour)")
+                DebugLogger.shared.warning("Available hours: \(hourLayouts.map { $0.hour })")
             }
             return WindowLayout(
                 window: window,
@@ -261,6 +262,14 @@ class TimelineLayoutManager: ObservableObject {
                 height: baseHourHeight,
                 contentHeight: baseHourHeight
             )
+        }
+        
+        // Debug the position calculation
+        Task { @MainActor in
+            DebugLogger.shared.info("Hour \(startHour) layout found:")
+            DebugLogger.shared.info("  - Index in hours: \(hourLayouts.firstIndex(where: { $0.hour == startHour }) ?? -1)")
+            DebugLogger.shared.info("  - yOffset: \(startHourLayout.yOffset)")
+            DebugLogger.shared.info("  - height: \(startHourLayout.height)")
         }
         
         // Calculate Y position (hour offset + minute offset within hour)
