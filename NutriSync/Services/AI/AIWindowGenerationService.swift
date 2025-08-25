@@ -258,14 +258,25 @@ class AIWindowGenerationService {
             let container = try decoder.singleValueContainer()
             let dateString = try container.decode(String.self)
             
+            // Debug log the raw date string from AI
+            Task { @MainActor in
+                DebugLogger.shared.info("AI returned date string: \(dateString)")
+            }
+            
             // Try parsing with full ISO8601 formatter first
             if let date = formatter.date(from: dateString) {
+                Task { @MainActor in
+                    DebugLogger.shared.info("Parsed as: \(date) (using full ISO8601)")
+                }
                 return date
             }
             
             // Fallback to basic ISO8601 if needed
             let basicFormatter = ISO8601DateFormatter()
             if let date = basicFormatter.date(from: dateString) {
+                Task { @MainActor in
+                    DebugLogger.shared.warning("Parsed as: \(date) (using basic ISO8601 - NO TIMEZONE)")
+                }
                 return date
             }
             

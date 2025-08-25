@@ -46,6 +46,20 @@ class ScheduleViewModel: ObservableObject {
         var windowEarliestHour: Int? = nil
         var windowLatestHour: Int? = nil
         if !mealWindows.isEmpty {
+            // Debug timezone extraction issue
+            for window in mealWindows {
+                let startHour = calendar.component(.hour, from: window.startTime)
+                let endHour = calendar.component(.hour, from: window.endTime)
+                Task { @MainActor in
+                    DebugLogger.shared.warning("Window '\(window.displayName)' hour extraction:")
+                    DebugLogger.shared.warning("  startTime Date: \(window.startTime)")
+                    DebugLogger.shared.warning("  formattedTimeRange: \(window.formattedTimeRange)")
+                    DebugLogger.shared.warning("  extracted startHour: \(startHour)")
+                    DebugLogger.shared.warning("  extracted endHour: \(endHour)")
+                    DebugLogger.shared.warning("  calendar timezone: \(calendar.timeZone.identifier)")
+                }
+            }
+            
             let windowStartHours = mealWindows.map { calendar.component(.hour, from: $0.startTime) }
             let windowEndHours = mealWindows.map { calendar.component(.hour, from: $0.endTime) }
             
