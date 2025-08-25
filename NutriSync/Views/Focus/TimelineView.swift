@@ -267,6 +267,10 @@ struct TimelineView: View {
                     Task { @MainActor in
                         DebugLogger.shared.warning("FORCED scroll to first window at hour \(targetHour)")
                     }
+                } else {
+                    // Fallback if somehow we have windows but can't get the first one
+                    targetHour = currentHour
+                    anchor = .center
                 }
             }
             // Priority 3: No windows - scroll to current time or first hour
