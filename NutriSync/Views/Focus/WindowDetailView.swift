@@ -42,7 +42,7 @@ struct WindowDetailView: View {
                         WindowPurposeCard(window: window)
                             .padding(.bottom, 32)
                     }
-                    .padding(.top)
+                    .padding(.top, 60) // Increased padding to avoid Dynamic Island/notch
                     .padding(.horizontal, 32) // Add consistent horizontal padding to entire content
                 }
             }
