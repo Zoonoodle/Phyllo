@@ -93,24 +93,30 @@ class ScheduleViewModel: ObservableObject {
             return Array(startHour...endHour)
         }
         
-        // Use work schedule defaults
-        let (defaultEarliest, defaultLatest) = userProfile.workSchedule.defaultMealHours
+        // Calculate range based on actual data, not arbitrary defaults
+        var startHour: Int
+        var endHour: Int
         
-        // Calculate range based on all available data
-        var startHour = defaultEarliest
-        var endHour = defaultLatest
-        
-        // Include wake time
-        if let earliestFromWake = earliestHour {
-            startHour = min(startHour, earliestFromWake)
+        // Prioritize actual window times if available
+        if let windowStart = windowEarliestHour, let windowEnd = windowLatestHour {
+            startHour = windowStart
+            endHour = windowEnd
+            
+            // Include wake time if earlier than windows
+            if let earliestFromWake = earliestHour {
+                startHour = min(startHour, earliestFromWake)
+            }
         }
-        
-        // Include meal windows
-        if let windowStart = windowEarliestHour {
-            startHour = min(startHour, windowStart)
+        // Fall back to wake time if no windows
+        else if let earliestFromWake = earliestHour {
+            startHour = earliestFromWake
+            endHour = min(23, earliestFromWake + 16) // Show 16 hours from wake
         }
-        if let windowEnd = windowLatestHour {
-            endHour = max(endHour, windowEnd)
+        // Last resort: use work schedule defaults
+        else {
+            let (defaultEarliest, defaultLatest) = userProfile.workSchedule.defaultMealHours
+            startHour = defaultEarliest
+            endHour = defaultLatest
         }
         
         // Analyze meal history to find patterns
