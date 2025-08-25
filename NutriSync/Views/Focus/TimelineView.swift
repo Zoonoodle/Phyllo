@@ -221,7 +221,8 @@ struct TimelineView: View {
                     }
                 }
                 // Align with the start of the timeline content (leave gutter for time labels)
-                .padding(EdgeInsets(top: 0, leading: 68, bottom: 0, trailing: 32))
+                // Add top padding to avoid Dynamic Island obstruction
+                .padding(EdgeInsets(top: 20, leading: 68, bottom: 0, trailing: 32))
                 .frame(
                     height: calculateTotalLayoutHeight() + 100,
                     alignment: .topLeading
