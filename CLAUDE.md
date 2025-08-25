@@ -41,35 +41,56 @@ git push origin main                          # Push after EVERY feature/fix
 ```
 
 ### Build & Debug Strategy (Large Project Optimization)
+
+**⚠️ CRITICAL: ALWAYS TEST BEFORE COMMITTING**
 ```bash
-# 1. After making changes, compile ONLY the edited files
+# MANDATORY WORKFLOW - NO EXCEPTIONS:
+# 1. After making changes, compile ALL edited files FIRST
 swiftc -parse -sdk $(xcrun --sdk iphonesimulator --show-sdk-path) \
   -target arm64-apple-ios17.0 -import-objc-header NutriSync-Bridging-Header.h \
-  Path/To/EditedFile.swift
+  Path/To/EditedFile1.swift Path/To/EditedFile2.swift
 
-# 2. Type-check for semantic validation
+# 2. Type-check for semantic validation if parse succeeds
 xcrun swift-frontend -typecheck \
   -sdk $(xcrun --sdk iphonesimulator --show-sdk-path) \
   -target arm64-apple-ios17.0 -module-name NutriSync \
   -import-objc-header NutriSync-Bridging-Header.h \
-  Path/To/EditedFile.swift
+  Path/To/EditedFile1.swift Path/To/EditedFile2.swift
 
-# 3. If all files compile, push to git
-git add -A && git commit -m "fix: compilation errors" && git push
+# 3. ONLY if compilation succeeds, then commit and push
+git add -A && git commit -m "fix: description" && git push
 
 # 4. Full build only when absolutely necessary (avoid due to timeouts)
 # Instead, rely on manual testing in Xcode
+
+# ❌ NEVER DO THIS:
+# - Mark "Test the fix" as complete without compiling
+# - Commit without testing edited files
+# - Skip compilation because "it should work"
 ```
 
 ### Testing Protocol
-1. **Manual Testing**: Build and run in Xcode simulator
-2. **Screenshot Documentation**: Capture UI changes for review
-3. **Edge Case Testing**: 
+
+**WHEN YOU CREATE A "TEST" TODO:**
+- It means ACTUALLY compile the code
+- It means ACTUALLY run the test commands
+- It means FIXING any errors before marking complete
+- NEVER mark "Test" todos complete without running tests
+
+1. **Compilation Testing** (MANDATORY before EVERY commit):
+   ```bash
+   swiftc -parse -sdk $(xcrun --sdk iphonesimulator --show-sdk-path) \
+     -target arm64-apple-ios17.0 \
+     ALL_EDITED_FILES.swift
+   ```
+2. **Manual Testing**: Build and run in Xcode simulator
+3. **Screenshot Documentation**: Capture UI changes for review
+4. **Edge Case Testing**: 
    - Midnight crossover scenarios
    - Timezone changes
    - Network failures
    - Empty states
-4. **User Feedback Integration**: Implement based on screenshots/feedback
+5. **User Feedback Integration**: Implement based on screenshots/feedback
 
 ---
 
@@ -433,11 +454,12 @@ enum APIKeys {
 ## 🛠 Quick Reference Commands
 
 ```bash
-# Daily workflow
+# Daily workflow - ALWAYS FOLLOW THIS ORDER
 git pull                                      # Start fresh
 # Make changes...
-swiftc -parse [edited files]                 # Quick syntax check
-git add -A && git commit -m "feat: X" && git push  # Ship it
+swiftc -parse [ALL edited files]             # MANDATORY: Test compilation
+# If compilation fails, FIX BEFORE COMMITTING
+git add -A && git commit -m "feat: X" && git push  # Ship ONLY after testing
 
 # Debug specific file
 xcrun swift-frontend -typecheck -sdk $(xcrun --sdk iphonesimulator --show-sdk-path) -target arm64-apple-ios17.0 -module-name NutriSync Path/To/File.swift
@@ -460,10 +482,12 @@ rg "FirebaseDataProvider" --type swift .
 
 ---
 
-**Remember**: 
-1. Push after EVERY feature/change
-2. Compile edited files before pushing
-3. Remove mock data ASAP
-4. Keep costs under $0.03 per AI operation
-5. Manual test everything
-6. Document as you code
+**Remember - MANDATORY RULES**: 
+1. **ALWAYS compile edited files BEFORE committing** - No exceptions!
+2. **Test todos mean ACTUAL testing** - Not just marking complete
+3. Push after EVERY feature/change (but ONLY after testing)
+4. Never commit if compilation fails - fix errors first
+5. Remove mock data ASAP
+6. Keep costs under $0.03 per AI operation
+7. Manual test everything in Xcode
+8. Document as you code
