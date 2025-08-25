@@ -77,6 +77,7 @@ class AIWindowGenerationService {
         
         Task { @MainActor in
             DebugLogger.shared.info("Received response from Gemini, parsing JSON...")
+            DebugLogger.shared.info("Raw AI response (first 500 chars): \(String(text.prefix(500)))")
         }
         
         // Parse the JSON response
@@ -95,10 +96,16 @@ class AIWindowGenerationService {
         formatter.timeZone = timeZone
         formatter.formatOptions = [.withInternetDateTime, .withTimeZone]
         
+        // Create a simple time formatter for human-readable times
+        let simpleTimeFormatter = DateFormatter()
+        simpleTimeFormatter.timeStyle = .short
+        simpleTimeFormatter.timeZone = timeZone
+        
         // Get wake time for today
         let calendar = Calendar.current
         let wakeTime: Date
         let wakeTimeString: String
+        let wakeTimeSimple: String
         
         if let checkIn = checkIn {
             wakeTime = checkIn.wakeTime
@@ -109,11 +116,23 @@ class AIWindowGenerationService {
                                                second: 0, 
                                                of: date) ?? date
             wakeTimeString = formatter.string(from: todayWakeTime)
+            wakeTimeSimple = simpleTimeFormatter.string(from: todayWakeTime)
+            
+            // Debug logging
+            Task { @MainActor in
+                DebugLogger.shared.info("Wake time being sent to AI:")
+                DebugLogger.shared.info("  Original checkIn.wakeTime: \(checkIn.wakeTime)")
+                DebugLogger.shared.info("  Today wake time: \(todayWakeTime)")
+                DebugLogger.shared.info("  ISO8601 string: \(wakeTimeString)")
+                DebugLogger.shared.info("  Simple format: \(wakeTimeSimple)")
+                DebugLogger.shared.info("  Timezone: \(timeZone.identifier) (offset: \(timeZone.secondsFromGMT() / 3600) hours)")
+            }
         } else {
             // Default wake time: 7 AM today
             let defaultWakeTime = calendar.date(bySettingHour: 7, minute: 0, second: 0, of: date) ?? date
             wakeTime = defaultWakeTime
             wakeTimeString = formatter.string(from: defaultWakeTime)
+            wakeTimeSimple = simpleTimeFormatter.string(from: defaultWakeTime)
         }
         
         // Calculate example window times based on actual wake time
@@ -141,6 +160,7 @@ class AIWindowGenerationService {
             
             ## Morning Check-In
             - Wake Time: \(wakeTimeString) (ISO8601 format)
+            - Wake Time (human readable): \(wakeTimeSimple) local time
             - Sleep Quality: \(checkIn.sleepQuality)/10
             - Energy Level: \(checkIn.energyLevel)/10
             - Hunger Level: \(checkIn.hungerLevel)/10
@@ -151,7 +171,8 @@ class AIWindowGenerationService {
             prompt += """
             
             ## Morning Check-In (Default - No check-in completed)
-            - Wake Time: \(wakeTimeString) (ISO8601 format - 7:00 AM local time)
+            - Wake Time: \(wakeTimeString) (ISO8601 format)
+            - Wake Time (human readable): \(wakeTimeSimple) local time
             - Sleep Quality: 7/10
             - Energy Level: 3/5
             - Hunger Level: 3/5
@@ -179,9 +200,12 @@ class AIWindowGenerationService {
         9. Rationale explaining why this window supports their goal
         10. Appropriate macro distribution based on window purpose
         
-        CRITICAL: All times must be in ISO8601 format with the SAME timezone as the wake time above.
-        The first window should start relative to the wake time, not at a fixed hour.
-        Use the exact same timezone offset as shown in the wake time.
+        CRITICAL TIMEZONE INSTRUCTIONS:
+        - The wake time is \(wakeTimeSimple) in the user's LOCAL timezone
+        - ALL window times MUST use the EXACT SAME timezone offset as the wake time ISO8601 string above
+        - For example, if wake time is "2025-08-25T06:20:00-05:00", ALL your times must end with "-05:00"
+        - The first window should start around \(simpleTimeFormatter.string(from: firstWindowStart)) local time
+        - Do NOT convert to UTC (+00:00). Keep the LOCAL timezone offset.
         
         Return as JSON array with this structure:
         {
