@@ -213,9 +213,9 @@ struct TimelineView: View {
                         showWindowDetail: $showWindowDetail
                     )
                     .transition(.opacity)
+                    // Align with the start of the timeline content (leave gutter for time labels)
+                    .padding(EdgeInsets(top: 0, leading: 68, bottom: 0, trailing: 32))
                 }
-                // Align with the start of the timeline content (leave gutter for time labels)
-                .padding(EdgeInsets(top: 0, leading: 68, bottom: 0, trailing: 32))
                 .frame(
                     height: calculateTotalLayoutHeight() + 100,
                     alignment: .topLeading
