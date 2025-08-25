@@ -9,12 +9,15 @@ import SwiftUI
 
 // Compact macro remaining indicator for window display
 struct WindowMacroIndicator: View {
-    let value: Double // 0.0 to 1.0
+    let value: Double // 0.0 to 1.0 (proportion consumed)
     let total: Int
     let label: String
     let color: Color
     
     private var remaining: Int {
+        // value is the proportion consumed (0.0 to 1.0)
+        // So consumed amount = total * value
+        // And remaining = total - consumed
         let consumed = Int(Double(total) * value)
         return max(0, total - consumed)
     }
@@ -848,19 +851,19 @@ struct ExpandableWindowBanner: View {
                         
                         HStack(spacing: 16) {
                             WindowMacroIndicator(
-                                value: Double(meals.reduce(0) { $0 + $1.protein }) / Double(window.effectiveMacros.protein),
+                                value: window.effectiveMacros.protein > 0 ? Double(meals.reduce(0) { $0 + $1.protein }) / Double(window.effectiveMacros.protein) : 0,
                                 total: window.effectiveMacros.protein,
                                 label: "P",
                                 color: .orange
                             )
                             WindowMacroIndicator(
-                                value: Double(meals.reduce(0) { $0 + $1.fat }) / Double(window.effectiveMacros.fat),
+                                value: window.effectiveMacros.fat > 0 ? Double(meals.reduce(0) { $0 + $1.fat }) / Double(window.effectiveMacros.fat) : 0,
                                 total: window.effectiveMacros.fat,
                                 label: "F",
                                 color: .yellow
                             )
                             WindowMacroIndicator(
-                                value: Double(meals.reduce(0) { $0 + $1.carbs }) / Double(window.effectiveMacros.carbs),
+                                value: window.effectiveMacros.carbs > 0 ? Double(meals.reduce(0) { $0 + $1.carbs }) / Double(window.effectiveMacros.carbs) : 0,
                                 total: window.effectiveMacros.carbs,
                                 label: "C",
                                 color: .blue
