@@ -25,17 +25,24 @@ class VertexAIService: ObservableObject {
         let ai = FirebaseAI.firebaseAI()
         
         // Configure generation parameters (V2 - low temperature for determinism)
+        // Enable thinking tokens for better reasoning about complex meals
         let config = GenerationConfig(
             temperature: 0.2,
             topP: 0.95,
             topK: 40,
+            candidateCount: 1,
             maxOutputTokens: 2048,
-            responseMIMEType: "application/json"
+            presencePenalty: nil,
+            frequencyPenalty: nil,
+            stopSequences: nil,
+            responseMIMEType: "application/json",
+            responseSchema: nil
         )
         
         // Create GenerativeModel using public API
+        // Using gemini-2.0-flash-thinking-exp for better reasoning
         self.model = ai.generativeModel(
-            modelName: "gemini-2.0-flash-exp",
+            modelName: "gemini-2.0-flash-thinking-exp-1219",
             generationConfig: config
         )
     }
@@ -142,6 +149,15 @@ class VertexAIService: ObservableObject {
             return """
             You are an expert nutritionist. Parse the user's voice description and return only the strict JSON described below.
             
+            <thinking>
+            Consider the following in your analysis:
+            1. Is this a restaurant/brand item or homemade?
+            2. What are the key ingredients and their likely quantities?
+            3. What cooking methods affect the calorie content?
+            4. Are there any hidden calories (oils, sauces, dressings)?
+            5. What similar items can I reference for accuracy?
+            </thinking>
+            
             Critical rules:
             - Never output text outside JSON.
             - Canonicalize units to allowed list: g, oz, ml, cup, tbsp, tsp, slice, piece, egg, can, bottle, packet, bowl
@@ -151,7 +167,12 @@ class VertexAIService: ObservableObject {
               • 0.85–0.95: simple, fully specified items (brand & size known).
               • 0.70–0.84: some uncertainty (size or one ingredient unclear).
               • 0.50–0.69: mixed dishes or multiple uncertainties; include clarifications.
-            - Brand detection: set brandDetected only if the user explicitly stated the brand/restaurant or the voice context clearly implies it.
+            - BRAND DETECTION PRIORITY: Always look for brand/restaurant indicators FIRST:
+              • Check for visible logos, packaging, containers, wrappers
+              • Look for restaurant-style plating, takeout containers, branded cups
+              • Identify chain restaurant menu items (burgers, fries, coffee cups, pizza boxes)
+              • If ANY brand/restaurant is suspected, set brandDetected and request brandSearch tool
+              • Common brands to detect: McDonald's, Starbucks, Subway, Chipotle, Pizza Hut, KFC, Taco Bell, Dunkin', Wendy's, Burger King, Chick-fil-A, Panera, Five Guys, In-N-Out, Shake Shack
             - Tool requests:
               • brandSearch: brand known but item/size/customization unclear.
               • nutritionLookup: unbranded foods where database values would materially reduce uncertainty.
@@ -205,6 +226,16 @@ class VertexAIService: ObservableObject {
         
         return """
         You are an expert nutritionist analyzing images (optionally with voice text). Return only the strict JSON below.
+        
+        <thinking>
+        Analyze this meal step-by-step:
+        1. What brands/logos/packaging are visible? Check containers, cups, wrappers.
+        2. What are the main components and their estimated portions?
+        3. Are there any hidden calories I should account for (cooking oil, butter, sauces)?
+        4. What's my confidence level based on what I can clearly see?
+        5. What critical information would most improve accuracy if I asked the user?
+        6. Does this match any known restaurant items based on presentation/packaging?
+        </thinking>
         
         Process (internal):
         - Identify visible components; don't guess hidden ones.
@@ -311,6 +342,9 @@ class VertexAIService: ObservableObject {
         let response: GenerateContentResponse
         if let imageData = imageData {
             // Multi-modal prompt with image
+            Task { @MainActor in
+                DebugLogger.shared.info("Creating InlineDataPart with image data: \(imageData.count) bytes, hash: \(imageData.hashValue)")
+            }
             let imageContent = InlineDataPart(data: imageData, mimeType: "image/jpeg")
             let textContent = prompt
             analysisProgress = 0.6
@@ -338,6 +372,28 @@ class VertexAIService: ObservableObject {
         Task { @MainActor in
             DebugLogger.shared.info("AI Response received: \(text.count) characters")
         }
+        
+        // Extract and log thinking process if present
+        if let thinkingRange = text.range(of: "<thinking>.*?</thinking>", options: .regularExpression) {
+            let thinkingContent = String(text[thinkingRange])
+                .replacingOccurrences(of: "<thinking>", with: "")
+                .replacingOccurrences(of: "</thinking>", with: "")
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            
+            print("🧠 THINKING PROCESS:")
+            print(String(repeating: "=", count: 60))
+            thinkingContent.split(separator: "\n").forEach { line in
+                print("  \(line)")
+            }
+            print(String(repeating: "=", count: 60))
+            
+            Task { @MainActor in
+                DebugLogger.shared.mealAnalysis("🧠 Model thinking: \(thinkingContent.prefix(500))...")
+            }
+        } else {
+            print("💭 No explicit thinking tokens found in response")
+        }
+        
         print("📝 AI Response: \(text)")
         
         // Try to extract JSON from the response

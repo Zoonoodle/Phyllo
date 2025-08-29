@@ -336,7 +336,7 @@ class AIWindowGenerationService {
             let calendar = Calendar.current
             let dayDate = calendar.startOfDay(for: date)
             
-            return aiResponse.windows.map { window in
+            return aiResponse.windows.enumerated().map { index, window in
                 // Validate and fix window times
                 var correctedEndTime = window.endTime
                 
@@ -352,6 +352,15 @@ class AIWindowGenerationService {
                     }
                 }
                 
+                // Fix generic window names
+                let windowName = fixGenericWindowName(
+                    window.name,
+                    index: index,
+                    purpose: window.purpose,
+                    startTime: window.startTime,
+                    totalWindows: aiResponse.windows.count
+                )
+                
                 return MealWindow(
                     id: UUID(),
                     startTime: window.startTime,
@@ -365,7 +374,7 @@ class AIWindowGenerationService {
                     purpose: mapPurpose(window.purpose),
                     flexibility: mapFlexibility(window.flexibility),
                     dayDate: dayDate,
-                    name: window.name,
+                    name: windowName,
                     rationale: window.rationale,
                     foodSuggestions: window.foodSuggestions,
                     micronutrientFocus: window.micronutrientFocus,
@@ -407,6 +416,83 @@ private struct AIWindow: Codable {
 
 // MARK: - Purpose Mapping
 extension AIWindowGenerationService {
+    /// Fix generic window names with contextual alternatives
+    private func fixGenericWindowName(
+        _ originalName: String,
+        index: Int,
+        purpose: String,
+        startTime: Date,
+        totalWindows: Int
+    ) -> String {
+        // Check if the name is generic
+        let genericPatterns = ["Window \\d+", "Breakfast", "Lunch", "Dinner", "Snack"]
+        let isGeneric = genericPatterns.contains { pattern in
+            originalName.range(of: pattern, options: .regularExpression) != nil
+        }
+        
+        // If not generic, return as-is
+        guard isGeneric else { return originalName }
+        
+        // Generate contextual name based on time and purpose
+        let calendar = Calendar.current
+        let hour = calendar.component(.hour, from: startTime)
+        
+        // Determine time-based prefix
+        let timePrefix: String
+        switch hour {
+        case 5..<9:
+            timePrefix = "Morning"
+        case 9..<11:
+            timePrefix = "Mid-Morning"
+        case 11..<14:
+            timePrefix = "Midday"
+        case 14..<17:
+            timePrefix = "Afternoon"
+        case 17..<20:
+            timePrefix = "Evening"
+        case 20..<23:
+            timePrefix = "Late Evening"
+        default:
+            timePrefix = "Night"
+        }
+        
+        // Map purpose to meaningful suffix
+        let purposeSuffix: String
+        switch purpose.lowercased() {
+        case "preworkout", "pre-workout":
+            purposeSuffix = "Pre-Training Fuel"
+        case "postworkout", "post-workout":
+            purposeSuffix = "Recovery Window"
+        case "metabolicboost", "metabolic-boost":
+            purposeSuffix = "Metabolic Boost"
+        case "recovery":
+            purposeSuffix = "Recovery & Repair"
+        case "sustainedenergy", "sustained-energy":
+            purposeSuffix = "Energy Sustainer"
+        case "sleepoptimization", "sleep-optimization":
+            purposeSuffix = "Sleep Prep"
+        case "focusboost", "focus-boost":
+            purposeSuffix = "Brain Power"
+        default:
+            // Position-based fallbacks
+            if index == 0 {
+                purposeSuffix = "Metabolic Primer"
+            } else if index == totalWindows - 1 {
+                purposeSuffix = "Wind-Down"
+            } else {
+                purposeSuffix = "Fuel Window"
+            }
+        }
+        
+        let newName = "\(timePrefix) \(purposeSuffix)"
+        
+        Task { @MainActor in
+            DebugLogger.shared.warning("Replaced generic name '\(originalName)' with '\(newName)'")
+        }
+        
+        return newName
+    }
+    
     /// Map AI-generated purpose strings to WindowPurpose enum
     private func mapPurpose(_ purposeString: String) -> WindowPurpose {
         switch purposeString.lowercased() {

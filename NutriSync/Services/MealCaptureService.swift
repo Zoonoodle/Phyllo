@@ -174,10 +174,10 @@ class MealCaptureService: ObservableObject {
                         analyzingMeal: analyzingMeal
                     )
                     
-                    // Check if clarification is needed
-                    if !result.clarifications.isEmpty {
+                    // Check if clarification is needed (always show if confidence < 0.85 or clarifications exist)
+                    if !result.clarifications.isEmpty || result.confidence < 0.85 {
                         Task { @MainActor in
-                            DebugLogger.shared.mealAnalysis("Clarification needed - \(result.clarifications.count) questions")
+                            DebugLogger.shared.mealAnalysis("Clarification needed - \(result.clarifications.count) questions (confidence: \(result.confidence))")
                         }
                         // Present clarification questions
                         await MainActor.run {
@@ -253,8 +253,8 @@ class MealCaptureService: ObservableObject {
                         analyzingMeal: analyzingMeal
                     )
                     
-                    // Check if clarification is needed
-                    if !result.clarifications.isEmpty {
+                    // Check if clarification is needed (always show if confidence < 0.85 or clarifications exist)
+                    if !result.clarifications.isEmpty || result.confidence < 0.85 {
                         Task { @MainActor in
                             DebugLogger.shared.mealAnalysis("Clarification needed with \(result.clarifications.count) questions")
                         }

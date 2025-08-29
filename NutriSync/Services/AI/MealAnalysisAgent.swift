@@ -138,9 +138,9 @@ class MealAnalysisAgent: ObservableObject {
             return true
         }
         
-        // Fallback: Low confidence still triggers tools
-        if result.confidence < 0.7 {
-            DebugLogger.shared.mealAnalysis("Very low confidence (\(result.confidence)) - tools needed")
+        // Use deep analysis for anything with confidence <= 0.8
+        if result.confidence <= 0.8 {
+            DebugLogger.shared.mealAnalysis("Confidence (\(result.confidence)) <= 0.8 - deep analysis needed")
             return true
         }
         
@@ -168,6 +168,35 @@ class MealAnalysisAgent: ObservableObject {
         return hasIndicator
     }
     
+    private func detectBrandFromImage(_ request: MealAnalysisRequest) -> String? {
+        // If there's an image, assume it might be from a restaurant/brand
+        // and let the brand search tool try to identify it
+        guard request.image != nil else { return nil }
+        
+        // Look for common visual cues in the meal name that suggest brands
+        let mealName = request.voiceTranscript?.lowercased() ?? ""
+        
+        // Common restaurant food patterns
+        let patterns = [
+            "burger", "fries", "nuggets", "wrap", "sandwich", "pizza",
+            "taco", "burrito", "bowl", "salad", "coffee", "latte",
+            "smoothie", "shake", "combo", "meal"
+        ]
+        
+        // If the meal contains common restaurant items, try brand search
+        for pattern in patterns {
+            if mealName.contains(pattern) {
+                DebugLogger.shared.info("Restaurant food pattern detected: \(pattern)")
+                return "restaurant" // Generic brand search trigger
+            }
+        }
+        
+        // Even without patterns, if we have an image with decent quality,
+        // we should try brand detection
+        DebugLogger.shared.info("Image provided - attempting brand detection")
+        return "detect_from_image"
+    }
+    
     private func performDeepAnalysis(
         _ initialResult: MealAnalysisResult,
         request: MealAnalysisRequest
@@ -176,9 +205,12 @@ class MealAnalysisAgent: ObservableObject {
         var enhancedResult = initialResult
         let requestedTools = initialResult.requestedTools ?? []
         
-        // Step 1: Brand/Restaurant Search (if requested by model)
-        if requestedTools.contains("brandSearch"), let brand = initialResult.brandDetected {
-            DebugLogger.shared.mealAnalysis("Brand detected: \(brand) - starting brand analysis")
+        // Step 1: Always try Brand/Restaurant Search first
+        // Check if brand was detected OR if we should try to detect one from the image
+        let brandToSearch = initialResult.brandDetected ?? detectBrandFromImage(request)
+        
+        if let brand = brandToSearch {
+            DebugLogger.shared.mealAnalysis("Brand detected or suspected: \(brand) - starting brand analysis")
             
             // Check cache first
             let cacheKey = "\(brand)_\(initialResult.mealName)"
@@ -324,14 +356,28 @@ extension MealAnalysisAgent {
         
         DebugLogger.shared.mealAnalysis("Performing brand-specific analysis for \(brand): \(mealName)")
         
+        // Handle generic brand detection requests
+        let actualBrand = (brand == "restaurant" || brand == "detect_from_image") 
+            ? "DETECT FROM IMAGE" 
+            : brand
+        
         let searchPrompt = """
-        Analyze this menu item. The initial detection was: \(mealName)
-        Brand: \(brand)
+        BRAND/RESTAURANT DETECTION AND ANALYSIS
+        
+        Initial detection: \(mealName)
+        \(actualBrand == "DETECT FROM IMAGE" ? "Task: IDENTIFY the brand/restaurant from the image and food characteristics" : "Brand: \(actualBrand)")
+        
+        DETECTION PRIORITY:
+        1. Look for visual brand indicators: logos, packaging, containers, wrappers, cups
+        2. Identify signature items: special sauce patterns, unique bun types, distinctive fries
+        3. Match food style to known chains (e.g., waffle fries = Chick-fil-A, square patties = Wendy's)
+        4. If brand detected, use EXACT official nutrition from that brand
+        5. If no brand detected but looks restaurant-made, estimate as "Generic Restaurant" with higher calories
         
         IMPORTANT: 
-        1. Keep the FULL meal name including brand (e.g., "\(mealName)")
-        2. Use official \(brand) nutrition information
-        3. DO NOT recalculate or add extra calories
+        1. If you detect a brand, prepend it to the meal name
+        2. Use official nutrition information when brand is known
+        3. Set brandDetected field with the identified brand
         
         Restaurant Nutrition Database:
         
@@ -753,10 +799,10 @@ extension VertexAIService {
             responseMIMEType: "application/json" // Request JSON response
         )
         
-        // Create model with tool-specific config
+        // Create model with tool-specific config - using thinking model
         let ai = FirebaseAI.firebaseAI()
         let model = ai.generativeModel(
-            modelName: "gemini-2.0-flash-exp",
+            modelName: "gemini-2.0-flash-thinking-exp-1219",
             generationConfig: config
         )
         
@@ -778,6 +824,23 @@ extension VertexAIService {
         let elapsed = Date().timeIntervalSince(startTime)
         DebugLogger.shared.performance("⏱️ Tool analysis completed in \(String(format: "%.2f", elapsed))s")
         DebugLogger.shared.info("Response length: \(response.count) characters")
+        
+        // Extract and log thinking process for tools
+        if let thinkingRange = response.range(of: "<thinking>.*?</thinking>", options: .regularExpression) {
+            let thinkingContent = String(response[thinkingRange])
+                .replacingOccurrences(of: "<thinking>", with: "")
+                .replacingOccurrences(of: "</thinking>", with: "")
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            
+            print("🧠 \(tool.displayName.uppercased()) THINKING:")
+            print(String(repeating: "-", count: 60))
+            thinkingContent.split(separator: "\n").forEach { line in
+                print("  \(line)")
+            }
+            print(String(repeating: "-", count: 60))
+            
+            DebugLogger.shared.mealAnalysis("🧠 Tool thinking: \(thinkingContent.prefix(300))...")
+        }
         
         return response
     }
