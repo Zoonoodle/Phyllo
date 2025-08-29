@@ -26,12 +26,14 @@ class VertexAIService: ObservableObject {
         
         // Configure generation parameters (V2 - low temperature for determinism)
         // Enable thinking tokens for better reasoning about complex meals
+        // IMPORTANT: When using thinking models, the thinking tokens count against the limit
+        // Set higher limit to account for both thinking (typically 2000-3000) and response tokens
         let config = GenerationConfig(
             temperature: 0.2,
             topP: 0.95,
             topK: 40,
             candidateCount: 1,
-            maxOutputTokens: 2048,
+            maxOutputTokens: 8192,  // Increased to handle thinking tokens + JSON response
             presencePenalty: nil,
             frequencyPenalty: nil,
             stopSequences: nil,

@@ -3,6 +3,22 @@
 
 Last Updated: 2025-08-29
 
+⚠️ **IMPORTANT:** This is a TEMPLATE file. For actual work, create `progress-[feature-name].md`
+
+---
+
+## 📋 MANDATORY WORKFLOW NOTICE
+
+**ALL development MUST follow the Context Engineering Workflow:**
+1. Research Phase → `research-[feature].md`
+2. Planning Phase → `plan-[feature].md`  
+3. Implementation → Monitor context (stop at 40% remaining)
+4. Progress Tracking → `progress-[feature].md`
+5. Continuation Loop → Until complete
+6. Review & Cleanup → Delete temporary files
+
+See `CONTEXT-ENGINEERING-WORKFLOW.md` for full protocol.
+
 ---
 
 ## 🎯 Current Focus

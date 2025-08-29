@@ -3,6 +3,19 @@
 
 Last Updated: 2025-08-29
 
+⚠️ **IMPORTANT:** This is a TEMPLATE file. For actual work, create `plan-[feature-name].md`
+
+---
+
+## 📋 MANDATORY WORKFLOW NOTICE
+
+**This plan MUST be created AFTER research phase:**
+1. Agent 1: Creates `research-[feature].md`
+2. Agent 2: Reads research → Creates THIS `plan-[feature].md`
+3. Agent 3+: Executes plan with context management
+
+See `CONTEXT-ENGINEERING-WORKFLOW.md` for full protocol.
+
 ---
 
 ## 🎯 Feature/Fix Overview

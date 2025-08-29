@@ -3,6 +3,21 @@
 
 Last Updated: 2025-08-29
 
+⚠️ **IMPORTANT:** This is a TEMPLATE file. For actual work, create `research-[feature-name].md`
+
+---
+
+## 📋 MANDATORY WORKFLOW NOTICE
+
+**This research MUST be the FIRST step for ALL development:**
+1. Agent 1: Deep analysis → Creates `research-[feature].md`
+2. Agent 2: Reads research → Creates `plan-[feature].md`
+3. Agent 3+: Executes plan systematically
+
+**NEVER skip research phase. ALWAYS scan entire codebase thoroughly.**
+
+See `CONTEXT-ENGINEERING-WORKFLOW.md` for full protocol.
+
 ---
 
 ## 🔍 Research Template

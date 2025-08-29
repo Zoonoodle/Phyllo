@@ -7,6 +7,37 @@ Last Updated: 2025-08-29
 
 ## 🎯 Active Development Tasks
 
+### Priority 0: TestFlight Release Requirements
+- [ ] **Onboarding Screens Conversion** - Adapt MacroFactorOnboarding to NutriSync
+  - Status: Not Started
+  - Sessions Required: 3-4
+  - Complexity: Medium
+  - Note: Keep aesthetic, update text/branding
+  
+- [ ] **Meal Scan Accuracy Improvement** - Switch to Gemini 2.5 Pro
+  - Status: Not Started  
+  - Sessions Required: 2-3
+  - Complexity: High
+  - Note: Current 2.0 Flash Thinking less accurate than 2.5 Pro
+  
+- [ ] **Check-In Views Polish** - UI/UX improvements
+  - Status: Not Started
+  - Sessions Required: 2-3
+  - Complexity: Medium
+  - Note: REQUIRES heavy user input for design decisions
+  
+- [ ] **Missed Windows View** - Handle skipped meal scenarios
+  - Status: Not Started
+  - Sessions Required: 2-3
+  - Complexity: Medium
+  - Note: REQUIRES user design approval
+  
+- [ ] **Scan View Enhancement** - Camera/gallery UX improvements
+  - Status: Not Started
+  - Sessions Required: 2-3
+  - Complexity: Medium
+  - Note: REQUIRES user design approval
+
 ### Priority 1: Critical Infrastructure
 - [ ] **Firebase Migration** - Replace MockDataManager in 47+ files
   - Status: Not Started
@@ -73,16 +104,31 @@ Last Updated: 2025-08-29
 
 ## 📊 Progress Metrics
 
-**Total Tasks:** 11
+**Total Tasks:** 16
 **Completed:** 5
 **In Progress:** 1
-**Not Started:** 5
-**Completion Rate:** 45%
+**Not Started:** 10
+**Completion Rate:** 31%
+
+### TestFlight Readiness: 0%
+- [ ] Core features complete
+- [ ] UI/UX polished
+- [ ] Multi-user testing ready
+- [ ] Onboarding flow complete
+- [ ] AI accuracy optimized
 
 ---
 
 ## 🚀 Next Up Queue
 
+### TestFlight Sprint (Priority 0)
+1. Onboarding screens conversion (MacroFactor → NutriSync)
+2. Meal scan accuracy improvement (Gemini 2.5 Pro migration)
+3. Check-In views polish (with user input)
+4. Missed Windows view implementation
+5. Scan view enhancement
+
+### Infrastructure (Priority 1)
 1. Complete SimplePerformanceView implementation
 2. Begin Firebase Migration Sprint
 3. Implement real-time meal window redistribution
@@ -120,7 +166,16 @@ Last Updated: 2025-08-29
 
 ---
 
-## 🎨 Development Guidelines
+## 🎨 Design & Development Guidelines
+
+### ⚠️ CRITICAL: Design Decision Protocol
+- **ALL UI/UX changes REQUIRE user approval FIRST**
+- **NEVER make autonomous design decisions**
+- **ALWAYS present mockups/suggestions for confirmation**
+- **User input weighs MORE HEAVILY than AI suggestions**
+- **Document all design decisions in research/plan phases**
+
+### Technical Guidelines
 
 - **ALWAYS** follow Context Engineering Protocol
 - **NEVER** skip research phase
