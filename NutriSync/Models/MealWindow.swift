@@ -386,6 +386,66 @@ struct MealWindow: Identifiable {
     }
 }
 
+// MARK: - Midnight Crossover Handling
+
+extension MealWindow {
+    var crossesMidnight: Bool {
+        let calendar = Calendar.current
+        let startDay = calendar.startOfDay(for: startTime)
+        let endDay = calendar.startOfDay(for: endTime)
+        return startDay != endDay
+    }
+    
+    func splitAtMidnight() -> [MealWindow] {
+        guard crossesMidnight else { return [self] }
+        
+        let calendar = Calendar.current
+        let midnight = calendar.startOfDay(for: endTime)
+        
+        // Window before midnight
+        let beforeMidnight = MealWindow(
+            id: UUID(),
+            name: "\(name) (Evening)",
+            startTime: startTime,
+            endTime: midnight,
+            targetCalories: Int(Double(targetCalories) * (midnight.timeIntervalSince(startTime) / duration)),
+            targetProtein: Int(Double(targetProtein) * (midnight.timeIntervalSince(startTime) / duration)),
+            targetCarbs: Int(Double(targetCarbs) * (midnight.timeIntervalSince(startTime) / duration)),
+            targetFat: Int(Double(targetFat) * (midnight.timeIntervalSince(startTime) / duration)),
+            purpose: purpose,
+            flexibility: flexibility,
+            type: type,
+            foodSuggestions: foodSuggestions,
+            micronutrientFocus: micronutrientFocus,
+            rationale: rationale,
+            activityLinked: activityLinked,
+            consumed: ConsumedMacros()
+        )
+        
+        // Window after midnight  
+        let afterMidnight = MealWindow(
+            id: UUID(),
+            name: "\(name) (Continued)",
+            startTime: midnight,
+            endTime: endTime,
+            targetCalories: targetCalories - beforeMidnight.targetCalories,
+            targetProtein: targetProtein - beforeMidnight.targetProtein,
+            targetCarbs: targetCarbs - beforeMidnight.targetCarbs,
+            targetFat: targetFat - beforeMidnight.targetFat,
+            purpose: purpose,
+            flexibility: flexibility,
+            type: type,
+            foodSuggestions: foodSuggestions,
+            micronutrientFocus: micronutrientFocus,
+            rationale: rationale,
+            activityLinked: activityLinked,
+            consumed: ConsumedMacros()
+        )
+        
+        return [beforeMidnight, afterMidnight]
+    }
+}
+
 // MARK: - Mock Data Generation
 
 extension MealWindow {
