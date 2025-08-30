@@ -16,7 +16,7 @@ struct OnboardingHeader: View {
     var body: some View {
         VStack(spacing: 0) {
             // Progress bar at top
-            ProgressBar(totalSteps: totalSteps, currentStep: currentStep + 1)
+            CheckInProgressBar(totalSteps: totalSteps, currentStep: currentStep + 1)
                 .padding(.horizontal, 20)
                 .padding(.top, 8)
                 .padding(.bottom, 32)
@@ -40,8 +40,8 @@ struct OnboardingHeader: View {
     }
 }
 
-// Copy of ProgressBar from onboarding
-struct ProgressBar: View {
+// Renamed to avoid conflict with BodyFatLevelView's ProgressBar
+struct CheckInProgressBar: View {
     let totalSteps: Int
     let currentStep: Int
     

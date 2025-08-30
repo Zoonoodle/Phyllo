@@ -278,31 +278,5 @@ struct AddActivitySheetV2: View {
     }
 }
 
-// Activity input model (copied from CheckInData)
-struct PlannedActivityInput: Identifiable {
-    let id = UUID()
-    var type: ActivityType
-    var startTime: String
-    var endTime: String
-    
-    enum ActivityType: String, CaseIterable {
-        case workout = "Workout"
-        case cardio = "Cardio"
-        case weights = "Weight Training"
-        case meal = "Meal Event"
-        case meeting = "Meeting"
-        case social = "Social Event"
-        case work = "Work Event"
-        case travel = "Travel"
-        
-        var icon: String {
-            switch self {
-            case .workout, .cardio, .weights: return "figure.run"
-            case .meal: return "fork.knife"
-            case .meeting, .work: return "briefcase.fill"
-            case .social: return "person.2.fill"
-            case .travel: return "car.fill"
-            }
-        }
-    }
-}
+// Use typealias to reference the existing PlannedActivityInput from EnhancedActivitiesView
+// This avoids duplication while we transition
