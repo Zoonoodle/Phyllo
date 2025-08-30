@@ -335,26 +335,82 @@ class VertexAIService: ObservableObject {
         
         analysisProgress = 0.5
         
-        // Generate content using Firebase AI (Gemini)
+        // Generate content using Firebase AI (Gemini) with retry logic
         Task { @MainActor in
             DebugLogger.shared.mealAnalysis("Sending request to Gemini AI")
         }
         let aiStart = Date()
         
-        let response: GenerateContentResponse
-        if let imageData = imageData {
-            // Multi-modal prompt with image
-            Task { @MainActor in
-                DebugLogger.shared.info("Creating InlineDataPart with image data: \(imageData.count) bytes, hash: \(imageData.hashValue)")
+        var response: GenerateContentResponse? = nil
+        var lastError: Error?
+        let maxRetries = 3
+        var retryCount = 0
+        
+        // Retry loop for network failures
+        while retryCount < maxRetries {
+            do {
+                if let imageData = imageData {
+                    // Multi-modal prompt with image
+                    Task { @MainActor in
+                        if retryCount > 0 {
+                            DebugLogger.shared.info("Retry attempt \(retryCount) of \(maxRetries - 1)")
+                        }
+                        DebugLogger.shared.info("Creating InlineDataPart with image data: \(imageData.count) bytes, hash: \(imageData.hashValue)")
+                    }
+                    let imageContent = InlineDataPart(data: imageData, mimeType: "image/jpeg")
+                    let textContent = prompt
+                    analysisProgress = 0.6
+                    response = try await model.generateContent(imageContent, textContent)
+                } else {
+                    // Text-only prompt for voice-only analysis
+                    analysisProgress = 0.6
+                    response = try await model.generateContent(prompt)
+                }
+                // Success - break out of retry loop
+                break
+            } catch let error as NSError where error.domain == NSURLErrorDomain {
+                // Network error - check if it's a connection lost error
+                lastError = error
+                retryCount += 1
+                
+                if error.code == NSURLErrorNetworkConnectionLost || 
+                   error.code == NSURLErrorNotConnectedToInternet ||
+                   error.code == NSURLErrorTimedOut {
+                    Task { @MainActor in
+                        DebugLogger.shared.warning("Network error (attempt \(retryCount)/\(maxRetries)): \(error.localizedDescription)")
+                    }
+                    
+                    if retryCount < maxRetries {
+                        // Wait before retrying (exponential backoff)
+                        let delay = Double(retryCount) * 2.0
+                        Task { @MainActor in
+                            DebugLogger.shared.info("Waiting \(delay) seconds before retry...")
+                        }
+                        try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+                        continue
+                    }
+                } else {
+                    // Other network error - throw immediately
+                    throw AnalysisError.networkError(error.localizedDescription)
+                }
+            } catch {
+                // Non-network error - throw immediately
+                throw error
             }
-            let imageContent = InlineDataPart(data: imageData, mimeType: "image/jpeg")
-            let textContent = prompt
-            analysisProgress = 0.6
-            response = try await model.generateContent(imageContent, textContent)
-        } else {
-            // Text-only prompt for voice-only analysis
-            analysisProgress = 0.6
-            response = try await model.generateContent(prompt)
+        }
+        
+        // Check if we got a response or need to throw an error
+        guard let finalResponse = response else {
+            // We exhausted retries without success
+            if let error = lastError {
+                Task { @MainActor in
+                    DebugLogger.shared.error("Failed after \(maxRetries) attempts: \(error.localizedDescription)")
+                }
+                throw AnalysisError.networkError("Connection failed after \(maxRetries) attempts. Please check your internet connection and try again.")
+            } else {
+                // This shouldn't happen, but handle it gracefully
+                throw AnalysisError.invalidResponse
+            }
         }
         
         Task { @MainActor in
@@ -364,7 +420,7 @@ class VertexAIService: ObservableObject {
         analysisProgress = 0.8
         
         // Parse the JSON response
-        guard let text = response.text else {
+        guard let text = finalResponse.text else {
             Task { @MainActor in
                 DebugLogger.shared.error("No text in AI response")
             }
@@ -735,15 +791,35 @@ class VertexAIService: ObservableObject {
         var errorDescription: String? {
             switch self {
             case .imageCompressionFailed:
-                return "Failed to process the image"
+                return "Failed to process the image. Please try taking another photo."
             case .noInputProvided:
-                return "No image or voice description provided"
+                return "No image or voice description provided. Please capture a photo or describe your meal."
             case .invalidResponse:
-                return "Invalid response from AI service"
+                return "Unable to analyze the meal. Please try again."
             case .networkError(let message):
-                return "Network error: \(message)"
+                // Make network errors more user-friendly
+                if message.contains("network connection was lost") || message.contains("Connection failed") {
+                    return "Network connection lost. Please check your internet connection and try again."
+                } else if message.contains("timed out") {
+                    return "Request timed out. Please check your connection and try again."
+                } else {
+                    return "Unable to connect. Please check your internet connection and try again."
+                }
             case .quotaExceeded:
-                return "Daily analysis limit reached"
+                return "You've reached your daily analysis limit. Please try again tomorrow."
+            }
+        }
+        
+        var recoverySuggestion: String? {
+            switch self {
+            case .networkError:
+                return "The app will automatically retry when you have a stable connection."
+            case .imageCompressionFailed:
+                return "Try taking a clearer photo with better lighting."
+            case .quotaExceeded:
+                return "You can still log meals manually or use voice input."
+            default:
+                return nil
             }
         }
     }
