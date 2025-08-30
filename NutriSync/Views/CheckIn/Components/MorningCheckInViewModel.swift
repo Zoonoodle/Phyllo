@@ -86,13 +86,7 @@ class MorningCheckInViewModel {
         // Save to CheckInManager
         CheckInManager.shared.saveMorningCheckIn(checkIn)
         
-        // Trigger window generation
-        Task {
-            await AIWindowGenerationService.shared.generateMealWindows(
-                checkIn: checkIn,
-                profile: UserProfileManager.shared.currentProfile ?? UserProfile.default,
-                goals: UserGoalManager.shared.currentGoals ?? UserGoal.default
-            )
-        }
+        // Window generation will be triggered by the view that handles check-in completion
+        // The AIScheduleView already handles this when the sheet dismisses
     }
 }
