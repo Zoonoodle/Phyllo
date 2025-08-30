@@ -191,7 +191,7 @@ class MealCaptureService: ObservableObject {
                             DebugLogger.shared.mealAnalysis("No clarification needed - completing analysis")
                         }
                         // No clarification needed, complete the analysis
-                        var savedMeal = try await dataProvider.completeAnalyzingMeal(
+                        let savedMeal = try await dataProvider.completeAnalyzingMeal(
                             id: analyzingMeal.id.uuidString,
                             result: result
                         )
@@ -277,7 +277,7 @@ class MealCaptureService: ObservableObject {
                         }
                     } else {
                         // Complete analysis without clarification
-                        var savedMeal = try await dataProvider.completeAnalyzingMeal(
+                        let savedMeal = try await dataProvider.completeAnalyzingMeal(
                             id: analyzingMeal.id.uuidString,
                             result: result
                         )
@@ -384,7 +384,7 @@ class MealCaptureService: ObservableObject {
     
     // MARK: - Helper Functions for Clarification Matching
     
-    private func findMatchingOption(in question: ClarificationQuestion, for selectedId: String) -> ClarificationOption? {
+    private func findMatchingOption(in question: MealAnalysisResult.ClarificationQuestion, for selectedId: String) -> MealAnalysisResult.ClarificationOption? {
         return question.options.first { option in
             // Strategy 1: Direct text match
             if option.text == selectedId { return true }
@@ -468,11 +468,16 @@ class MealCaptureService: ObservableObject {
             // Scale ingredients based on portion
             let scale = extractPortionScale(from: selectedOption)
             transformedIngredients = transformedIngredients.map { ingredient in
-                var scaled = ingredient
                 if let amount = Double(ingredient.amount) {
-                    scaled.amount = String(amount * scale)
+                    // Create new ingredient with scaled amount since amount is immutable
+                    return MealAnalysisResult.AnalyzedIngredient(
+                        name: ingredient.name,
+                        amount: String(amount * scale),
+                        unit: ingredient.unit,
+                        foodGroup: ingredient.foodGroup
+                    )
                 }
-                return scaled
+                return ingredient
             }
             
         case "cooking_method":
@@ -533,7 +538,7 @@ class MealCaptureService: ObservableObject {
         return "\(variation) \(original)"
     }
     
-    private func addDeluxeIngredients(to ingredients: [MealIngredient]) -> [MealIngredient] {
+    private func addDeluxeIngredients(to ingredients: [MealAnalysisResult.AnalyzedIngredient]) -> [MealAnalysisResult.AnalyzedIngredient] {
         var updated = ingredients
         
         // Add typical deluxe ingredients if not present
@@ -542,7 +547,7 @@ class MealCaptureService: ObservableObject {
         let hasCheese = ingredients.contains { $0.name.lowercased().contains("cheese") }
         
         if !hasLettuce {
-            updated.append(.init(
+            updated.append(MealAnalysisResult.AnalyzedIngredient(
                 name: "Lettuce",
                 amount: "1",
                 unit: "leaf",
@@ -551,7 +556,7 @@ class MealCaptureService: ObservableObject {
         }
         
         if !hasTomato {
-            updated.append(.init(
+            updated.append(MealAnalysisResult.AnalyzedIngredient(
                 name: "Tomato",
                 amount: "2",
                 unit: "slices",
@@ -560,7 +565,7 @@ class MealCaptureService: ObservableObject {
         }
         
         if !hasCheese {
-            updated.append(.init(
+            updated.append(MealAnalysisResult.AnalyzedIngredient(
                 name: "American Cheese",
                 amount: "1",
                 unit: "slice",
@@ -588,7 +593,7 @@ class MealCaptureService: ObservableObject {
         
         guard !clarificationAnswers.isEmpty else { 
             // No clarifications to apply, save original
-            try await dataProvider.completeAnalyzingMeal(
+            _ = try await dataProvider.completeAnalyzingMeal(
                 id: analyzingMeal.id.uuidString,
                 result: originalResult
             )
