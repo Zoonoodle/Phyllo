@@ -9,6 +9,341 @@ import Foundation
 import FirebaseAI
 import FirebaseFirestore
 
+/// Schedule types for different user patterns
+enum ScheduleType {
+    case earlyBird      // Wake: 4-7am
+    case standard       // Wake: 7-10am  
+    case nightOwl       // Wake: 10am-2pm
+    case nightShift     // Wake: 2pm+ or sleep during day
+    
+    static func detect(wakeTime: Date, bedTime: Date) -> ScheduleType {
+        let hour = Calendar.current.component(.hour, from: wakeTime)
+        let sleepHour = Calendar.current.component(.hour, from: bedTime)
+        
+        if sleepHour >= 4 && sleepHour <= 10 { // Sleep during day
+            return .nightShift
+        } else if hour >= 14 { // Wake after 2pm
+            return .nightShift
+        } else if hour >= 10 {
+            return .nightOwl
+        } else if hour < 7 {
+            return .earlyBird
+        }
+        return .standard
+    }
+}
+
+/// Context-aware window name generator
+struct WindowNameGenerator {
+    struct Context {
+        let windowIndex: Int
+        let totalWindows: Int
+        let scheduleType: ScheduleType
+        let isPreWorkout: Bool
+        let isPostWorkout: Bool
+        let timeOfDay: TimeOfDay
+        let userGoal: UserGoal
+        let isFirstMeal: Bool
+        let isLastMeal: Bool
+    }
+    
+    enum TimeOfDay {
+        case earlyMorning  // 5-8am
+        case morning       // 8-11am
+        case midday        // 11am-2pm
+        case afternoon     // 2-5pm
+        case evening       // 5-8pm
+        case lateNight     // 8pm+
+        
+        static func from(hour: Int) -> TimeOfDay {
+            switch hour {
+            case 5..<8: return .earlyMorning
+            case 8..<11: return .morning
+            case 11..<14: return .midday
+            case 14..<17: return .afternoon
+            case 17..<20: return .evening
+            default: return .lateNight
+            }
+        }
+    }
+    
+    static func generate(context: Context) -> String {
+        // Priority order for naming
+        if context.isPreWorkout {
+            return preWorkoutName(context)
+        } else if context.isPostWorkout {
+            return postWorkoutName(context)
+        } else if context.isFirstMeal {
+            return firstMealName(context)
+        } else if context.isLastMeal {
+            return lastMealName(context)
+        } else {
+            return functionalName(context)
+        }
+    }
+    
+    private static func preWorkoutName(_ context: Context) -> String {
+        switch context.userGoal {
+        case .buildMuscle:
+            return "Anabolic Primer"
+        case .improvePerformance:
+            return "Performance Fuel"
+        case .loseWeight:
+            return "Pre-Training Energy"
+        case .betterSleep:
+            return "Active Energy"
+        case .generalHealth:
+            return "Pre-Activity Boost"
+        }
+    }
+    
+    private static func postWorkoutName(_ context: Context) -> String {
+        let baseNames = [
+            "Recovery Window",
+            "Post-Training Recovery", 
+            "Anabolic Window",
+            "Muscle Recovery"
+        ]
+        // Add time context for late workouts
+        if context.timeOfDay == .lateNight {
+            return "Night Recovery"
+        }
+        return baseNames.randomElement() ?? "Recovery Window"
+    }
+    
+    private static func firstMealName(_ context: Context) -> String {
+        switch context.scheduleType {
+        case .nightShift:
+            return "First Meal" // Not "breakfast" at 8pm
+        case .nightOwl:
+            return "Late Morning Fuel"
+        case .earlyBird:
+            return "Dawn Foundation"
+        default:
+            return "Morning Foundation"
+        }
+    }
+    
+    private static func lastMealName(_ context: Context) -> String {
+        switch context.scheduleType {
+        case .nightShift:
+            return "Pre-Sleep Wind Down"
+        case .nightOwl:
+            return "Late Night Sustainer"
+        case .earlyBird:
+            return "Early Evening Closure"
+        default:
+            return "Evening Wind-Down"
+        }
+    }
+    
+    private static func functionalName(_ context: Context) -> String {
+        // Generate based on time and goal
+        let timePrefix: String
+        switch context.timeOfDay {
+        case .earlyMorning: timePrefix = "Early"
+        case .morning: timePrefix = "Morning"
+        case .midday: timePrefix = "Midday"
+        case .afternoon: timePrefix = "Afternoon"
+        case .evening: timePrefix = "Evening"
+        case .lateNight: timePrefix = "Late"
+        }
+        
+        let goalSuffix: String
+        switch context.userGoal {
+        case .loseWeight: goalSuffix = "Metabolic Boost"
+        case .buildMuscle: goalSuffix = "Growth Window"
+        case .improvePerformance: goalSuffix = "Energy Sustainer"
+        case .betterSleep: goalSuffix = "Balance Window"
+        case .generalHealth: goalSuffix = "Nourishment"
+        }
+        
+        return "\(timePrefix) \(goalSuffix)"
+    }
+}
+
+/// Window name validator for quality control
+struct WindowNameValidator {
+    static let genericPatterns = [
+        "Window \\d+",
+        "Meal \\d+",
+        "Eating Window \\d+",
+        "Period \\d+"
+    ]
+    
+    static func isGeneric(_ name: String) -> Bool {
+        for pattern in genericPatterns {
+            if name.range(of: pattern, options: .regularExpression) != nil {
+                return true
+            }
+        }
+        return false
+    }
+    
+    static func logForReview(_ window: MealWindow, reason: String) {
+        Task { @MainActor in
+            DebugLogger.shared.warning("Window name review needed: '\(window.name)' - Reason: \(reason)")
+        }
+        
+        // Log to Firebase for manual review (if connected)
+        Task {
+            do {
+                let db = Firestore.firestore()
+                let log: [String: Any] = [
+                    "windowName": window.name,
+                    "reason": reason,
+                    "timestamp": Date(),
+                    "windowId": window.id.uuidString,
+                    "startTime": window.startTime,
+                    "windowType": window.purpose.rawValue
+                ]
+                
+                try await db.collection("windowNameReviews").addDocument(data: log)
+            } catch {
+                // Silently fail if Firebase is not configured
+                print("Could not log window name for review: \(error)")
+            }
+        }
+    }
+}
+
+/// Enhanced workout parser for activity detection
+struct WorkoutParser {
+    struct WorkoutInfo {
+        let time: Date
+        let isLateNight: Bool  // After 8pm
+        let isFasted: Bool      // Before 8am with no prior window
+        let intensity: WorkoutIntensity
+    }
+    
+    enum WorkoutIntensity {
+        case light
+        case moderate
+        case high
+    }
+    
+    static func parseWorkouts(from activities: [String], baseDate: Date) -> [WorkoutInfo] {
+        var workouts: [WorkoutInfo] = []
+        let calendar = Calendar.current
+        
+        for activity in activities {
+            let lowercased = activity.lowercased()
+            
+            // Enhanced regex patterns for various formats
+            let patterns = [
+                (pattern: "workout.*?(\\d{1,2})(?::(\\d{2}))?\\s*([ap]m)?", intensity: WorkoutIntensity.moderate),
+                (pattern: "gym.*?(\\d{1,2})(?::(\\d{2}))?\\s*([ap]m)?", intensity: WorkoutIntensity.high),
+                (pattern: "training.*?(\\d{1,2})(?::(\\d{2}))?\\s*([ap]m)?", intensity: WorkoutIntensity.high),
+                (pattern: "exercise.*?(\\d{1,2})(?::(\\d{2}))?\\s*([ap]m)?", intensity: WorkoutIntensity.moderate),
+                (pattern: "run.*?(\\d{1,2})(?::(\\d{2}))?\\s*([ap]m)?", intensity: WorkoutIntensity.moderate),
+                (pattern: "lift.*?(\\d{1,2})(?::(\\d{2}))?\\s*([ap]m)?", intensity: WorkoutIntensity.high),
+                (pattern: "yoga.*?(\\d{1,2})(?::(\\d{2}))?\\s*([ap]m)?", intensity: WorkoutIntensity.light),
+                (pattern: "walk.*?(\\d{1,2})(?::(\\d{2}))?\\s*([ap]m)?", intensity: WorkoutIntensity.light)
+            ]
+            
+            // Also check for simple presence of workout keywords
+            let simpleKeywords = ["workout", "gym", "training", "exercise", "run", "lift", "yoga", "walk", "fitness"]
+            var foundWorkout = false
+            
+            for (pattern, intensity) in patterns {
+                if let _ = lowercased.range(of: pattern, options: .regularExpression) {
+                    // Try to extract time, or use default afternoon time
+                    let workoutTime = parseWorkoutTime(from: lowercased, baseDate: baseDate) ?? 
+                                     calendar.date(bySettingHour: 16, minute: 0, second: 0, of: baseDate) ?? baseDate
+                    
+                    let hour = calendar.component(.hour, from: workoutTime)
+                    let workout = WorkoutInfo(
+                        time: workoutTime,
+                        isLateNight: hour >= 20,
+                        isFasted: hour < 8,
+                        intensity: intensity
+                    )
+                    workouts.append(workout)
+                    foundWorkout = true
+                    break
+                }
+            }
+            
+            // If no pattern matched but keyword exists, add default workout
+            if !foundWorkout {
+                for keyword in simpleKeywords {
+                    if lowercased.contains(keyword) {
+                        let defaultTime = calendar.date(bySettingHour: 16, minute: 0, second: 0, of: baseDate) ?? baseDate
+                        let workout = WorkoutInfo(
+                            time: defaultTime,
+                            isLateNight: false,
+                            isFasted: false,
+                            intensity: .moderate
+                        )
+                        workouts.append(workout)
+                        break
+                    }
+                }
+            }
+        }
+        
+        return workouts
+    }
+    
+    private static func parseWorkoutTime(from text: String, baseDate: Date) -> Date? {
+        let calendar = Calendar.current
+        
+        // Try to extract time from text
+        let timePattern = "(\\d{1,2})(?::(\\d{2}))?\\s*([ap]m)?"
+        guard let regex = try? NSRegularExpression(pattern: timePattern, options: .caseInsensitive) else {
+            return nil
+        }
+        
+        let matches = regex.matches(in: text, range: NSRange(text.startIndex..., in: text))
+        guard let match = matches.first else { return nil }
+        
+        // Extract hour
+        guard let hourRange = Range(match.range(at: 1), in: text),
+              let hour = Int(text[hourRange]) else { return nil }
+        
+        // Extract minute if present
+        var minute = 0
+        if let minuteRange = Range(match.range(at: 2), in: text) {
+            minute = Int(text[minuteRange]) ?? 0
+        }
+        
+        // Check for AM/PM
+        var adjustedHour = hour
+        if let ampmRange = Range(match.range(at: 3), in: text) {
+            let ampm = text[ampmRange].lowercased()
+            if ampm == "pm" && hour < 12 {
+                adjustedHour = hour + 12
+            } else if ampm == "am" && hour == 12 {
+                adjustedHour = 0
+            }
+        }
+        
+        return calendar.date(bySettingHour: adjustedHour, minute: minute, second: 0, of: baseDate)
+    }
+    
+    /// Determine dynamic window count based on workouts and schedule
+    static func determineWindowCount(workouts: [WorkoutInfo], scheduleType: ScheduleType) -> Int {
+        let baseWindows = 3
+        var additionalWindows = 0
+        
+        for workout in workouts {
+            if workout.isLateNight {
+                // Late workout needs recovery window that might cross midnight
+                additionalWindows += 2 // Pre + extended post
+            } else if workout.isFasted {
+                // Fasted workout needs careful fueling
+                additionalWindows += 2 // Light pre + substantial post
+            } else {
+                // Standard workout
+                additionalWindows += 1 // Combined pre/post window
+            }
+        }
+        
+        // Cap at 6 windows max
+        return min(baseWindows + additionalWindows, 6)
+    }
+}
+
 /// Service responsible for generating personalized meal windows using AI
 class AIWindowGenerationService {
     static let shared = AIWindowGenerationService()
@@ -168,6 +503,10 @@ class AIWindowGenerationService {
         - Daily Fat Target: \(profile.dailyFatTarget)g
         """
         
+        // Detect schedule type
+        let bedTime = checkIn?.plannedBedtime ?? calendar.date(bySettingHour: 22, minute: 30, second: 0, of: date) ?? date
+        let scheduleType = ScheduleType.detect(wakeTime: wakeTime, bedTime: bedTime)
+        
         if let checkIn = checkIn {
             prompt += """
             
@@ -178,6 +517,7 @@ class AIWindowGenerationService {
             - Energy Level: \(checkIn.energyLevel)/10
             - Hunger Level: \(checkIn.hungerLevel)/10
             - Planned Activities: \(checkIn.plannedActivities.joined(separator: ", "))
+            - Schedule Type: \(String(describing: scheduleType))
             """
         } else {
             // No check-in, use reasonable defaults
@@ -190,6 +530,7 @@ class AIWindowGenerationService {
             - Energy Level: 3/5
             - Hunger Level: 3/5
             - Planned Activities: Regular work day
+            - Schedule Type: \(String(describing: scheduleType))
             """
         }
         
@@ -242,6 +583,50 @@ class AIWindowGenerationService {
         - If user has "gym" or "workout": Include "Pre-Workout Fuel" or "Post-Training Recovery"
         - If user has "meetings" or "work": Include "Focus Fuel" or "Brain Power Window"
         - If user has no activities: Focus on metabolic and energy-based names
+        
+        ## Schedule-Specific Instructions:
+        """
+        
+        // Add schedule-specific instructions
+        switch scheduleType {
+        case .nightShift:
+            prompt += """
+        CRITICAL: User works night shift or has nocturnal schedule.
+        - First window should be their "breakfast" even if at evening time (8pm, etc.)
+        - Respect their biological clock (their morning is evening time)
+        - Include a "Pre-Work Energy" window if they work nights
+        - Avoid traditional meal names like "dinner" for their first meal
+        - Use functional names: "First Meal", "Pre-Shift Energy", "Mid-Shift Fuel", "Recovery Window"
+        - Their last window might be morning time (6-8am) which is their "evening"
+        """
+        case .nightOwl:
+            prompt += """
+        User is a night owl (late riser).
+        - Compress or skip traditional morning windows if waking after 11am
+        - Focus on afternoon/evening optimization
+        - Later workout windows are normal for this user
+        - Use names like "Late Morning Fuel", "Afternoon Foundation", "Evening Performance"
+        - Their peak energy is likely in evening/night hours
+        """
+        case .earlyBird:
+            prompt += """
+        User is an early bird (early riser).
+        - First window can start within 30 minutes of waking
+        - Morning is their peak performance time
+        - Earlier workout windows are optimal
+        - Last window should be well before 8pm for optimal sleep
+        - Use energizing morning names: "Dawn Fuel", "Early Bird Energy", "Morning Power"
+        """
+        case .standard:
+            prompt += """
+        User has standard schedule.
+        - Follow typical meal timing patterns
+        - Balance windows throughout the day
+        - Standard naming conventions apply
+        """
+        }
+        
+        prompt += """
         
         Return as JSON array with this structure:
         {

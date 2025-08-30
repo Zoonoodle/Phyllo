@@ -21,43 +21,72 @@ NutriSync revolutionizes nutrition tracking by focusing on **meal window timing*
 
 ---
 
-## 🚀 Development Workflow (MANDATORY)
+## 🚀 Development Workflow (MANDATORY - NO EXCEPTIONS)
 
-### Context Engineering Strategy (IMPLEMENT IMMEDIATELY)
+### ⚠️ CRITICAL: Multi-Agent Context Engineering Protocol
 
-**The 40% Rule:** Start planning session handoff when context window reaches ~40% capacity to maintain optimal performance.
+**MANDATORY DOCUMENTS TO READ:**
+- `CONTEXT-ENGINEERING-WORKFLOW.md` - Complete protocol specification
+- `WORKFLOW-ENFORCEMENT-CHECKLIST.md` - Exact behavior for each phase
+- `codebase-todolist.md` - Master task tracking
 
-#### Three-Phase Workflow with Intentional Compaction
+**The 40% Rule:** STOP at 60% context usage (40% remaining) to prevent overflow.
 
-1. **Research Phase** → `research.md`
-   - Use subagents for parallel exploration
-   - Document findings, patterns, constraints
-   - Human review before proceeding
+#### Five-Phase Workflow (FOLLOW EXACTLY)
 
-2. **Planning Phase** → `plan.md`
-   - Transform research into step-by-step implementation
-   - Define success criteria and rollback plans
-   - Human approval of approach
+1. **Research Phase** → Creates `research-[feature].md`
+   - Deep codebase analysis with Task tool
+   - Document patterns, constraints, options
+   - END: Tell user to start NEW session
 
-3. **Implementation Phase** → Update `progress.md`
-   - Execute plan with fresh context
-   - Track completion and blockers
-   - Preserve key decisions for next session
+2. **Planning Phase** → Creates `plan-[feature].md`
+   - Read research document completely
+   - ASK user for design preferences (MANDATORY)
+   - Get human approval before proceeding
+   - END: Tell user to start NEW session
+
+3. **Implementation Phase** → Updates `progress-[feature].md`
+   - Execute plan EXACTLY as written
+   - Test with `swiftc -parse` after EVERY change
+   - Monitor context usage continuously
+   - STOP at 60% usage, create progress doc
+
+4. **Continuation Phase** → Reads all docs, resumes exactly
+   - Pick up from exact stopping point
+   - Continue until complete or context limit
+
+5. **Review Phase** → Cleanup and verification
+   - User testing and approval
+   - Delete temporary .md files
+   - Update codebase-todolist.md
 
 #### Quick Start Commands
 ```bash
-# Start new feature/fix with fresh context
-cat progress.md  # Review current state
-# Clear chat with /clear if needed
+# MANDATORY: Read workflow documents first
+cat CONTEXT-ENGINEERING-WORKFLOW.md
+cat WORKFLOW-ENFORCEMENT-CHECKLIST.md
+cat codebase-todolist.md
 
-# When context approaching 40%
-# Update progress.md with current state
-# Start new session with: "Continue from progress.md"
+# Phase 1: Research (Agent 1)
+# Creates research-[feature].md
+# Ends with: "Start NEW session for Phase 2"
 
-# For complex features requiring research
-# 1. Create research.md with findings
-# 2. Create plan.md with implementation steps  
-# 3. Execute plan, updating progress.md
+# Phase 2: Planning (Agent 2) 
+# User provides: @research-[feature].md
+# Creates plan-[feature].md with user input
+# Ends with: "Start NEW session for Phase 3"
+
+# Phase 3: Implementation (Agent 3+)
+# User provides: @plan-[feature].md @research-[feature].md
+# Executes plan, monitors context
+# Creates progress-[feature].md at 60% usage
+
+# Phase 4: Continuation (if needed)
+# User provides: @progress @plan @research
+# Resumes from exact stopping point
+
+# Phase 5: Review & Cleanup
+# Tests, deletes temp files, updates todolist
 ```
 
 ### Git & Version Control

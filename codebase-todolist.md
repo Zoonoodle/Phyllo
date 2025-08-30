@@ -1,4 +1,4 @@
-# NutriSync Codebase Master Todo List
+why# NutriSync Codebase Master Todo List
 ## Overall Project Tracking
 
 Last Updated: 2025-08-29
@@ -8,8 +8,8 @@ Last Updated: 2025-08-29
 ## 🎯 Active Development Tasks
 
 ### Priority 0: TestFlight Release Requirements
-- [ ] **Onboarding Screens Conversion** - Adapt MacroFactorOnboarding to NutriSync
-  - Status: Not Started
+- [x] **Onboarding Screens Conversion** - Adapt MacroFactorOnboarding to NutriSync
+  - Status: COMPLETED (2025-08-30)
   - Sessions Required: 3-4
   - Complexity: Medium
   - Note: Keep aesthetic, update text/branding
@@ -50,6 +50,14 @@ Last Updated: 2025-08-29
   - Complexity: Medium
 
 ### Priority 2: Core Features
+- [ ] **Voice Context Onboarding** - Reduce onboarding screens via intelligent voice input
+  - Status: Not Started
+  - Sessions Required: 4-5
+  - Complexity: High
+  - Note: User speaks preferences naturally, AI agent parses and extracts context for window generation
+  - Benefits: Could reduce 31 screens to 5-10 screens
+  - Implementation: Lower-level agent parses voice→text, extracts goals/preferences/constraints
+  
 - [ ] **SimplePerformanceView Completion** - Finish Momentum tab implementation
   - Status: In Progress
   - Sessions Required: 1-2
@@ -93,6 +101,12 @@ Last Updated: 2025-08-29
 
 ## 🔄 Completed Tasks
 
+### 2025-08-30
+- [x] Onboarding screens fully converted (31 screens, no scrolling)
+- [x] Split content-heavy screens for better UX
+- [x] Fixed all navigation and progress bar issues
+- [x] Updated OnboardingPreview with all screens
+
 ### 2025-08-29
 - [x] Replaced tabbed NutritionDashboardView with SimplePerformanceView
 - [x] Fixed meal windows extending past bedtime
@@ -104,17 +118,17 @@ Last Updated: 2025-08-29
 
 ## 📊 Progress Metrics
 
-**Total Tasks:** 16
-**Completed:** 5
+**Total Tasks:** 17
+**Completed:** 10
 **In Progress:** 1
-**Not Started:** 10
-**Completion Rate:** 31%
+**Not Started:** 6
+**Completion Rate:** 59%
 
-### TestFlight Readiness: 0%
+### TestFlight Readiness: 20%
 - [ ] Core features complete
 - [ ] UI/UX polished
 - [ ] Multi-user testing ready
-- [ ] Onboarding flow complete
+- [x] Onboarding flow complete
 - [ ] AI accuracy optimized
 
 ---

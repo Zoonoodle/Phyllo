@@ -8,14 +8,43 @@ Last Updated: 2025-08-29
 ## 🔍 Investigation Topic
 Converting existing MacroFactorOnboarding screens to NutriSync-specific onboarding flow while maintaining aesthetic quality and ensuring all necessary data collection for window generation service.
 
-### Key Questions
-1. What MacroFactor-specific content needs to be replaced?
-2. What additional data do we need for NutriSync's window generation?
-3. How can we maintain the existing aesthetic while making it uniquely NutriSync?
-4. What is the current implementation architecture and flow?
-5. Are there any technical constraints or dependencies?
+### Key Questions & Answers
+
+1. **What MacroFactor-specific content needs to be replaced?**
+   - Rename folder: `MacroFactorOnboarding/` → `Onboarding/`
+   - Remove all "MF" prefixes from file names (keep files, rename them)
+   - Update text content: Replace MacroFactor references with NutriSync
+   - Focus on window generation/scheduling instead of macro tracking
+   - Keep all UI code intact (1:1 aesthetic preservation)
+
+2. **What additional data do we need for NutriSync's window generation?**
+   - Workout Schedule (days, times, pre/post nutrition)
+   - Lifestyle Factors (work schedule, social meals, travel)
+   - Nutrition Preferences (restrictions, macro preferences, sensitivities)
+   - Circadian Optimization (energy peaks, caffeine, digestion)
+   - Window Generation Preferences (flexibility, auto-adjust, notifications)
+
+3. **How can we maintain the existing aesthetic while making it uniquely NutriSync?**
+   - Keep ALL UI code unchanged (components, styles, animations)
+   - Only modify text/descriptions to align with window generation
+   - Maintain same navigation and section organization
+   - Add new screens using same component patterns
+
+4. **What is the current implementation architecture and flow?**
+   - Standalone UI screens disconnected from backend
+   - Coordinator pattern with 5 sections, 25+ screens
+   - Will integrate with user auth later (new accounts → onboarding)
+   - Currently stores data in memory during session
+
+5. **Are there any technical constraints or dependencies?**
+   - No backend integration yet (keep disconnected for now)
+   - SwiftUI native components only
+   - Must collect all data needed for WindowGenerationService
+   - Integration with Firebase will come after user auth implementation
 
 ---
+
+
 
 ## 📊 Findings
 
@@ -157,7 +186,7 @@ struct CollectedData {
 - Meal frequency ✓
 - Eating window preferences ✓
 
-### Need to Add for Window Generation
+### Need to Add for Window Generation - NEW SCREENS REQUIRED
 1. **Workout Schedule**
    - Days of week
    - Typical workout times
@@ -215,24 +244,41 @@ struct CollectedData {
 
 ---
 
-## 🎯 Recommendation
+## 🎯 Implementation Approach
 
-**Recommended Approach:** Option B - Full NutriSync Integration
+**Selected Approach:** Full NutriSync Conversion with UI Preservation
 
-**Rationale:**
-1. TestFlight needs complete experience for meaningful feedback
-2. Window generation is core differentiator - needs proper data
-3. One-time implementation avoids technical debt
-4. Current architecture supports extension well
+**Core Strategy:**
+1. **Keep ALL UI/design code intact** - 1:1 aesthetic preservation
+2. **Rename folder structure** - Remove MF prefixes
+3. **Update text/descriptions** - Focus on window generation
+4. **Add new screens** - Using same design patterns for missing data
+5. **Keep disconnected** - No backend integration until user auth
 
-**Implementation Strategy:**
-1. **Phase 1**: Update all text/branding (quick wins)
-2. **Phase 2**: Add 3-5 new screens for window-specific data
-3. **Phase 3**: Integrate with Firebase for persistence
-4. **Phase 4**: Add preview of generated windows
+**New Screens to Add (Using Same Aesthetic):**
 
-**Next Step:** 
-→ Create `plan-onboarding-conversion.md` with detailed implementation steps
+### Section 3: Goal Setting (Expand)
+- **WorkoutScheduleView** - Days and times selection
+- **WorkoutNutritionView** - Pre/post workout needs
+
+### Section 4: Program (Expand)  
+- **LifestyleFactorsView** - Work schedule, social commitments
+- **NutritionPreferencesView** - Restrictions and sensitivities
+- **CircadianOptimizationView** - Energy peaks, caffeine timing
+- **WindowFlexibilityView** - Strict vs adaptive preferences
+- **NotificationPreferencesView** - Window reminders setup
+
+**File Renaming Plan:**
+- `MFOnboardingCoordinator` → `OnboardingCoordinator`
+- `MFBasicInfoView` → `BasicInfoView`
+- `MFWeightView` → `WeightView`
+- (Apply to all 25+ files)
+
+**Text Updates Focus:**
+- Replace "macro tracking" → "window timing"
+- Replace "calorie targets" → "optimal eating windows"
+- Replace "MacroFactor" → "NutriSync"
+- Emphasize circadian rhythm and meal timing benefits
 
 ---
 

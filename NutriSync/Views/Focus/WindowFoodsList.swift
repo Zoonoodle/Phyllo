@@ -27,12 +27,12 @@ struct WindowFoodsList: View {
             // Section header
             HStack {
                 Text("Logged Foods")
-                    .font(.system(size: 18, weight: .semibold))
+                    .font(.system(size: 22, weight: .semibold))
                     .foregroundColor(.white)
                 
                 Text("(\(windowMeals.count))")
-                    .font(.system(size: 16))
-                    .foregroundColor(.white.opacity(0.5))
+                    .font(.system(size: 20))
+                    .foregroundColor(.white.opacity(TimelineOpacity.tertiary))
                 
                 Spacer()
                 
@@ -105,29 +105,29 @@ struct FoodItemCard: View {
                     // Meal info
                     VStack(alignment: .leading, spacing: 4) {
                         Text(meal.name)
-                            .font(.system(size: 16, weight: .medium))
+                            .font(TimelineTypography.foodName)
                             .foregroundColor(.white)
                         
                         HStack(spacing: 8) {
                             Text("\(meal.calories) cal")
-                                .font(.system(size: 14))
-                                .foregroundColor(.white.opacity(0.7))
+                                .font(TimelineTypography.foodCalories)
+                                .foregroundColor(.white.opacity(TimelineOpacity.secondary))
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.8)
                                 .layoutPriority(1)
                             
                             Text("•")
-                                .foregroundColor(.white.opacity(0.3))
+                                .foregroundColor(.white.opacity(TimelineOpacity.quaternary))
                             
                             Text(timeString(from: meal.timestamp))
-                                .font(.system(size: 14))
-                                .foregroundColor(.white.opacity(0.7))
+                                .font(TimelineTypography.timestamp)
+                                .foregroundColor(.white.opacity(TimelineOpacity.secondary))
                                 .lineLimit(1)
                         }
                         
                         Text(meal.macroSummary)
-                            .font(.system(size: 12))
-                            .foregroundColor(.white.opacity(0.5))
+                            .font(TimelineTypography.macroLabel)
+                            .foregroundColor(.white.opacity(TimelineOpacity.tertiary))
                     }
                     
                     Spacer()
@@ -226,12 +226,12 @@ struct EmptyFoodsView: View {
                 .foregroundColor(.white.opacity(0.3))
             
             Text("No meals logged yet")
-                .font(.system(size: 16, weight: .medium))
-                .foregroundColor(.white.opacity(0.5))
+                .font(.system(size: 20, weight: .medium))
+                .foregroundColor(.white.opacity(TimelineOpacity.tertiary))
             
             Text("Tap + to add your first meal")
-                .font(.system(size: 14))
-                .foregroundColor(.white.opacity(0.3))
+                .font(.system(size: 17))
+                .foregroundColor(.white.opacity(TimelineOpacity.quaternary))
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 40)
@@ -256,8 +256,8 @@ struct IngredientChip: View {
                 .frame(width: 6, height: 6)
             
             Text(ingredient.displayString)
-                .font(.system(size: 12, weight: .medium))
-                .foregroundColor(.white.opacity(0.9))
+                .font(TimelineTypography.macroLabel)
+                .foregroundColor(.white.opacity(TimelineOpacity.secondary))
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 6)

@@ -193,20 +193,20 @@ struct MacroProgressItem: View {
                     .font(.system(size: 16))
             } else if let sfSymbol = sfSymbol {
                 Image(systemName: sfSymbol)
-                    .font(.system(size: 14, weight: .medium))
+                    .font(.system(size: 16, weight: .medium))
                     .foregroundColor(color)
             } else if let label = label {
                 Text(label)
-                    .font(.system(size: 12, weight: .bold))
+                    .font(.system(size: 14, weight: .bold))
                     .foregroundColor(color)
             }
             
             Text("\(value) / \(target)")
-                .font(.system(size: 10, weight: .medium))
+                .font(.system(size: 12, weight: .medium))
                 .foregroundColor(.white.opacity(0.8))
                 .lineLimit(1)
-                .minimumScaleFactor(0.5)  // Allow more shrinking
-                .frame(minWidth: 40, maxWidth: 80)  // Constrain width
+                .minimumScaleFactor(0.7)  // Adjust shrinking for larger font
+                .frame(minWidth: 50, maxWidth: 90)  // Slightly wider for larger text
             
             // Progress bar
             GeometryReader { geometry in

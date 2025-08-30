@@ -156,8 +156,8 @@ struct HourRowView: View {
         HStack(alignment: .top, spacing: 12) {
             // Time label
             Text(timeString)
-                .font(.system(size: 12, weight: isCurrentHour ? .medium : .regular))
-                .foregroundColor(isCurrentHour ? .white.opacity(0.8) : .white.opacity(0.5))
+                .font(isCurrentHour ? TimelineTypography.hourLabelCurrent : TimelineTypography.hourLabel)
+                .foregroundColor(isCurrentHour ? .white.opacity(TimelineOpacity.currentHour) : .white.opacity(TimelineOpacity.otherHour))
                 .frame(width: 48, alignment: .leading)
                 .padding(.top, -8)
             

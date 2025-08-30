@@ -219,30 +219,79 @@ If an agent session fails:
 
 ---
 
-## 📝 Example Workflow Execution
+## 📝 EXACT Workflow Execution (FOLLOW THIS EXACTLY)
 
-```bash
-# Session 1 (Research Agent)
-User: "Implement Firebase migration"
-Agent: *Creates research-firebase-migration.md after deep analysis*
+### Real Example: Onboarding Conversion Task
 
-# Session 2 (Planning Agent)  
-User: *Provides research-firebase-migration.md*
-Agent: *Creates plan-firebase-migration.md with human input*
+```markdown
+# Session 1 (Research Agent) - ACTUAL BEHAVIOR
+User: "Let's test this out, convert onboarding screens"
 
-# Session 3 (Implementation Agent)
-User: *Provides plan + research*
-Agent: *Implements until 60% context used*
-Agent: *Creates progress-firebase-migration-1.md*
+Agent: [IMMEDIATE ACTIONS]
+1. ✅ Creates TodoWrite list
+2. ✅ Uses Task tool with subagent for deep analysis  
+3. ✅ Creates research-onboarding-conversion.md
+4. ✅ Says: "PHASE 1: RESEARCH COMPLETE. Start NEW session for Phase 2"
 
-# Session 4 (Continuation Agent)
-User: *Provides all previous docs*
-Agent: *Continues from stopping point*
-Agent: *Completes implementation*
+# Session 2 (Planning Agent) - EXPECTED BEHAVIOR
+User: @research-onboarding-conversion.md
 
-# Session 5 (Review Agent)
-User: *Tests and approves*
-Agent: *Cleans up files, updates todolist*
+Agent: [IMMEDIATE ACTIONS]
+1. ✅ Reads research completely
+2. ✅ ASKS: "I need your design preferences on:
+   - Option A or B for implementation?
+   - Priority level?
+   - Specific requirements?"
+3. ✅ Creates plan-onboarding-conversion.md
+4. ✅ Says: "PHASE 2: PLANNING COMPLETE. Start NEW session for Phase 3"
+
+# Session 3 (Implementation Agent) - EXPECTED BEHAVIOR
+User: @plan-onboarding-conversion.md @research-onboarding-conversion.md
+
+Agent: [IMMEDIATE ACTIONS]
+1. ✅ Creates TodoWrite from plan steps
+2. ✅ Executes Step 1, tests with swiftc -parse
+3. ✅ Commits working code
+4. ✅ Monitors context (at 60%):
+5. ✅ Creates progress-onboarding-conversion.md
+6. ✅ Says: "Context at 60%. Continue in NEW session"
+
+# Session 4 (Continuation Agent) - EXPECTED BEHAVIOR
+User: @progress-onboarding-conversion.md @plan @research
+
+Agent: [IMMEDIATE ACTIONS]
+1. ✅ Reads: "Stopped at Step 3, line 147"
+2. ✅ Resumes EXACTLY from line 147
+3. ✅ Completes remaining steps
+4. ✅ Says: "Implementation complete. Ready for review"
+
+# Session 5 (Review Agent) - EXPECTED BEHAVIOR  
+User: "Test and verify everything works"
+
+Agent: [IMMEDIATE ACTIONS]
+1. ✅ Runs all tests
+2. ✅ Fixes any issues
+3. ✅ Deletes: research-*.md, plan-*.md, progress-*.md
+4. ✅ Updates codebase-todolist.md
+5. ✅ Says: "Task complete and cleaned up"
+```
+
+### ⚠️ CRITICAL: What Went Wrong in Other Sessions
+
+```markdown
+# ❌ WRONG (What happened in failed session)
+User: "Work on feature X"
+Agent: "Let me implement that for you" [SKIPPED RESEARCH]
+Agent: *Starts coding immediately* [NO PLAN CREATED]
+Agent: *Runs out of context* [NO PROGRESS TRACKING]
+Result: INCOMPLETE WORK, LOST PROGRESS
+
+# ✅ CORRECT (What should happen EVERY TIME)
+User: "Work on feature X"  
+Agent: "Starting PHASE 1: RESEARCH"
+Agent: *Creates research-feature-x.md*
+Agent: "Research complete. Start NEW session for planning"
+Result: SYSTEMATIC, COMPLETE IMPLEMENTATION
 ```
 
 ---

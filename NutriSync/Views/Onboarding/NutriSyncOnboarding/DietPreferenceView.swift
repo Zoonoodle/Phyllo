@@ -1,0 +1,139 @@
+//
+//  DietPreferenceView.swift
+//  NutriSync
+//
+//  NutriSync Onboarding Screen 13 - Dark Theme
+//
+
+import SwiftUI
+
+struct DietPreferenceView: View {
+    @State private var selectedDiet = "Balanced"
+    
+    let diets = [
+        ("Balanced", "scale.3d", "Standard distribution of carbs and fat."),
+        ("Low-fat", "arrow.down.circle", "Fat will be reduced to prioritize carb and protein intake."),
+        ("Low-carb", "wheat", "Carbs will be reduced to prioritize fat and protein intake."),
+        ("Keto", "circle.slash", "Carbs will be very restricted to allow for higher fat intake.")
+    ]
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            // Progress bar
+            ProgressBar(totalSteps: 31, currentStep: 16)
+                .padding(.horizontal, 20)
+                .padding(.top, 8)
+                .padding(.bottom, 32)
+            
+            // Title
+            Text("What is your preferred diet?")
+                .font(.system(size: 28, weight: .bold))
+                .foregroundColor(.white)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 40)
+                .padding(.bottom, 32)
+            
+            // Diet options
+            VStack(spacing: 16) {
+                ForEach(diets, id: \.0) { diet, icon, description in
+                    DietOption(
+                        title: diet,
+                        icon: icon,
+                        description: description,
+                        isSelected: selectedDiet == diet
+                    ) {
+                        selectedDiet = diet
+                    }
+                }
+            }
+            .padding(.horizontal, 20)
+            
+            Spacer()
+            
+            // Navigation
+            HStack {
+                Button {
+                    // Back action
+                } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 20, weight: .medium))
+                        .foregroundColor(.white)
+                        .frame(width: 44, height: 44)
+                        .background(Color.white.opacity(0.1))
+                        .clipShape(Circle())
+                }
+                
+                Spacer()
+                
+                Button {
+                    // Next action
+                } label: {
+                    HStack(spacing: 6) {
+                        Text("Next")
+                            .font(.system(size: 17, weight: .semibold))
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 14, weight: .semibold))
+                    }
+                    .foregroundColor(Color.nutriSyncBackground)
+                    .padding(.horizontal, 24)
+                    .frame(height: 44)
+                    .background(Color.white)
+                    .cornerRadius(22)
+                }
+            }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 34)
+        }
+        .background(Color.nutriSyncBackground)
+    }
+}
+
+struct DietOption: View {
+    let title: String
+    let icon: String
+    let description: String
+    let isSelected: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            HStack(alignment: .top, spacing: 16) {
+                // Icon
+                Image(systemName: icon)
+                    .font(.system(size: 24))
+                    .foregroundColor(.white)
+                    .frame(width: 30, height: 30)
+                    .padding(.top, 20)
+                
+                // Text content
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(title)
+                        .font(.system(size: 20, weight: .semibold))
+                        .foregroundColor(.white)
+                    
+                    Text(description)
+                        .font(.system(size: 15))
+                        .foregroundColor(.white.opacity(0.6))
+                        .multilineTextAlignment(.leading)
+                }
+                .padding(.top, 16)
+                .padding(.bottom, 20)
+                
+                Spacer()
+            }
+            .padding(.horizontal, 20)
+            .background(Color.white.opacity(0.03))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(isSelected ? Color.white : Color.white.opacity(0.2), lineWidth: isSelected ? 3 : 1)
+            )
+            .cornerRadius(16)
+        }
+    }
+}
+
+struct DietPreferenceView_Previews: PreviewProvider {
+    static var previews: some View {
+        DietPreferenceView()
+    }
+}

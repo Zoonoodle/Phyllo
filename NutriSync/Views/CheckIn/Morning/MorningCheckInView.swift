@@ -180,8 +180,8 @@ struct MorningCheckInView: View {
                 let profile = try await provider.getUserProfile() ?? UserProfile.defaultProfile
                 let goals = try await provider.getUserGoals() ?? UserGoals.defaultGoals
                 
-                // Generate windows using enhanced service
-                let windowService = WindowGenerationService.shared
+                // Generate windows using AI-enhanced service
+                let windowService = AIWindowGenerationService.shared
                 let windows = try await windowService.generateWindows(
                     profile: profile,
                     checkIn: checkIn,
