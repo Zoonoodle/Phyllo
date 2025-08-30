@@ -42,7 +42,7 @@ struct WindowNameGenerator {
         let isPreWorkout: Bool
         let isPostWorkout: Bool
         let timeOfDay: TimeOfDay
-        let userGoal: UserGoal
+        let userGoal: UserGoals.Goal
         let isFirstMeal: Bool
         let isLastMeal: Bool
     }
@@ -92,7 +92,7 @@ struct WindowNameGenerator {
             return "Pre-Training Energy"
         case .betterSleep:
             return "Active Energy"
-        case .generalHealth:
+        case .maintainWeight, .overallHealth:
             return "Pre-Activity Boost"
         }
     }
@@ -155,7 +155,7 @@ struct WindowNameGenerator {
         case .buildMuscle: goalSuffix = "Growth Window"
         case .improvePerformance: goalSuffix = "Energy Sustainer"
         case .betterSleep: goalSuffix = "Balance Window"
-        case .generalHealth: goalSuffix = "Nourishment"
+        case .maintainWeight, .overallHealth: goalSuffix = "Nourishment"
         }
         
         return "\(timePrefix) \(goalSuffix)"
