@@ -121,7 +121,7 @@ struct NudgeContainer: View {
         }
         .animation(.spring(response: 0.4, dampingFraction: 0.8), value: nudgeManager.activeNudge?.id)
         .sheet(isPresented: $showMorningCheckIn) {
-            MorningCheckInView()
+            MorningCheckInCoordinator()
         }
         .sheet(isPresented: $showPostMealCheckIn) {
             if let meal = postMealCheckInMeal {

@@ -129,7 +129,7 @@ struct AIScheduleView: View {
             )
         }
         .sheet(isPresented: $showMorningCheckIn) {
-            MorningCheckInView()
+            MorningCheckInCoordinator()
         }
         .onChange(of: showMorningCheckIn) { wasShowing, isShowing in
             // When check-in sheet dismisses, show loading while windows generate
