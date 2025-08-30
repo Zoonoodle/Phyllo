@@ -38,7 +38,7 @@ struct ClarificationQuestionsView: View {
                             .replacingOccurrences(of: ".", with: "")
                             .replacingOccurrences(of: ",", with: "")
                         
-                        ClarificationOption(
+                        return ClarificationOption(
                             id: normalizedId,
                             text: aiOption.text,
                             icon: getIconForOption(aiOption.text),
