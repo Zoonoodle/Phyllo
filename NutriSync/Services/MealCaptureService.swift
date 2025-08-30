@@ -191,7 +191,7 @@ class MealCaptureService: ObservableObject {
                             DebugLogger.shared.mealAnalysis("No clarification needed - completing analysis")
                         }
                         // No clarification needed, complete the analysis
-                        let savedMeal = try await dataProvider.completeAnalyzingMeal(
+                        var savedMeal = try await dataProvider.completeAnalyzingMeal(
                             id: analyzingMeal.id.uuidString,
                             result: result
                         )
