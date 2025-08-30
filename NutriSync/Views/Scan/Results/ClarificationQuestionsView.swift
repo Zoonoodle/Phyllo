@@ -29,8 +29,17 @@ struct ClarificationQuestionsView: View {
                     id: index,
                     question: aiQuestion.question,
                     options: aiQuestion.options.map { aiOption in
+                        // Normalize ID to match service-side normalization
+                        let normalizedId = aiOption.text.lowercased()
+                            .replacingOccurrences(of: " ", with: "_")
+                            .replacingOccurrences(of: "(", with: "")
+                            .replacingOccurrences(of: ")", with: "")
+                            .replacingOccurrences(of: "/", with: "_")
+                            .replacingOccurrences(of: ".", with: "")
+                            .replacingOccurrences(of: ",", with: "")
+                        
                         ClarificationOption(
-                            id: aiOption.text.lowercased().replacingOccurrences(of: " ", with: "_"),
+                            id: normalizedId,
                             text: aiOption.text,
                             icon: getIconForOption(aiOption.text),
                             calorieImpact: aiOption.calorieImpact,

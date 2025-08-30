@@ -183,9 +183,9 @@ struct MorningCheckInView: View {
                 // Generate windows using AI-enhanced service
                 let windowService = AIWindowGenerationService.shared
                 let windows = try await windowService.generateWindows(
-                    profile: profile,
+                    for: profile,
                     checkIn: checkIn,
-                    goals: goals
+                    date: Date()
                 )
                 
                 // Save generated windows to Firebase

@@ -10,9 +10,9 @@
 import SwiftUI
 
 struct TimelineTypography {
-    // Hour markers (was 12px → 15px)
-    static let hourLabel = Font.system(size: 15, weight: .medium)
-    static let hourLabelCurrent = Font.system(size: 15, weight: .semibold)
+    // Hour markers (was 12px → 15px → 13px)
+    static let hourLabel = Font.system(size: 13, weight: .medium)
+    static let hourLabelCurrent = Font.system(size: 13, weight: .semibold)
     
     // Window headers (was 13-14px → 16-17px)
     static let windowTitle = Font.system(size: 17, weight: .semibold)

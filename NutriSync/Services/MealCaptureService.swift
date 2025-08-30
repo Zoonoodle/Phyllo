@@ -382,65 +382,269 @@ class MealCaptureService: ObservableObject {
         return (result, metadata)
     }
     
+    // MARK: - Helper Functions for Clarification Matching
+    
+    private func findMatchingOption(in question: ClarificationQuestion, for selectedId: String) -> ClarificationOption? {
+        return question.options.first { option in
+            // Strategy 1: Direct text match
+            if option.text == selectedId { return true }
+            
+            // Strategy 2: Direct ID match (if option has an id field)
+            // Note: Currently ClarificationOption doesn't have an id field, so skipping this
+            
+            // Strategy 3: Normalized ID match
+            let normalizedFromText = normalizeForId(option.text)
+            if normalizedFromText == selectedId.lowercased() { return true }
+            
+            // Strategy 4: Bidirectional partial match for robustness
+            let selectedNormalized = selectedId.lowercased()
+            if normalizedFromText.contains(selectedNormalized) || 
+               selectedNormalized.contains(normalizedFromText) { 
+                return true 
+            }
+            
+            return false
+        }
+    }
+    
+    private func normalizeForId(_ text: String) -> String {
+        return text.lowercased()
+            .replacingOccurrences(of: " ", with: "_")
+            .replacingOccurrences(of: "(", with: "")
+            .replacingOccurrences(of: ")", with: "")
+            .replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: ".", with: "")
+            .replacingOccurrences(of: ",", with: "")
+    }
+    
+    // MARK: - Meal Transformation System
+    
+    private func transformMealBasedOnClarification(
+        original: MealAnalysisResult,
+        clarificationType: String,
+        selectedOption: String,
+        nutritionDeltas: (cal: Int, protein: Double, carbs: Double, fat: Double)
+    ) -> MealAnalysisResult {
+        
+        var transformedName = original.mealName
+        var transformedIngredients = original.ingredients
+        
+        switch clarificationType {
+        case "beverage_type_volume":
+            // Complete replacement for beverages
+            if selectedOption.lowercased().contains("black coffee") {
+                transformedName = "Black Coffee"
+                transformedIngredients = [
+                    .init(
+                        name: "Black Coffee",
+                        amount: extractAmount(from: selectedOption) ?? "12",
+                        unit: "oz",
+                        foodGroup: "Beverage"
+                    )
+                ]
+            } else if selectedOption.lowercased().contains("water") {
+                transformedName = "Water"
+                transformedIngredients = [
+                    .init(
+                        name: "Water",
+                        amount: extractAmount(from: selectedOption) ?? "16",
+                        unit: "oz",
+                        foodGroup: "Beverage"
+                    )
+                ]
+            }
+            
+        case "menu_item_variation":
+            // Update name and ingredients for variations
+            if selectedOption.lowercased().contains("spicy deluxe") {
+                transformedName = transformMenuItemName(original: transformedName, variation: "Spicy Deluxe")
+                transformedIngredients = addDeluxeIngredients(to: transformedIngredients)
+            } else if selectedOption.lowercased().contains("grilled") {
+                transformedName = transformMenuItemName(original: transformedName, variation: "Grilled")
+                // Adjust fat content for grilled vs fried
+            }
+            
+        case "portion_size":
+            // Scale ingredients based on portion
+            let scale = extractPortionScale(from: selectedOption)
+            transformedIngredients = transformedIngredients.map { ingredient in
+                var scaled = ingredient
+                if let amount = Double(ingredient.amount) {
+                    scaled.amount = String(amount * scale)
+                }
+                return scaled
+            }
+            
+        case "cooking_method":
+            // Adjust based on cooking method
+            if selectedOption.lowercased().contains("fried") {
+                // Add oil to ingredients
+                transformedIngredients.append(
+                    .init(
+                        name: "Cooking Oil",
+                        amount: "1",
+                        unit: "tbsp",
+                        foodGroup: "Fats"
+                    )
+                )
+            }
+            
+        default:
+            break
+        }
+        
+        // Apply nutrition deltas and create result
+        return MealAnalysisResult(
+            mealName: transformedName,
+            confidence: original.confidence,
+            ingredients: transformedIngredients,
+            nutrition: .init(
+                calories: max(0, original.nutrition.calories + nutritionDeltas.cal),
+                protein: max(0, original.nutrition.protein + nutritionDeltas.protein),
+                carbs: max(0, original.nutrition.carbs + nutritionDeltas.carbs),
+                fat: max(0, original.nutrition.fat + nutritionDeltas.fat)
+            ),
+            micronutrients: original.micronutrients,
+            clarifications: [],  // Already answered
+            requestedTools: original.requestedTools,
+            brandDetected: original.brandDetected
+        )
+    }
+    
+    // Helper functions for transformation
+    private func extractAmount(from text: String) -> String? {
+        // Extract "12" from "Black coffee (approx. 12 oz / 350 ml)"
+        let pattern = #"(\d+)\s*oz"#
+        if let regex = try? NSRegularExpression(pattern: pattern),
+           let match = regex.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)),
+           let range = Range(match.range(at: 1), in: text) {
+            return String(text[range])
+        }
+        return nil
+    }
+    
+    private func transformMenuItemName(original: String, variation: String) -> String {
+        // Smart name transformation
+        if original.lowercased().contains("sandwich") {
+            return original.replacingOccurrences(of: "Sandwich", with: "\(variation) Sandwich")
+        } else if original.lowercased().contains("burger") {
+            return original.replacingOccurrences(of: "Burger", with: "\(variation) Burger")
+        }
+        return "\(variation) \(original)"
+    }
+    
+    private func addDeluxeIngredients(to ingredients: [MealIngredient]) -> [MealIngredient] {
+        var updated = ingredients
+        
+        // Add typical deluxe ingredients if not present
+        let hasLettuce = ingredients.contains { $0.name.lowercased().contains("lettuce") }
+        let hasTomato = ingredients.contains { $0.name.lowercased().contains("tomato") }
+        let hasCheese = ingredients.contains { $0.name.lowercased().contains("cheese") }
+        
+        if !hasLettuce {
+            updated.append(.init(
+                name: "Lettuce",
+                amount: "1",
+                unit: "leaf",
+                foodGroup: "Vegetables"
+            ))
+        }
+        
+        if !hasTomato {
+            updated.append(.init(
+                name: "Tomato",
+                amount: "2",
+                unit: "slices",
+                foodGroup: "Vegetables"
+            ))
+        }
+        
+        if !hasCheese {
+            updated.append(.init(
+                name: "American Cheese",
+                amount: "1",
+                unit: "slice",
+                foodGroup: "Dairy"
+            ))
+        }
+        
+        return updated
+    }
+    
+    private func extractPortionScale(from text: String) -> Double {
+        if text.lowercased().contains("small") { return 0.75 }
+        if text.lowercased().contains("large") { return 1.25 }
+        if text.lowercased().contains("extra large") { return 1.5 }
+        if text.lowercased().contains("half") { return 0.5 }
+        return 1.0
+    }
+    
     /// Handle clarification answers
     func completeWithClarification(
         analyzingMeal: AnalyzingMeal,
         originalResult: MealAnalysisResult,
         clarificationAnswers: [String: String]
     ) async throws {
-        // Compute adjusted nutrition based on clarification answers.
-        // Keys are currently stored as question indices in string form. We'll map them back to options.
-        var calorieDelta = 0
-        var proteinDelta: Double = 0
-        var carbDelta: Double = 0
-        var fatDelta: Double = 0
-
+        
+        guard !clarificationAnswers.isEmpty else { 
+            // No clarifications to apply, save original
+            try await dataProvider.completeAnalyzingMeal(
+                id: analyzingMeal.id.uuidString,
+                result: originalResult
+            )
+            return
+        }
+        
+        var adjustedResult = originalResult
         var appliedClarifications: [String: String] = [:] // clarificationType -> option text
-
+        
         for (key, selectedOptionId) in clarificationAnswers {
             guard let questionIndex = Int(key),
                   originalResult.clarifications.indices.contains(questionIndex) else { continue }
             let question = originalResult.clarifications[questionIndex]
-            // Match by exact text or case-insensitive ID fallback
-            let matched = question.options.first { opt in
-                let normalized = opt.text.lowercased().replacingOccurrences(of: " ", with: "_")
-                return opt.text == selectedOptionId || normalized == selectedOptionId.lowercased()
+            
+            // Use new robust matching
+            guard let matchedOption = findMatchingOption(in: question, for: selectedOptionId) else {
+                print("⚠️ No matching option found for '\(selectedOptionId)' in question '\(question.question)'")
+                continue
             }
-            if let opt = matched {
-                calorieDelta += opt.calorieImpact
-                proteinDelta += opt.proteinImpact ?? 0
-                carbDelta += opt.carbImpact ?? 0
-                fatDelta += opt.fatImpact ?? 0
-                appliedClarifications[question.clarificationType] = opt.text
-            }
+            
+            // Calculate nutrition deltas
+            let deltas = (
+                cal: matchedOption.calorieImpact,
+                protein: matchedOption.proteinImpact ?? 0,
+                carbs: matchedOption.carbImpact ?? 0,
+                fat: matchedOption.fatImpact ?? 0
+            )
+            
+            // Apply transformation based on clarification type
+            adjustedResult = transformMealBasedOnClarification(
+                original: adjustedResult,
+                clarificationType: question.clarificationType,
+                selectedOption: matchedOption.text,
+                nutritionDeltas: deltas
+            )
+            
+            appliedClarifications[question.clarificationType] = matchedOption.text
+            
+            // Debug logging
+            print("📊 Clarification Debug:")
+            print("   Question: \(question.question)")
+            print("   Selected ID: \(selectedOptionId)")
+            print("   Matched: \(matchedOption.text)")
+            print("   Type: \(question.clarificationType)")
+            print("   Before: \(originalResult.mealName) - \(originalResult.nutrition.calories) cal")
+            print("   After: \(adjustedResult.mealName) - \(adjustedResult.nutrition.calories) cal")
+            print("   Deltas: cal: \(deltas.cal), protein: \(deltas.protein), carbs: \(deltas.carbs), fat: \(deltas.fat)")
+            print("   Ingredients: \(adjustedResult.ingredients.count) items")
         }
-
-        // Apply deltas
-        let adjustedCalories = max(0, originalResult.nutrition.calories + calorieDelta)
-        let adjustedProtein = max(0, originalResult.nutrition.protein + proteinDelta)
-        let adjustedCarbs = max(0, originalResult.nutrition.carbs + carbDelta)
-        let adjustedFat = max(0, originalResult.nutrition.fat + fatDelta)
-
-        // Build adjusted result to flow through existing save path
-        let adjustedResult = MealAnalysisResult(
-            mealName: originalResult.mealName,
-            confidence: originalResult.confidence,
-            ingredients: originalResult.ingredients,
-            nutrition: .init(
-                calories: adjustedCalories,
-                protein: adjustedProtein,
-                carbs: adjustedCarbs,
-                fat: adjustedFat
-            ),
-            micronutrients: originalResult.micronutrients,
-            clarifications: originalResult.clarifications,
-            requestedTools: originalResult.requestedTools,
-            brandDetected: originalResult.brandDetected
-        )
-
+        
+        // Log final result
         Task { @MainActor in
-            DebugLogger.shared.mealAnalysis("Applied clarification deltas -> cal: \(calorieDelta), P: \(proteinDelta), C: \(carbDelta), F: \(fatDelta)")
-            DebugLogger.shared.mealAnalysis("Adjusted totals -> \(adjustedCalories) cal, \(String(format: "%.1f", adjustedProtein))P, \(String(format: "%.1f", adjustedCarbs))C, \(String(format: "%.1f", adjustedFat))F")
+            DebugLogger.shared.mealAnalysis("✅ Applied \(appliedClarifications.count) clarifications")
+            DebugLogger.shared.mealAnalysis("   Final meal: \(adjustedResult.mealName)")
+            DebugLogger.shared.mealAnalysis("   Final nutrition: \(adjustedResult.nutrition.calories) cal, \(String(format: "%.1f", adjustedResult.nutrition.protein))P, \(String(format: "%.1f", adjustedResult.nutrition.carbs))C, \(String(format: "%.1f", adjustedResult.nutrition.fat))F")
+            DebugLogger.shared.mealAnalysis("   Ingredients: \(adjustedResult.ingredients.map { $0.name }.joined(separator: ", "))")
         }
 
         // Save with adjusted result
