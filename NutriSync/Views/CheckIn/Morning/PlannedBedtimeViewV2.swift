@@ -50,7 +50,7 @@ struct PlannedBedtimeViewV2: View {
                     .padding()
                     .background(
                         RoundedRectangle(cornerRadius: 16)
-                            .fill(Color.phylloCard)
+                            .fill(Color.nutriSyncElevated.opacity(0.5))
                     )
                     .onChange(of: viewModel.plannedBedtime) { oldValue, newValue in
                         hapticGenerator.impactOccurred()

@@ -44,7 +44,7 @@ struct TimeScrollSelector: View {
                 .frame(height: 300)
                 .background(
                     RoundedRectangle(cornerRadius: 16)
-                        .fill(Color.phylloCard)
+                        .fill(Color.nutriSyncElevated.opacity(0.5))
                 )
                 .onAppear {
                     generateTimeOptions()
@@ -85,13 +85,17 @@ struct TimeScrollSelector: View {
     private func findClosestTime(to target: Date) -> Date? {
         let calendar = Calendar.current
         let targetComponents = calendar.dateComponents([.hour, .minute], from: target)
+        let targetMinutes = (targetComponents.hour ?? 0) * 60 + (targetComponents.minute ?? 0)
         
         return timeOptions.min { time1, time2 in
             let comp1 = calendar.dateComponents([.hour, .minute], from: time1)
             let comp2 = calendar.dateComponents([.hour, .minute], from: time2)
             
-            let diff1 = abs((comp1.hour ?? 0) * 60 + (comp1.minute ?? 0) - ((targetComponents.hour ?? 0) * 60 + (targetComponents.minute ?? 0)))
-            let diff2 = abs((comp2.hour ?? 0) * 60 + (comp2.minute ?? 0) - ((targetComponents.hour ?? 0) * 60 + (targetComponents.minute ?? 0)))
+            let minutes1 = (comp1.hour ?? 0) * 60 + (comp1.minute ?? 0)
+            let minutes2 = (comp2.hour ?? 0) * 60 + (comp2.minute ?? 0)
+            
+            let diff1 = abs(minutes1 - targetMinutes)
+            let diff2 = abs(minutes2 - targetMinutes)
             
             return diff1 < diff2
         }

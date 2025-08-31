@@ -50,11 +50,11 @@ struct PhylloSlider: View {
             HStack {
                 Text(lowLabel)
                     .font(.caption)
-                    .foregroundColor(.phylloTextSecondary)
+                    .foregroundColor(.nutriSyncTextSecondary)
                 Spacer()
                 Text(highLabel)
                     .font(.caption)
-                    .foregroundColor(.phylloTextSecondary)
+                    .foregroundColor(.nutriSyncTextSecondary)
             }
         }
         .padding()

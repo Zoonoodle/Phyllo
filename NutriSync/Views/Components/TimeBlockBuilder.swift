@@ -214,6 +214,7 @@ struct TimelinePreview: View {
 struct CompactTimePicker: View {
     @Binding var selectedTime: Date
     @Environment(\.dismiss) private var dismiss
+    private let hapticGenerator = UIImpactFeedbackGenerator(style: .light)
     
     var body: some View {
         NavigationView {
