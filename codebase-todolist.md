@@ -20,11 +20,11 @@ Last Updated: 2025-08-29
   - Complexity: High
   - Note: Current 2.0 Flash Thinking less accurate than 2.5 Pro
   
-- [ ] **Check-In Views Polish** - UI/UX improvements
-  - Status: Not Started
-  - Sessions Required: 2-3
+- [x] **Check-In Views Polish** - UI/UX improvements
+  - Status: COMPLETED (2025-08-31)
+  - Sessions Required: 4 (research, planning, implementation, continuation)
   - Complexity: Medium
-  - Note: REQUIRES heavy user input for design decisions
+  - Implemented: Sliders with haptics, time selectors, activity categories, TimeBlockBuilder
   
 - [ ] **Missed Windows View** - Handle skipped meal scenarios
   - Status: Not Started
@@ -101,6 +101,15 @@ Last Updated: 2025-08-29
 
 ## 🔄 Completed Tasks
 
+### 2025-08-31
+- [x] Morning Check-In UI improvements completed
+  - Created PhylloSlider with haptic feedback
+  - Created TimeScrollSelector for past time selection
+  - Created MorningActivity enum with 10 actionable categories
+  - Created TimeBlockBuilder for activity scheduling
+  - Updated all V2 views with new components
+  - Removed 2 deprecated V1 files
+
 ### 2025-08-30
 - [x] Onboarding screens fully converted (31 screens, no scrolling)
 - [x] Split content-heavy screens for better UX
@@ -119,10 +128,10 @@ Last Updated: 2025-08-29
 ## 📊 Progress Metrics
 
 **Total Tasks:** 17
-**Completed:** 10
-**In Progress:** 1
+**Completed:** 11
+**In Progress:** 0
 **Not Started:** 6
-**Completion Rate:** 59%
+**Completion Rate:** 65%
 
 ### TestFlight Readiness: 20%
 - [ ] Core features complete
