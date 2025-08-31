@@ -24,14 +24,8 @@ struct WakeTimeSelectionViewV2: View {
             },
             canGoNext: true
         ) {
-            VStack(spacing: 40) {
-                // Sun icon for morning
-                Image(systemName: "sun.max.fill")
-                    .font(.system(size: 64))
-                    .foregroundColor(.nutriSyncAccent)
-                    .padding(.top, 20)
-                
-                // Time scroll selector for past times
+            VStack(spacing: 20) {
+                // Time scroll selector for past times - increased height
                 TimeScrollSelector(
                     selectedTime: $selectedWakeTime,
                     hoursBack: 12,  // Show past 12 hours
@@ -39,6 +33,7 @@ struct WakeTimeSelectionViewV2: View {
                     autoScrollTarget: getDefaultWakeTime()
                 )
                 .padding(.horizontal, 20)
+                .padding(.top, 40)  // Add top padding to better position the selector
             }
         }
         .onAppear {

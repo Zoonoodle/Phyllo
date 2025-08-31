@@ -25,43 +25,40 @@ struct EnergyLevelViewV2: View {
             canGoNext: true
         ) {
             VStack(spacing: 40) {
-                // Energy display
+                Spacer()
+                
+                // Energy display - positioned like sleep hours
                 VStack(spacing: 12) {
                     Image(systemName: energyIcon)
                         .font(.system(size: 72))
                         .foregroundColor(.nutriSyncAccent)
                     
                     Text(energyLabel)
-                        .font(.system(size: 32, weight: .bold))
+                        .font(.system(size: 28, weight: .bold))
                         .foregroundColor(.white)
                     
                     Text("Energy Level")
                         .font(.system(size: 18))
                         .foregroundColor(.white.opacity(0.6))
                 }
-                .padding(.top, 40)
                 
-                // Energy slider
-                VStack(spacing: 16) {
-                    Slider(value: $energy, in: 1...10, step: 1)
-                        .accentColor(.nutriSyncAccent)
-                        .padding(.horizontal, 20)
-                    
-                    // Labels
-                    HStack {
-                        Text("Exhausted")
-                            .font(.system(size: 14))
-                            .foregroundColor(.white.opacity(0.5))
-                        
-                        Spacer()
-                        
-                        Text("Excellent")
-                            .font(.system(size: 14))
-                            .foregroundColor(.white.opacity(0.5))
-                    }
-                    .padding(.horizontal, 20)
-                }
+                // Energy slider using PhylloSlider with green gradient
+                PhylloSlider(
+                    value: $energy,
+                    range: 1...10,
+                    step: 1,
+                    label: "Energy Level",
+                    gradient: LinearGradient(
+                        colors: [Color.nutriSyncAccent.opacity(0.3), Color.nutriSyncAccent.opacity(0.8)],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    ),
+                    lowLabel: "Exhausted",
+                    highLabel: "Excellent"
+                )
                 .padding(.horizontal, 20)
+                
+                Spacer()
             }
         }
         .onAppear {

@@ -104,12 +104,16 @@ class NudgeManager: ObservableObject {
             let today = Calendar.current.startOfDay(for: TimeProvider.shared.currentTime)
             let checkIn = try await DataSourceProvider.shared.provider.getMorningCheckIn(for: today)
             
-            // Only show morning nudge between 6 AM and 11 AM
-            let hour = Calendar.current.component(.hour, from: TimeProvider.shared.currentTime)
-            if checkIn == nil && hour >= 6 && hour < 11 {
-                // Check if we haven't shown this nudge today
+            // Show morning nudge if not completed, regardless of time
+            // This makes it mandatory
+            if checkIn == nil {
+                // Check if we haven't shown this nudge in the last 30 minutes
                 let lastShown = UserDefaults.standard.object(forKey: "lastMorningNudgeDate") as? Date ?? Date.distantPast
-                if !Calendar.current.isDateInToday(lastShown) {
+                let timeSinceLastShown = Date().timeIntervalSince(lastShown)
+                
+                // Show again if it's been more than 30 minutes since last shown
+                // This ensures the nudge keeps appearing until completed
+                if timeSinceLastShown > 1800 { // 30 minutes
                     await MainActor.run {
                         self.triggerNudge(.morningCheckIn)
                         UserDefaults.standard.set(Date(), forKey: "lastMorningNudgeDate")

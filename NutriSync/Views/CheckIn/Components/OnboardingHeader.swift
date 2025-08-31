@@ -26,6 +26,7 @@ struct OnboardingHeader: View {
                 .font(.system(size: 28, weight: .bold))
                 .foregroundColor(.white)
                 .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
                 .padding(.horizontal, 20)
                 .padding(.bottom, 12)
             
@@ -48,20 +49,9 @@ struct OnboardingProgressBar: View {
     var body: some View {
         HStack(spacing: 6) {
             ForEach(1...totalSteps, id: \.self) { step in
-                if step == 1 {
-                    Rectangle()
-                        .fill(step <= currentStep ? Color.white : Color.white.opacity(0.2))
-                        .frame(height: 3)
-                } else {
-                    HStack(spacing: 6) {
-                        Rectangle()
-                            .fill(Color.white.opacity(0.2))
-                            .frame(width: 3, height: 3)
-                        Rectangle()
-                            .fill(step <= currentStep ? Color.white : Color.white.opacity(0.2))
-                            .frame(height: 3)
-                    }
-                }
+                Rectangle()
+                    .fill(step <= currentStep ? Color.white : Color.white.opacity(0.2))
+                    .frame(height: 3)
             }
         }
         .frame(height: 3)

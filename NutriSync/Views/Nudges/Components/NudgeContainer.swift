@@ -33,6 +33,8 @@ struct NudgeContainer: View {
                             showMorningCheckIn = true
                         },
                         onDismiss: {
+                            // Don't allow dismissal - must complete check-in
+                            showMorningCheckIn = true
                             nudgeManager.dismissCurrentNudge()
                         }
                     )
@@ -121,7 +123,8 @@ struct NudgeContainer: View {
         }
         .animation(.spring(response: 0.4, dampingFraction: 0.8), value: nudgeManager.activeNudge?.id)
         .sheet(isPresented: $showMorningCheckIn) {
-            MorningCheckInCoordinator()
+            MorningCheckInCoordinator(isMandatory: true)
+                .interactiveDismissDisabled(true) // Prevent swipe down dismissal
         }
         .sheet(isPresented: $showPostMealCheckIn) {
             if let meal = postMealCheckInMeal {

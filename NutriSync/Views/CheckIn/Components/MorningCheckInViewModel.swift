@@ -69,6 +69,8 @@ class MorningCheckInViewModel {
     
     func completeCheckIn() {
         saveCheckIn()
+        // Move to the next step after the last one to trigger dismissal
+        currentStep += 1
     }
     
     func saveCheckIn() {
@@ -80,7 +82,7 @@ class MorningCheckInViewModel {
         dayFocus = Set(selectedActivities.compactMap { activity in
             switch activity {
             case .work, .meeting: return MorningCheckIn.DayFocus.work
-            case .rest: return MorningCheckIn.DayFocus.relaxing
+            case .selfCare: return MorningCheckIn.DayFocus.relaxing
             case .socialEvent: return MorningCheckIn.DayFocus.friends
             default: return nil
             }

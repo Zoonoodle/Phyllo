@@ -36,7 +36,7 @@ struct TimeBlockBuilder: View {
                     Text("Start")
                         .font(.subheadline)
                         .foregroundColor(.white.opacity(0.7))
-                        .frame(width: 50, alignment: .leading)
+                        .frame(width: 70, alignment: .leading)
                     
                     Button(action: {
                         showingTimePicker = true
@@ -69,7 +69,7 @@ struct TimeBlockBuilder: View {
                     Text("Duration")
                         .font(.subheadline)
                         .foregroundColor(.white.opacity(0.7))
-                        .frame(width: 50, alignment: .leading)
+                        .frame(width: 70, alignment: .leading)
                     
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 8) {
@@ -102,7 +102,7 @@ struct TimeBlockBuilder: View {
                     duration: duration,
                     activity: activity
                 )
-                .frame(height: 60)
+                .frame(height: 80)
             }
         }
         .padding()
@@ -136,57 +136,90 @@ struct TimelinePreview: View {
         Calendar.current.date(byAdding: .minute, value: duration, to: startTime) ?? startTime
     }
     
+    private var timeFormatter: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "h:mm a"
+        return formatter
+    }
+    
     var body: some View {
-        GeometryReader { geometry in
-            ZStack(alignment: .leading) {
-                // Background timeline
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(Color.white.opacity(0.03))
+        VStack(alignment: .leading, spacing: 8) {
+            // Time display above timeline
+            HStack {
+                Text(timeFormatter.string(from: startTime))
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.white)
                 
-                // Time block visualization
-                HStack(spacing: 0) {
-                    // Start time offset
-                    Color.clear
-                        .frame(width: calculateOffset(in: geometry.size.width))
-                    
-                    // Activity block
-                    RoundedRectangle(cornerRadius: 6)
-                        .fill(activity.color.opacity(0.3))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 6)
-                                .stroke(activity.color, lineWidth: 2)
-                        )
-                        .frame(width: calculateWidth(in: geometry.size.width))
-                        .overlay(
-                            VStack(spacing: 2) {
-                                Text(startTime, format: .dateTime.hour().minute())
-                                    .font(.caption2)
-                                    .foregroundColor(.white.opacity(0.9))
-                                
-                                Text("→ \(endTime, format: .dateTime.hour().minute())")
-                                    .font(.caption2)
-                                    .foregroundColor(.white.opacity(0.7))
-                            }
-                            .padding(.horizontal, 4)
-                        )
-                    
-                    Spacer()
-                }
+                Image(systemName: "arrow.right")
+                    .font(.system(size: 10))
+                    .foregroundColor(.white.opacity(0.5))
                 
-                // Hour markers
-                HStack(spacing: 0) {
-                    ForEach(6..<23, id: \.self) { hour in
-                        if hour % 3 == 0 {
-                            VStack {
-                                Spacer()
-                                Text("\(hour):00")
-                                    .font(.system(size: 8))
+                Text(timeFormatter.string(from: endTime))
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.white)
+                
+                Spacer()
+                
+                Text("\(formatDuration(duration))")
+                    .font(.system(size: 12))
+                    .foregroundColor(.white.opacity(0.6))
+            }
+            
+            // Simplified timeline bar
+            GeometryReader { geometry in
+                ZStack(alignment: .topLeading) {
+                    // Background with grid lines
+                    HStack(spacing: 0) {
+                        ForEach(0..<9, id: \.self) { index in
+                            Rectangle()
+                                .fill(Color.white.opacity(0.02))
+                                .overlay(
+                                    Rectangle()
+                                        .fill(Color.white.opacity(0.05))
+                                        .frame(width: 1),
+                                    alignment: .leading
+                                )
+                        }
+                    }
+                    
+                    // Activity bar
+                    HStack(spacing: 0) {
+                        // Offset spacer
+                        Color.clear
+                            .frame(width: calculateOffset(in: geometry.size.width))
+                        
+                        // Activity block - simple and clean
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(
+                                LinearGradient(
+                                    colors: [
+                                        activity.color.opacity(0.4),
+                                        activity.color.opacity(0.6)
+                                    ],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                            .frame(width: calculateWidth(in: geometry.size.width), height: 24)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 4)
+                                    .strokeBorder(activity.color, lineWidth: 1.5)
+                            )
+                        
+                        Spacer()
+                    }
+                    .padding(.vertical, 6)
+                    
+                    // Hour labels below
+                    VStack {
+                        Spacer()
+                        HStack(spacing: 0) {
+                            ForEach([6, 9, 12, 15, 18, 21], id: \.self) { hour in
+                                Text(hour == 12 ? "12pm" : hour < 12 ? "\(hour)am" : "\(hour-12)pm")
+                                    .font(.system(size: 9))
                                     .foregroundColor(.white.opacity(0.3))
+                                    .frame(maxWidth: .infinity, alignment: .leading)
                             }
-                            .frame(width: geometry.size.width / 17)
-                        } else {
-                            Color.clear
-                                .frame(width: geometry.size.width / 17)
                         }
                     }
                 }
@@ -207,6 +240,16 @@ struct TimelinePreview: View {
     private func calculateWidth(in totalWidth: CGFloat) -> CGFloat {
         let totalMinutesInDay = 17 * 60 // 6 AM to 11 PM
         return min(totalWidth, (CGFloat(duration) / CGFloat(totalMinutesInDay)) * totalWidth)
+    }
+    
+    private func formatDuration(_ minutes: Int) -> String {
+        if minutes < 60 {
+            return "\(minutes)m"
+        } else if minutes % 60 == 0 {
+            return "\(minutes/60)h"
+        } else {
+            return "\(minutes/60)h \(minutes%60)m"
+        }
     }
 }
 

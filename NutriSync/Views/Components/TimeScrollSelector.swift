@@ -41,7 +41,7 @@ struct TimeScrollSelector: View {
                     }
                     .padding(.horizontal)
                 }
-                .frame(height: 300)
+                .frame(height: 400)
                 .background(
                     RoundedRectangle(cornerRadius: 16)
                         .fill(Color.nutriSyncElevated.opacity(0.5))
@@ -65,10 +65,40 @@ struct TimeScrollSelector: View {
         let calendar = Calendar.current
         var options: [Date] = []
         
+        // Add "Now" as the first option
+        options.append(now)
+        
+        // Get current time components
+        let currentComponents = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: now)
+        let currentMinute = currentComponents.minute ?? 0
+        
+        // Calculate the most recent time divisible by 5
+        let roundedMinute: Int
+        if currentMinute % 5 == 0 {
+            // If already divisible by 5, start from 15 minutes ago
+            roundedMinute = currentMinute - 15
+        } else {
+            // Round down to nearest 5
+            roundedMinute = (currentMinute / 5) * 5
+        }
+        
+        // Create the starting point
+        var startComponents = currentComponents
+        startComponents.minute = roundedMinute
+        
+        guard let startTime = calendar.date(from: startComponents) else {
+            timeOptions = options
+            return
+        }
+        
+        // Generate times going backwards in 15-minute intervals
         let totalIntervals = (hoursBack * 60) / interval
         for i in 0..<totalIntervals {
-            if let time = calendar.date(byAdding: .minute, value: -interval * i, to: now) {
-                options.append(time)
+            if let time = calendar.date(byAdding: .minute, value: -interval * i, to: startTime) {
+                // Don't add times that are in the future (except "Now")
+                if time <= now {
+                    options.append(time)
+                }
             }
         }
         
@@ -107,7 +137,10 @@ struct TimeScrollSelector: View {
         let hours = Int(interval / 3600)
         let minutes = Int((interval.truncatingRemainder(dividingBy: 3600)) / 60)
         
-        if hours > 0 {
+        // Check if this is the "Now" option (within 1 minute)
+        if interval < 60 {
+            return "Now"
+        } else if hours > 0 {
             if minutes > 0 {
                 return "\(hours)h \(minutes)m ago"
             } else {

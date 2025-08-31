@@ -13,6 +13,11 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         return true
     }
     
+    func application(_ application: UIApplication, supportedInterfaceOrientationsFor window: UIWindow?) -> UIInterfaceOrientationMask {
+        // Lock app to portrait orientation only
+        return .portrait
+    }
+    
     func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
         // Convert token to string
         let tokenParts = deviceToken.map { data in String(format: "%02.2hhx", data) }

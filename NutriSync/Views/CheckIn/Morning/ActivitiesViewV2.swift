@@ -109,7 +109,7 @@ struct ActivitiesViewV2: View {
                             // Visual timeline showing all blocks
                             if activityBlocks.count > 1 {
                                 DayTimeline(blocks: activityBlocks)
-                                    .frame(height: 100)
+                                    .frame(height: 200)
                                     .padding(.top, 8)
                             }
                         }
@@ -342,38 +342,87 @@ struct ActivityTimeBlock: Identifiable {
     let activity: MorningActivity
     var startTime: Date
     var duration: Int // minutes
+    
+    var endTime: Date {
+        Calendar.current.date(byAdding: .minute, value: duration, to: startTime) ?? startTime
+    }
 }
 
 // MARK: - Day Timeline Visualization
 struct DayTimeline: View {
     let blocks: [ActivityTimeBlock]
     
+    private var timeFormatter: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "h:mm a"
+        return formatter
+    }
+    
     var body: some View {
-        GeometryReader { geometry in
-            ZStack(alignment: .topLeading) {
-                // Background with hour markers
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color.white.opacity(0.03))
-                
-                // Hour markers
-                HStack(spacing: 0) {
-                    ForEach(6..<23, id: \.self) { hour in
-                        VStack {
-                            if hour % 3 == 0 {
-                                Text("\(hour):00")
-                                    .font(.system(size: 10))
-                                    .foregroundColor(.white.opacity(0.3))
-                                Spacer()
-                            }
-                        }
-                        .frame(width: geometry.size.width / 17)
+        VStack(alignment: .leading, spacing: 12) {
+            // Activity legend above timeline
+            VStack(alignment: .leading, spacing: 6) {
+                ForEach(blocks) { block in
+                    HStack(spacing: 8) {
+                        Circle()
+                            .fill(block.activity.color)
+                            .frame(width: 8, height: 8)
+                        
+                        Text(block.activity.rawValue)
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(.white)
+                        
+                        Text("(\(timeFormatter.string(from: block.startTime)) - \(timeFormatter.string(from: block.endTime)))")
+                            .font(.system(size: 11))
+                            .foregroundColor(.white.opacity(0.6))
                     }
                 }
-                .padding(.top, 4)
-                
-                // Activity blocks
-                ForEach(blocks) { block in
-                    TimelineBlock(block: block, totalWidth: geometry.size.width)
+            }
+            .padding(.horizontal, 8)
+            
+            // Timeline visualization
+            GeometryReader { geometry in
+                ZStack(alignment: .topLeading) {
+                    // Background with vertical grid lines
+                    HStack(spacing: 0) {
+                        ForEach(0..<9, id: \.self) { _ in
+                            Rectangle()
+                                .fill(Color.white.opacity(0.02))
+                                .overlay(
+                                    Rectangle()
+                                        .fill(Color.white.opacity(0.05))
+                                        .frame(width: 1),
+                                    alignment: .leading
+                                )
+                        }
+                    }
+                    .cornerRadius(8)
+                    
+                    // Activity blocks - stacked vertically
+                    VStack(spacing: 4) {
+                        ForEach(Array(blocks.enumerated()), id: \.element.id) { index, block in
+                            TimelineBlock(
+                                block: block,
+                                totalWidth: geometry.size.width,
+                                verticalOffset: CGFloat(index * 20)
+                            )
+                        }
+                    }
+                    .padding(.top, 12)
+                    
+                    // Hour labels at bottom
+                    VStack {
+                        Spacer()
+                        HStack(spacing: 0) {
+                            ForEach([6, 9, 12, 15, 18, 21], id: \.self) { hour in
+                                Text(hour == 12 ? "12pm" : hour < 12 ? "\(hour)am" : "\(hour-12)pm")
+                                    .font(.system(size: 10))
+                                    .foregroundColor(.white.opacity(0.4))
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                        }
+                        .padding(.horizontal, 4)
+                    }
                 }
             }
         }
@@ -383,6 +432,7 @@ struct DayTimeline: View {
 struct TimelineBlock: View {
     let block: ActivityTimeBlock
     let totalWidth: CGFloat
+    let verticalOffset: CGFloat
     
     private var offset: CGFloat {
         let calendar = Calendar.current
@@ -399,21 +449,23 @@ struct TimelineBlock: View {
     }
     
     var body: some View {
-        RoundedRectangle(cornerRadius: 6)
-            .fill(block.activity.color.opacity(0.3))
-            .overlay(
-                RoundedRectangle(cornerRadius: 6)
-                    .stroke(block.activity.color, lineWidth: 2)
+        RoundedRectangle(cornerRadius: 4)
+            .fill(
+                LinearGradient(
+                    colors: [
+                        block.activity.color.opacity(0.4),
+                        block.activity.color.opacity(0.6)
+                    ],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
             )
-            .frame(width: width, height: 30)
-            .offset(x: offset, y: 35)
             .overlay(
-                Text(block.activity.rawValue)
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundColor(.white)
-                    .lineLimit(1)
-                    .offset(x: offset + 4, y: 35)
+                RoundedRectangle(cornerRadius: 4)
+                    .strokeBorder(block.activity.color, lineWidth: 1.5)
             )
+            .frame(width: width, height: 16)
+            .offset(x: offset, y: verticalOffset)
     }
 }
 

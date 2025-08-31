@@ -77,28 +77,30 @@ struct ActivityButtonV2: View {
             onToggle()
         }) {
             VStack(spacing: 8) {
-                Image(systemName: activity.icon)
-                    .font(.system(size: 24))
-                    .foregroundColor(isSelected ? .white : .white.opacity(isDisabled ? 0.3 : 0.5))
-                    .frame(width: 44, height: 44)
-                    .background(
-                        Circle()
-                            .fill(isSelected ? activity.color.opacity(0.8) : Color.white.opacity(isDisabled ? 0.03 : 0.05))
-                    )
-                
-                VStack(spacing: 2) {
-                    Text(activity.rawValue)
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundColor(isSelected ? .white : .white.opacity(isDisabled ? 0.3 : 0.7))
+                // Icon circle - larger and cleaner like DayFocusSelectionView
+                ZStack {
+                    Circle()
+                        .fill(isSelected ? Color.nutriSyncAccent : Color.white.opacity(0.1))
+                        .frame(width: 72, height: 72)
                     
-                    if activity.defaultDuration > 0 {
-                        Text("\(activity.defaultDuration) min")
-                            .font(.system(size: 9))
-                            .foregroundColor(isSelected ? .white.opacity(0.8) : .white.opacity(isDisabled ? 0.2 : 0.4))
+                    Image(systemName: activity.icon)
+                        .font(.system(size: 28))
+                        .foregroundColor(isSelected ? Color.black : Color.white.opacity(0.7))
+                    
+                    // Selection ring
+                    if isSelected {
+                        Circle()
+                            .stroke(Color.nutriSyncAccent, lineWidth: 3)
+                            .frame(width: 76, height: 76)
                     }
                 }
+                
+                // Label
+                Text(activity.rawValue)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(isSelected ? Color.white : Color.nutriSyncTextSecondary)
             }
-            .opacity(isDisabled && !isSelected ? 0.5 : 1.0)
+            .opacity(isDisabled && !isSelected ? 0.4 : 1.0)
         }
         .disabled(isDisabled)
         .scaleEffect(isSelected ? 1.05 : 1.0)

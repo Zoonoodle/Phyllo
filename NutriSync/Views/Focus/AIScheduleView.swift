@@ -129,7 +129,8 @@ struct AIScheduleView: View {
             )
         }
         .sheet(isPresented: $showMorningCheckIn) {
-            MorningCheckInCoordinator()
+            MorningCheckInCoordinator(isMandatory: viewModel.mealWindows.isEmpty)
+                .interactiveDismissDisabled(viewModel.mealWindows.isEmpty) // Can't dismiss if no windows
         }
         .onChange(of: showMorningCheckIn) { wasShowing, isShowing in
             // When check-in sheet dismisses, show loading while windows generate
@@ -137,10 +138,34 @@ struct AIScheduleView: View {
                 // User completed or dismissed check-in
                 viewModel.isGeneratingWindows = true
                 
-                // Monitor for windows to appear
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    // Start checking for windows
-                    checkForWindowGeneration()
+                // Trigger window generation
+                Task {
+                    // Get the latest morning check-in data
+                    if let checkIn = CheckInManager.shared.getLatestMorningCheckIn() {
+                        // Convert to the format expected by ScheduleViewModel
+                        let checkInData = MorningCheckInData(
+                            date: checkIn.date,
+                            wakeTime: checkIn.wakeTime,
+                            plannedBedtime: checkIn.plannedBedtime,
+                            sleepQuality: checkIn.sleepQuality,
+                            energyLevel: checkIn.energyLevel,
+                            hungerLevel: checkIn.hungerLevel,
+                            dayFocus: checkIn.dayFocus,
+                            morningMood: checkIn.morningMood,
+                            plannedActivities: checkIn.plannedActivities,
+                            windowPreference: checkIn.windowPreference,
+                            hasRestrictions: checkIn.hasRestrictions,
+                            restrictions: checkIn.restrictions
+                        )
+                        
+                        // Save check-in and generate windows
+                        await viewModel.legacyViewModel.completeMorningCheckIn(checkInData)
+                    }
+                    
+                    // Monitor for windows to appear
+                    await MainActor.run {
+                        checkForWindowGeneration()
+                    }
                 }
             }
         }
