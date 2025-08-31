@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct TimeScrollSelector: View {
+    private let hapticGenerator = UIImpactFeedbackGenerator(style: .light)
+    
     @Binding var selectedTime: Date
     let hoursBack: Int
     let interval: Int
@@ -20,7 +22,7 @@ struct TimeScrollSelector: View {
         VStack(spacing: 16) {
             Text("Select Time")
                 .font(.headline)
-                .foregroundColor(.phylloText)
+                .foregroundColor(.nutriSyncTextPrimary)
             
             ScrollViewReader { proxy in
                 ScrollView {
@@ -32,7 +34,7 @@ struct TimeScrollSelector: View {
                                 relativeTime: relativeTimeString(for: time)
                             ) {
                                 selectedTime = time
-                                HapticManager.shared.impact(style: .light)
+                                hapticGenerator.impactOccurred()
                             }
                             .id(time)
                         }
@@ -41,7 +43,7 @@ struct TimeScrollSelector: View {
                 }
                 .frame(height: 300)
                 .background(
-                    RoundedRectangle(cornerRadius: PhylloDesignSystem.cornerRadius)
+                    RoundedRectangle(cornerRadius: 16)
                         .fill(Color.phylloCard)
                 )
                 .onAppear {
@@ -133,18 +135,18 @@ struct TimeOptionRow: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(timeFormatter.string(from: time))
                         .font(.system(size: 18, weight: isSelected ? .semibold : .regular))
-                        .foregroundColor(isSelected ? .phylloAccent : .phylloText)
+                        .foregroundColor(isSelected ? .nutriSyncAccent : .nutriSyncTextPrimary)
                     
                     Text(relativeTime)
                         .font(.caption)
-                        .foregroundColor(.phylloTextSecondary)
+                        .foregroundColor(.nutriSyncTextSecondary)
                 }
                 
                 Spacer()
                 
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
-                        .foregroundColor(.phylloAccent)
+                        .foregroundColor(.nutriSyncAccent)
                         .font(.system(size: 20))
                 }
             }
@@ -152,7 +154,7 @@ struct TimeOptionRow: View {
             .padding(.vertical, 12)
             .background(
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(isSelected ? Color.phylloAccent.opacity(0.1) : Color.clear)
+                    .fill(isSelected ? Color.nutriSyncAccent.opacity(0.1) : Color.clear)
             )
         }
         .buttonStyle(PlainButtonStyle())

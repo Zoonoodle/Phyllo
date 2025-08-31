@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct PhylloSlider: View {
+    private let hapticGenerator = UIImpactFeedbackGenerator(style: .light)
+    
     @Binding var value: Double
     let range: ClosedRange<Double>
     let step: Double
@@ -16,11 +18,11 @@ struct PhylloSlider: View {
             HStack {
                 Text(label)
                     .font(.body)
-                    .foregroundColor(.phylloText)
+                    .foregroundColor(.nutriSyncTextPrimary)
                 Spacer()
                 Text(String(format: "%.0f", value))
                     .font(.headline)
-                    .foregroundColor(.phylloAccent)
+                    .foregroundColor(.nutriSyncAccent)
             }
             
             ZStack(alignment: .leading) {
@@ -40,7 +42,7 @@ struct PhylloSlider: View {
                 .tint(.clear)
                 .onChange(of: value) { oldValue, newValue in
                     if abs(newValue - lastHapticValue) >= step {
-                        HapticManager.shared.impact(style: .light)
+                        hapticGenerator.impactOccurred()
                         lastHapticValue = newValue
                     }
                 }
@@ -57,8 +59,8 @@ struct PhylloSlider: View {
         }
         .padding()
         .background(
-            RoundedRectangle(cornerRadius: PhylloDesignSystem.cornerRadius)
-                .fill(Color.phylloCard)
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color.nutriSyncElevated.opacity(0.5))
         )
         .onAppear {
             lastHapticValue = value

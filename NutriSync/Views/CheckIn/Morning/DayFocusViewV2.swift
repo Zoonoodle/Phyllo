@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct DayFocusViewV2: View {
+    private let hapticGenerator = UIImpactFeedbackGenerator(style: .light)
+    
     @Bindable var viewModel: MorningCheckInViewModel
     
     private let maxSelections = 3
@@ -58,7 +60,7 @@ struct DayFocusViewV2: View {
                 viewModel.activityDurations[activity] = activity.defaultDuration
             }
         }
-        HapticManager.shared.impact(style: .light)
+        hapticGenerator.impactOccurred()
     }
 }
 

@@ -10,6 +10,7 @@ import SwiftUI
 struct ActivitiesViewV2: View {
     @Bindable var viewModel: MorningCheckInViewModel
     @State private var activityBlocks: [ActivityTimeBlock] = []
+    @State private var activities: [PlannedActivityInput] = []
     @State private var showingAddActivity = false
     
     // Initialize blocks from selected activities
@@ -415,9 +416,6 @@ struct TimelineBlock: View {
             )
     }
 }
-
-// Keep existing PlannedActivityInput for backward compatibility
-@State private var activities: [PlannedActivityInput] = []
 
 // Use typealias to reference the existing PlannedActivityInput from EnhancedActivitiesView
 // This avoids duplication while we transition

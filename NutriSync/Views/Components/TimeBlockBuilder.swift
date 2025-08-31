@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct TimeBlockBuilder: View {
+    private let hapticGenerator = UIImpactFeedbackGenerator(style: .light)
+    
     @Binding var startTime: Date
     @Binding var duration: Int // minutes
     let activity: MorningActivity
@@ -38,7 +40,7 @@ struct TimeBlockBuilder: View {
                     
                     Button(action: {
                         showingTimePicker = true
-                        HapticManager.shared.impact(style: .light)
+                        hapticGenerator.impactOccurred()
                     }) {
                         HStack {
                             Image(systemName: "clock")
@@ -74,7 +76,7 @@ struct TimeBlockBuilder: View {
                             ForEach([30, 45, 60, 90, 120], id: \.self) { minutes in
                                 Button(action: {
                                     duration = minutes
-                                    HapticManager.shared.impact(style: .light)
+                                    hapticGenerator.impactOccurred()
                                 }) {
                                     Text(formatDuration(minutes))
                                         .font(.caption)
@@ -84,7 +86,7 @@ struct TimeBlockBuilder: View {
                                         .padding(.vertical, 6)
                                         .background(
                                             duration == minutes ? 
-                                            Color.phylloAccent : 
+                                            Color.nutriSyncAccent : 
                                             Color.white.opacity(0.1)
                                         )
                                         .cornerRadius(16)
@@ -104,8 +106,8 @@ struct TimeBlockBuilder: View {
             }
         }
         .padding()
-        .background(Color.phylloCard)
-        .cornerRadius(PhylloDesignSystem.cornerRadius)
+        .background(Color.nutriSyncElevated.opacity(0.5))
+        .cornerRadius(16)
         .sheet(isPresented: $showingTimePicker) {
             CompactTimePicker(selectedTime: $startTime)
                 .presentationDetents([.height(300)])
@@ -228,16 +230,16 @@ struct CompactTimePicker: View {
                 Spacer()
             }
             .padding()
-            .background(Color.phylloBackground)
+            .background(Color.nutriSyncBackground)
             .navigationTitle("Select Start Time")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") {
-                        HapticManager.shared.impact(style: .light)
+                        hapticGenerator.impactOccurred()
                         dismiss()
                     }
-                    .foregroundColor(.phylloAccent)
+                    .foregroundColor(.nutriSyncAccent)
                 }
             }
         }
@@ -253,6 +255,6 @@ struct TimeBlockBuilder_Previews: PreviewProvider {
             activity: .workout
         )
         .padding()
-        .background(Color.phylloBackground)
+        .background(Color.nutriSyncBackground)
     }
 }

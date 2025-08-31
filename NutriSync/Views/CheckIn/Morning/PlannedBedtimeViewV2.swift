@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct PlannedBedtimeViewV2: View {
+    private let hapticGenerator = UIImpactFeedbackGenerator(style: .light)
+    
     @Bindable var viewModel: MorningCheckInViewModel
     
     var body: some View {
@@ -34,7 +36,7 @@ struct PlannedBedtimeViewV2: View {
                 VStack(spacing: 20) {
                     Text("Planned Bedtime Tonight")
                         .font(.headline)
-                        .foregroundColor(.phylloText)
+                        .foregroundColor(.nutriSyncTextPrimary)
                     
                     DatePicker(
                         "",
@@ -51,7 +53,7 @@ struct PlannedBedtimeViewV2: View {
                             .fill(Color.phylloCard)
                     )
                     .onChange(of: viewModel.plannedBedtime) { oldValue, newValue in
-                        HapticManager.shared.impact(style: .light)
+                        hapticGenerator.impactOccurred()
                         // Ensure bedtime is set to today's date with the selected time
                         let calendar = Calendar.current
                         let components = calendar.dateComponents([.hour, .minute], from: newValue)
