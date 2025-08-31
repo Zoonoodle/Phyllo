@@ -23,25 +23,35 @@ struct PlannedBedtimeViewV2: View {
             canGoNext: true
         ) {
             VStack(spacing: 32) {
+                Spacer()
+                
                 // Icon
                 Image(systemName: "moon.stars.fill")
                     .font(.system(size: 64))
                     .foregroundColor(.nutriSyncAccent)
-                    .padding(.top, 20)
                 
-                // Time Picker
-                VStack(spacing: 16) {
+                // Compact Time Picker with better UX
+                VStack(spacing: 20) {
+                    Text("Planned Bedtime Tonight")
+                        .font(.headline)
+                        .foregroundColor(.phylloText)
+                    
                     DatePicker(
                         "",
                         selection: $viewModel.plannedBedtime,
                         displayedComponents: .hourAndMinute
                     )
-                    .datePickerStyle(WheelDatePickerStyle())
+                    .datePickerStyle(.compact)
                     .labelsHidden()
-                    .colorScheme(.dark)
-                    .scaleEffect(1.2)
-                    .padding(.horizontal)
-                    .onChange(of: viewModel.plannedBedtime) { newValue in
+                    .tint(.nutriSyncAccent)
+                    .scaleEffect(1.3)
+                    .padding()
+                    .background(
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(Color.phylloCard)
+                    )
+                    .onChange(of: viewModel.plannedBedtime) { oldValue, newValue in
+                        HapticManager.shared.impact(style: .light)
                         // Ensure bedtime is set to today's date with the selected time
                         let calendar = Calendar.current
                         let components = calendar.dateComponents([.hour, .minute], from: newValue)
@@ -53,8 +63,9 @@ struct PlannedBedtimeViewV2: View {
                         todayComponents.second = 0
                         
                         if let adjustedBedtime = calendar.date(from: todayComponents) {
-                            // If bedtime is before wake time, assume it's for tomorrow
-                            if adjustedBedtime < viewModel.wakeTime {
+                            // If bedtime is before current time, assume it's for tomorrow
+                            let now = Date()
+                            if adjustedBedtime < now {
                                 if let tomorrowBedtime = calendar.date(byAdding: .day, value: 1, to: adjustedBedtime) {
                                     viewModel.plannedBedtime = tomorrowBedtime
                                 } else {
@@ -87,6 +98,8 @@ struct PlannedBedtimeViewV2: View {
                             )
                     )
                 }
+                
+                Spacer()
             }
             .padding(.horizontal, 20)
         }

@@ -19,47 +19,52 @@ struct DayFocusViewV2: View {
     
     var body: some View {
         CheckInScreenTemplate(
-            title: "What's your main focus for today?",
-            subtitle: "Pick up to 3",
+            title: "What activities do you have planned?",
+            subtitle: "Pick up to 3 (we'll adjust meal timing)",
             currentStep: viewModel.currentStep,
             totalSteps: viewModel.totalSteps,
             onBack: viewModel.previousStep,
             onNext: {
                 viewModel.nextStep()
             },
-            canGoNext: !viewModel.dayFocus.isEmpty
+            canGoNext: !viewModel.selectedActivities.isEmpty
         ) {
-            LazyVGrid(columns: columns, spacing: 20) {
-                ForEach(MorningCheckIn.DayFocus.allCases, id: \.self) { focus in
-                    FocusButtonV2(
-                        focus: focus,
-                        isSelected: viewModel.dayFocus.contains(focus),
-                        isDisabled: !viewModel.dayFocus.contains(focus) && viewModel.dayFocus.count >= maxSelections,
-                        onToggle: {
-                            toggleFocus(focus)
-                        }
-                    )
+            ScrollView {
+                LazyVGrid(columns: columns, spacing: 20) {
+                    ForEach(MorningActivity.allCases, id: \.self) { activity in
+                        ActivityButtonV2(
+                            activity: activity,
+                            isSelected: viewModel.selectedActivities.contains(activity),
+                            isDisabled: !viewModel.selectedActivities.contains(activity) && viewModel.selectedActivities.count >= maxSelections,
+                            onToggle: {
+                                toggleActivity(activity)
+                            }
+                        )
+                    }
                 }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 20)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 20)
         }
     }
     
-    private func toggleFocus(_ focus: MorningCheckIn.DayFocus) {
+    private func toggleActivity(_ activity: MorningActivity) {
         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-            if viewModel.dayFocus.contains(focus) {
-                viewModel.dayFocus.remove(focus)
-            } else if viewModel.dayFocus.count < maxSelections {
-                viewModel.dayFocus.insert(focus)
+            if viewModel.selectedActivities.contains(activity) {
+                viewModel.selectedActivities.removeAll { $0 == activity }
+                viewModel.activityDurations.removeValue(forKey: activity)
+            } else if viewModel.selectedActivities.count < maxSelections {
+                viewModel.selectedActivities.append(activity)
+                viewModel.activityDurations[activity] = activity.defaultDuration
             }
         }
+        HapticManager.shared.impact(style: .light)
     }
 }
 
-// MARK: - Focus Button
-struct FocusButtonV2: View {
-    let focus: MorningCheckIn.DayFocus
+// MARK: - Activity Button
+struct ActivityButtonV2: View {
+    let activity: MorningActivity
     let isSelected: Bool
     let isDisabled: Bool
     let onToggle: () -> Void
@@ -68,25 +73,28 @@ struct FocusButtonV2: View {
         Button(action: {
             guard !isDisabled else { return }
             onToggle()
-            
-            // Haptic feedback
-            let impact = UIImpactFeedbackGenerator(style: .light)
-            impact.prepare()
-            impact.impactOccurred()
         }) {
             VStack(spacing: 8) {
-                Image(systemName: focus.icon)
+                Image(systemName: activity.icon)
                     .font(.system(size: 24))
                     .foregroundColor(isSelected ? .white : .white.opacity(isDisabled ? 0.3 : 0.5))
                     .frame(width: 44, height: 44)
                     .background(
                         Circle()
-                            .fill(isSelected ? Color.nutriSyncAccent : Color.white.opacity(isDisabled ? 0.03 : 0.05))
+                            .fill(isSelected ? activity.color.opacity(0.8) : Color.white.opacity(isDisabled ? 0.03 : 0.05))
                     )
                 
-                Text(focus.rawValue)
-                    .font(.system(size: 12))
-                    .foregroundColor(isSelected ? .white : .white.opacity(isDisabled ? 0.3 : 0.7))
+                VStack(spacing: 2) {
+                    Text(activity.rawValue)
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(isSelected ? .white : .white.opacity(isDisabled ? 0.3 : 0.7))
+                    
+                    if activity.defaultDuration > 0 {
+                        Text("\(activity.defaultDuration) min")
+                            .font(.system(size: 9))
+                            .foregroundColor(isSelected ? .white.opacity(0.8) : .white.opacity(isDisabled ? 0.2 : 0.4))
+                    }
+                }
             }
             .opacity(isDisabled && !isSelected ? 0.5 : 1.0)
         }

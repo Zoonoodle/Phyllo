@@ -25,42 +25,25 @@ struct HungerLevelViewV2: View {
             canGoNext: true
         ) {
             VStack(spacing: 40) {
-                // Hunger display
-                VStack(spacing: 12) {
-                    Text(hungerEmoji)
-                        .font(.system(size: 72))
-                    
-                    Text(hungerLabel)
-                        .font(.system(size: 32, weight: .bold))
-                        .foregroundColor(.white)
-                    
-                    Text("Hunger Level")
-                        .font(.system(size: 18))
-                        .foregroundColor(.white.opacity(0.6))
-                }
-                .padding(.top, 40)
+                Spacer()
                 
-                // Hunger slider
-                VStack(spacing: 16) {
-                    Slider(value: $hunger, in: 1...10, step: 1)
-                        .accentColor(.nutriSyncAccent)
-                        .padding(.horizontal, 20)
-                    
-                    // Labels
-                    HStack {
-                        Text("Not hungry")
-                            .font(.system(size: 14))
-                            .foregroundColor(.white.opacity(0.5))
-                        
-                        Spacer()
-                        
-                        Text("Starving")
-                            .font(.system(size: 14))
-                            .foregroundColor(.white.opacity(0.5))
-                    }
-                    .padding(.horizontal, 20)
-                }
+                // Hunger slider with visual progress bar
+                PhylloSlider(
+                    value: $hunger,
+                    range: 1...10,
+                    step: 1,
+                    label: "Current Hunger Level",
+                    gradient: LinearGradient(
+                        colors: [Color.red.opacity(0.6), Color.green.opacity(0.6)],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    ),
+                    lowLabel: "Not Hungry",
+                    highLabel: "Very Hungry"
+                )
                 .padding(.horizontal, 20)
+                
+                Spacer()
             }
         }
         .onAppear {
@@ -70,28 +53,6 @@ struct HungerLevelViewV2: View {
             } else {
                 hunger = 5.0
             }
-        }
-    }
-    
-    private var hungerEmoji: String {
-        switch Int(hunger) {
-        case 1...2: return "😌"
-        case 3...4: return "🙂"
-        case 5...6: return "😐"
-        case 7...8: return "😋"
-        case 9...10: return "🤤"
-        default: return "😐"
-        }
-    }
-    
-    private var hungerLabel: String {
-        switch Int(hunger) {
-        case 1...2: return "Not Hungry"
-        case 3...4: return "Slightly Hungry"
-        case 5...6: return "Moderately Hungry"
-        case 7...8: return "Very Hungry"
-        case 9...10: return "Starving"
-        default: return "Moderately Hungry"
         }
     }
 }

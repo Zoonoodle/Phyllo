@@ -31,6 +31,10 @@ class MorningCheckInViewModel {
     var restrictions: [String] = []
     var dayFocus: Set<MorningCheckIn.DayFocus> = []
     
+    // New properties for improved UI
+    var selectedActivities: [MorningActivity] = []
+    var activityDurations: [MorningActivity: Int] = [:]
+    
     // Navigation methods
     func nextStep() {
         if currentStep < totalSteps - 1 {
@@ -68,6 +72,20 @@ class MorningCheckInViewModel {
     }
     
     func saveCheckIn() {
+        // Convert selectedActivities to plannedActivities strings
+        plannedActivities = selectedActivities.map { $0.rawValue }
+        
+        // Convert selectedActivities to dayFocus if needed (compatibility)
+        // Map activity types to closest matching focus categories
+        dayFocus = Set(selectedActivities.compactMap { activity in
+            switch activity {
+            case .work, .meeting: return MorningCheckIn.DayFocus.work
+            case .rest: return MorningCheckIn.DayFocus.relaxing
+            case .socialEvent: return MorningCheckIn.DayFocus.friends
+            default: return nil
+            }
+        })
+        
         let checkIn = MorningCheckIn(
             date: Date(),
             wakeTime: wakeTime,

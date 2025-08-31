@@ -26,6 +26,8 @@ struct SleepQualityViewV2: View {
             canGoNext: true
         ) {
             VStack(spacing: 40) {
+                Spacer()
+                
                 // Sleep hours display
                 VStack(spacing: 12) {
                     Text("\(sleepHours, specifier: "%.1f")")
@@ -35,51 +37,25 @@ struct SleepQualityViewV2: View {
                     Text("hours of sleep")
                         .font(.system(size: 18))
                         .foregroundColor(.white.opacity(0.6))
-                    
-                    // Quality indicator
-                    HStack(spacing: 4) {
-                        Image(systemName: qualityIcon)
-                            .font(.system(size: 16))
-                            .foregroundColor(.nutriSyncAccent)
-                        
-                        Text(qualityText)
-                            .font(.system(size: 16, weight: .medium))
-                            .foregroundColor(.white.opacity(0.8))
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
-                    .background(
-                        Capsule()
-                            .fill(Color.white.opacity(0.05))
-                            .overlay(
-                                Capsule()
-                                    .strokeBorder(Color.nutriSyncAccent.opacity(0.2), lineWidth: 1)
-                            )
-                    )
                 }
-                .padding(.top, 40)
                 
-                // Simple slider
-                VStack(spacing: 16) {
-                    Slider(value: $sleepHours, in: 0...12, step: 0.5)
-                        .accentColor(.nutriSyncAccent)
-                        .padding(.horizontal, 20)
-                    
-                    // Min and max labels
-                    HStack {
-                        Text("0h")
-                            .font(.system(size: 14))
-                            .foregroundColor(.white.opacity(0.5))
-                        
-                        Spacer()
-                        
-                        Text("12h")
-                            .font(.system(size: 14))
-                            .foregroundColor(.white.opacity(0.5))
-                    }
-                    .padding(.horizontal, 20)
-                }
+                // Sleep quality slider with visual progress bar
+                PhylloSlider(
+                    value: $sleepHours,
+                    range: 0...12,
+                    step: 0.5,
+                    label: "Sleep Duration",
+                    gradient: LinearGradient(
+                        colors: [Color.blue.opacity(0.3), Color.blue.opacity(0.8)],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    ),
+                    lowLabel: "0 hours",
+                    highLabel: "12 hours"
+                )
                 .padding(.horizontal, 20)
+                
+                Spacer()
             }
         }
         .onAppear {
@@ -87,26 +63,6 @@ struct SleepQualityViewV2: View {
             if viewModel.sleepQuality > 0 {
                 sleepHours = Double(viewModel.sleepQuality) * 1.2
             }
-        }
-    }
-    
-    private var qualityText: String {
-        switch sleepHours {
-        case 0..<3: return "Very Poor"
-        case 3..<5: return "Poor"
-        case 5..<7: return "Fair"
-        case 7..<9: return "Good"
-        default: return "Excellent"
-        }
-    }
-    
-    private var qualityIcon: String {
-        switch sleepHours {
-        case 0..<3: return "moon.zzz"
-        case 3..<5: return "moon"
-        case 5..<7: return "moon.fill"
-        case 7..<9: return "moon.stars"
-        default: return "moon.stars.fill"
         }
     }
 }
