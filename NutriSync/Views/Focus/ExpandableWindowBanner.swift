@@ -62,39 +62,56 @@ struct AnimatedInfoSwitcher: View {
     
     var body: some View {
         ZStack {
-            // Macros display
-            HStack(spacing: 3) {
-                Text("\(window.effectiveMacros.protein)g")
-                    .font(TimelineTypography.macroValue)
-                    .foregroundColor(.orange.opacity(0.8))
-                    .minimumScaleFactor(0.8)
-                Text("P")
-                    .font(TimelineTypography.macroLabel)
-                    .foregroundColor(.orange.opacity(0.6))
+            // Macros display - improved layout to prevent truncation
+            HStack(spacing: 2) {
+                // Protein
+                HStack(spacing: 1) {
+                    Text("\(window.effectiveMacros.protein)")
+                        .font(TimelineTypography.macroValue)
+                        .foregroundColor(.orange.opacity(0.8))
+                        .minimumScaleFactor(0.7)
+                        .lineLimit(1)
+                        .layoutPriority(1)
+                    Text("P")
+                        .font(TimelineTypography.macroLabel)
+                        .foregroundColor(.orange.opacity(0.6))
+                }
                 
                 Text("·")
                     .font(TimelineTypography.macroLabel)
                     .foregroundColor(.white.opacity(TimelineOpacity.quaternary))
+                    .padding(.horizontal, 1)
                 
-                Text("\(window.effectiveMacros.fat)g")
-                    .font(TimelineTypography.macroValue)
-                    .foregroundColor(.yellow.opacity(0.8))
-                    .minimumScaleFactor(0.8)
-                Text("F")
-                    .font(TimelineTypography.macroLabel)
-                    .foregroundColor(.yellow.opacity(0.6))
+                // Fat
+                HStack(spacing: 1) {
+                    Text("\(window.effectiveMacros.fat)")
+                        .font(TimelineTypography.macroValue)
+                        .foregroundColor(.yellow.opacity(0.8))
+                        .minimumScaleFactor(0.7)
+                        .lineLimit(1)
+                        .layoutPriority(1)
+                    Text("F")
+                        .font(TimelineTypography.macroLabel)
+                        .foregroundColor(.yellow.opacity(0.6))
+                }
                 
                 Text("·")
                     .font(TimelineTypography.macroLabel)
                     .foregroundColor(.white.opacity(TimelineOpacity.quaternary))
+                    .padding(.horizontal, 1)
                 
-                Text("\(window.effectiveMacros.carbs)g")
-                    .font(TimelineTypography.macroValue)
-                    .foregroundColor(.blue.opacity(0.8))
-                    .minimumScaleFactor(0.8)
-                Text("C")
-                    .font(TimelineTypography.macroLabel)
-                    .foregroundColor(.blue.opacity(0.6))
+                // Carbs
+                HStack(spacing: 1) {
+                    Text("\(window.effectiveMacros.carbs)")
+                        .font(TimelineTypography.macroValue)
+                        .foregroundColor(.blue.opacity(0.8))
+                        .minimumScaleFactor(0.7)
+                        .lineLimit(1)
+                        .layoutPriority(1)
+                    Text("C")
+                        .font(TimelineTypography.macroLabel)
+                        .foregroundColor(.blue.opacity(0.6))
+                }
             }
             .lineLimit(1)
             .opacity(showMacros ? 1 : 0)
@@ -533,9 +550,9 @@ struct ExpandableWindowBanner: View {
                     .font(.system(size: { if case .active = windowStatus { return 17 } else { return 15 } }()))
                 Text(mealType)
                     .font({ if case .active = windowStatus { return TimelineTypography.windowTitle } else { return TimelineTypography.windowTitleInactive } }())
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.65)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+                    .truncationMode(.tail)
             }
             .foregroundColor(.white)
             

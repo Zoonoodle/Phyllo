@@ -69,17 +69,32 @@ struct WindowNameGenerator {
     
     static func generate(context: Context) -> String {
         // Priority order for naming
+        let name: String
         if context.isPreWorkout {
-            return preWorkoutName(context)
+            name = preWorkoutName(context)
         } else if context.isPostWorkout {
-            return postWorkoutName(context)
+            name = postWorkoutName(context)
         } else if context.isFirstMeal {
-            return firstMealName(context)
+            name = firstMealName(context)
         } else if context.isLastMeal {
-            return lastMealName(context)
+            name = lastMealName(context)
         } else {
-            return functionalName(context)
+            name = functionalName(context)
         }
+        
+        // Ensure name doesn't exceed maximum length (20 characters for optimal display)
+        return truncateWindowName(name, maxLength: 20)
+    }
+    
+    private static func truncateWindowName(_ name: String, maxLength: Int) -> String {
+        guard name.count > maxLength else { return name }
+        
+        // Try to truncate at word boundary
+        let truncated = String(name.prefix(maxLength))
+        if let lastSpace = truncated.lastIndex(of: " ") {
+            return String(truncated[..<lastSpace])
+        }
+        return truncated
     }
     
     private static func preWorkoutName(_ context: Context) -> String {
@@ -89,18 +104,18 @@ struct WindowNameGenerator {
         case .improvePerformance:
             return "Performance Fuel"
         case .loseWeight:
-            return "Pre-Training Energy"
+            return "Pre-Training"
         case .betterSleep:
             return "Active Energy"
         case .maintainWeight, .overallHealth:
-            return "Pre-Activity Boost"
+            return "Pre-Activity"
         }
     }
     
     private static func postWorkoutName(_ context: Context) -> String {
         let baseNames = [
             "Recovery Window",
-            "Post-Training Recovery", 
+            "Post-Training", 
             "Anabolic Window",
             "Muscle Recovery"
         ]
@@ -116,22 +131,22 @@ struct WindowNameGenerator {
         case .nightShift:
             return "First Meal" // Not "breakfast" at 8pm
         case .nightOwl:
-            return "Late Morning Fuel"
+            return "Late Morning"
         case .earlyBird:
             return "Dawn Foundation"
         default:
-            return "Morning Foundation"
+            return "Morning Fuel"
         }
     }
     
     private static func lastMealName(_ context: Context) -> String {
         switch context.scheduleType {
         case .nightShift:
-            return "Pre-Sleep Wind Down"
+            return "Pre-Sleep"
         case .nightOwl:
-            return "Late Night Sustainer"
+            return "Late Night"
         case .earlyBird:
-            return "Early Evening Closure"
+            return "Evening Closure"
         default:
             return "Evening Wind-Down"
         }
@@ -153,7 +168,7 @@ struct WindowNameGenerator {
         switch context.userGoal {
         case .loseWeight: goalSuffix = "Metabolic Boost"
         case .buildMuscle: goalSuffix = "Growth Window"
-        case .improvePerformance: goalSuffix = "Energy Sustainer"
+        case .improvePerformance: goalSuffix = "Energy"
         case .betterSleep: goalSuffix = "Balance Window"
         case .maintainWeight, .overallHealth: goalSuffix = "Nourishment"
         }
