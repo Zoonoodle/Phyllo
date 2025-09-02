@@ -212,17 +212,24 @@ struct RealVoiceInputView: View {
     
     private var backgroundLayer: some View {
         ZStack {
+            // Always use black background as base
+            Color.black
+                .ignoresSafeArea()
+            
+            // Add blurred image overlay if available
             if let image = capturedImage {
-                Image(uiImage: image)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .blur(radius: 20)
-            } else {
-                // Use solid black background for voice-only mode
-                Color.black
+                GeometryReader { geometry in
+                    Image(uiImage: image)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(width: geometry.size.width, height: geometry.size.height)
+                        .clipped()
+                        .blur(radius: 30)
+                        .opacity(0.3) // Make it subtle
+                }
+                .ignoresSafeArea()
             }
         }
-        .ignoresSafeArea()
     }
     
     private var listeningIndicator: some View {
