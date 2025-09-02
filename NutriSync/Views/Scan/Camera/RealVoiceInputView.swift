@@ -21,6 +21,11 @@ struct RealVoiceInputView: View {
     @State private var permissionStatus = SFSpeechRecognizerAuthorizationStatus.notDetermined
     @State private var showTips = false
     
+    // Manual text editing states
+    @State private var isEditingText = false
+    @State private var editableText = ""
+    @FocusState private var isTextFieldFocused: Bool
+    
     // Speech recognition properties
     @State private var speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
     @State private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
@@ -35,6 +40,22 @@ struct RealVoiceInputView: View {
     
     // Timer for updating audio levels
     let timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
+    
+    // Computed property for adaptive instruction height
+    private var instructionMaxHeight: CGFloat {
+        let screenHeight = UIScreen.main.bounds.height
+        let minHeight: CGFloat = 150
+        let maxHeight: CGFloat = 300
+        
+        // Adjust based on device size
+        if screenHeight < 700 { // SE, mini
+            return minHeight
+        } else if screenHeight < 850 { // Standard
+            return 220
+        } else { // Pro Max
+            return maxHeight
+        }
+    }
     
     var body: some View {
         ZStack {
@@ -63,24 +84,78 @@ struct RealVoiceInputView: View {
                     ScrollView {
                         instructionalContent
                     }
-                    .frame(maxHeight: 220)
+                    .frame(maxHeight: instructionMaxHeight)
                     .transition(.opacity.combined(with: .scale(0.95)))
                 } else if !transcribedText.isEmpty {
                     ScrollView {
-                        Text(transcribedText)
-                            .font(.system(size: 18, weight: .medium))
-                            .foregroundColor(.white)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal, 40)
-                            .padding(.vertical, 20)
-                            .background(
-                                RoundedRectangle(cornerRadius: 16)
-                                    .fill(Color.black.opacity(0.5))
-                            )
+                        Group {
+                            if isEditingText {
+                                TextField("Type or edit your meal description", text: $editableText, axis: .vertical)
+                                    .textFieldStyle(.plain)
+                                    .focused($isTextFieldFocused)
+                                    .font(.system(size: 18, weight: .medium))
+                                    .foregroundColor(.white)
+                                    .multilineTextAlignment(.center)
+                                    .onSubmit {
+                                        transcribedText = editableText
+                                        isEditingText = false
+                                    }
+                            } else {
+                                Text(transcribedText)
+                                    .font(.system(size: 18, weight: .medium))
+                                    .foregroundColor(.white)
+                                    .multilineTextAlignment(.center)
+                                    .onLongPressGesture(minimumDuration: 0.5) {
+                                        let generator = UIImpactFeedbackGenerator(style: .medium)
+                                        generator.impactOccurred()
+                                        editableText = transcribedText
+                                        isEditingText = true
+                                        isTextFieldFocused = true
+                                    }
+                            }
+                        }
+                        .padding(.horizontal, 40)
+                        .padding(.vertical, 20)
+                        .background(
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(Color.black.opacity(0.5))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .stroke(isEditingText ? Color.nutriSyncAccent : Color.clear, lineWidth: 2)
+                                )
+                        )
                     }
                     .frame(maxHeight: 150)
                     .padding(.horizontal)
                     .transition(.opacity.combined(with: .move(edge: .top)))
+                    
+                    // Hint text for long-press capability
+                    if !isEditingText && !transcribedText.isEmpty {
+                        Text("Long press to edit")
+                            .font(.caption)
+                            .foregroundColor(Color.white.opacity(0.4))
+                            .padding(.top, 4)
+                    }
+                    
+                    // Done editing button when in edit mode
+                    if isEditingText {
+                        Button(action: {
+                            transcribedText = editableText
+                            isEditingText = false
+                            isTextFieldFocused = false
+                        }) {
+                            Text("Done Editing")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(.nutriSyncAccent)
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 8)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .fill(Color.white.opacity(0.1))
+                                )
+                        }
+                        .padding(.top, 8)
+                    }
                 }
                 
                 Spacer(minLength: 10)
@@ -228,6 +303,8 @@ struct RealVoiceInputView: View {
             HStack(spacing: 20) {
                 // Cancel button
                 Button(action: { 
+                    let generator = UIImpactFeedbackGenerator(style: .light)
+                    generator.impactOccurred()
                     stopRecording()
                     dismiss() 
                 }) {
@@ -252,6 +329,8 @@ struct RealVoiceInputView: View {
                 
                 // Done button
                 Button(action: {
+                    let generator = UIImpactFeedbackGenerator(style: .medium)
+                    generator.impactOccurred()
                     stopRecording()
                     onComplete?(transcribedText)
                     dismiss()
@@ -267,11 +346,25 @@ struct RealVoiceInputView: View {
                     .padding(.vertical, 14)
                     .background(
                         RoundedRectangle(cornerRadius: 30)
-                            .fill(Color.green)
+                            .fill(Color.nutriSyncAccent)
                             .opacity(isListening || !transcribedText.isEmpty ? 1 : 0.3)
                     )
                 }
                 .disabled(!isListening && transcribedText.isEmpty)
+            }
+            
+            // Skip button as secondary action
+            Button(action: {
+                let generator = UIImpactFeedbackGenerator(style: .light)
+                generator.impactOccurred()
+                stopRecording()
+                onComplete?("")  // Empty description
+                dismiss()
+            }) {
+                Text("Skip voice description")
+                    .font(.system(size: 14))
+                    .foregroundColor(Color.white.opacity(0.5))
+                    .padding(.top, 8)
             }
         }
     }
@@ -327,7 +420,7 @@ struct RealVoiceInputView: View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: icon)
                 .font(.system(size: 14))
-                .foregroundColor(.green)
+                .foregroundColor(.nutriSyncAccent)
                 .frame(width: 18)
             
             VStack(alignment: .leading, spacing: 2) {
@@ -412,7 +505,7 @@ struct RealVoiceInputView: View {
                     Button("Done") {
                         showTips = false
                     }
-                    .foregroundColor(.green)
+                    .foregroundColor(.nutriSyncAccent)
                 }
             }
         }
@@ -434,7 +527,7 @@ struct RealVoiceInputView: View {
                     ForEach(examples, id: \.self) { example in
                         HStack(alignment: .top, spacing: 8) {
                             Text("•")
-                                .foregroundColor(.green)
+                                .foregroundColor(.nutriSyncAccent)
                             Text(example)
                                 .font(.system(size: 14))
                                 .foregroundColor(.white.opacity(0.6))

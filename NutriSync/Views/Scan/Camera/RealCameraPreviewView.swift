@@ -8,7 +8,60 @@
 import SwiftUI
 import AVFoundation
 
+// Camera Session Manager for pre-warming
+class CameraSessionManager: ObservableObject {
+    private var session: AVCaptureSession?
+    private var photoOutput: AVCapturePhotoOutput?
+    @Published var isReady = false
+    
+    func preWarmSession() {
+        guard session == nil else { return }
+        
+        DispatchQueue.global(qos: .userInitiated).async {
+            let newSession = AVCaptureSession()
+            newSession.sessionPreset = .photo
+            
+            guard let backCamera = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
+                  let input = try? AVCaptureDeviceInput(device: backCamera) else {
+                print("Unable to access back camera during pre-warm!")
+                return
+            }
+            
+            let newPhotoOutput = AVCapturePhotoOutput()
+            newPhotoOutput.isHighResolutionCaptureEnabled = true
+            
+            if newSession.canAddInput(input) && newSession.canAddOutput(newPhotoOutput) {
+                newSession.addInput(input)
+                newSession.addOutput(newPhotoOutput)
+            }
+            
+            // Start the session to pre-warm
+            newSession.startRunning()
+            
+            DispatchQueue.main.async {
+                self.session = newSession
+                self.photoOutput = newPhotoOutput
+                self.isReady = true
+            }
+        }
+    }
+    
+    func getSession() -> AVCaptureSession? {
+        return session
+    }
+    
+    func getPhotoOutput() -> AVCapturePhotoOutput? {
+        return photoOutput
+    }
+    
+    func stopSession() {
+        session?.stopRunning()
+    }
+}
+
 struct RealCameraPreviewView: UIViewRepresentable {
+    // Shared camera session for pre-warming
+    static let sharedCameraSession = CameraSessionManager()
     @Binding var capturedImage: UIImage?
     @Binding var capturePhoto: Bool
     
@@ -44,21 +97,38 @@ struct RealCameraPreviewView: UIViewRepresentable {
     func makeUIView(context: Context) -> UIView {
         let view = UIView()
         
-        let captureSession = AVCaptureSession()
-        captureSession.sessionPreset = .photo
+        // Try to use pre-warmed session if available
+        let captureSession: AVCaptureSession
+        let photoOutput: AVCapturePhotoOutput
         
-        guard let backCamera = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
-              let input = try? AVCaptureDeviceInput(device: backCamera) else {
-            print("Unable to access back camera!")
-            return view
-        }
-        
-        let photoOutput = AVCapturePhotoOutput()
-        photoOutput.isHighResolutionCaptureEnabled = true
-        
-        if captureSession.canAddInput(input) && captureSession.canAddOutput(photoOutput) {
-            captureSession.addInput(input)
-            captureSession.addOutput(photoOutput)
+        if RealCameraPreviewView.sharedCameraSession.isReady,
+           let preWarmedSession = RealCameraPreviewView.sharedCameraSession.getSession(),
+           let preWarmedOutput = RealCameraPreviewView.sharedCameraSession.getPhotoOutput() {
+            // Use pre-warmed session
+            captureSession = preWarmedSession
+            photoOutput = preWarmedOutput
+        } else {
+            // Create new session if pre-warm not available
+            captureSession = AVCaptureSession()
+            captureSession.sessionPreset = .photo
+            
+            guard let backCamera = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
+                  let input = try? AVCaptureDeviceInput(device: backCamera) else {
+                print("Unable to access back camera!")
+                return view
+            }
+            
+            photoOutput = AVCapturePhotoOutput()
+            photoOutput.isHighResolutionCaptureEnabled = true
+            
+            if captureSession.canAddInput(input) && captureSession.canAddOutput(photoOutput) {
+                captureSession.addInput(input)
+                captureSession.addOutput(photoOutput)
+            }
+            
+            DispatchQueue.global(qos: .userInitiated).async {
+                captureSession.startRunning()
+            }
         }
         
         let previewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
@@ -70,10 +140,6 @@ struct RealCameraPreviewView: UIViewRepresentable {
         context.coordinator.captureSession = captureSession
         context.coordinator.previewLayer = previewLayer
         context.coordinator.photoOutput = photoOutput
-        
-        DispatchQueue.global(qos: .userInitiated).async {
-            captureSession.startRunning()
-        }
         
         return view
     }

@@ -251,6 +251,10 @@ struct ScanTabView: View {
             }
         }
         .preferredColorScheme(.dark)
+        .onAppear {
+            // Pre-warm camera session to prevent black screen on first capture
+            RealCameraPreviewView.sharedCameraSession.preWarmSession()
+        }
         .onReceive(NotificationCenter.default.publisher(for: .mealAnalysisCompleted)) { notification in
             Task { @MainActor in
                 DebugLogger.shared.notification("Received mealAnalysisCompleted notification")
@@ -306,6 +310,16 @@ struct ScanTabView: View {
         }
         
         if selectedMode == .photo {
+            // Check if camera is ready
+            if !RealCameraPreviewView.sharedCameraSession.isReady {
+                Task { @MainActor in
+                    DebugLogger.shared.ui("Camera still preparing, please wait...")
+                }
+                captureAnimation = false
+                // TODO: Show "Camera preparing..." message to user
+                return
+            }
+            
             // Trigger actual photo capture
             capturePhotoTrigger = true
             
