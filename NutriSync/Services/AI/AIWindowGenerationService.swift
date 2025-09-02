@@ -82,8 +82,8 @@ struct WindowNameGenerator {
             name = functionalName(context)
         }
         
-        // Ensure name doesn't exceed maximum length (20 characters for optimal display)
-        return truncateWindowName(name, maxLength: 20)
+        // Ensure name doesn't exceed maximum length (15 characters for optimal display)
+        return truncateWindowName(name, maxLength: 15)
     }
     
     private static func truncateWindowName(_ name: String, maxLength: Int) -> String {
@@ -100,30 +100,30 @@ struct WindowNameGenerator {
     private static func preWorkoutName(_ context: Context) -> String {
         switch context.userGoal {
         case .buildMuscle:
-            return "Anabolic Primer"
+            return "Power Prime"
         case .improvePerformance:
-            return "Performance Fuel"
+            return "Performance"
         case .loseWeight:
-            return "Pre-Training"
+            return "Pre-Workout"
         case .betterSleep:
-            return "Active Energy"
+            return "Active Fuel"
         case .maintainWeight, .overallHealth:
-            return "Pre-Activity"
+            return "Pre-Active"
         }
     }
     
     private static func postWorkoutName(_ context: Context) -> String {
         let baseNames = [
-            "Recovery Window",
-            "Post-Training", 
-            "Anabolic Window",
-            "Muscle Recovery"
+            "Recovery",
+            "Post-Workout", 
+            "Anabolic",
+            "Recovery"
         ]
         // Add time context for late workouts
         if context.timeOfDay == .lateNight {
             return "Night Recovery"
         }
-        return baseNames.randomElement() ?? "Recovery Window"
+        return baseNames.randomElement() ?? "Recovery"
     }
     
     private static func firstMealName(_ context: Context) -> String {
@@ -133,9 +133,9 @@ struct WindowNameGenerator {
         case .nightOwl:
             return "Late Morning"
         case .earlyBird:
-            return "Dawn Foundation"
+            return "Dawn Start"
         default:
-            return "Morning Fuel"
+            return "Morning"
         }
     }
     
@@ -146,9 +146,9 @@ struct WindowNameGenerator {
         case .nightOwl:
             return "Late Night"
         case .earlyBird:
-            return "Evening Closure"
+            return "Evening"
         default:
-            return "Evening Wind-Down"
+            return "Evening"
         }
     }
     
@@ -166,11 +166,11 @@ struct WindowNameGenerator {
         
         let goalSuffix: String
         switch context.userGoal {
-        case .loseWeight: goalSuffix = "Metabolic Boost"
-        case .buildMuscle: goalSuffix = "Growth Window"
+        case .loseWeight: goalSuffix = "Boost"
+        case .buildMuscle: goalSuffix = "Growth"
         case .improvePerformance: goalSuffix = "Energy"
-        case .betterSleep: goalSuffix = "Balance Window"
-        case .maintainWeight, .overallHealth: goalSuffix = "Nourishment"
+        case .betterSleep: goalSuffix = "Balance"
+        case .maintainWeight, .overallHealth: goalSuffix = "Fuel"
         }
         
         return "\(timePrefix) \(goalSuffix)"
