@@ -134,6 +134,12 @@ struct AIScheduleView: View {
             MorningCheckInCoordinator(isMandatory: viewModel.mealWindows.isEmpty)
                 .interactiveDismissDisabled(viewModel.mealWindows.isEmpty) // Can't dismiss if no windows
         }
+        .sheet(isPresented: $showDayDetail) {
+            DayDetailView(
+                viewModel: viewModel.legacyViewModel,
+                showDayDetail: $showDayDetail
+            )
+        }
         .onChange(of: showMorningCheckIn) { wasShowing, isShowing in
             // When check-in sheet dismisses, show loading while windows generate
             if wasShowing && !isShowing {
