@@ -10,9 +10,9 @@ import SwiftUI
 struct PremiumRingSpecs {
     static let ringWidth: CGFloat = 10
     static let ringSpacing: CGFloat = 8
-    static let outerRingSize: CGFloat = 200
-    static let middleRingSize: CGFloat = 172
-    static let innerRingSize: CGFloat = 144
+    static let outerRingSize: CGFloat = 180
+    static let middleRingSize: CGFloat = 154
+    static let innerRingSize: CGFloat = 128
     
     static let glowRadius: CGFloat = 8
     static let shadowRadius: CGFloat = 4
@@ -64,19 +64,19 @@ struct PremiumActivityRings: View {
                 ).delay(ring.delay), value: ring.progress)
             }
             
-            VStack(spacing: 4) {
+            VStack(spacing: 2) {
                 Text("\(Int(overallScore * 100))%")
-                    .font(.system(size: 48, weight: .semibold, design: .rounded))
+                    .font(.system(size: 42, weight: .semibold, design: .rounded))
                     .foregroundColor(.white)
                     .contentTransition(.numericText())
                     .animation(.spring(response: 0.5, dampingFraction: 0.8), value: overallScore)
                 
                 Text("Overall")
-                    .font(.system(size: 14, weight: .regular))
+                    .font(.system(size: 13, weight: .regular))
                     .foregroundColor(.white.opacity(0.6))
             }
         }
-        .frame(height: 300)
+        .frame(height: 240)
         .onAppear {
             withAnimation(.spring(response: 0.8, dampingFraction: 0.85)) {
                 animatedTimingScore = timingScore

@@ -25,7 +25,7 @@ struct PremiumPerformanceView: View {
                 Color.nutriSyncBackground.ignoresSafeArea()
                 
                 ScrollView(showsIndicators: false) {
-                    VStack(spacing: 24) {
+                    VStack(spacing: 20) {
                         headerSection
                         
                         PremiumActivityRings(
@@ -33,7 +33,7 @@ struct PremiumPerformanceView: View {
                             nutrientScore: calculateNutrientScore(),
                             adherenceScore: calculateAdherenceScore()
                         )
-                        .padding(.top, 20)
+                        .padding(.top, 8)
                         
                         RingLabelsView(
                             timingScore: calculateTimingScore(),
@@ -41,12 +41,14 @@ struct PremiumPerformanceView: View {
                             adherenceScore: calculateAdherenceScore()
                         )
                         .padding(.horizontal, 40)
+                        .padding(.bottom, 8)
                         
                         TodaysSummaryCard()
                             .padding(.horizontal, 20)
                             .environmentObject(viewModel)
                         
                         ProgressTimelineSection(viewModel: timelineVM)
+                            .padding(.bottom, 8)
                         
                         QuickStatsGrid(
                             streak: currentStreak,
@@ -56,7 +58,7 @@ struct PremiumPerformanceView: View {
                         )
                         .padding(.horizontal, 20)
                     }
-                    .padding(.bottom, 30)
+                    .padding(.bottom, 100) // Extra padding for tab bar visibility
                 }
             }
             .task {
