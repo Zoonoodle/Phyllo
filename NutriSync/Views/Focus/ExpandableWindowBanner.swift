@@ -78,7 +78,7 @@ struct AnimatedInfoSwitcher: View {
                 }
                 
                 Text("·")
-                    .font(TimelineTypography.macroLabel)
+                    .font(.system(size: 12))
                     .foregroundColor(.white.opacity(TimelineOpacity.quaternary))
                     .padding(.horizontal, 1)
                 
@@ -96,7 +96,7 @@ struct AnimatedInfoSwitcher: View {
                 }
                 
                 Text("·")
-                    .font(TimelineTypography.macroLabel)
+                    .font(.system(size: 12))
                     .foregroundColor(.white.opacity(TimelineOpacity.quaternary))
                     .padding(.horizontal, 1)
                 
@@ -547,19 +547,20 @@ struct ExpandableWindowBanner: View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 6) {
                 Image(systemName: mealIcon)
-                    .font(.system(size: { if case .active = windowStatus { return 17 } else { return 15 } }()))
+                    .font(.system(size: { if case .active = windowStatus { return 18 } else { return 16 } }()))
                 Text(mealType)
-                    .font({ if case .active = windowStatus { return TimelineTypography.windowTitle } else { return TimelineTypography.windowTitleInactive } }())
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.6)
+                    .font(.system(size: { if case .active = windowStatus { return 16 } else { return 15 } }(), weight: .semibold))
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.75)
                     .truncationMode(.tail)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .foregroundColor(.white)
             
             // Time range display with duration
             VStack(alignment: .leading, spacing: 1) {
                 Text(formatTimeRange(start: window.startTime, end: window.endTime))
-                    .font(TimelineTypography.timeRange)
+                    .font(.system(size: 14))
                     .foregroundColor(.white.opacity(TimelineOpacity.secondary))
                     .lineLimit(1)
                     .minimumScaleFactor(0.85)
@@ -567,7 +568,7 @@ struct ExpandableWindowBanner: View {
                 // Show duration for windows longer than 1 hour
                 if window.duration > 3600 {
                     Text("\(formatDuration(window.duration)) window")
-                        .font(TimelineTypography.duration)
+                        .font(.system(size: 13))
                         .foregroundColor(.white.opacity(TimelineOpacity.tertiary))
                 }
             }
@@ -578,9 +579,9 @@ struct ExpandableWindowBanner: View {
                 HStack(spacing: 4) {
                     if let remaining = window.timeRemaining {
                         Image(systemName: "clock")
-                            .font(TimelineTypography.statusLabel)
+                            .font(.system(size: 13))
                         Text("\(formatTime(remaining)) left")
-                            .font(TimelineTypography.statusValue)
+                            .font(.system(size: 14, weight: .medium))
                             .monospacedDigit()
                     }
                 }
@@ -590,7 +591,7 @@ struct ExpandableWindowBanner: View {
                 if let hoursLate = window.hoursLate {
                     HStack(spacing: 4) {
                         Image(systemName: "exclamationmark.circle")
-                            .font(TimelineTypography.statusLabel)
+                            .font(.system(size: 13))
                         if hoursLate < 1 {
                             Text("\(Int(hoursLate * 60))m late •")
                                 .monospacedDigit()
@@ -601,21 +602,21 @@ struct ExpandableWindowBanner: View {
                             Text("still doable")
                         }
                     }
-                    .font(TimelineTypography.statusValue)
+                    .font(.system(size: 14, weight: .medium))
                     .foregroundColor(.yellow)
                 }
                 
             case .completed, .missed:
                 if !timeUntilWindow.isEmpty {
                     Text(timeUntilWindow)
-                        .font(TimelineTypography.statusLabel)
+                        .font(.system(size: 13))
                         .monospacedDigit()
                         .foregroundColor(.orange.opacity(0.8))
                 }
                 
             case .upcoming:
                 Text(timeUntilWindow)
-                    .font(TimelineTypography.statusLabel)
+                    .font(.system(size: 13))
                     .monospacedDigit()
                     .foregroundColor(getTimeTextColor())
             }
@@ -630,21 +631,21 @@ struct ExpandableWindowBanner: View {
                 // Show consumed vs target
                 HStack(spacing: 2) {
                     Text("\(consumed)")
-                        .font(consumed >= 1000 ? TimelineTypography.caloriesSmall : TimelineTypography.caloriesMedium)
+                        .font(.system(size: consumed >= 1000 ? 15 : 16, weight: .semibold))
                         .monospacedDigit()
                         .foregroundColor(consumptionColor(consumed: consumed, target: target))
-                        .minimumScaleFactor(0.6)
+                        .minimumScaleFactor(0.7)
                         .lineLimit(1)
                     Text("/")
-                        .font(TimelineTypography.calorieUnit)
+                        .font(.system(size: 13))
                         .foregroundColor(.white.opacity(TimelineOpacity.tertiary))
                     Text("\(target)")
-                        .font(TimelineTypography.calorieUnit)
+                        .font(.system(size: 13))
                         .monospacedDigit()
                         .foregroundColor(.white.opacity(TimelineOpacity.secondary))
-                        .minimumScaleFactor(0.6)
+                        .minimumScaleFactor(0.7)
                     Text("cal")
-                        .font(TimelineTypography.calorieUnit)
+                        .font(.system(size: 12))
                         .foregroundColor(.white.opacity(TimelineOpacity.secondary))
                 }
                 
@@ -664,13 +665,13 @@ struct ExpandableWindowBanner: View {
             case .missed(let redistribution):
                 HStack(spacing: 2) {
                     Text("\(window.effectiveCalories)")
-                        .font(window.effectiveCalories >= 1000 ? TimelineTypography.caloriesSmall : TimelineTypography.caloriesMedium)
+                        .font(.system(size: window.effectiveCalories >= 1000 ? 15 : 16, weight: .semibold))
                         .monospacedDigit()
                         .foregroundColor(.orange.opacity(0.8))
                         .lineLimit(1)
-                        .minimumScaleFactor(0.6)
+                        .minimumScaleFactor(0.7)
                     Text("cal")
-                        .font(TimelineTypography.calorieUnit)
+                        .font(.system(size: 12))
                         .foregroundColor(.orange.opacity(0.7))
                 }
                 
@@ -689,13 +690,13 @@ struct ExpandableWindowBanner: View {
             case .lateButDoable:
                 HStack(spacing: 2) {
                     Text("\(window.effectiveCalories)")
-                        .font(window.effectiveCalories >= 1000 ? TimelineTypography.caloriesSmall : TimelineTypography.caloriesMedium)
+                        .font(.system(size: window.effectiveCalories >= 1000 ? 15 : 16, weight: .semibold))
                         .monospacedDigit()
                         .foregroundColor(.white.opacity(TimelineOpacity.secondary))
                         .lineLimit(1)
-                        .minimumScaleFactor(0.6)
+                        .minimumScaleFactor(0.7)
                     Text("cal")
-                        .font(TimelineTypography.calorieUnit)
+                        .font(.system(size: 12))
                         .foregroundColor(.white.opacity(TimelineOpacity.secondary))
                 }
                 
@@ -705,32 +706,32 @@ struct ExpandableWindowBanner: View {
             case .active:
                 HStack(spacing: 2) {
                     Text("\(windowCaloriesRemaining)")
-                        .font(windowCaloriesRemaining >= 1000 ? TimelineTypography.caloriesSmall : TimelineTypography.caloriesLarge)
+                        .font(.system(size: windowCaloriesRemaining >= 1000 ? 17 : 18, weight: .bold))
                         .monospacedDigit()
                         .foregroundColor(.white)
                         .lineLimit(1)
-                        .minimumScaleFactor(0.6)
+                        .minimumScaleFactor(0.7)
                         .layoutPriority(1)
                     Text("cal")
-                        .font(TimelineTypography.calorieUnit)
+                        .font(.system(size: 13))
                         .foregroundColor(.white.opacity(TimelineOpacity.secondary))
                 }
                 
                 Text("remaining")
-                    .font(TimelineTypography.statusLabel)
+                    .font(.system(size: 12))
                     .foregroundColor(.white.opacity(TimelineOpacity.tertiary))
                 
             case .upcoming:
                 HStack(spacing: 2) {
                     Text("\(window.effectiveCalories)")
-                        .font(window.effectiveCalories >= 1000 ? TimelineTypography.caloriesSmall : TimelineTypography.caloriesMedium)
+                        .font(.system(size: window.effectiveCalories >= 1000 ? 15 : 16, weight: .semibold))
                         .monospacedDigit()
                         .foregroundColor(.white.opacity(TimelineOpacity.secondary))
                         .lineLimit(1)
-                        .minimumScaleFactor(0.6)
+                        .minimumScaleFactor(0.7)
                         .layoutPriority(1)
                     Text("cal")
-                        .font(TimelineTypography.calorieUnit)
+                        .font(.system(size: 12))
                         .foregroundColor(.white.opacity(TimelineOpacity.secondary))
                 }
                 
@@ -1082,7 +1083,7 @@ struct ExpandableWindowBanner: View {
             
             // Show analyzing meals first
             ForEach(analyzingMealsInWindow) { analyzingMeal in
-                AnalyzingMealRowCompact(meal: analyzingMeal)
+                AnalyzingMealRowCompact(meal: analyzingMeal, windowColor: window.purpose.color)
                     .padding(.horizontal, 14)
                     .transition(.asymmetric(
                         insertion: .scale(scale: 0.95).combined(with: .opacity),
@@ -1378,16 +1379,7 @@ struct MealRowCompact: View {
 // Compact analyzing meal row for inside window banner
 struct AnalyzingMealRowCompact: View {
     let meal: AnalyzingMeal
-    @State private var dotsAnimation = false
-    @State private var currentMessageIndex = 0
-    @State private var messageTimer: Timer?
-    
-    let messages = [
-        "Analyzing meal...",
-        "Processing...",
-        "Calculating...",
-        "Almost done..."
-    ]
+    let windowColor: Color
     
     var body: some View {
         HStack(spacing: 8) {
@@ -1398,52 +1390,13 @@ struct AnalyzingMealRowCompact: View {
                 .foregroundColor(.white.opacity(0.5))
                 .frame(width: 35)
             
-            // Loading dots instead of emoji
-            HStack(spacing: 3) {
-                ForEach(0..<3) { index in
-                    Circle()
-                        .fill(Color.nutriSyncAccent)
-                        .frame(width: 5, height: 5)
-                        .scaleEffect(dotsAnimation ? 1.0 : 0.5)
-                        .opacity(dotsAnimation ? 1.0 : 0.3)
-                        .animation(
-                            Animation.easeInOut(duration: 0.8)
-                                .repeatForever()
-                                .delay(Double(index) * 0.2),
-                            value: dotsAnimation
-                        )
-                }
-            }
-            .frame(width: 16)
-            
-            // Meal info
-            VStack(alignment: .leading, spacing: 1) {
-                Text(messages[currentMessageIndex])
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(.white)
-                    .lineLimit(1)
-                    .animation(.easeInOut(duration: 0.3), value: currentMessageIndex)
-                
-                // Shimmer for macros
-                RoundedRectangle(cornerRadius: 3)
-                    .fill(Color.white.opacity(0.1))
-                    .frame(width: 100, height: 11)
-                    .shimmer()
-            }
+            // New compact meal analysis loader
+            CompactMealAnalysisLoader(
+                size: .inline,
+                windowColor: windowColor
+            )
             
             Spacer()
-            
-            // Loading spinner
-            ProgressView()
-                .progressViewStyle(CircularProgressViewStyle(tint: .nutriSyncAccent.opacity(0.6)))
-                .scaleEffect(0.6)
-        }
-        .onAppear {
-            dotsAnimation = true
-            startMessageRotation()
-        }
-        .onDisappear {
-            messageTimer?.invalidate()
         }
     }
     
@@ -1451,14 +1404,6 @@ struct AnalyzingMealRowCompact: View {
         let formatter = DateFormatter()
         formatter.dateFormat = "h:mm"
         return formatter
-    }
-    
-    private func startMessageRotation() {
-        messageTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { _ in
-            withAnimation(.easeInOut(duration: 0.3)) {
-                currentMessageIndex = (currentMessageIndex + 1) % messages.count
-            }
-        }
     }
 }
 

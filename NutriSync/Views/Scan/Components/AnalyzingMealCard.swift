@@ -11,52 +11,19 @@ struct AnalyzingMealCard: View {
     let timestamp: Date
     let metadata: AnalysisMetadata?
     @ObservedObject private var agent = MealAnalysisAgent.shared
-    @State private var dotsAnimation = false
-    @State private var currentMessageIndex = 0
-    @State private var messageTimer: Timer?
     @State private var showMetadata = false
-    
-    let messages = [
-        "Analyzing your meal...",
-        "Detecting ingredients...",
-        "Calculating nutrition...",
-        "Processing image...",
-        "Finalizing results..."
-    ]
     
     var body: some View {
         HStack(spacing: 16) {
-            // Loading indicator placeholder (where emoji would be)
-            ZStack {
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color.white.opacity(0.05))
-                    .frame(width: 50, height: 50)
-                
-                HStack(spacing: 4) {
-                    ForEach(0..<3) { index in
-                        Circle()
-                            .fill(Color.nutriSyncAccent)
-                            .frame(width: 8, height: 8)
-                            .scaleEffect(dotsAnimation ? 1.0 : 0.5)
-                            .opacity(dotsAnimation ? 1.0 : 0.3)
-                            .animation(
-                                Animation.easeInOut(duration: 0.8)
-                                    .repeatForever()
-                                    .delay(Double(index) * 0.2),
-                                value: dotsAnimation
-                            )
-                    }
-                }
-            }
+            // New compact meal analysis loader
+            CompactMealAnalysisLoader(
+                size: .card,
+                windowColor: .nutriSyncAccent
+            )
+            .frame(width: 80)
             
             // Meal info (loading state)
             VStack(alignment: .leading, spacing: 4) {
-                Text(agent.currentTool?.displayName ?? messages[currentMessageIndex])
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(.white)
-                    .animation(.easeInOut(duration: 0.3), value: agent.currentTool)
-                    .animation(.easeInOut(duration: 0.3), value: currentMessageIndex)
-                
                 HStack(spacing: 8) {
                     Text("Analyzing")
                         .font(.system(size: 14))
@@ -136,11 +103,6 @@ struct AnalyzingMealCard: View {
             }
             
             Spacer()
-            
-            // Loading spinner instead of chevron
-            ProgressView()
-                .progressViewStyle(CircularProgressViewStyle(tint: .white.opacity(0.3)))
-                .scaleEffect(0.8)
         }
         .padding(16)
         .background(
@@ -151,27 +113,12 @@ struct AnalyzingMealCard: View {
                         .strokeBorder(Color.nutriSyncAccent.opacity(0.3), lineWidth: 1)
                 )
         )
-        .onAppear {
-            dotsAnimation = true
-            startMessageRotation()
-        }
-        .onDisappear {
-            messageTimer?.invalidate()
-        }
     }
     
     private func timeString(from date: Date) -> String {
         let formatter = DateFormatter()
         formatter.timeStyle = .short
         return formatter.string(from: date)
-    }
-    
-    private func startMessageRotation() {
-        messageTimer = Timer.scheduledTimer(withTimeInterval: 2.5, repeats: true) { _ in
-            withAnimation(.easeInOut(duration: 0.3)) {
-                currentMessageIndex = (currentMessageIndex + 1) % messages.count
-            }
-        }
     }
 }
 
@@ -180,16 +127,6 @@ struct AnalyzingMealRow: View {
     let timestamp: Date
     let metadata: AnalysisMetadata?
     @ObservedObject private var agent = MealAnalysisAgent.shared
-    @State private var dotsAnimation = false
-    @State private var currentMessageIndex = 0
-    @State private var messageTimer: Timer?
-    
-    let messages = [
-        "Analyzing meal...",
-        "Processing...",
-        "Calculating...",
-        "Almost done..."
-    ]
     
     var body: some View {
         HStack(spacing: 12) {
@@ -199,28 +136,16 @@ struct AnalyzingMealRow: View {
                 .foregroundColor(.white.opacity(0.5))
                 .frame(width: 35)
             
-            // Loading dots instead of emoji
-            HStack(spacing: 3) {
-                ForEach(0..<3) { index in
-                    Circle()
-                        .fill(Color.nutriSyncAccent)
-                        .frame(width: 6, height: 6)
-                        .scaleEffect(dotsAnimation ? 1.0 : 0.5)
-                        .opacity(dotsAnimation ? 1.0 : 0.3)
-                        .animation(
-                            Animation.easeInOut(duration: 0.8)
-                                .repeatForever()
-                                .delay(Double(index) * 0.2),
-                            value: dotsAnimation
-                        )
-                }
-            }
-            .frame(width: 20)
+            // New compact meal analysis loader
+            CompactMealAnalysisLoader(
+                size: .inline,
+                windowColor: .nutriSyncAccent
+            )
             
-            // Meal info
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 4) {
-                    if let metadata = metadata {
+            // Meal info (if metadata available)
+            if let metadata = metadata {
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 4) {
                         // Show completed analysis badge
                         Image(systemName: metadata.complexity.icon)
                             .font(.system(size: 10))
@@ -230,54 +155,27 @@ struct AnalyzingMealRow: View {
                             .font(.system(size: 14, weight: .medium))
                             .foregroundColor(.white)
                             .lineLimit(1)
-                    } else if agent.isUsingTools, agent.currentTool != nil {
-                        Image(systemName: agent.currentTool?.iconName ?? "sparkle")
-                            .font(.system(size: 10))
-                            .foregroundColor(.nutriSyncAccent)
-                        
-                        Text(agent.currentTool?.displayName ?? messages[currentMessageIndex])
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(.white)
-                            .lineLimit(1)
-                            .animation(.easeInOut(duration: 0.3), value: agent.currentTool)
-                    } else {
-                        Text(messages[currentMessageIndex])
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(.white)
-                            .lineLimit(1)
-                            .animation(.easeInOut(duration: 0.3), value: currentMessageIndex)
                     }
-                }
-                
-                // Show tools or shimmer
-                if let metadata = metadata, !metadata.toolsUsed.isEmpty {
-                    HStack(spacing: 3) {
-                        ForEach(metadata.toolsUsed.prefix(2), id: \.self) { tool in
-                            Image(systemName: tool.icon)
-                                .font(.system(size: 9))
-                                .foregroundColor(Color(hex: tool.color))
-                        }
-                        if metadata.toolsUsed.count > 2 {
-                            Text("+\(metadata.toolsUsed.count - 2)")
-                                .font(.system(size: 9))
-                                .foregroundColor(.white.opacity(0.5))
+                    
+                    // Show tools if available
+                    if !metadata.toolsUsed.isEmpty {
+                        HStack(spacing: 3) {
+                            ForEach(metadata.toolsUsed.prefix(2), id: \.self) { tool in
+                                Image(systemName: tool.icon)
+                                    .font(.system(size: 9))
+                                    .foregroundColor(Color(hex: tool.color))
+                            }
+                            if metadata.toolsUsed.count > 2 {
+                                Text("+\(metadata.toolsUsed.count - 2)")
+                                    .font(.system(size: 9))
+                                    .foregroundColor(.white.opacity(0.5))
+                            }
                         }
                     }
-                } else {
-                    // Shimmer for macros
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(Color.white.opacity(0.1))
-                        .frame(width: 100, height: 11)
-                        .shimmer()
                 }
             }
             
             Spacer()
-            
-            // Loading spinner
-            ProgressView()
-                .progressViewStyle(CircularProgressViewStyle(tint: .white.opacity(0.3)))
-                .scaleEffect(0.6)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
@@ -293,27 +191,12 @@ struct AnalyzingMealRow: View {
                         .strokeBorder(Color.nutriSyncAccent.opacity(0.3), lineWidth: 1)
                 )
         )
-        .onAppear {
-            dotsAnimation = true
-            startMessageRotation()
-        }
-        .onDisappear {
-            messageTimer?.invalidate()
-        }
     }
     
     private var timeFormatter: DateFormatter {
         let formatter = DateFormatter()
         formatter.dateFormat = "h:mm"
         return formatter
-    }
-    
-    private func startMessageRotation() {
-        messageTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { _ in
-            withAnimation(.easeInOut(duration: 0.3)) {
-                currentMessageIndex = (currentMessageIndex + 1) % messages.count
-            }
-        }
     }
 }
 
@@ -429,4 +312,3 @@ extension View {
         }
     }
 }
-

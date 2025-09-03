@@ -180,11 +180,6 @@ struct ScanTabView: View {
                 .presentationDetents([.medium])
                 .presentationDragIndicator(.visible)
             }
-            .sheet(isPresented: $showLoading) {
-                LoadingSheet()
-                    .presentationDetents([.height(400)])
-                    .interactiveDismissDisabled()
-            }
             .sheet(isPresented: $showResults) {
                 if let meal = lastCompletedMeal {
                     NavigationStack {
@@ -473,29 +468,6 @@ struct ScanTabView: View {
     
 }
 
-// Loading sheet component
-struct LoadingSheet: View {
-    var body: some View {
-        ZStack {
-            Color.black.ignoresSafeArea()
-            
-            VStack {
-                // Drag indicator
-                Capsule()
-                    .fill(Color.white.opacity(0.3))
-                    .frame(width: 40, height: 5)
-                    .padding(.top, 12)
-                
-                Spacer()
-                
-                MealAnalysisLoadingView()
-                
-                Spacer()
-            }
-        }
-        .preferredColorScheme(.dark)
-    }
-}
 
 // Recents View - displays recently logged meals
 struct RecentsView: View {
