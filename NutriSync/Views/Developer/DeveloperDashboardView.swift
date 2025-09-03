@@ -371,18 +371,27 @@ struct FirebaseTabView: View {
                                 userInfo: [NSLocalizedDescriptionKey: "Firebase provider not available"])
                 }
                 
-                // Get user profile and check-in data
-                guard let profile = try await firebaseProvider.getUserProfile() else {
+                // Get user profile - it will create a default one if none exists
+                let profile = try await firebaseProvider.getUserProfile()
+                
+                // Ensure we have a profile (should always succeed due to auto-creation)
+                guard let validProfile = profile else {
                     throw NSError(domain: "DeveloperDashboard", code: 2,
-                                userInfo: [NSLocalizedDescriptionKey: "User profile not found"])
+                                userInfo: [NSLocalizedDescriptionKey: "Failed to create or fetch user profile"])
                 }
                 
-                let checkIn = try await firebaseProvider.getMorningCheckIn(for: Date())
+                // Log profile fetch success
+                await MainActor.run {
+                    DebugLogger.shared.info("Successfully fetched user profile: \(validProfile.name)")
+                }
+                
+                // Get check-in data (optional - can be nil)
+                let checkIn = try? await firebaseProvider.getMorningCheckIn(for: Date())
                 
                 // Clear and regenerate windows
                 let newWindows = try await firebaseProvider.clearAndRegenerateWindows(
                     for: Date(),
-                    profile: profile,
+                    profile: validProfile,
                     checkIn: checkIn
                 )
                 
