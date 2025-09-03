@@ -105,13 +105,20 @@ class ProgressTimelineViewModel: ObservableObject {
             let isToday = dayOffset == 0
             let mockData = DailyAnalytics(
                 date: date,
+                totalCalories: isToday ? 821 : Int.random(in: 1800...2600),
+                totalProtein: isToday ? 30 : Double.random(in: 80...120),
+                totalCarbs: isToday ? 100 : Double.random(in: 200...300),
+                totalFat: isToday ? 35 : Double.random(in: 60...90),
                 mealsLogged: isToday ? 2 : Int.random(in: 3...5),
                 targetMeals: 5,
+                windowsCompleted: isToday ? 2 : Int.random(in: 3...5),
+                totalWindows: 5,
+                windowsMissed: 0,
+                averageEnergyLevel: nil,
+                micronutrientProgress: [:],
                 timingScore: isToday ? 1.0 : Double.random(in: 0.6...1.0),
                 nutrientScore: isToday ? 0.19 : Double.random(in: 0.4...0.9),
                 adherenceScore: isToday ? 0.34 : Double.random(in: 0.5...0.95),
-                windowsCompleted: isToday ? 2 : Int.random(in: 3...5),
-                totalWindows: 5,
                 caloriesConsumed: isToday ? 821 : Int.random(in: 1800...2600),
                 targetCalories: 2400
             )
