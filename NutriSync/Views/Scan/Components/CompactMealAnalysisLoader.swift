@@ -25,26 +25,46 @@ struct CompactMealAnalysisLoader: View {
     @State private var messageTimer: Timer?
     @State private var progressTimer: Timer?
     @State private var isComplete: Bool = false
+    @ObservedObject private var agent = MealAnalysisAgent.shared
     
     let size: MealAnalysisLoaderSize
     let windowColor: Color
     let onComplete: (() -> Void)?
     
-    // Status messages that rotate every 2.5 seconds
-    private let statusMessages = [
+    // Default status messages that rotate every 2.5 seconds
+    private let defaultMessages = [
         "Identifying ingredients...",
         "Calculating nutrition...",
         "Analyzing portions...",
         "Finalizing analysis..."
     ]
     
-    // Simulated progress milestones with timing
-    private let progressMilestones: [(progress: Double, duration: Double, messageIndex: Int)] = [
-        (0.10, 0.3, 0),  // 0-10% in 0.3s - "Identifying ingredients..."
-        (0.30, 0.7, 1),  // 10-30% in 0.7s - "Calculating nutrition..."
-        (0.60, 1.0, 2),  // 30-60% in 1.0s - "Analyzing portions..."
-        (0.85, 0.8, 3),  // 60-85% in 0.8s - "Finalizing analysis..."
-        (0.99, 0.5, 3),  // 85-99% in 0.5s - Still "Finalizing analysis..."
+    // Dynamic messages based on actual analysis state
+    private var currentStatusMessage: String {
+        // Use agent's actual progress if available
+        if !agent.toolProgress.isEmpty && agent.isUsingTools {
+            return agent.toolProgress
+        }
+        
+        // Use tool-specific message if available
+        if let tool = agent.currentTool {
+            return tool.displayName
+        }
+        
+        // Fall back to rotating default messages
+        return defaultMessages[currentMessageIndex]
+    }
+    
+    // Simulated progress milestones with timing (8-9 seconds to 99%)
+    private let progressMilestones: [(progress: Double, duration: Double)] = [
+        (0.10, 0.8),   // 0-10% in 0.8s
+        (0.25, 1.2),   // 10-25% in 1.2s  
+        (0.40, 1.5),   // 25-40% in 1.5s
+        (0.55, 1.5),   // 40-55% in 1.5s
+        (0.70, 1.5),   // 55-70% in 1.5s
+        (0.85, 1.3),   // 70-85% in 1.3s
+        (0.99, 1.2),   // 85-99% in 1.2s
+        // Total: 9 seconds to reach 99%
     ]
     
     init(size: MealAnalysisLoaderSize = .inline,
@@ -56,19 +76,28 @@ struct CompactMealAnalysisLoader: View {
     }
     
     var body: some View {
-        VStack(spacing: size == .inline ? 8 : 12) {
-            // Progress ring
+        if size == .inline {
+            // Inline mode: just the ring, no text below
             MealAnalysisProgressRing(
                 progress: progress,
                 size: size.dimension,
                 color: windowColor
             )
-            
-            // Status message
-            Text(statusMessages[currentMessageIndex])
-                .font(size == .inline ? TimelineTypography.macroLabel : TimelineTypography.statusLabel)
-                .foregroundColor(.white.opacity(TimelineOpacity.secondary))
-                .animation(.easeInOut(duration: 0.3), value: currentMessageIndex)
+        } else {
+            // Card mode: ring with status message below
+            VStack(spacing: 12) {
+                MealAnalysisProgressRing(
+                    progress: progress,
+                    size: size.dimension,
+                    color: windowColor
+                )
+                
+                // Dynamic status message
+                Text(currentStatusMessage)
+                    .font(TimelineTypography.statusLabel)
+                    .foregroundColor(.white.opacity(TimelineOpacity.secondary))
+                    .animation(.easeInOut(duration: 0.3), value: currentStatusMessage)
+            }
         }
         .onAppear {
             startAnimation()
@@ -99,15 +128,11 @@ struct CompactMealAnalysisLoader: View {
         func animateToNextMilestone() {
             guard milestoneIndex < progressMilestones.count else {
                 // Hold at 99% until analysis completes
+                // Keep message rotation going
                 return
             }
             
             let milestone = progressMilestones[milestoneIndex]
-            
-            // Update message when reaching certain milestones
-            withAnimation(.easeInOut(duration: 0.3)) {
-                currentMessageIndex = milestone.messageIndex
-            }
             
             // Animate progress to milestone
             withAnimation(.linear(duration: milestone.duration)) {
@@ -126,14 +151,12 @@ struct CompactMealAnalysisLoader: View {
     }
     
     private func startMessageRotation() {
-        // Rotate messages every 2.5 seconds as backup
-        // (primary message changes are driven by progress milestones)
+        // Rotate messages every 2.5 seconds
+        // Continue rotating even at 99% to show activity
         messageTimer = Timer.scheduledTimer(withTimeInterval: 2.5, repeats: true) { _ in
             withAnimation(.easeInOut(duration: 0.3)) {
-                // Only rotate if we're not at the final message
-                if currentMessageIndex < statusMessages.count - 1 && progress < 0.85 {
-                    currentMessageIndex = (currentMessageIndex + 1) % statusMessages.count
-                }
+                // Always rotate through all messages, even at 99%
+                currentMessageIndex = (currentMessageIndex + 1) % defaultMessages.count
             }
         }
     }

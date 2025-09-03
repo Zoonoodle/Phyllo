@@ -114,7 +114,7 @@ struct DayPurposeCard: View {
                     Image(systemName: "sparkles.rectangle.stack.fill")
                         .font(.system(size: 40))
                         .foregroundStyle(LinearGradient(
-                            colors: [.phylloAccent, .phylloAccent.opacity(0.6)],
+                            colors: [Color.nutriSyncAccent, Color.nutriSyncAccent.opacity(0.6)],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         ))
@@ -171,7 +171,7 @@ struct DayPurposeCard: View {
         HStack(spacing: 6) {
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 12))
-                .foregroundStyle(.phylloAccent)
+                .foregroundStyle(Color.nutriSyncAccent)
             
             Text(simplifyPriorityText(priority))
                 .font(.system(size: 14, weight: .medium))
@@ -181,11 +181,11 @@ struct DayPurposeCard: View {
         .padding(.vertical, 8)
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(Color.phylloAccent.opacity(0.12))
+                .fill(Color.nutriSyncAccent.opacity(0.12))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 16)
-                .strokeBorder(Color.phylloAccent.opacity(0.2), lineWidth: 1)
+                .strokeBorder(Color.nutriSyncAccent.opacity(0.2), lineWidth: 1)
         )
     }
     

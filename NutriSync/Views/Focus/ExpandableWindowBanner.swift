@@ -1380,23 +1380,74 @@ struct MealRowCompact: View {
 struct AnalyzingMealRowCompact: View {
     let meal: AnalyzingMeal
     let windowColor: Color
+    @ObservedObject private var agent = MealAnalysisAgent.shared
+    @State private var currentMessageIndex: Int = 0
+    @State private var messageTimer: Timer?
+    
+    // Default messages that rotate
+    private let defaultMessages = [
+        "Identifying ingredients...",
+        "Calculating nutrition...",
+        "Analyzing portions...",
+        "Finalizing analysis..."
+    ]
+    
+    // Get current status message
+    private var statusMessage: String {
+        // Use agent's actual progress if available
+        if !agent.toolProgress.isEmpty && agent.isUsingTools {
+            return agent.toolProgress
+        }
+        
+        // Use tool-specific message if available
+        if let tool = agent.currentTool {
+            return tool.displayName
+        }
+        
+        // Fall back to rotating default messages
+        return defaultMessages[currentMessageIndex]
+    }
     
     var body: some View {
-        HStack(spacing: 8) {
-            // Time
+        HStack(spacing: 6) {
+            // Time (matching MealRowCompact)
             Text(timeFormatter.string(from: meal.timestamp))
                 .font(.system(size: 11))
                 .monospacedDigit()
                 .foregroundColor(.white.opacity(0.5))
                 .frame(width: 35)
             
-            // New compact meal analysis loader
+            // Progress ring where emoji would be (matching MealRowCompact size)
             CompactMealAnalysisLoader(
                 size: .inline,
                 windowColor: windowColor
             )
+            .frame(width: 20, height: 20)
+            .scaleEffect(0.4) // Scale down the 50px ring to fit in 20px frame
             
-            Spacer()
+            // Status info (matching MealRowCompact layout)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(statusMessage)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                
+                // Shimmer placeholder for nutrition info
+                RoundedRectangle(cornerRadius: 2)
+                    .fill(Color.white.opacity(0.1))
+                    .frame(height: 11)
+                    .frame(maxWidth: 140)
+                    .shimmer()
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .onAppear {
+            startMessageRotation()
+        }
+        .onDisappear {
+            messageTimer?.invalidate()
         }
     }
     
@@ -1404,6 +1455,41 @@ struct AnalyzingMealRowCompact: View {
         let formatter = DateFormatter()
         formatter.dateFormat = "h:mm"
         return formatter
+    }
+    
+    private func startMessageRotation() {
+        // Rotate messages every 2.5 seconds
+        messageTimer = Timer.scheduledTimer(withTimeInterval: 2.5, repeats: true) { _ in
+            withAnimation(.easeInOut(duration: 0.3)) {
+                currentMessageIndex = (currentMessageIndex + 1) % defaultMessages.count
+            }
+        }
+    }
+}
+
+// Shimmer effect for loading states
+extension View {
+    func shimmer() -> some View {
+        self.overlay(
+            LinearGradient(
+                gradient: Gradient(colors: [
+                    Color.white.opacity(0),
+                    Color.white.opacity(0.1),
+                    Color.white.opacity(0)
+                ]),
+                startPoint: .leading,
+                endPoint: .trailing
+            )
+            .offset(x: -200)
+            .rotationEffect(.degrees(0))
+            .offset(x: 200)
+            .animation(
+                Animation.linear(duration: 1.5)
+                    .repeatForever(autoreverses: false),
+                value: UUID()
+            )
+            .mask(self)
+        )
     }
 }
 
