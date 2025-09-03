@@ -225,6 +225,8 @@ struct InlineNudgeCard_Previews: PreviewProvider {
                         title: "Did you know?",
                         subtitle: "Logging meals within 30 minutes improves tracking accuracy by 40%",
                         actionTitle: "Learn More",
+                        onAction: { },
+                        onDismiss: { },
                         style: .standard
                     )
                     
@@ -234,6 +236,8 @@ struct InlineNudgeCard_Previews: PreviewProvider {
                         title: "New feature: Voice logging",
                         subtitle: "",
                         actionTitle: "Try it",
+                        onAction: { },
+                        onDismiss: { },
                         style: .compact
                     )
                     
@@ -243,6 +247,7 @@ struct InlineNudgeCard_Previews: PreviewProvider {
                         title: "You're on a Roll!",
                         subtitle: "3-day streak of logging all meals. Keep it up to unlock premium insights.",
                         actionTitle: "View Progress",
+                        onAction: { },
                         onDismiss: nil,
                         style: .prominent,
                         showDismiss: false
