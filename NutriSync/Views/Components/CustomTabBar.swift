@@ -18,10 +18,21 @@ struct CustomTabBar: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // Separation line
+            // Separation line with softer glow
             Rectangle()
-                .fill(Color.white.opacity(0.08))
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color.white.opacity(0.0),
+                            Color.white.opacity(0.1),
+                            Color.white.opacity(0.0)
+                        ],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
                 .frame(height: 0.5)
+                .blur(radius: 0.5)
             
             HStack(spacing: 0) {
                 ForEach(0..<tabs.count, id: \.self) { index in
@@ -40,7 +51,40 @@ struct CustomTabBar: View {
             .padding(.top, 2)
             .padding(.bottom, 16) // Account for home indicator
             .background(
-                Color(red: 0.07, green: 0.07, blue: 0.07) // Solid dark background
+                // Glass morphism effect
+                ZStack {
+                    // Base blur effect
+                    Rectangle()
+                        .fill(.ultraThinMaterial)
+                        .environment(\.colorScheme, .dark)
+                    
+                    // Subtle gradient overlay
+                    Rectangle()
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    Color.black.opacity(0.3),
+                                    Color.black.opacity(0.2)
+                                ],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                    
+                    // Subtle inner glow/border
+                    Rectangle()
+                        .strokeBorder(
+                            LinearGradient(
+                                colors: [
+                                    Color.white.opacity(0.05),
+                                    Color.white.opacity(0.02)
+                                ],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            ),
+                            lineWidth: 0.5
+                        )
+                }
             )
         }
     }
@@ -67,13 +111,14 @@ struct TabBarButton: View {
                 Image(systemName: isSelected ? tab.selectedIcon : tab.icon)
                     .font(.system(size: 22))
                     .scaleEffect(isSelected ? 1.1 : 1.0)
-                    .foregroundColor(isSelected ? .white : .white.opacity(0.5))
+                    .foregroundColor(isSelected ? .white : .white.opacity(0.6))
                     .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)
                     .frame(width: 30, height: 30)
+                    .shadow(color: isSelected ? .white.opacity(0.3) : .clear, radius: 3)
                 
                 Text(tab.label)
                     .font(.caption2)
-                    .foregroundColor(isSelected ? .white : .white.opacity(0.5))
+                    .foregroundColor(isSelected ? .white.opacity(0.9) : .white.opacity(0.6))
                     .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)
                     .fixedSize()
             }
