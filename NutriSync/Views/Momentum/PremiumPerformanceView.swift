@@ -10,11 +10,14 @@ import SwiftUI
 struct PremiumPerformanceView: View {
     @StateObject private var viewModel = NutritionDashboardViewModel()
     @StateObject private var timelineVM = ProgressTimelineViewModel()
-    @StateObject private var dataProvider = DataSourceProvider.shared.provider as! FirebaseDataProvider
     
     @State private var currentStreak: Int = 0
     @State private var fastingHours: Double = 0
     @State private var isLoadingStreak = false
+    
+    private var dataProvider: DataProvider {
+        DataSourceProvider.shared.provider
+    }
     
     var body: some View {
         NavigationStack {
