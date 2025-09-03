@@ -265,7 +265,7 @@ struct ScanTabView: View {
                let result = notification.userInfo?["result"] as? MealAnalysisResult,
                let savedMeal = notification.userInfo?["savedMeal"] as? LoggedMeal,
                analyzingMeal.id == currentAnalyzingMeal?.id {
-                let metadata = notification.userInfo?["metadata"] as? AnalysisMetadata
+                let _ = notification.userInfo?["metadata"] as? AnalysisMetadata
                 
                 Task { @MainActor in
                     DebugLogger.shared.mealAnalysis("Analysis completed for meal: \(result.mealName)")
@@ -386,19 +386,17 @@ struct ScanTabView: View {
     private func handleRecentMealSelection(_ meal: LoggedMeal) async {
         // Create a new meal based on the selected recent meal
         let newMeal = LoggedMeal(
-            id: UUID(),
             name: meal.name,
-            items: meal.items,
-            totalCalories: meal.totalCalories,
-            totalProtein: meal.totalProtein,
-            totalCarbs: meal.totalCarbs,
-            totalFat: meal.totalFat,
+            calories: meal.calories,
+            protein: meal.protein,
+            carbs: meal.carbs,
+            fat: meal.fat,
             timestamp: Date(),
             windowId: nil, // Will be assigned when added to a window
-            photoData: meal.photoData,
-            confidence: meal.confidence,
-            verificationStatus: .unverified,
-            notes: nil
+            micronutrients: meal.micronutrients,
+            ingredients: meal.ingredients,
+            imageData: meal.imageData,
+            appliedClarifications: meal.appliedClarifications
         )
         
         // Save the new meal
@@ -539,7 +537,7 @@ struct RecentsView: View {
                                             .frame(width: 56, height: 56)
                                             .overlay(
                                                 Group {
-                                                    if let photoData = meal.photoData,
+                                                    if let photoData = meal.imageData,
                                                        let uiImage = UIImage(data: photoData) {
                                                         Image(uiImage: uiImage)
                                                             .resizable()
