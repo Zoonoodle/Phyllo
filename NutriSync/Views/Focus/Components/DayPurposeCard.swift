@@ -4,71 +4,134 @@ import UIKit
 struct DayPurposeCard: View {
     let dayPurpose: DayPurpose?
     @State private var expandedSections: Set<String> = []
+    @State private var selectedCategory: StrategyCategory = .nutrition
+    
+    enum StrategyCategory: String, CaseIterable {
+        case nutrition = "nutrition"
+        case energy = "energy"
+        case performance = "performance"
+        case recovery = "recovery"
+        
+        var icon: String {
+            switch self {
+            case .nutrition: return "leaf.circle.fill"
+            case .energy: return "bolt.circle.fill"
+            case .performance: return "figure.run.circle.fill"
+            case .recovery: return "moon.circle.fill"
+            }
+        }
+        
+        var title: String {
+            switch self {
+            case .nutrition: return "Nutrition"
+            case .energy: return "Energy"
+            case .performance: return "Performance"
+            case .recovery: return "Recovery"
+            }
+        }
+        
+        var color: Color {
+            switch self {
+            case .nutrition: return .green
+            case .energy: return .yellow
+            case .performance: return .orange
+            case .recovery: return .purple
+            }
+        }
+    }
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Today's Strategy")
-                .font(.headline)
-                .foregroundStyle(.white)
+        VStack(alignment: .leading, spacing: 20) {
+            // Header
+            HStack {
+                Text("Today's Strategy")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(.white)
+                
+                Spacer()
+                
+                // Compact date
+                Text(Date().formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day()))
+                    .font(.system(size: 14))
+                    .foregroundStyle(.white.opacity(0.4))
+            }
             
             if let dayPurpose = dayPurpose {
-                VStack(spacing: 12) {
-                    expandableSection(
-                        title: "🎯 Nutritional Strategy",
-                        content: dayPurpose.nutritionalStrategy,
-                        id: "nutrition"
-                    )
+                // Category pills
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 10) {
+                        ForEach(StrategyCategory.allCases, id: \.self) { category in
+                            categoryPill(category)
+                        }
+                    }
+                }
+                
+                // Content for selected category
+                VStack(alignment: .leading, spacing: 12) {
+                    // Icon and title
+                    HStack(spacing: 10) {
+                        Image(systemName: selectedCategory.icon)
+                            .font(.system(size: 24))
+                            .foregroundStyle(selectedCategory.color)
+                        
+                        Text(selectedCategory.title)
+                            .font(.system(size: 18, weight: .medium))
+                            .foregroundStyle(.white)
+                        
+                        Spacer()
+                    }
                     
-                    expandableSection(
-                        title: "⚡ Energy Management",
-                        content: dayPurpose.energyManagement,
-                        id: "energy"
-                    )
-                    
-                    expandableSection(
-                        title: "💪 Performance Optimization",
-                        content: dayPurpose.performanceOptimization,
-                        id: "performance"
-                    )
-                    
-                    expandableSection(
-                        title: "🛌 Recovery Focus",
-                        content: dayPurpose.recoveryFocus,
-                        id: "recovery"
-                    )
-                    
-                    if !dayPurpose.keyPriorities.isEmpty {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Key Priorities")
-                                .font(.subheadline)
-                                .foregroundStyle(.white.opacity(0.7))
-                            
-                            ForEach(Array(dayPurpose.keyPriorities.prefix(3).enumerated()), id: \.offset) { index, priority in
-                                HStack(spacing: 8) {
-                                    Circle()
-                                        .fill(Color.phylloAccent.opacity(0.6))
-                                        .frame(width: 6, height: 6)
-                                    
-                                    Text(priority)
-                                        .font(.caption)
-                                        .foregroundStyle(.white.opacity(0.85))
+                    // Content with better readability
+                    Text(getStrategyContent(for: selectedCategory, from: dayPurpose))
+                        .font(.system(size: 15))
+                        .foregroundStyle(.white.opacity(0.85))
+                        .lineSpacing(4)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(16)
+                .background(Color.white.opacity(0.03))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                
+                // Key priorities as chips
+                if !dayPurpose.keyPriorities.isEmpty {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Top Priorities")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(.white.opacity(0.5))
+                        
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 8) {
+                                ForEach(Array(dayPurpose.keyPriorities.prefix(3).enumerated()), id: \.offset) { index, priority in
+                                    priorityChip(priority, index: index)
                                 }
                             }
                         }
-                        .padding(.top, 8)
                     }
                 }
             } else {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Day purpose will be generated during your morning check-in")
-                        .font(.subheadline)
-                        .foregroundStyle(.white.opacity(0.6))
+                // Empty state with better design
+                VStack(spacing: 16) {
+                    Image(systemName: "sparkles.rectangle.stack.fill")
+                        .font(.system(size: 40))
+                        .foregroundStyle(LinearGradient(
+                            colors: [.phylloAccent, .phylloAccent.opacity(0.6)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ))
                     
-                    Text("Complete your check-in to receive personalized daily nutrition strategy")
-                        .font(.caption)
-                        .foregroundStyle(.white.opacity(0.5))
+                    VStack(spacing: 6) {
+                        Text("Strategy Awaits")
+                            .font(.system(size: 17, weight: .medium))
+                            .foregroundStyle(.white)
+                        
+                        Text("Complete your morning check-in for today's personalized plan")
+                            .font(.system(size: 14))
+                            .foregroundStyle(.white.opacity(0.6))
+                            .multilineTextAlignment(.center)
+                    }
                 }
-                .padding(.vertical, 8)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 24)
             }
         }
         .padding(20)
@@ -76,44 +139,120 @@ struct DayPurposeCard: View {
         .clipShape(RoundedRectangle(cornerRadius: 16))
     }
     
-    private func expandableSection(title: String, content: String, id: String) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text(title)
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-                    .foregroundStyle(.white.opacity(0.9))
-                
-                Spacer()
-                
-                Image(systemName: expandedSections.contains(id) ? "chevron.up" : "chevron.down")
-                    .font(.caption)
-                    .foregroundStyle(.white.opacity(0.5))
-            }
-            .contentShape(Rectangle())
-            .onTapGesture {
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                    if expandedSections.contains(id) {
-                        expandedSections.remove(id)
-                    } else {
-                        expandedSections.insert(id)
-                    }
-                }
-                let impact = UIImpactFeedbackGenerator(style: .light)
-                impact.impactOccurred()
-            }
+    private func categoryPill(_ category: StrategyCategory) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: category.icon)
+                .font(.system(size: 14))
             
-            if expandedSections.contains(id) {
-                Text(content)
-                    .font(.caption)
-                    .foregroundStyle(.white.opacity(0.7))
-                    .fixedSize(horizontal: false, vertical: true)
-                    .transition(.opacity.combined(with: .scale(scale: 0.95, anchor: .top)))
-            }
+            Text(category.title)
+                .font(.system(size: 14, weight: .medium))
         }
-        .padding(12)
-        .background(Color.white.opacity(0.02))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .foregroundStyle(selectedCategory == category ? Color.black : category.color)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 8)
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(selectedCategory == category ? category.color : category.color.opacity(0.15))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 20)
+                .strokeBorder(category.color.opacity(0.3), lineWidth: selectedCategory == category ? 0 : 1)
+        )
+        .onTapGesture {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                selectedCategory = category
+            }
+            let impact = UIImpactFeedbackGenerator(style: .light)
+            impact.impactOccurred()
+        }
+    }
+    
+    private func priorityChip(_ priority: String, index: Int) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 12))
+                .foregroundStyle(.phylloAccent)
+            
+            Text(simplifyPriorityText(priority))
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(.white)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color.phylloAccent.opacity(0.12))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .strokeBorder(Color.phylloAccent.opacity(0.2), lineWidth: 1)
+        )
+    }
+    
+    private func getStrategyContent(for category: StrategyCategory, from dayPurpose: DayPurpose) -> String {
+        let content: String
+        switch category {
+        case .nutrition:
+            content = dayPurpose.nutritionalStrategy
+        case .energy:
+            content = dayPurpose.energyManagement
+        case .performance:
+            content = dayPurpose.performanceOptimization
+        case .recovery:
+            content = dayPurpose.recoveryFocus
+        }
+        
+        // Simplify and shorten the content
+        return simplifyStrategyText(content)
+    }
+    
+    private func simplifyStrategyText(_ text: String) -> String {
+        // Take first 2 sentences or up to 150 characters
+        let sentences = text.components(separatedBy: ". ")
+        if sentences.count >= 2 {
+            return sentences.prefix(2).joined(separator: ". ") + "."
+        } else if text.count > 150 {
+            let truncated = String(text.prefix(150))
+            if let lastSpace = truncated.lastIndex(of: " ") {
+                return String(truncated[..<lastSpace]) + "..."
+            }
+            return truncated + "..."
+        }
+        return text
+    }
+    
+    private func simplifyPriorityText(_ text: String) -> String {
+        // Shorten common priority phrases
+        let replacements = [
+            "Hit ": "",
+            "target": "goal",
+            "Prioritize": "",
+            "Fuel workouts effectively with": "Smart",
+            "targeted": "",
+            "pre- and post-workout": "workout",
+            "Maintain consistent": "",
+            "by spacing meals appropriately": "",
+            "throughout the day": "daily"
+        ]
+        
+        var simplified = text
+        for (old, new) in replacements {
+            simplified = simplified.replacingOccurrences(of: old, with: new)
+        }
+        
+        // Trim and capitalize
+        simplified = simplified.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        // Limit to 30 characters
+        if simplified.count > 30 {
+            let truncated = String(simplified.prefix(27))
+            if let lastSpace = truncated.lastIndex(of: " ") {
+                return String(truncated[..<lastSpace]) + "..."
+            }
+            return truncated + "..."
+        }
+        
+        return simplified
     }
 }
 
