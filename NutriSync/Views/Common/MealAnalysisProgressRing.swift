@@ -14,6 +14,10 @@ struct MealAnalysisProgressRing: View {
     let showPercentage: Bool = true // Always show percentage for meal analysis
     let lineWidth: CGFloat = 2
     
+    // For smooth counting animation
+    @State private var displayedPercentage: Int = 0
+    private let percentageTimer = Timer.publish(every: 0.02, on: .main, in: .common).autoconnect()
+    
     var body: some View {
         ZStack {
             // Background ring with open bottom (76% of circle)
@@ -32,15 +36,28 @@ struct MealAnalysisProgressRing: View {
                 )
                 .frame(width: size, height: size)
                 .rotationEffect(.degrees(126))
-                .animation(.linear(duration: 1), value: progress)
+                .animation(.linear(duration: 0.3), value: progress)
             
-            // Percentage text
+            // Percentage text with counting animation
             if showPercentage {
-                Text("\(Int(progress * 100))%")
+                Text("\(displayedPercentage)%")
                     .font(fontSize(for: size))
                     .foregroundColor(.white)
                     .monospacedDigit()
+                    .contentTransition(.numericText())
+                    .animation(.snappy(duration: 0.1), value: displayedPercentage)
             }
+        }
+        .onReceive(percentageTimer) { _ in
+            let targetPercentage = Int(progress * 100)
+            if displayedPercentage < targetPercentage {
+                displayedPercentage = min(displayedPercentage + 1, targetPercentage)
+            } else if displayedPercentage > targetPercentage {
+                displayedPercentage = targetPercentage
+            }
+        }
+        .onAppear {
+            displayedPercentage = Int(progress * 100)
         }
     }
     
