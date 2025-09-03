@@ -1417,13 +1417,13 @@ struct AnalyzingMealRowCompact: View {
                 .foregroundColor(.white.opacity(0.5))
                 .frame(width: 35)
             
-            // Progress ring where emoji would be (matching MealRowCompact size)
+            // Progress ring where emoji would be (slightly larger than emoji)
             CompactMealAnalysisLoader(
                 size: .inline,
                 windowColor: windowColor
             )
-            .frame(width: 20, height: 20)
-            .scaleEffect(0.4) // Scale down the 50px ring to fit in 20px frame
+            .frame(width: 24, height: 24)
+            .scaleEffect(0.48) // Scale down the 50px ring to fit in 24px frame
             
             // Status info (matching MealRowCompact layout)
             VStack(alignment: .leading, spacing: 2) {
