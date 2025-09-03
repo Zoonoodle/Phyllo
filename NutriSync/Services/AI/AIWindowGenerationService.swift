@@ -402,17 +402,28 @@ class AIWindowGenerationService {
         let prompt = buildPrompt(profile: profile, checkIn: checkIn, date: actualDate)
         
         Task { @MainActor in
-            DebugLogger.shared.info("Calling Gemini AI for window generation")
+            DebugLogger.shared.info("=== WINDOW GENERATION REQUEST ===")
             DebugLogger.shared.info("User goal: \(profile.primaryGoal.displayName)")
-            DebugLogger.shared.info("Requested date: \(date), Actual date for windows: \(actualDate)")
+            DebugLogger.shared.info("Activity level: \(profile.activityLevel.rawValue)")
+            DebugLogger.shared.info("Daily targets - Calories: \(profile.dailyCalorieTarget), P: \(profile.dailyProteinTarget)g, C: \(profile.dailyCarbTarget)g, F: \(profile.dailyFatTarget)g")
+            if let checkIn = checkIn {
+                DebugLogger.shared.info("Check-in data - Sleep: \(checkIn.sleepQuality)/10, Energy: \(checkIn.energyLevel)/10, Hunger: \(checkIn.hungerLevel)/10")
+                DebugLogger.shared.info("Activities: \(checkIn.plannedActivities.joined(separator: ", "))")
+            }
+            DebugLogger.shared.info("Date: \(actualDate)")
+            DebugLogger.shared.info("Prompt length: \(prompt.count) characters")
+            // Log full prompt for debugging
+            DebugLogger.shared.info("Full prompt:\n\(prompt)")
         }
         
         // Call Gemini AI
+        let startTime = Date()
         let response = try await model.generateContent(prompt)
+        let elapsed = Date().timeIntervalSince(startTime)
         
         guard let text = response.text else {
             Task { @MainActor in
-                DebugLogger.shared.error("No response text from Gemini")
+                DebugLogger.shared.error("No response text from Gemini after \(String(format: "%.2f", elapsed))s")
             }
             throw NSError(
                 domain: "AIWindowGeneration",
@@ -422,8 +433,11 @@ class AIWindowGenerationService {
         }
         
         Task { @MainActor in
-            DebugLogger.shared.info("Received response from Gemini, parsing JSON...")
-            DebugLogger.shared.info("Raw AI response (first 500 chars): \(String(text.prefix(500)))")
+            DebugLogger.shared.info("=== WINDOW GENERATION RESPONSE ===")
+            DebugLogger.shared.success("Received response from Gemini in \(String(format: "%.2f", elapsed))s")
+            DebugLogger.shared.info("Response size: \(text.count) characters")
+            // Log full response for debugging
+            DebugLogger.shared.info("Full response:\n\(text)")
         }
         
         // Parse the JSON response with the actual date
@@ -724,11 +738,15 @@ class AIWindowGenerationService {
             let aiResponse = try decoder.decode(AIWindowResponse.self, from: data)
             
             Task { @MainActor in
+                DebugLogger.shared.success("=== WINDOW GENERATION RESULT ===")
                 DebugLogger.shared.success("Parsed \(aiResponse.windows.count) windows from AI response")
-                for window in aiResponse.windows {
-                    DebugLogger.shared.info("AI Window: \(window.name)")
-                    DebugLogger.shared.info("  Start: \(window.startTime)")
-                    DebugLogger.shared.info("  End: \(window.endTime)")
+                for (index, window) in aiResponse.windows.enumerated() {
+                    DebugLogger.shared.info("Window \(index + 1): \(window.name)")
+                    DebugLogger.shared.info("  Time: \(window.startTime) to \(window.endTime)")
+                    DebugLogger.shared.info("  Calories: \(window.targetCalories)")
+                    DebugLogger.shared.info("  Macros: P:\(window.targetProtein)g C:\(window.targetCarbs)g F:\(window.targetFat)g")
+                    DebugLogger.shared.info("  Purpose: \(window.purpose)")
+                    DebugLogger.shared.info("  Type: \(window.type)")
                 }
             }
             

@@ -309,6 +309,18 @@ class VertexAIService: ObservableObject {
     private func callGeminiAI(prompt: String, imageData: Data?) async throws -> MealAnalysisResult {
         analysisProgress = 0.4
         
+        // Log full prompt for debugging
+        Task { @MainActor in
+            DebugLogger.shared.mealAnalysis("=== MEAL ANALYSIS REQUEST ===")
+            DebugLogger.shared.mealAnalysis("Prompt length: \(prompt.count) characters")
+            DebugLogger.shared.mealAnalysis("Has image: \(imageData != nil)")
+            if let imageData = imageData {
+                DebugLogger.shared.mealAnalysis("Image size: \(imageData.count / 1024)KB")
+            }
+            // Log full prompt in Developer Dashboard for debugging
+            DebugLogger.shared.info("Full prompt:\n\(prompt)")
+        }
+        
         var imageRef: StorageReference? = nil
         
         // Handle image upload if provided
@@ -428,7 +440,10 @@ class VertexAIService: ObservableObject {
         }
         
         Task { @MainActor in
-            DebugLogger.shared.info("AI Response received: \(text.count) characters")
+            DebugLogger.shared.mealAnalysis("=== MEAL ANALYSIS RESPONSE ===")
+            DebugLogger.shared.info("Response size: \(text.count) characters")
+            // Log full response for debugging
+            DebugLogger.shared.info("Full response:\n\(text)")
         }
         
         // Extract and log thinking process if present
@@ -438,21 +453,15 @@ class VertexAIService: ObservableObject {
                 .replacingOccurrences(of: "</thinking>", with: "")
                 .trimmingCharacters(in: .whitespacesAndNewlines)
             
-            print("🧠 THINKING PROCESS:")
-            print(String(repeating: "=", count: 60))
-            thinkingContent.split(separator: "\n").forEach { line in
-                print("  \(line)")
-            }
-            print(String(repeating: "=", count: 60))
-            
             Task { @MainActor in
-                DebugLogger.shared.mealAnalysis("🧠 Model thinking: \(thinkingContent.prefix(500))...")
+                DebugLogger.shared.mealAnalysis("🧠 Model thinking process detected")
+                DebugLogger.shared.info("Thinking content:\n\(thinkingContent)")
             }
         } else {
-            print("💭 No explicit thinking tokens found in response")
+            Task { @MainActor in
+                DebugLogger.shared.mealAnalysis("No explicit thinking tokens in response")
+            }
         }
-        
-        print("📝 AI Response: \(text)")
         
         // Try to extract JSON from the response
         let jsonText: String
@@ -501,7 +510,20 @@ class VertexAIService: ObservableObject {
             
             Task { @MainActor in
                 DebugLogger.shared.success("Successfully parsed meal analysis")
-                DebugLogger.shared.mealAnalysis("Detected: \(result.mealName) - \(result.nutrition.calories) cal")
+                DebugLogger.shared.mealAnalysis("=== ANALYSIS RESULT ===")
+                DebugLogger.shared.mealAnalysis("Meal: \(result.mealName)")
+                DebugLogger.shared.mealAnalysis("Confidence: \(result.confidence)")
+                DebugLogger.shared.mealAnalysis("Calories: \(result.nutrition.calories)")
+                DebugLogger.shared.mealAnalysis("Macros: P:\(result.nutrition.protein)g C:\(result.nutrition.carbs)g F:\(result.nutrition.fat)g")
+                DebugLogger.shared.mealAnalysis("Ingredients: \(result.ingredients.count)")
+                DebugLogger.shared.mealAnalysis("Micronutrients: \(result.micronutrients.count)")
+                DebugLogger.shared.mealAnalysis("Clarifications needed: \(result.clarifications.count)")
+                if let tools = result.requestedTools, !tools.isEmpty {
+                    DebugLogger.shared.mealAnalysis("Tools requested: \(tools.joined(separator: ", "))")
+                }
+                if let brand = result.brandDetected {
+                    DebugLogger.shared.mealAnalysis("Brand detected: \(brand)")
+                }
             }
             return result
         } catch {

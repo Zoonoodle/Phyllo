@@ -137,7 +137,7 @@ class ScheduleViewModel: ObservableObject {
         // Ensure we have a minimum reasonable range
         // If the range is too small or invalid, show a default day view
         if endHour <= startHour {
-            print("⚠️ Timeline hours invalid range: \(startHour) to \(endHour), using default")
+            DebugLogger.shared.warning("Timeline hours invalid range: \(startHour) to \(endHour), using default")
             return Array(5...22) // Default: 5 AM to 10 PM
         }
         
@@ -425,7 +425,7 @@ class ScheduleViewModel: ObservableObject {
         } catch {
             isLoading = false
             errorMessage = "Failed to load data: \(error.localizedDescription)"
-            print("❌ Failed to load schedule data: \(error)")
+            DebugLogger.shared.error("Failed to load schedule data: \(error)")
         }
     }
     
@@ -477,7 +477,7 @@ class ScheduleViewModel: ObservableObject {
             
         } catch {
             errorMessage = "Failed to save check-in: \(error.localizedDescription)"
-            print("❌ Failed to save morning check-in: \(error)")
+            DebugLogger.shared.error("Failed to save morning check-in: \(error)")
         }
     }
     
@@ -526,7 +526,7 @@ class ScheduleViewModel: ObservableObject {
             } else {
                 errorMessage = "Failed to generate windows: \(error.localizedDescription)"
             }
-            print("❌ Failed to generate windows: \(error)")
+            DebugLogger.shared.error("Failed to generate windows: \(error)")
             Task { @MainActor in
                 DebugLogger.shared.error("Window generation failed: \(error)")
             }
@@ -540,7 +540,7 @@ class ScheduleViewModel: ObservableObject {
             // Windows will update via observation
         } catch {
             errorMessage = "Failed to redistribute windows: \(error.localizedDescription)"
-            print("❌ Failed to redistribute windows: \(error)")
+            DebugLogger.shared.error("Failed to redistribute windows: \(error)")
         }
     }
     
@@ -551,7 +551,7 @@ class ScheduleViewModel: ObservableObject {
             // Meals will update via observation
         } catch {
             errorMessage = "Failed to delete meal: \(error.localizedDescription)"
-            print("❌ Failed to delete meal: \(error)")
+            DebugLogger.shared.error("Failed to delete meal: \(error)")
         }
     }
     
@@ -686,7 +686,7 @@ extension ScheduleViewModel {
                 do {
                     try await dataProvider.updateWindow(updatedWindow)
                 } catch {
-                    print("❌ Failed to mark window as fasted: \(error)")
+                    DebugLogger.shared.error("Failed to mark window as fasted: \(error)")
                 }
             }
         }
@@ -695,7 +695,7 @@ extension ScheduleViewModel {
     /// Mark a single window as fasted
     func markWindowAsFasted(windowId: UUID) async {
         guard let windowIndex = mealWindows.firstIndex(where: { $0.id == windowId }) else {
-            print("❌ Window not found with id: \(windowId)")
+            DebugLogger.shared.error("Window not found with id: \(windowId)")
             return
         }
         
@@ -712,7 +712,7 @@ extension ScheduleViewModel {
             try await dataProvider.updateWindow(updatedWindow)
             // Windows will update automatically via observation
         } catch {
-            print("❌ Failed to mark window as fasted: \(error)")
+            DebugLogger.shared.error("Failed to mark window as fasted: \(error)")
             // Revert local change on failure
             await MainActor.run {
                 updatedWindow.isMarkedAsFasted = false
@@ -728,7 +728,7 @@ extension ScheduleViewModel {
             self.userProfile = profile
         } catch {
             errorMessage = "Failed to update profile: \(error.localizedDescription)"
-            print("❌ Failed to update user profile: \(error)")
+            DebugLogger.shared.error("Failed to update user profile: \(error)")
         }
     }
     
@@ -752,7 +752,7 @@ extension ScheduleViewModel {
             
         } catch {
             errorMessage = "Failed to process meals: \(error.localizedDescription)"
-            print("❌ Failed to process retrospective meals: \(error)")
+            DebugLogger.shared.error("Failed to process retrospective meals: \(error)")
         }
     }
 }

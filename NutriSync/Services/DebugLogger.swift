@@ -39,6 +39,16 @@ enum DebugCategory: String, CaseIterable {
     }
 }
 
+// MARK: - Debug Configuration
+struct DebugConfiguration {
+    static var verboseAILogging = true  // Log full AI prompts/responses
+    static var logAITokenCounts = true  // Log token usage for cost monitoring
+    static var logPerformanceMetrics = true  // Log timing for all operations
+    static var maxLogLength = 5000  // Maximum characters for a single log entry
+    static var enableConsoleOutput = true  // Print to console
+    static var enableFileLogging = false  // Save to file (future feature)
+}
+
 // MARK: - Debug Logger
 @MainActor
 class DebugLogger: ObservableObject {
@@ -47,6 +57,7 @@ class DebugLogger: ObservableObject {
     @Published var isEnabled = true
     @Published var enabledCategories: Set<DebugCategory> = Set(DebugCategory.allCases)
     @Published var logHistory: [DebugLogEntry] = []
+    @Published var configuration = DebugConfiguration()
     
     private let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -65,10 +76,26 @@ class DebugLogger: ObservableObject {
         let fileName = URL(fileURLWithPath: file).lastPathComponent.replacingOccurrences(of: ".swift", with: "")
         let location = "\(fileName).\(function):\(line)"
         
+        // Truncate message if needed
+        var truncatedMessage = message
+        if message.count > DebugConfiguration.maxLogLength {
+            truncatedMessage = String(message.prefix(DebugConfiguration.maxLogLength)) + "... [TRUNCATED]"
+        }
+        
+        // Special handling for verbose AI logs
+        let shouldShowFullMessage: Bool
+        if category == .mealAnalysis || category == .info {
+            shouldShowFullMessage = DebugConfiguration.verboseAILogging
+        } else {
+            shouldShowFullMessage = true
+        }
+        
+        let displayMessage = shouldShowFullMessage ? truncatedMessage : String(truncatedMessage.prefix(200)) + "..."
+        
         let logEntry = DebugLogEntry(
             timestamp: Date(),
             category: category,
-            message: message,
+            message: truncatedMessage,
             location: location
         )
         
@@ -78,11 +105,13 @@ class DebugLogger: ObservableObject {
             logHistory.removeFirst(100)
         }
         
-        // Print to console with formatting
-        print("\n\(category.color) [\(timestamp)] \(category.rawValue)")
-        print("📍 \(location)")
-        print("💬 \(message)")
-        print("─────────────────────────────────────────")
+        // Print to console if enabled
+        if DebugConfiguration.enableConsoleOutput {
+            print("\n\(category.color) [\(timestamp)] \(category.rawValue)")
+            print("📍 \(location)")
+            print("💬 \(displayMessage)")
+            print("─────────────────────────────────────────")
+        }
     }
     
     // MARK: - Convenience Methods
@@ -142,6 +171,74 @@ class DebugLogger: ObservableObject {
     func endTiming(_ label: String, start: Date) {
         let elapsed = Date().timeIntervalSince(start)
         performance("⏱️ Completed \(label) in \(String(format: "%.3f", elapsed))s")
+    }
+    
+    // MARK: - AI-Specific Logging
+    
+    func logAIRequest(service: String, prompt: String, hasImage: Bool = false, imageSize: Int? = nil) {
+        guard DebugConfiguration.verboseAILogging else {
+            mealAnalysis("[\(service)] Request sent (prompt: \(prompt.count) chars)")
+            return
+        }
+        
+        var details = "[\(service)] AI REQUEST:\n"
+        details += "Prompt length: \(prompt.count) characters"
+        
+        if hasImage, let imageSize = imageSize {
+            details += "\nImage size: \(imageSize / 1024)KB"
+        }
+        
+        if DebugConfiguration.logAITokenCounts {
+            // Rough token estimation (1 token ≈ 4 characters)
+            let estimatedTokens = prompt.count / 4
+            details += "\nEstimated tokens: ~\(estimatedTokens)"
+            
+            // Cost estimation based on service
+            if service.contains("Gemini") || service.contains("Window") {
+                let costPer1M = service.contains("Flash") ? 0.075 : 0.50
+                let estimatedCost = Double(estimatedTokens) * costPer1M / 1_000_000
+                details += "\nEstimated input cost: $\(String(format: "%.6f", estimatedCost))"
+            }
+        }
+        
+        info(details)
+        
+        if DebugConfiguration.verboseAILogging {
+            info("Full prompt:\n\(prompt)")
+        }
+    }
+    
+    func logAIResponse(service: String, response: String, processingTime: TimeInterval? = nil) {
+        guard DebugConfiguration.verboseAILogging else {
+            mealAnalysis("[\(service)] Response received (\(response.count) chars)")
+            return
+        }
+        
+        var details = "[\(service)] AI RESPONSE:\n"
+        details += "Response length: \(response.count) characters"
+        
+        if let time = processingTime {
+            details += "\nProcessing time: \(String(format: "%.2f", time))s"
+        }
+        
+        if DebugConfiguration.logAITokenCounts {
+            // Rough token estimation
+            let estimatedTokens = response.count / 4
+            details += "\nEstimated tokens: ~\(estimatedTokens)"
+            
+            // Cost estimation
+            if service.contains("Gemini") || service.contains("Window") {
+                let costPer1M = service.contains("Flash") ? 0.30 : 1.50
+                let estimatedCost = Double(estimatedTokens) * costPer1M / 1_000_000
+                details += "\nEstimated output cost: $\(String(format: "%.6f", estimatedCost))"
+            }
+        }
+        
+        info(details)
+        
+        if DebugConfiguration.verboseAILogging {
+            info("Full response:\n\(response)")
+        }
     }
     
     // MARK: - Data Logging
