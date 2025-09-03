@@ -76,27 +76,29 @@ struct CompactMealAnalysisLoader: View {
     }
     
     var body: some View {
-        if size == .inline {
-            // Inline mode: just the ring, no text below
-            MealAnalysisProgressRing(
-                progress: progress,
-                size: size.dimension,
-                color: windowColor
-            )
-        } else {
-            // Card mode: ring with status message below
-            VStack(spacing: 12) {
+        Group {
+            if size == .inline {
+                // Inline mode: just the ring, no text below
                 MealAnalysisProgressRing(
                     progress: progress,
                     size: size.dimension,
                     color: windowColor
                 )
-                
-                // Dynamic status message
-                Text(currentStatusMessage)
-                    .font(TimelineTypography.statusLabel)
-                    .foregroundColor(.white.opacity(TimelineOpacity.secondary))
-                    .animation(.easeInOut(duration: 0.3), value: currentStatusMessage)
+            } else {
+                // Card mode: ring with status message below
+                VStack(spacing: 12) {
+                    MealAnalysisProgressRing(
+                        progress: progress,
+                        size: size.dimension,
+                        color: windowColor
+                    )
+                    
+                    // Dynamic status message
+                    Text(currentStatusMessage)
+                        .font(TimelineTypography.statusLabel)
+                        .foregroundColor(.white.opacity(TimelineOpacity.secondary))
+                        .animation(.easeInOut(duration: 0.3), value: currentStatusMessage)
+                }
             }
         }
         .onAppear {
