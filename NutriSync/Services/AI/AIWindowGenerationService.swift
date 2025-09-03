@@ -781,18 +781,16 @@ class AIWindowGenerationService {
                 guard let self = self else { 
                     // Return a basic window if self is nil (shouldn't happen)
                     return MealWindow(
-                        id: UUID(),
+                        name: window.name,
                         startTime: window.startTime,
                         endTime: window.endTime,
                         targetCalories: window.targetCalories,
-                        targetMacros: MacroTargets(
-                            protein: window.targetProtein,
-                            carbs: window.targetCarbs,
-                            fat: window.targetFat
-                        ),
+                        targetProtein: window.targetProtein,
+                        targetCarbs: window.targetCarbs,
+                        targetFat: window.targetFat,
                         purpose: .sustainedEnergy,
                         flexibility: .moderate,
-                        dayDate: dayDate
+                        type: .regular
                     )
                 }
                 // Validate and fix window times
