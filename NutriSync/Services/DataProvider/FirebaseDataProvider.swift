@@ -750,15 +750,23 @@ class FirebaseDataProvider: DataProvider {
             let windows = try await getWindows(for: currentDate)
             let profile = try await getUserProfile()
             
-            let completedWindows = windows.filter { $0.status == .logged }.count
-            let totalCalories = meals.reduce(0) { $0 + ($1.analysis?.nutrition.calories ?? 0) }
-            let totalProtein = meals.reduce(0) { $0 + ($1.analysis?.nutrition.protein ?? 0) }
-            let totalCarbs = meals.reduce(0) { $0 + ($1.analysis?.nutrition.carbs ?? 0) }
-            let totalFat = meals.reduce(0) { $0 + ($1.analysis?.nutrition.fat ?? 0) }
+            let completedWindows = windows.filter { $0.consumed.calories > 0 }.count
+            let totalCalories = meals.reduce(0) { $0 + $1.calories }
+            let totalProtein = Double(meals.reduce(0) { $0 + $1.protein })
+            let totalCarbs = Double(meals.reduce(0) { $0 + $1.carbs })
+            let totalFat = Double(meals.reduce(0) { $0 + $1.fat })
             
             let timingScore = completedWindows > 0 ? Double(completedWindows) / Double(max(windows.count, 1)) : 0
-            let nutrientScore = calculateNutrientScore(protein: totalProtein, carbs: totalCarbs, fat: totalFat, target: profile?.nutritionGoals)
-            let adherenceScore = Double(meals.count) / Double(max(profile?.mealPreferences.mealsPerDay ?? 5, 1))
+            let nutrientScore = calculateNutrientScore(
+                protein: totalProtein,
+                carbs: totalCarbs,
+                fat: totalFat,
+                targetCalories: profile?.dailyCalorieTarget,
+                targetProtein: profile?.dailyProteinTarget,
+                targetCarbs: profile?.dailyCarbTarget,
+                targetFat: profile?.dailyFatTarget
+            )
+            let adherenceScore = Double(meals.count) / 5.0  // Default 5 meals per day
             
             let dateString = ISO8601DateFormatter.yyyyMMdd.string(from: currentDate)
             analyticsArray.append(DailyAnalytics(
@@ -769,17 +777,17 @@ class FirebaseDataProvider: DataProvider {
                 totalCarbs: totalCarbs,
                 totalFat: totalFat,
                 mealsLogged: meals.count,
-                targetMeals: profile?.mealPreferences.mealsPerDay ?? 5,
+                targetMeals: 5,  // Default 5 meals per day
                 windowsCompleted: completedWindows,
                 totalWindows: windows.count,
-                windowsMissed: windows.filter { $0.status == .missed }.count,
+                windowsMissed: windows.filter { $0.consumed.calories == 0 && Date() > $0.endTime }.count,
                 averageEnergyLevel: nil,
                 micronutrientProgress: [:],
                 timingScore: timingScore,
                 nutrientScore: nutrientScore,
                 adherenceScore: adherenceScore,
                 caloriesConsumed: totalCalories,
-                targetCalories: profile?.nutritionGoals.dailyCalories ?? 2400
+                targetCalories: profile?.dailyCalorieTarget ?? 2400
             ))
         }
         
@@ -875,12 +883,25 @@ class FirebaseDataProvider: DataProvider {
         return windowsByDate
     }
     
-    private func calculateNutrientScore(protein: Double, carbs: Double, fat: Double, target: NutritionGoals?) -> Double {
-        guard let target = target else { return 0.5 }
+    private func calculateNutrientScore(
+        protein: Double,
+        carbs: Double,
+        fat: Double,
+        targetCalories: Int?,
+        targetProtein: Int?,
+        targetCarbs: Int?,
+        targetFat: Int?
+    ) -> Double {
+        guard let targetProtein = targetProtein,
+              let targetCarbs = targetCarbs,
+              let targetFat = targetFat,
+              targetProtein > 0,
+              targetCarbs > 0,
+              targetFat > 0 else { return 0.5 }
         
-        let proteinRatio = min(protein / Double(target.dailyProtein), 1.0)
-        let carbRatio = min(carbs / Double(target.dailyCarbs), 1.0)
-        let fatRatio = min(fat / Double(target.dailyFat), 1.0)
+        let proteinRatio = min(protein / Double(targetProtein), 1.0)
+        let carbRatio = min(carbs / Double(targetCarbs), 1.0)
+        let fatRatio = min(fat / Double(targetFat), 1.0)
         
         return (proteinRatio + carbRatio + fatRatio) / 3.0
     }
