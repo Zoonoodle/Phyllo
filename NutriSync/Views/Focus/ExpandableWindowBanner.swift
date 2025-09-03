@@ -1467,32 +1467,6 @@ struct AnalyzingMealRowCompact: View {
     }
 }
 
-// Shimmer effect for loading states
-extension View {
-    func shimmer() -> some View {
-        self.overlay(
-            LinearGradient(
-                gradient: Gradient(colors: [
-                    Color.white.opacity(0),
-                    Color.white.opacity(0.1),
-                    Color.white.opacity(0)
-                ]),
-                startPoint: .leading,
-                endPoint: .trailing
-            )
-            .offset(x: -200)
-            .rotationEffect(.degrees(0))
-            .offset(x: 200)
-            .animation(
-                Animation.linear(duration: 1.5)
-                    .repeatForever(autoreverses: false),
-                value: UUID()
-            )
-            .mask(self)
-        )
-    }
-}
-
 #Preview {
     @Previewable @State var selectedWindow: MealWindow?
     @Previewable @State var showWindowDetail = false
