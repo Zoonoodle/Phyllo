@@ -8,6 +8,9 @@ class FirebaseDataProvider: DataProvider {
     private let db = Firestore.firestore()
     private var listeners: [String: ListenerRegistration] = [:]
     
+    // Cache for current day purpose
+    var currentDayPurpose: DayPurpose?
+    
     // Current user ID (will be replaced with Auth in Phase 8)
     private var currentUserId: String {
         // For now, use a development user ID
@@ -343,14 +346,23 @@ class FirebaseDataProvider: DataProvider {
         // NO FALLBACK - AI generation is ALWAYS required
         // Call the AI Window Generation Service
         do {
-            let aiWindows = try await AIWindowGenerationService.shared.generateWindows(
+            let (aiWindows, dayPurpose) = try await AIWindowGenerationService.shared.generateWindows(
                 for: profile,
                 checkIn: checkIn,
                 date: date
             )
             
+            // Store day purpose if generated
+            if let dayPurpose = dayPurpose {
+                self.currentDayPurpose = dayPurpose
+                // TODO: Save to Firestore once we add the field
+            }
+            
             Task { @MainActor in
                 DebugLogger.shared.success("AI generated \(aiWindows.count) windows with rich content")
+                if dayPurpose != nil {
+                    DebugLogger.shared.success("Day purpose also generated successfully")
+                }
             }
             
             // Save AI-generated windows to Firestore
@@ -399,11 +411,17 @@ class FirebaseDataProvider: DataProvider {
         
         // Generate new windows with AI
         do {
-            let aiWindows = try await AIWindowGenerationService.shared.generateWindows(
+            let (aiWindows, dayPurpose) = try await AIWindowGenerationService.shared.generateWindows(
                 for: profile,
                 checkIn: checkIn,
                 date: date
             )
+            
+            // Store day purpose if generated
+            if let dayPurpose = dayPurpose {
+                self.currentDayPurpose = dayPurpose
+                // TODO: Save to Firestore once we add the field
+            }
             
             // Save all windows to Firebase
             for window in aiWindows {

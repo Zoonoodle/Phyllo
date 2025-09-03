@@ -10,6 +10,7 @@ import SwiftUI
 struct DayNavigationHeader: View {
     @Binding var selectedDate: Date
     @Binding var showDeveloperDashboard: Bool
+    @Binding var showDayDetail: Bool
     let meals: [LoggedMeal]
     let userProfile: UserProfile
     
@@ -53,9 +54,24 @@ struct DayNavigationHeader: View {
                 }
                 .padding(.horizontal, 16)
                 
-                // Macro bars (MacroFactors style)
+                // Macro bars (MacroFactors style) - now tappable
                 MacroSummaryBar(meals: meals, userProfile: userProfile)
                     .padding(.horizontal, 16)
+                    .contentShape(Rectangle())  // Make entire area tappable
+                    .onTapGesture {
+                        HapticManager.shared.impact(style: .light)
+                        showDayDetail = true
+                    }
+                    .overlay(
+                        // Add subtle chevron to indicate tappability
+                        HStack {
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundColor(.white.opacity(0.4))
+                                .padding(.trailing, 4)
+                        }
+                    )
             }
             .padding(.vertical, 6)
             

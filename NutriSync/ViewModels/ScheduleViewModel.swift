@@ -756,3 +756,176 @@ extension ScheduleViewModel {
         }
     }
 }
+
+// MARK: - Daily Aggregation
+extension ScheduleViewModel {
+    
+    /// Status of a micronutrient compared to daily recommended values
+    enum MicronutrientStatus {
+        case deficient(percentage: Double, recommendation: String)
+        case optimal(percentage: Double)
+        case excess(percentage: Double, recommendation: String)
+        
+        var name: String {
+            switch self {
+            case .deficient(_, _): return "deficient"
+            case .optimal(_): return "optimal"
+            case .excess(_, _): return "excess"
+            }
+        }
+    }
+    
+    /// Comprehensive daily nutrition summary
+    struct DailyNutritionSummary {
+        let date: Date
+        let totalCalories: Int
+        let totalProtein: Int
+        let totalFat: Int
+        let totalCarbs: Int
+        let micronutrients: [String: Double]
+        let meals: [LoggedMeal]
+        let windows: [MealWindow]
+        let dayPurpose: DayPurpose?
+    }
+    
+    /// Timeline entry for chronological food list
+    struct TimelineEntry {
+        let timestamp: Date
+        let meal: LoggedMeal
+        let windowName: String?
+    }
+    
+    /// Aggregate all daily nutrition data
+    func aggregateDailyNutrition() -> DailyNutritionSummary {
+        // Calculate totals from all meals
+        let totalCalories = todaysMeals.reduce(0) { $0 + $1.totalCalories }
+        let totalProtein = todaysMeals.reduce(0) { $0 + $1.totalProtein }
+        let totalFat = todaysMeals.reduce(0) { $0 + $1.totalFat }
+        let totalCarbs = todaysMeals.reduce(0) { $0 + $1.totalCarbs }
+        
+        // Aggregate micronutrients
+        var micronutrients: [String: Double] = [:]
+        for meal in todaysMeals {
+            for (nutrient, value) in meal.micronutrients {
+                micronutrients[nutrient, default: 0] += value
+            }
+        }
+        
+        // Get cached day purpose if available
+        let dayPurpose: DayPurpose?
+        if let firebaseProvider = dataProvider as? FirebaseDataProvider {
+            dayPurpose = firebaseProvider.currentDayPurpose
+        } else {
+            dayPurpose = nil
+        }
+        
+        return DailyNutritionSummary(
+            date: timeProvider.currentTime,
+            totalCalories: totalCalories,
+            totalProtein: totalProtein,
+            totalFat: totalFat,
+            totalCarbs: totalCarbs,
+            micronutrients: micronutrients,
+            meals: todaysMeals,
+            windows: mealWindows,
+            dayPurpose: dayPurpose
+        )
+    }
+    
+    /// Calculate micronutrient status compared to daily recommendations
+    func calculateMicronutrientStatus() -> [(nutrient: String, status: MicronutrientStatus)] {
+        let summary = aggregateDailyNutrition()
+        var statuses: [(nutrient: String, status: MicronutrientStatus)] = []
+        
+        // Daily recommended values (simplified - should be personalized)
+        let dailyRecommendations: [String: Double] = [
+            "Vitamin A": 900,  // mcg
+            "Vitamin C": 90,   // mg
+            "Vitamin D": 20,   // mcg
+            "Vitamin E": 15,   // mg
+            "Vitamin K": 120,  // mcg
+            "Thiamin": 1.2,    // mg
+            "Riboflavin": 1.3, // mg
+            "Niacin": 16,      // mg
+            "Vitamin B6": 1.7, // mg
+            "Folate": 400,     // mcg
+            "Vitamin B12": 2.4,// mcg
+            "Calcium": 1000,   // mg
+            "Iron": 8,         // mg
+            "Magnesium": 400,  // mg
+            "Phosphorus": 700, // mg
+            "Potassium": 2600, // mg
+            "Sodium": 2300,    // mg (max)
+            "Zinc": 11,        // mg
+            "Fiber": 28        // g
+        ]
+        
+        for (nutrient, recommended) in dailyRecommendations {
+            let consumed = summary.micronutrients[nutrient] ?? 0
+            let percentage = (consumed / recommended) * 100
+            
+            let status: MicronutrientStatus
+            if percentage < 80 {
+                let recommendation = "Increase intake of \(nutrient)-rich foods"
+                status = .deficient(percentage: percentage, recommendation: recommendation)
+            } else if percentage > 150 {
+                let recommendation = nutrient == "Sodium" ? "Reduce sodium intake" : "Monitor \(nutrient) intake"
+                status = .excess(percentage: percentage, recommendation: recommendation)
+            } else {
+                status = .optimal(percentage: percentage)
+            }
+            
+            // Only include deficient or excess nutrients
+            if case .deficient = status {
+                statuses.append((nutrient: nutrient, status: status))
+            } else if case .excess = status {
+                statuses.append((nutrient: nutrient, status: status))
+            }
+        }
+        
+        // Sort by severity (furthest from 100%)
+        statuses.sort { first, second in
+            let firstPercentage: Double
+            let secondPercentage: Double
+            
+            switch first.status {
+            case .deficient(let p, _), .optimal(let p), .excess(let p, _):
+                firstPercentage = p
+            }
+            
+            switch second.status {
+            case .deficient(let p, _), .optimal(let p), .excess(let p, _):
+                secondPercentage = p
+            }
+            
+            return abs(firstPercentage - 100) > abs(secondPercentage - 100)
+        }
+        
+        // Return max 8 nutrients
+        return Array(statuses.prefix(8))
+    }
+    
+    /// Get chronological timeline of all foods logged today
+    func getDailyFoodTimeline() -> [TimelineEntry] {
+        var timeline: [TimelineEntry] = []
+        
+        for meal in todaysMeals.sorted(by: { $0.timestamp < $1.timestamp }) {
+            // Find which window this meal belongs to
+            let windowName = mealWindows.first { window in
+                if let windowId = meal.windowId {
+                    return windowId == window.id
+                } else {
+                    return meal.timestamp >= window.startTime && meal.timestamp <= window.endTime
+                }
+            }?.name
+            
+            timeline.append(TimelineEntry(
+                timestamp: meal.timestamp,
+                meal: meal,
+                windowName: windowName
+            ))
+        }
+        
+        return timeline
+    }
+}

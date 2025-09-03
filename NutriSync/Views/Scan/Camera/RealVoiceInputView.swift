@@ -62,8 +62,8 @@ struct RealVoiceInputView: View {
             // Background with captured photo
             backgroundLayer
             
-            // Dark overlay for better visibility
-            Color.black.opacity(0.4)
+            // Very subtle dark overlay for text readability
+            Color.black.opacity(0.05)
                 .ignoresSafeArea()
             
             // Main content

@@ -389,12 +389,12 @@ class AIWindowGenerationService {
     ///   - profile: User's profile with goals and preferences
     ///   - checkIn: Morning check-in data with wake time and energy levels
     ///   - date: Date to generate windows for
-    /// - Returns: Array of meal windows with AI-generated content
+    /// - Returns: Tuple of meal windows array and optional day purpose
     func generateWindows(
         for profile: UserProfile,
         checkIn: MorningCheckInData?,
         date: Date
-    ) async throws -> [MealWindow] {
+    ) async throws -> (windows: [MealWindow], dayPurpose: DayPurpose?) {
         
         // Determine actual date for windows based on check-in time
         let actualDate = determineWindowDate(checkIn: checkIn, requestedDate: date)
@@ -657,8 +657,23 @@ class AIWindowGenerationService {
         
         prompt += """
         
-        Return as JSON array with this structure:
+        ## Day Purpose Requirements
+        Also generate a comprehensive "dayPurpose" that explains the overall daily nutrition strategy. This should include:
+        1. Nutritional Strategy: Overall approach for the day based on user's goal and check-in data
+        2. Energy Management: How the windows will manage energy levels throughout the day
+        3. Performance Optimization: Strategies for optimal physical and mental performance
+        4. Recovery Focus: How nutrition will support recovery and adaptation
+        5. Key Priorities: Top 3 priorities for successful execution today
+        
+        Return as JSON with this structure:
         {
+            "dayPurpose": {
+                "nutritionalStrategy": "Your goal-aligned nutrition approach for today...",
+                "energyManagement": "How we'll optimize your energy levels throughout the day...",
+                "performanceOptimization": "Strategies for peak performance today...",
+                "recoveryFocus": "Recovery and adaptation support through nutrition...",
+                "keyPriorities": ["Priority 1", "Priority 2", "Priority 3"]
+            },
             "windows": [
                 {
                     "name": "Morning Metabolic Primer",
@@ -690,8 +705,8 @@ class AIWindowGenerationService {
         return formatter.string(from: date)
     }
     
-    /// Parse AI response into MealWindow objects
-    private func parseAIResponse(_ response: String, for date: Date) throws -> [MealWindow] {
+    /// Parse AI response into MealWindow objects and DayPurpose
+    private func parseAIResponse(_ response: String, for date: Date) throws -> (windows: [MealWindow], dayPurpose: DayPurpose?) {
         guard let data = response.data(using: .utf8) else {
             throw NSError(domain: "AIWindowGeneration", code: 3002, 
                          userInfo: [NSLocalizedDescriptionKey: "Failed to convert response to data"])
@@ -754,7 +769,7 @@ class AIWindowGenerationService {
             let calendar = Calendar.current
             let dayDate = calendar.startOfDay(for: date)
             
-            return aiResponse.windows.enumerated().map { index, window in
+            let windows = aiResponse.windows.enumerated().map { index, window in
                 // Validate and fix window times
                 var correctedEndTime = window.endTime
                 
@@ -800,6 +815,10 @@ class AIWindowGenerationService {
                     type: window.type
                 )
             }
+            
+            // Return both windows and day purpose
+            return (windows: windows, dayPurpose: aiResponse.dayPurpose)
+            
         } catch {
             Task { @MainActor in
                 DebugLogger.shared.error("Failed to parse AI response: \(error)")
@@ -813,6 +832,7 @@ class AIWindowGenerationService {
 // MARK: - AI Response Models
 private struct AIWindowResponse: Codable {
     let windows: [AIWindow]
+    let dayPurpose: DayPurpose?  // Optional for backwards compatibility
 }
 
 private struct AIWindow: Codable {
@@ -830,6 +850,30 @@ private struct AIWindow: Codable {
     let foodSuggestions: [String]
     let micronutrientFocus: [String]
     let tips: [String]
+}
+
+/// Day-level purpose for comprehensive daily strategy
+public struct DayPurpose: Codable {
+    public let nutritionalStrategy: String      // Overall nutrition approach for the day
+    public let energyManagement: String         // How energy levels will be managed
+    public let performanceOptimization: String  // Performance-focused insights
+    public let recoveryFocus: String            // Recovery and adaptation strategies
+    public let keyPriorities: [String]         // Top 3 priorities for the day
+    public let generatedAt: Date?              // When this was generated
+    
+    public init(nutritionalStrategy: String,
+         energyManagement: String,
+         performanceOptimization: String,
+         recoveryFocus: String,
+         keyPriorities: [String],
+         generatedAt: Date? = Date()) {
+        self.nutritionalStrategy = nutritionalStrategy
+        self.energyManagement = energyManagement
+        self.performanceOptimization = performanceOptimization
+        self.recoveryFocus = recoveryFocus
+        self.keyPriorities = Array(keyPriorities.prefix(3))  // Max 3 priorities
+        self.generatedAt = generatedAt
+    }
 }
 
 // MARK: - Purpose Mapping

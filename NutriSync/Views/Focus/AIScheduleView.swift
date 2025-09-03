@@ -12,6 +12,7 @@ struct AIScheduleView: View {
     @State private var selectedMealId: String?
     @State private var showMissedMealsRecovery = false
     @State private var showMorningCheckIn = false
+    @State private var showDayDetail = false
     @Namespace private var animationNamespace
     
     var body: some View {
@@ -30,6 +31,7 @@ struct AIScheduleView: View {
                     DayNavigationHeader(
                         selectedDate: $selectedDate,
                         showDeveloperDashboard: $showDeveloperDashboard,
+                        showDayDetail: $showDayDetail,
                         meals: viewModel.meals,
                         userProfile: viewModel.userProfile
                     )
