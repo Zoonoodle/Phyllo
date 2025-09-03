@@ -134,8 +134,6 @@ struct CompactNudgeCard_Previews: PreviewProvider {
                     title: "Pro Tip",
                     subtitle: "Log your meals right after eating for the most accurate tracking",
                     actionTitle: "Got it",
-                    onAction: { print("Action tapped") },
-                    onDismiss: { print("Dismissed") },
                     position: .top
                 )
                 
@@ -145,8 +143,6 @@ struct CompactNudgeCard_Previews: PreviewProvider {
                     title: "Window Starting Soon",
                     subtitle: "Your lunch window starts in 15 minutes",
                     actionTitle: "View",
-                    onAction: { print("View tapped") },
-                    onDismiss: { print("Dismissed") },
                     position: .bottom
                 )
             }

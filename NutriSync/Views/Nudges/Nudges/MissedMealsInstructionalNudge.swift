@@ -118,7 +118,6 @@ struct MissedMealsInstructionalNudge: View {
         Color.black.ignoresSafeArea()
         
         MissedMealsInstructionalNudge {
-            print("Dismissed")
         }
     }
 }

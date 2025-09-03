@@ -244,8 +244,10 @@ struct ScanTabView: View {
                 ImagePicker(selectedImage: $capturedImage)
                     .onDisappear {
                         if capturedImage != nil {
-                            // Show voice input after selecting image
-                            showVoiceInput = true
+                            // Show voice input after selecting image with small delay to ensure image is set
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                showVoiceInput = true
+                            }
                         }
                     }
             }

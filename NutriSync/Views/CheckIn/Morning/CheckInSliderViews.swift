@@ -261,17 +261,17 @@ struct CheckInSliderViews_Previews: PreviewProvider {
     static var previews: some View {
         Group {
             SleepQualitySliderView(sleepQuality: .constant(5)) {
-                print("Continue")
+                // Preview action
             }
             .previewDisplayName("Sleep Quality")
             
             EnergyLevelSliderView(energyLevel: .constant(5)) {
-                print("Continue")
+                // Preview action
             }
             .previewDisplayName("Energy Level")
             
             HungerLevelSliderView(hungerLevel: .constant(5)) {
-                print("Continue")
+                // Preview action
             }
             .previewDisplayName("Hunger Level")
         }

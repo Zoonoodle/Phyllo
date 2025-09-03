@@ -76,7 +76,6 @@ struct ActiveWindowNudge_Previews: PreviewProvider {
                 window: MealWindow.mockWindows(for: .performanceFocus)[0],
                 timeRemaining: 45
             ) {
-                print("Dismissed")
             }
         }
     }

@@ -191,9 +191,7 @@ struct FloatingNudgeCard_Previews: PreviewProvider {
                 iconColor: .green,
                 title: "Great Progress!",
                 subtitle: "You've logged 3 meals today",
-                primaryAction: ("View Stats", { print("View stats") }),
                 secondaryAction: nil,
-                onDismiss: { print("Dismissed") },
                 position: .bottomRight,
                 style: .standard
             )
@@ -204,9 +202,6 @@ struct FloatingNudgeCard_Previews: PreviewProvider {
                 iconColor: .orange,
                 title: "Window Alert",
                 subtitle: "Your dinner window is starting now",
-                primaryAction: ("Log Meal", { print("Log meal") }),
-                secondaryAction: ("Snooze", { print("Snooze") }),
-                onDismiss: { print("Dismissed") },
                 position: .topRight,
                 style: .minimal
             )

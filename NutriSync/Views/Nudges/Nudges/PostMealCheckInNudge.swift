@@ -111,10 +111,8 @@ struct PostMealCheckInNudge_Previews: PreviewProvider {
                     appliedClarifications: [:]
                 ),
                 onCheckIn: {
-                    print("Check-in tapped")
                 },
                 onDismiss: {
-                    print("Nudge dismissed")
                 }
             )
         }

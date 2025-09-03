@@ -121,7 +121,7 @@ class NudgeManager: ObservableObject {
                 }
             }
         } catch {
-            print("Error checking morning check-in status: \(error)")
+            DebugLogger.shared.error("Error checking morning check-in status: \(error)")
         }
     }
     
@@ -169,7 +169,7 @@ class NudgeManager: ObservableObject {
                 }
             }
         } catch {
-            print("Error checking window status: \(error)")
+            DebugLogger.shared.error("Error checking window status: \(error)")
         }
     }
     

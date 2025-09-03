@@ -332,7 +332,6 @@ struct MealCelebrationNudge_Previews: PreviewProvider {
                     ),
                     metadata: nil
                 ) {
-                    print("Dismissed")
                 }
                 
                 // With metadata
@@ -354,7 +353,6 @@ struct MealCelebrationNudge_Previews: PreviewProvider {
                         ingredientCount: 12
                     )
                 ) {
-                    print("Dismissed")
                 }
             }
         }

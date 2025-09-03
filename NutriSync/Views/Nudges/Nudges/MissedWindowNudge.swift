@@ -83,7 +83,6 @@ struct MissedWindowNudge_Previews: PreviewProvider {
             MissedWindowNudge(
                 window: MealWindow.mockWindows(for: .performanceFocus)[0],
                 onResponse: { ate in
-                    print(ate ? "User ate" : "User skipped")
                 }
             )
         }

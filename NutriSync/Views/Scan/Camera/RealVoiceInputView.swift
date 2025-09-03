@@ -225,7 +225,7 @@ struct RealVoiceInputView: View {
                         .frame(width: geometry.size.width, height: geometry.size.height)
                         .clipped()
                         .blur(radius: 30)
-                        .opacity(0.3) // Make it subtle
+                        .opacity(0.15) // More transparent for subtler effect
                 }
                 .ignoresSafeArea()
             }

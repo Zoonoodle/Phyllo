@@ -134,10 +134,8 @@ struct MorningCheckInNudge_Previews: PreviewProvider {
             
             MorningCheckInNudge(
                 onCheckIn: {
-                    print("Check-in tapped")
                 },
                 onDismiss: {
-                    print("Nudge dismissed")
                 }
             )
         }

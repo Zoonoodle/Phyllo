@@ -198,10 +198,7 @@ struct CoachingCard_Previews: PreviewProvider {
                         message: "I noticed you haven't logged lunch yet. Your window is closing in 30 minutes!",
                         suggestion: "Quick tip: Take a photo now and log details later",
                         actions: [
-                            ("Log Meal", { print("Log meal") }),
-                            ("Remind Later", { print("Remind later") })
                         ],
-                        onDismiss: { print("Dismissed") },
                         mood: .concerned
                     )
                     
@@ -209,7 +206,6 @@ struct CoachingCard_Previews: PreviewProvider {
                         message: "Amazing job! You've hit your protein target 5 days in a row. Your muscle recovery must be thanking you!",
                         suggestion: nil,
                         actions: [
-                            ("View Progress", { print("View progress") })
                         ],
                         onDismiss: nil,
                         avatarIcon: "trophy.fill",
@@ -220,10 +216,7 @@ struct CoachingCard_Previews: PreviewProvider {
                         message: "Based on your sleep data, having dinner 3 hours before bed could improve your sleep quality. Currently, you're eating 1.5 hours before sleep.",
                         suggestion: "Try moving your dinner window 30 minutes earlier this week",
                         actions: [
-                            ("Adjust Schedule", { print("Adjust") }),
-                            ("Learn More", { print("Learn") })
                         ],
-                        onDismiss: { print("Dismissed") },
                         avatarIcon: "moon.zzz.fill",
                         mood: .informative
                     )

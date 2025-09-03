@@ -14,16 +14,11 @@ Last Updated: 2025-09-02
   - Complexity: Medium
   - Note: Keep aesthetic, update text/branding
   
-- [ ] **Meal Scan Accuracy Improvement** - 
-  - Status: Not Started  
-  - Sessions Required: 2-3
-  - Complexity: High
-  - Note:
   
 - [x] **Check-In Views Polish** - UI/UX improvements
   - Status: COMPLETED (2025-08-31)
   - Sessions Required: 4 (research, planning, implementation, continuation)
-  - Complexity: Medium
+  - Compl`exity: Medium
   - Implemented: Sliders with haptics, time selectors, activity categories, TimeBlockBuilder
   
 - [ ] **Missed Windows View** - Handle skipped meal scenarios
@@ -135,11 +130,11 @@ Last Updated: 2025-09-02
 
 ## 📊 Progress Metrics
 
-**Total Tasks:** 17
+**Total Tasks:** 16
 **Completed:** 14
 **In Progress:** 0
-**Not Started:** 3
-**Completion Rate:** 82%
+**Not Started:** 2
+**Completion Rate:** 88%
 
 ### TestFlight Readiness: 40%
 - [ ] Core features complete
@@ -153,11 +148,10 @@ Last Updated: 2025-09-02
 ## 🚀 Next Up Queue
 
 ### TestFlight Sprint (Priority 0)
-1. Onboarding screens conversion (MacroFactor → NutriSync)
-2. Meal scan accuracy improvement (Gemini 2.5 Pro migration)
-3. Check-In views polish (with user input)
-4. Missed Windows view implementation
-5. Scan view enhancement
+1. Onboarding screens conversion (MacroFactor → NutriSync) ✅
+2. Check-In views polish (with user input) ✅
+3. Missed Windows view implementation
+4. Scan view enhancement
 
 ### Infrastructure (Priority 1)
 1. Complete SimplePerformanceView implementation

@@ -144,9 +144,7 @@ struct FullScreenNudgeCard_Previews: PreviewProvider {
             title: "Welcome to NutriSync",
             subtitle: "Your AI-powered nutrition coach that learns your patterns and helps you optimize your health",
             primaryButtonTitle: "Get Started",
-            primaryAction: { print("Primary action") },
             secondaryButtonTitle: "I have an account",
-            secondaryAction: { print("Secondary action") },
             showProgress: true,
             currentStep: 1,
             totalSteps: 4

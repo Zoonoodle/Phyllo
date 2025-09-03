@@ -138,7 +138,6 @@ struct SpotlightOverlay_Previews: PreviewProvider {
                     Spacer()
                     
                     Button {
-                        print("Button tapped")
                     } label: {
                         Text("Spotlight Target")
                             .font(.system(size: 16, weight: .medium))
@@ -163,7 +162,6 @@ struct SpotlightOverlay_Previews: PreviewProvider {
                     dimOpacity: 0.85,
                     isShowing: $showSpotlight
                 ) {
-                    print("Spotlight dismissed")
                 }
             }
         }

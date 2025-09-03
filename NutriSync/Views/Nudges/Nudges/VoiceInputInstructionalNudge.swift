@@ -104,7 +104,6 @@ struct VoiceInputInstructionalNudge: View {
         Color.black.ignoresSafeArea()
         
         VoiceInputInstructionalNudge {
-            print("Dismissed")
         }
     }
 }
