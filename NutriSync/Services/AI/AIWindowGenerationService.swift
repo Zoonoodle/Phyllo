@@ -582,11 +582,19 @@ class AIWindowGenerationService {
            - User's goal (e.g., for weight loss: "Fat Burning Window", "Metabolic Boost")
            - Planned activities (e.g., "Post-Gym Protein Load", "Pre-Meeting Energy")
            - Never use generic names like "Window 1", "Window 2", "Breakfast", "Lunch", "Dinner"
-        7. Food suggestions (2-3 specific foods per window)
-        8. Micronutrient focus (2-3 vitamins/minerals to prioritize)
-        9. Optimization tips (2-3 actionable tips)
-        10. Rationale explaining why this window supports their goal
-        11. Appropriate macro distribution based on window purpose
+        7. Each window MUST have a "purpose" field with ONE of these exact values:
+           - "preWorkout" (for pre-exercise fuel)
+           - "postWorkout" (for post-exercise recovery)
+           - "sustainedEnergy" (for steady energy throughout the day)
+           - "recovery" (for muscle/body recovery)
+           - "metabolicBoost" (for metabolism optimization)
+           - "sleepOptimization" (for evening/pre-sleep nutrition)
+           - "focusBoost" (for cognitive performance)
+        8. Food suggestions (2-3 specific foods per window)
+        9. Micronutrient focus (2-3 vitamins/minerals to prioritize)
+        10. Optimization tips (2-3 actionable tips)
+        11. Rationale explaining why this window supports their goal
+        12. Appropriate macro distribution based on window purpose
         
         CRITICAL DATE AND TIMEZONE INSTRUCTIONS:
         - The wake time is \(wakeTimeSimple) in the user's LOCAL timezone
@@ -769,7 +777,8 @@ class AIWindowGenerationService {
             let calendar = Calendar.current
             let dayDate = calendar.startOfDay(for: date)
             
-            let windows = aiResponse.windows.enumerated().map { index, window in
+            let windows = aiResponse.windows.enumerated().map { [weak self] index, window in
+                guard let self = self else { return MealWindow.mockWindows()[0] }
                 // Validate and fix window times
                 var correctedEndTime = window.endTime
                 
@@ -794,6 +803,15 @@ class AIWindowGenerationService {
                     totalWindows: aiResponse.windows.count
                 )
                 
+                // Determine window purpose - use AI suggestion or intelligent fallback
+                let windowPurpose = determineWindowPurpose(
+                    aiPurpose: window.purpose,
+                    windowIndex: index,
+                    totalWindows: aiResponse.windows.count,
+                    startHour: calendar.component(.hour, from: window.startTime),
+                    windowName: windowName
+                )
+                
                 return MealWindow(
                     id: UUID(),
                     startTime: window.startTime,
@@ -804,7 +822,7 @@ class AIWindowGenerationService {
                         carbs: window.targetCarbs,
                         fat: window.targetFat
                     ),
-                    purpose: mapPurpose(window.purpose),
+                    purpose: windowPurpose,
                     flexibility: mapFlexibility(window.flexibility),
                     dayDate: dayDate,
                     name: windowName,
@@ -955,24 +973,94 @@ extension AIWindowGenerationService {
         return newName
     }
     
+    /// Intelligently determine window purpose based on context
+    private func determineWindowPurpose(
+        aiPurpose: String,
+        windowIndex: Int,
+        totalWindows: Int,
+        startHour: Int,
+        windowName: String
+    ) -> WindowPurpose {
+        // First try to use the AI's suggestion
+        let mapped = mapPurpose(aiPurpose)
+        
+        // If AI gave us a valid purpose (not the default), use it
+        if aiPurpose.lowercased() != "sustainedenergy" && mapped != .sustainedEnergy {
+            return mapped
+        }
+        
+        // Otherwise, intelligently assign based on context
+        let nameLower = windowName.lowercased()
+        
+        // Check for workout-related names
+        if nameLower.contains("pre-workout") || nameLower.contains("pre-training") || nameLower.contains("fuel") && nameLower.contains("pre") {
+            return .preWorkout
+        }
+        if nameLower.contains("post-workout") || nameLower.contains("recovery") || nameLower.contains("post-training") {
+            return .postWorkout
+        }
+        
+        // Check for sleep-related names
+        if nameLower.contains("sleep") || nameLower.contains("night") || nameLower.contains("evening") {
+            return .sleepOptimization
+        }
+        
+        // Check for focus-related names
+        if nameLower.contains("focus") || nameLower.contains("brain") || nameLower.contains("cognitive") {
+            return .focusBoost
+        }
+        
+        // Check for metabolic-related names
+        if nameLower.contains("metabolic") || nameLower.contains("burn") || nameLower.contains("boost") {
+            return .metabolicBoost
+        }
+        
+        // Time-based heuristics
+        if windowIndex == 0 && startHour < 10 {
+            // First window in morning - metabolic boost
+            return .metabolicBoost
+        } else if windowIndex == totalWindows - 1 && startHour >= 19 {
+            // Last window in evening - sleep optimization
+            return .sleepOptimization
+        } else if startHour >= 11 && startHour <= 14 {
+            // Midday window - focus boost
+            return .focusBoost
+        } else if startHour >= 15 && startHour <= 18 {
+            // Afternoon window - sustained energy
+            return .sustainedEnergy
+        }
+        
+        // Default to sustained energy for general windows
+        return .sustainedEnergy
+    }
+    
     /// Map AI-generated purpose strings to WindowPurpose enum
     private func mapPurpose(_ purposeString: String) -> WindowPurpose {
-        switch purposeString.lowercased() {
-        case "preworkout", "pre-workout":
+        let normalizedString = purposeString.lowercased().replacingOccurrences(of: " ", with: "").replacingOccurrences(of: "-", with: "")
+        
+        Task { @MainActor in
+            DebugLogger.shared.info("Mapping purpose string: '\(purposeString)' -> normalized: '\(normalizedString)'")
+        }
+        
+        switch normalizedString {
+        case "preworkout", "pretraining", "prefuel":
             return .preWorkout
-        case "postworkout", "post-workout":
+        case "postworkout", "posttraining", "recovery":
             return .postWorkout
-        case "sustainedenergy", "sustained-energy", "sustained energy":
+        case "sustainedenergy", "energy", "balanced":
             return .sustainedEnergy
-        case "recovery":
+        case "recovery", "restoration", "repair":
             return .recovery
-        case "metabolicboost", "metabolic-boost", "metabolic boost":
+        case "metabolicboost", "metabolic", "fatburning":
             return .metabolicBoost
-        case "sleepoptimization", "sleep-optimization", "sleep optimization":
+        case "sleepoptimization", "sleep", "nighttime", "evening":
             return .sleepOptimization
-        case "focusboost", "focus-boost", "focus boost":
+        case "focusboost", "focus", "cognitive", "brain":
             return .focusBoost
         default:
+            Task { @MainActor in
+                DebugLogger.shared.warning("Unknown purpose string '\(purposeString)' - defaulting to sustainedEnergy")
+            }
             return .sustainedEnergy
         }
     }

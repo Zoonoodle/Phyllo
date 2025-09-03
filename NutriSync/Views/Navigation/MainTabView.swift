@@ -46,7 +46,7 @@ struct MainTabView: View {
                 .tag(0)
                 .ignoresSafeArea(edges: [.top, .bottom])
                 
-                SimplePerformanceView(showDeveloperDashboard: $showDeveloperDashboard)
+                PremiumPerformanceView()
                     .tag(1)
                 .ignoresSafeArea(edges: [.top, .bottom])
                 
