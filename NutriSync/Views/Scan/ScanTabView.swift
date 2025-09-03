@@ -508,95 +508,109 @@ struct RecentsView: View {
                 Color.black.ignoresSafeArea()
                 
                 if recentMeals.isEmpty {
-                    VStack(spacing: 16) {
-                        Image(systemName: "clock.arrow.circlepath")
-                            .font(.system(size: 48))
-                            .foregroundColor(.white.opacity(0.3))
-                        
-                        Text("No recent meals")
-                            .font(.system(size: 18, weight: .medium))
-                            .foregroundColor(.white.opacity(0.5))
-                        
-                        Text("Your recently logged meals will appear here")
-                            .font(.system(size: 14))
-                            .foregroundColor(.white.opacity(0.3))
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal, 40)
-                    }
+                    emptyStateView
                 } else {
-                    ScrollView {
-                        VStack(spacing: 12) {
-                            ForEach(recentMeals) { meal in
-                                Button(action: {
-                                    selectedMeal(meal)
-                                }) {
-                                    HStack(spacing: 12) {
-                                        // Meal icon or image
-                                        Circle()
-                                            .fill(Color.white.opacity(0.05))
-                                            .frame(width: 56, height: 56)
-                                            .overlay(
-                                                Group {
-                                                    if let photoData = meal.imageData,
-                                                       let uiImage = UIImage(data: photoData) {
-                                                        Image(uiImage: uiImage)
-                                                            .resizable()
-                                                            .aspectRatio(contentMode: .fill)
-                                                            .frame(width: 56, height: 56)
-                                                            .clipShape(Circle())
-                                                    } else {
-                                                        Image(systemName: "fork.knife")
-                                                            .font(.system(size: 20))
-                                                            .foregroundColor(.white.opacity(0.5))
-                                                    }
-                                                }
-                                            )
-                                        
-                                        // Meal details
-                                        VStack(alignment: .leading, spacing: 4) {
-                                            Text(meal.name)
-                                                .font(.system(size: 16, weight: .semibold))
-                                                .foregroundColor(.white)
-                                                .lineLimit(1)
-                                            
-                                            HStack(spacing: 12) {
-                                                Text("\(meal.totalCalories) cal")
-                                                    .font(.system(size: 13))
-                                                    .foregroundColor(.white.opacity(0.6))
-                                                
-                                                Text(formatTimeAgo(meal.timestamp))
-                                                    .font(.system(size: 13))
-                                                    .foregroundColor(.white.opacity(0.4))
-                                            }
-                                            
-                                            // Macros
-                                            HStack(spacing: 8) {
-                                                MacroTag(value: meal.totalProtein, label: "P", color: .green)
-                                                MacroTag(value: meal.totalCarbs, label: "C", color: .orange)
-                                                MacroTag(value: meal.totalFat, label: "F", color: .yellow)
-                                            }
-                                        }
-                                        
-                                        Spacer()
-                                        
-                                        // Arrow indicator
-                                        Image(systemName: "chevron.right")
-                                            .font(.system(size: 14, weight: .medium))
-                                            .foregroundColor(.white.opacity(0.3))
-                                    }
-                                    .padding(16)
-                                    .background(Color.white.opacity(0.03))
-                                    .cornerRadius(12)
-                                }
-                            }
-                        }
-                        .padding(20)
-                    }
+                    mealListView
                 }
             }
             .navigationTitle("Recent Meals")
             .navigationBarTitleDisplayMode(.inline)
             .preferredColorScheme(.dark)
+        }
+    }
+    
+    private var emptyStateView: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "clock.arrow.circlepath")
+                .font(.system(size: 48))
+                .foregroundColor(.white.opacity(0.3))
+            
+            Text("No recent meals")
+                .font(.system(size: 18, weight: .medium))
+                .foregroundColor(.white.opacity(0.5))
+            
+            Text("Your recently logged meals will appear here")
+                .font(.system(size: 14))
+                .foregroundColor(.white.opacity(0.3))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 40)
+        }
+    }
+    
+    private var mealListView: some View {
+        ScrollView {
+            VStack(spacing: 12) {
+                ForEach(recentMeals) { meal in
+                    mealRow(for: meal)
+                }
+            }
+            .padding(20)
+        }
+    }
+    
+    private func mealRow(for meal: LoggedMeal) -> some View {
+        Button(action: {
+            selectedMeal(meal)
+        }) {
+            HStack(spacing: 12) {
+                mealImage(for: meal)
+                mealDetails(for: meal)
+                Spacer()
+                
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.white.opacity(0.3))
+            }
+            .padding(16)
+            .background(Color.white.opacity(0.03))
+            .cornerRadius(12)
+        }
+    }
+    
+    private func mealImage(for meal: LoggedMeal) -> some View {
+        Circle()
+            .fill(Color.white.opacity(0.05))
+            .frame(width: 56, height: 56)
+            .overlay(
+                Group {
+                    if let photoData = meal.imageData,
+                       let uiImage = UIImage(data: photoData) {
+                        Image(uiImage: uiImage)
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .frame(width: 56, height: 56)
+                            .clipShape(Circle())
+                    } else {
+                        Image(systemName: "fork.knife")
+                            .font(.system(size: 20))
+                            .foregroundColor(.white.opacity(0.5))
+                    }
+                }
+            )
+    }
+    
+    private func mealDetails(for meal: LoggedMeal) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(meal.name)
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundColor(.white)
+                .lineLimit(1)
+            
+            HStack(spacing: 12) {
+                Text("\(meal.calories) cal")
+                    .font(.system(size: 13))
+                    .foregroundColor(.white.opacity(0.6))
+                
+                Text(formatTimeAgo(meal.timestamp))
+                    .font(.system(size: 13))
+                    .foregroundColor(.white.opacity(0.4))
+            }
+            
+            HStack(spacing: 8) {
+                MacroTag(value: meal.protein, label: "P", color: .green)
+                MacroTag(value: meal.carbs, label: "C", color: .orange)
+                MacroTag(value: meal.fat, label: "F", color: .yellow)
+            }
         }
     }
     
