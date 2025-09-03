@@ -607,9 +607,9 @@ struct RecentsView: View {
             }
             
             HStack(spacing: 8) {
-                MacroTag(value: meal.protein, label: "P", color: .green)
-                MacroTag(value: meal.carbs, label: "C", color: .orange)
-                MacroTag(value: meal.fat, label: "F", color: .yellow)
+                MacroTag(value: Double(meal.protein), label: "P", color: .green)
+                MacroTag(value: Double(meal.carbs), label: "C", color: .orange)
+                MacroTag(value: Double(meal.fat), label: "F", color: .yellow)
             }
         }
     }
