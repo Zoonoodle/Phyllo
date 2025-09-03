@@ -29,16 +29,16 @@ struct PremiumPerformanceView: View {
                         headerSection
                         
                         PremiumActivityRings(
-                            timingScore: viewModel.timingPercentage / 100,
-                            nutrientScore: viewModel.nutrientPercentage / 100,
-                            adherenceScore: viewModel.adherencePercentage / 100
+                            timingScore: calculateTimingScore(),
+                            nutrientScore: calculateNutrientScore(),
+                            adherenceScore: calculateAdherenceScore()
                         )
                         .padding(.top, 20)
                         
                         RingLabelsView(
-                            timingScore: viewModel.timingPercentage / 100,
-                            nutrientScore: viewModel.nutrientPercentage / 100,
-                            adherenceScore: viewModel.adherencePercentage / 100
+                            timingScore: calculateTimingScore(),
+                            nutrientScore: calculateNutrientScore(),
+                            adherenceScore: calculateAdherenceScore()
                         )
                         .padding(.horizontal, 40)
                         
@@ -95,11 +95,11 @@ struct PremiumPerformanceView: View {
         
         async let timelineLoad: () = timelineVM.loadLastSevenDays()
         async let streakLoad: () = loadStreak()
-        async let mealsLoad: () = viewModel.loadMeals()
+        // View model loads data automatically in init
         
         await timelineLoad
         await streakLoad
-        await mealsLoad
+        // Data loading handled by view model
         
         isLoadingStreak = false
     }
@@ -116,13 +116,43 @@ struct PremiumPerformanceView: View {
     }
     
     private func calculateFastingHours() -> Double {
-        guard !viewModel.meals.isEmpty else { return 0 }
+        guard !viewModel.todaysMeals.isEmpty else { return 0 }
         
-        let sortedMeals = viewModel.meals.sorted { $0.timestamp < $1.timestamp }
+        let sortedMeals = viewModel.todaysMeals.sorted { $0.timestamp < $1.timestamp }
         guard let lastMeal = sortedMeals.last else { return 0 }
         
         let hoursSinceLastMeal = Date().timeIntervalSince(lastMeal.timestamp) / 3600
         return max(0, hoursSinceLastMeal)
+    }
+    
+    private func calculateTimingScore() -> Double {
+        // Calculate based on how many windows were consumed on time
+        guard !viewModel.mealWindows.isEmpty else { return 0 }
+        
+        let windowsWithMeals = viewModel.mealWindows.filter { window in
+            !viewModel.mealsInWindow(window).isEmpty
+        }.count
+        
+        return Double(windowsWithMeals) / Double(viewModel.mealWindows.count)
+    }
+    
+    private func calculateNutrientScore() -> Double {
+        // Calculate based on macros achieved
+        let calorieProgress = min(Double(viewModel.totalCalories) / Double(viewModel.dailyCalorieTarget), 1.0)
+        let proteinProgress = min(Double(viewModel.totalProtein) / Double(viewModel.dailyProteinTarget), 1.0)
+        
+        return (calorieProgress + proteinProgress) / 2.0
+    }
+    
+    private func calculateAdherenceScore() -> Double {
+        // Calculate based on windows completed
+        guard !viewModel.mealWindows.isEmpty else { return 0 }
+        
+        let completedWindows = viewModel.mealWindows.filter { window in
+            !viewModel.mealsInWindow(window).isEmpty
+        }.count
+        
+        return Double(completedWindows) / Double(viewModel.mealWindows.count)
     }
 }
 

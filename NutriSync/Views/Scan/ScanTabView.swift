@@ -25,6 +25,8 @@ struct ScanTabView: View {
     @State private var analysisResult: MealAnalysisResult?
     @State private var capturePhotoTrigger = false
     @State private var voiceTranscript: String?
+    @State private var showRecents = false
+    @State private var recentMeals: [LoggedMeal] = []
     @StateObject private var clarificationManager = ClarificationManager.shared
     @StateObject private var mealCaptureService = MealCaptureService.shared
     
@@ -63,44 +65,14 @@ struct ScanTabView: View {
                 
                 // Main UI layer
                 VStack(spacing: 0) {
-                    // Top navigation bar - matching ScheduleView header
+                    // Top navigation bar - simplified
                     VStack(spacing: 0) {
                         VStack(spacing: 8) {
-                            ZStack {
-                                HStack {
-                                    // Close button on left
-                                    Button(action: {
-                                        // Close action - handled by tab navigation
-                                    }) {
-                                        Image(systemName: "xmark")
-                                            .font(.system(size: 20, weight: .medium))
-                                            .foregroundColor(.white.opacity(0.6))
-                                            .frame(width: 36, height: 36)
-                                            .background(Color.white.opacity(0.1))
-                                            .clipShape(Circle())
-                                    }
-                                    
-                                    Spacer()
-                                    
-                                    // Photo library button on right
-                                    Button(action: {
-                                        showImagePicker = true
-                                    }) {
-                                        Image(systemName: "photo.on.rectangle")
-                                            .font(.system(size: 20, weight: .medium))
-                                            .foregroundColor(.white.opacity(0.6))
-                                            .frame(width: 36, height: 36)
-                                            .background(Color.white.opacity(0.1))
-                                            .clipShape(Circle())
-                                    }
-                                }
-                                
-                                // Title centered
-                                Text("Scan")
-                                    .font(.system(size: 24, weight: .bold))
-                                    .foregroundColor(.white)
-                            }
-                            .padding(.horizontal, 24)
+                            // Title centered
+                            Text("Scan")
+                                .font(.system(size: 24, weight: .bold))
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 24)
                         }
                         .padding(.vertical, 6)
                         
@@ -113,10 +85,6 @@ struct ScanTabView: View {
                     
                     // Bottom controls
                     VStack(spacing: 24) {
-                        // Quick actions bar
-                        QuickActionsBar(showQuickLog: $showQuickLog)
-                            .padding(.horizontal, 20)
-                        
                         // Mode selector
                         ScanModeSelector(selectedMode: $selectedMode)
                             .padding(.horizontal, 20)
@@ -157,9 +125,33 @@ struct ScanTabView: View {
                                 }
                             )
                             
-                            // Balance spacer
-                            Color.clear
-                                .frame(width: 50, height: 50)
+                            // Recents button (right side)
+                            if selectedMode == .photo {
+                                Button(action: {
+                                    showRecents = true
+                                    Task {
+                                        await loadRecentMeals()
+                                    }
+                                }) {
+                                    VStack(spacing: 8) {
+                                        Circle()
+                                            .fill(Color.white.opacity(0.1))
+                                            .frame(width: 50, height: 50)
+                                            .overlay(
+                                                Image(systemName: "clock.arrow.circlepath")
+                                                    .font(.system(size: 20, weight: .medium))
+                                                    .foregroundColor(.white.opacity(0.8))
+                                            )
+                                        Text("Recents")
+                                            .font(.system(size: 12, weight: .medium))
+                                            .foregroundColor(.white.opacity(0.6))
+                                    }
+                                }
+                            } else {
+                                // Spacer to maintain layout
+                                Color.clear
+                                    .frame(width: 50, height: 50)
+                            }
                         }
                         .padding(.bottom, 40)
                     }
@@ -175,10 +167,19 @@ struct ScanTabView: View {
                     simulateAIProcessing()
                 }
             }
-            .sheet(isPresented: $showQuickLog) {
-                QuickLogView()
-                    .presentationDetents([.medium])
-                    .presentationDragIndicator(.visible)
+            .sheet(isPresented: $showRecents) {
+                RecentsView(
+                    recentMeals: recentMeals,
+                    selectedMeal: { meal in
+                        // When a recent meal is selected, close the sheet and add it
+                        showRecents = false
+                        Task {
+                            await handleRecentMealSelection(meal)
+                        }
+                    }
+                )
+                .presentationDetents([.medium])
+                .presentationDragIndicator(.visible)
             }
             .sheet(isPresented: $showLoading) {
                 LoadingSheet()
