@@ -13,7 +13,6 @@ struct ScanTabView: View {
     @Binding var selectedTab: Int
     @Binding var scrollToAnalyzingMeal: AnalyzingMeal?
     @State private var selectedMode: ScanMode = .photo
-    @State private var showQuickLog = false
     @State private var showVoiceInput = false
     @State private var showLoading = false
     @State private var showResults = false
@@ -357,6 +356,74 @@ struct ScanTabView: View {
         }
     }
     
+    private func loadRecentMeals() async {
+        do {
+            // Get meals from the last 7 days
+            let calendar = Calendar.current
+            let today = Date()
+            var allMeals: [LoggedMeal] = []
+            
+            for daysAgo in 0..<7 {
+                if let date = calendar.date(byAdding: .day, value: -daysAgo, to: today) {
+                    let mealsForDay = try await dataProvider.getMeals(for: date)
+                    allMeals.append(contentsOf: mealsForDay)
+                }
+            }
+            
+            // Sort by most recent first and limit to 10
+            recentMeals = allMeals
+                .sorted { $0.timestamp > $1.timestamp }
+                .prefix(10)
+                .map { $0 }
+        } catch {
+            Task { @MainActor in
+                DebugLogger.shared.error("Failed to load recent meals: \(error)")
+            }
+            recentMeals = []
+        }
+    }
+    
+    private func handleRecentMealSelection(_ meal: LoggedMeal) async {
+        // Create a new meal based on the selected recent meal
+        let newMeal = LoggedMeal(
+            id: UUID(),
+            name: meal.name,
+            items: meal.items,
+            totalCalories: meal.totalCalories,
+            totalProtein: meal.totalProtein,
+            totalCarbs: meal.totalCarbs,
+            totalFat: meal.totalFat,
+            timestamp: Date(),
+            windowId: nil, // Will be assigned when added to a window
+            photoData: meal.photoData,
+            confidence: meal.confidence,
+            verificationStatus: .unverified,
+            notes: nil
+        )
+        
+        // Save the new meal
+        do {
+            try await dataProvider.saveMeal(newMeal)
+            
+            // Navigate to schedule to see the meal
+            await MainActor.run {
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    selectedTab = 0
+                }
+                
+                // Trigger meal sliding animation
+                NotificationCenter.default.post(
+                    name: .animateMealToWindow,
+                    object: newMeal
+                )
+            }
+        } catch {
+            Task { @MainActor in
+                DebugLogger.shared.error("Failed to save meal from recent: \(error)")
+            }
+        }
+    }
+    
     private func simulateAIProcessing() {
         Task {
             do {
@@ -432,33 +499,142 @@ struct LoadingSheet: View {
     }
 }
 
-// Placeholder views - will be replaced with actual implementations
-
-struct QuickActionsBar: View {
-    @Binding var showQuickLog: Bool
+// Recents View - displays recently logged meals
+struct RecentsView: View {
+    let recentMeals: [LoggedMeal]
+    let selectedMeal: (LoggedMeal) -> Void
     
     var body: some View {
-        HStack(spacing: 16) {
-            Button(action: { showQuickLog = true }) {
-                Label("Recent", systemImage: "clock.arrow.circlepath")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(.white.opacity(0.7))
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
-                    .background(Color.white.opacity(0.1))
-                    .cornerRadius(20)
+        NavigationStack {
+            ZStack {
+                Color.black.ignoresSafeArea()
+                
+                if recentMeals.isEmpty {
+                    VStack(spacing: 16) {
+                        Image(systemName: "clock.arrow.circlepath")
+                            .font(.system(size: 48))
+                            .foregroundColor(.white.opacity(0.3))
+                        
+                        Text("No recent meals")
+                            .font(.system(size: 18, weight: .medium))
+                            .foregroundColor(.white.opacity(0.5))
+                        
+                        Text("Your recently logged meals will appear here")
+                            .font(.system(size: 14))
+                            .foregroundColor(.white.opacity(0.3))
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 40)
+                    }
+                } else {
+                    ScrollView {
+                        VStack(spacing: 12) {
+                            ForEach(recentMeals) { meal in
+                                Button(action: {
+                                    selectedMeal(meal)
+                                }) {
+                                    HStack(spacing: 12) {
+                                        // Meal icon or image
+                                        Circle()
+                                            .fill(Color.white.opacity(0.05))
+                                            .frame(width: 56, height: 56)
+                                            .overlay(
+                                                Group {
+                                                    if let photoData = meal.photoData,
+                                                       let uiImage = UIImage(data: photoData) {
+                                                        Image(uiImage: uiImage)
+                                                            .resizable()
+                                                            .aspectRatio(contentMode: .fill)
+                                                            .frame(width: 56, height: 56)
+                                                            .clipShape(Circle())
+                                                    } else {
+                                                        Image(systemName: "fork.knife")
+                                                            .font(.system(size: 20))
+                                                            .foregroundColor(.white.opacity(0.5))
+                                                    }
+                                                }
+                                            )
+                                        
+                                        // Meal details
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text(meal.name)
+                                                .font(.system(size: 16, weight: .semibold))
+                                                .foregroundColor(.white)
+                                                .lineLimit(1)
+                                            
+                                            HStack(spacing: 12) {
+                                                Text("\(meal.totalCalories) cal")
+                                                    .font(.system(size: 13))
+                                                    .foregroundColor(.white.opacity(0.6))
+                                                
+                                                Text(formatTimeAgo(meal.timestamp))
+                                                    .font(.system(size: 13))
+                                                    .foregroundColor(.white.opacity(0.4))
+                                            }
+                                            
+                                            // Macros
+                                            HStack(spacing: 8) {
+                                                MacroTag(value: meal.totalProtein, label: "P", color: .green)
+                                                MacroTag(value: meal.totalCarbs, label: "C", color: .orange)
+                                                MacroTag(value: meal.totalFat, label: "F", color: .yellow)
+                                            }
+                                        }
+                                        
+                                        Spacer()
+                                        
+                                        // Arrow indicator
+                                        Image(systemName: "chevron.right")
+                                            .font(.system(size: 14, weight: .medium))
+                                            .foregroundColor(.white.opacity(0.3))
+                                    }
+                                    .padding(16)
+                                    .background(Color.white.opacity(0.03))
+                                    .cornerRadius(12)
+                                }
+                            }
+                        }
+                        .padding(20)
+                    }
+                }
             }
-            
-            Button(action: {}) {
-                Label("Favorites", systemImage: "star.fill")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(.white.opacity(0.7))
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
-                    .background(Color.white.opacity(0.1))
-                    .cornerRadius(20)
-            }
+            .navigationTitle("Recent Meals")
+            .navigationBarTitleDisplayMode(.inline)
+            .preferredColorScheme(.dark)
         }
+    }
+    
+    private func formatTimeAgo(_ date: Date) -> String {
+        let now = Date()
+        let components = Calendar.current.dateComponents([.day, .hour, .minute], from: date, to: now)
+        
+        if let days = components.day, days > 0 {
+            return "\(days) day\(days == 1 ? "" : "s") ago"
+        } else if let hours = components.hour, hours > 0 {
+            return "\(hours) hour\(hours == 1 ? "" : "s") ago"
+        } else if let minutes = components.minute, minutes > 0 {
+            return "\(minutes) min ago"
+        } else {
+            return "Just now"
+        }
+    }
+}
+
+struct MacroTag: View {
+    let value: Double
+    let label: String
+    let color: Color
+    
+    var body: some View {
+        HStack(spacing: 2) {
+            Text(label)
+                .font(.system(size: 11, weight: .medium))
+            Text("\(Int(value))g")
+                .font(.system(size: 11))
+        }
+        .foregroundColor(color)
+        .padding(.horizontal, 6)
+        .padding(.vertical, 2)
+        .background(color.opacity(0.15))
+        .cornerRadius(4)
     }
 }
 
