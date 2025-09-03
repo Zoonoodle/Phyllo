@@ -778,7 +778,23 @@ class AIWindowGenerationService {
             let dayDate = calendar.startOfDay(for: date)
             
             let windows = aiResponse.windows.enumerated().map { [weak self] index, window in
-                guard let self = self else { return MealWindow.mockWindows()[0] }
+                guard let self = self else { 
+                    // Return a basic window if self is nil (shouldn't happen)
+                    return MealWindow(
+                        id: UUID(),
+                        startTime: window.startTime,
+                        endTime: window.endTime,
+                        targetCalories: window.targetCalories,
+                        targetMacros: MacroTargets(
+                            protein: window.targetProtein,
+                            carbs: window.targetCarbs,
+                            fat: window.targetFat
+                        ),
+                        purpose: .sustainedEnergy,
+                        flexibility: .moderate,
+                        dayDate: dayDate
+                    )
+                }
                 // Validate and fix window times
                 var correctedEndTime = window.endTime
                 
@@ -1045,7 +1061,7 @@ extension AIWindowGenerationService {
         switch normalizedString {
         case "preworkout", "pretraining", "prefuel":
             return .preWorkout
-        case "postworkout", "posttraining", "recovery":
+        case "postworkout", "posttraining":
             return .postWorkout
         case "sustainedenergy", "energy", "balanced":
             return .sustainedEnergy
