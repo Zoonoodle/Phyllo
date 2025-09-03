@@ -739,6 +739,152 @@ class FirebaseDataProvider: DataProvider {
         ])
     }
     
+    func getDailyAnalyticsRange(from: Date, to: Date) async throws -> [DailyAnalytics]? {
+        var analyticsArray: [DailyAnalytics] = []
+        let calendar = Calendar.current
+        
+        for dayOffset in 0...calendar.dateComponents([.day], from: from, to: to).day! {
+            guard let currentDate = calendar.date(byAdding: .day, value: dayOffset, to: from) else { continue }
+            
+            let meals = try await getMeals(for: currentDate)
+            let windows = try await getWindows(for: currentDate)
+            let profile = try await getUserProfile()
+            
+            let completedWindows = windows.filter { $0.status == .logged }.count
+            let totalCalories = meals.reduce(0) { $0 + ($1.analysis?.nutrition.calories ?? 0) }
+            let totalProtein = meals.reduce(0) { $0 + ($1.analysis?.nutrition.protein ?? 0) }
+            let totalCarbs = meals.reduce(0) { $0 + ($1.analysis?.nutrition.carbs ?? 0) }
+            let totalFat = meals.reduce(0) { $0 + ($1.analysis?.nutrition.fat ?? 0) }
+            
+            let timingScore = completedWindows > 0 ? Double(completedWindows) / Double(max(windows.count, 1)) : 0
+            let nutrientScore = calculateNutrientScore(protein: totalProtein, carbs: totalCarbs, fat: totalFat, target: profile?.nutritionGoals)
+            let adherenceScore = Double(meals.count) / Double(max(profile?.mealPreferences.mealsPerDay ?? 5, 1))
+            
+            let dateString = ISO8601DateFormatter.yyyyMMdd.string(from: currentDate)
+            analyticsArray.append(DailyAnalytics(
+                id: dateString,
+                date: currentDate,
+                totalCalories: totalCalories,
+                totalProtein: totalProtein,
+                totalCarbs: totalCarbs,
+                totalFat: totalFat,
+                mealsLogged: meals.count,
+                targetMeals: profile?.mealPreferences.mealsPerDay ?? 5,
+                windowsCompleted: completedWindows,
+                totalWindows: windows.count,
+                windowsMissed: windows.filter { $0.status == .missed }.count,
+                averageEnergyLevel: nil,
+                micronutrientProgress: [:],
+                timingScore: timingScore,
+                nutrientScore: nutrientScore,
+                adherenceScore: adherenceScore,
+                caloriesConsumed: totalCalories,
+                targetCalories: profile?.nutritionGoals.dailyCalories ?? 2400
+            ))
+        }
+        
+        return analyticsArray.isEmpty ? nil : analyticsArray
+    }
+    
+    func calculateStreak(until date: Date) async throws -> (current: Int, best: Int) {
+        let thirtyDaysAgo = Calendar.current.date(byAdding: .day, value: -30, to: date)!
+        
+        guard let analyticsRange = try await getDailyAnalyticsRange(from: thirtyDaysAgo, to: date) else {
+            return (current: 0, best: 0)
+        }
+        
+        let sortedAnalytics = analyticsRange.sorted { $0.date > $1.date }
+        
+        var currentStreak = 0
+        var bestStreak = 0
+        var tempStreak = 0
+        
+        for (index, analytics) in sortedAnalytics.enumerated() {
+            let hasLoggedMeals = analytics.mealsLogged > 0
+            let hasCompletedWindows = analytics.windowsCompleted > 0
+            
+            if hasLoggedMeals || hasCompletedWindows {
+                if index == 0 {
+                    currentStreak += 1
+                    tempStreak = currentStreak
+                } else {
+                    tempStreak += 1
+                }
+                bestStreak = max(bestStreak, tempStreak)
+            } else {
+                if index == 0 {
+                    currentStreak = 0
+                }
+                tempStreak = 0
+            }
+        }
+        
+        return (current: currentStreak, best: bestStreak)
+    }
+    
+    func getMealsForDateRange(from: Date, to: Date) async throws -> [Date: [LoggedMeal]] {
+        let startOfDay = Calendar.current.startOfDay(for: from)
+        let endOfDay = Calendar.current.date(byAdding: .day, value: 1, to: Calendar.current.startOfDay(for: to))!
+        
+        let docs = try await userRef.collection("meals")
+            .whereField("timestamp", isGreaterThanOrEqualTo: startOfDay)
+            .whereField("timestamp", isLessThan: endOfDay)
+            .getDocuments()
+        
+        var mealsByDate: [Date: [LoggedMeal]] = [:]
+        
+        for doc in docs.documents {
+            if let meal = LoggedMeal.fromFirestore(doc.data()) {
+                let dayDate = Calendar.current.startOfDay(for: meal.timestamp)
+                if mealsByDate[dayDate] == nil {
+                    mealsByDate[dayDate] = []
+                }
+                mealsByDate[dayDate]?.append(meal)
+            }
+        }
+        
+        return mealsByDate
+    }
+    
+    func getWindowsForDateRange(from: Date, to: Date) async throws -> [Date: [MealWindow]] {
+        let startOfDay = Calendar.current.startOfDay(for: from)
+        let endOfDay = Calendar.current.startOfDay(for: Calendar.current.date(byAdding: .day, value: 1, to: to)!)
+        
+        let docs = try await userRef.collection("windows")
+            .whereField("dayDate", isGreaterThanOrEqualTo: startOfDay)
+            .whereField("dayDate", isLessThan: endOfDay)
+            .getDocuments()
+        
+        var windowsByDate: [Date: [MealWindow]] = [:]
+        
+        for doc in docs.documents {
+            if let window = MealWindow.fromFirestore(doc.data()),
+               let dayDate = doc.data()["dayDate"] as? Timestamp {
+                let date = Calendar.current.startOfDay(for: dayDate.dateValue())
+                if windowsByDate[date] == nil {
+                    windowsByDate[date] = []
+                }
+                windowsByDate[date]?.append(window)
+            }
+        }
+        
+        for (date, windows) in windowsByDate {
+            windowsByDate[date] = windows.sorted { $0.startTime < $1.startTime }
+        }
+        
+        return windowsByDate
+    }
+    
+    private func calculateNutrientScore(protein: Double, carbs: Double, fat: Double, target: NutritionGoals?) -> Double {
+        guard let target = target else { return 0.5 }
+        
+        let proteinRatio = min(protein / Double(target.dailyProtein), 1.0)
+        let carbRatio = min(carbs / Double(target.dailyCarbs), 1.0)
+        let fatRatio = min(fat / Double(target.dailyFat), 1.0)
+        
+        return (proteinRatio + carbRatio + fatRatio) / 3.0
+    }
+    
     // MARK: - Real-time Updates
     
     func observeMeals(for date: Date, onChange: @escaping ([LoggedMeal]) -> Void) -> ObservationToken {

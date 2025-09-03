@@ -40,6 +40,10 @@ protocol DataProvider {
     func getDailyAnalytics(for date: Date) async throws -> DailyAnalytics?
     func getWeeklyAnalytics(for weekStart: Date) async throws -> WeeklyAnalytics?
     func updateDailyAnalytics(_ analytics: DailyAnalytics) async throws
+    func getDailyAnalyticsRange(from: Date, to: Date) async throws -> [DailyAnalytics]?
+    func calculateStreak(until date: Date) async throws -> (current: Int, best: Int)
+    func getMealsForDateRange(from: Date, to: Date) async throws -> [Date: [LoggedMeal]]
+    func getWindowsForDateRange(from: Date, to: Date) async throws -> [Date: [MealWindow]]
     
     // MARK: - Real-time Updates
     func observeMeals(for date: Date, onChange: @escaping ([LoggedMeal]) -> Void) -> ObservationToken
@@ -72,17 +76,69 @@ class ObservationToken {
 // MARK: - Data Models for Firebase
 
 /// Daily analytics summary
-struct DailyAnalytics: Codable {
+struct DailyAnalytics: Identifiable, Codable {
+    let id: String
     let date: Date
     let totalCalories: Int
     let totalProtein: Double
     let totalCarbs: Double
     let totalFat: Double
     let mealsLogged: Int
+    let targetMeals: Int
     let windowsCompleted: Int
+    let totalWindows: Int
     let windowsMissed: Int
     let averageEnergyLevel: Double?
     let micronutrientProgress: [String: Double] // nutrient name -> percentage of RDA
+    let timingScore: Double
+    let nutrientScore: Double
+    let adherenceScore: Double
+    let caloriesConsumed: Int
+    let targetCalories: Int
+    
+    var overallScore: Double {
+        (timingScore + nutrientScore + adherenceScore) / 3
+    }
+    
+    init(
+        id: String = UUID().uuidString,
+        date: Date,
+        totalCalories: Int = 0,
+        totalProtein: Double = 0,
+        totalCarbs: Double = 0,
+        totalFat: Double = 0,
+        mealsLogged: Int = 0,
+        targetMeals: Int = 5,
+        windowsCompleted: Int = 0,
+        totalWindows: Int = 5,
+        windowsMissed: Int = 0,
+        averageEnergyLevel: Double? = nil,
+        micronutrientProgress: [String: Double] = [:],
+        timingScore: Double = 0,
+        nutrientScore: Double = 0,
+        adherenceScore: Double = 0,
+        caloriesConsumed: Int = 0,
+        targetCalories: Int = 2400
+    ) {
+        self.id = id
+        self.date = date
+        self.totalCalories = totalCalories
+        self.totalProtein = totalProtein
+        self.totalCarbs = totalCarbs
+        self.totalFat = totalFat
+        self.mealsLogged = mealsLogged
+        self.targetMeals = targetMeals
+        self.windowsCompleted = windowsCompleted
+        self.totalWindows = totalWindows
+        self.windowsMissed = windowsMissed
+        self.averageEnergyLevel = averageEnergyLevel
+        self.micronutrientProgress = micronutrientProgress
+        self.timingScore = timingScore
+        self.nutrientScore = nutrientScore
+        self.adherenceScore = adherenceScore
+        self.caloriesConsumed = caloriesConsumed
+        self.targetCalories = targetCalories
+    }
 }
 
 /// Weekly analytics summary
