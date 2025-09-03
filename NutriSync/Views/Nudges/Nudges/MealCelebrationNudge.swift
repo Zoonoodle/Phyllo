@@ -49,10 +49,10 @@ struct MealCelebrationNudge: View {
                                 .foregroundColor(.white.opacity(0.9))
                             
                             HStack(spacing: 16) {
-                                MacroTag(value: meal.calories, label: "cal", color: .white.opacity(0.7))
-                                MacroTag(value: meal.protein, label: "P", color: .nutriSyncAccent)
-                                MacroTag(value: meal.carbs, label: "C", color: .blue)
-                                MacroTag(value: meal.fat, label: "F", color: .orange)
+                                CelebrationMacroTag(value: meal.calories, label: "cal", color: .white.opacity(0.7))
+                                CelebrationMacroTag(value: meal.protein, label: "P", color: .nutriSyncAccent)
+                                CelebrationMacroTag(value: meal.carbs, label: "C", color: .blue)
+                                CelebrationMacroTag(value: meal.fat, label: "F", color: .orange)
                             }
                             .padding(.top, 8)
                             
@@ -237,7 +237,7 @@ struct MealCelebrationNudge: View {
     }
 }
 
-struct MacroTag: View {
+private struct CelebrationMacroTag: View {
     let value: Int
     let label: String
     let color: Color
