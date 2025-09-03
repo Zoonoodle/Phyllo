@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct DayNavigationHeader: View {
     @Binding var selectedDate: Date
@@ -59,7 +60,9 @@ struct DayNavigationHeader: View {
                     .padding(.horizontal, 16)
                     .contentShape(Rectangle())  // Make entire area tappable
                     .onTapGesture {
-                        HapticManager.shared.impact(style: .light)
+                        let impact = UIImpactFeedbackGenerator(style: .light)
+                        impact.prepare()
+                        impact.impactOccurred()
                         showDayDetail = true
                     }
                     .overlay(
@@ -255,6 +258,7 @@ struct MacroProgressItem: View {
             DayNavigationHeader(
                 selectedDate: .constant(Date()),
                 showDeveloperDashboard: $showDeveloperDashboard,
+                showDayDetail: .constant(false),
                 meals: [],
                 userProfile: UserProfile.defaultProfile
             )

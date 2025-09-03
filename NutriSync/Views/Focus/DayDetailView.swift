@@ -12,7 +12,7 @@ struct DayDetailView: View {
     @Binding var showDayDetail: Bool
     @State private var animateContent = false
     @State private var isLoadingDetails = true
-    @State private var micronutrientStatus: [(nutrient: String, status: ScheduleViewModel.MicronutrientStatus)] = []
+    @State private var micronutrientStatus: [ScheduleViewModel.MicronutrientStatus] = []
     @State private var foodTimeline: [ScheduleViewModel.TimelineEntry] = []
     
     // Progressive loading states
@@ -53,7 +53,7 @@ struct DayDetailView: View {
                     VStack(spacing: 24) {
                         // Phase 1: Basic stats (immediate)
                         if basicDataLoaded {
-                            DailyNutriSyncRing(summary: dailySummary)
+                            DailyNutriSyncRing(dailySummary: dailySummary)
                                 .padding(.horizontal, 16)
                                 .transition(.opacity.combined(with: .scale))
                         } else {
@@ -74,14 +74,14 @@ struct DayDetailView: View {
                         
                         // Phase 3: Food Timeline (1s delay)
                         if timelineLoaded && !foodTimeline.isEmpty {
-                            ChronologicalFoodList(timeline: foodTimeline)
+                            ChronologicalFoodList(foodTimeline: foodTimeline)
                                 .padding(.horizontal, 16)
                                 .transition(.opacity.combined(with: .move(edge: .bottom)))
                         }
                         
                         // Phase 4: Micronutrients (1.5s delay)
                         if micronutrientsLoaded && !micronutrientStatus.isEmpty {
-                            MicronutrientStatusView(nutrients: micronutrientStatus)
+                            DailyMicronutrientStatusView(micronutrientStatus: micronutrientStatus)
                                 .padding(.horizontal, 16)
                                 .padding(.bottom, 32)
                                 .transition(.opacity)
@@ -171,171 +171,4 @@ struct DayDetailView: View {
     }
 }
 
-// MARK: - Shimmer Effect for Loading
-extension View {
-    func shimmer() -> some View {
-        self
-            .redacted(reason: .placeholder)
-            .overlay(
-                GeometryReader { geometry in
-                    LinearGradient(
-                        gradient: Gradient(colors: [
-                            Color.white.opacity(0),
-                            Color.white.opacity(0.1),
-                            Color.white.opacity(0)
-                        ]),
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                    .frame(width: geometry.size.width * 2)
-                    .offset(x: -geometry.size.width)
-                }
-                .mask(Rectangle())
-            )
-    }
-}
-
-// MARK: - Placeholder Components (will be replaced with actual implementations)
-
-// Temporary placeholder for DailyNutriSyncRing
-struct DailyNutriSyncRing: View {
-    let summary: ScheduleViewModel.DailyNutritionSummary
-    
-    var body: some View {
-        VStack(spacing: 16) {
-            Text("Daily Totals")
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundColor(.white)
-            
-            HStack(spacing: 20) {
-                VStack(spacing: 4) {
-                    Text("\(summary.totalCalories)")
-                        .font(.system(size: 24, weight: .bold))
-                        .foregroundColor(.nutriSyncAccent)
-                    Text("Calories")
-                        .font(.system(size: 12))
-                        .foregroundColor(.white.opacity(0.6))
-                }
-                
-                VStack(spacing: 4) {
-                    Text("\(summary.totalProtein)g")
-                        .font(.system(size: 24, weight: .bold))
-                        .foregroundColor(.orange)
-                    Text("Protein")
-                        .font(.system(size: 12))
-                        .foregroundColor(.white.opacity(0.6))
-                }
-                
-                VStack(spacing: 4) {
-                    Text("\(summary.totalCarbs)g")
-                        .font(.system(size: 24, weight: .bold))
-                        .foregroundColor(.blue)
-                    Text("Carbs")
-                        .font(.system(size: 12))
-                        .foregroundColor(.white.opacity(0.6))
-                }
-                
-                VStack(spacing: 4) {
-                    Text("\(summary.totalFat)g")
-                        .font(.system(size: 24, weight: .bold))
-                        .foregroundColor(.yellow)
-                    Text("Fat")
-                        .font(.system(size: 12))
-                        .foregroundColor(.white.opacity(0.6))
-                }
-            }
-        }
-        .frame(maxWidth: .infinity)
-        .padding(20)
-        .background(Color.phylloCard)
-        .cornerRadius(16)
-    }
-}
-
-// Temporary placeholder for DayPurposeCard
-struct DayPurposeCard: View {
-    let dayPurpose: DayPurpose
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Today's Strategy")
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundColor(.white)
-            
-            Text(dayPurpose.nutritionalStrategy)
-                .font(.system(size: 14))
-                .foregroundColor(.white.opacity(0.8))
-                .lineLimit(3)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(16)
-        .background(Color.phylloCard)
-        .cornerRadius(12)
-    }
-}
-
-// Temporary placeholder for ChronologicalFoodList
-struct ChronologicalFoodList: View {
-    let timeline: [ScheduleViewModel.TimelineEntry]
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Foods Logged Today")
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundColor(.white)
-            
-            ForEach(timeline, id: \.timestamp) { entry in
-                HStack {
-                    Text(entry.meal.name)
-                        .foregroundColor(.white)
-                    Spacer()
-                    Text("\(entry.meal.totalCalories) cal")
-                        .foregroundColor(.white.opacity(0.6))
-                }
-                .padding(.vertical, 4)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(16)
-        .background(Color.phylloCard)
-        .cornerRadius(12)
-    }
-}
-
-// Temporary placeholder for MicronutrientStatusView
-struct MicronutrientStatusView: View {
-    let nutrients: [(nutrient: String, status: ScheduleViewModel.MicronutrientStatus)]
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Micronutrient Status")
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundColor(.white)
-            
-            ForEach(nutrients, id: \.nutrient) { item in
-                HStack {
-                    Text(item.nutrient)
-                        .foregroundColor(.white)
-                    Spacer()
-                    
-                    switch item.status {
-                    case .deficient(let percentage, _):
-                        Text("\(Int(percentage))%")
-                            .foregroundColor(.red)
-                    case .excess(let percentage, _):
-                        Text("\(Int(percentage))%")
-                            .foregroundColor(.orange)
-                    case .optimal(let percentage):
-                        Text("\(Int(percentage))%")
-                            .foregroundColor(.green)
-                    }
-                }
-                .padding(.vertical, 4)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(16)
-        .background(Color.phylloCard)
-        .cornerRadius(12)
-    }
-}
+// MARK: - End of DayDetailView

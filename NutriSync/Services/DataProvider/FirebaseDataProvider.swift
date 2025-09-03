@@ -355,7 +355,18 @@ class FirebaseDataProvider: DataProvider {
             // Store day purpose if generated
             if let dayPurpose = dayPurpose {
                 self.currentDayPurpose = dayPurpose
-                // TODO: Save to Firestore once we add the field
+                
+                // Save day purpose to Firestore
+                let dateString = ISO8601DateFormatter.yyyyMMdd.string(from: date)
+                let dayPurposeRef = userRef.collection("dayPurposes").document(dateString)
+                try? await dayPurposeRef.setData([
+                    "nutritionalStrategy": dayPurpose.nutritionalStrategy,
+                    "energyManagement": dayPurpose.energyManagement,
+                    "performanceOptimization": dayPurpose.performanceOptimization,
+                    "recoveryFocus": dayPurpose.recoveryFocus,
+                    "keyPriorities": dayPurpose.keyPriorities,
+                    "generatedAt": Date()
+                ])
             }
             
             Task { @MainActor in
@@ -420,7 +431,18 @@ class FirebaseDataProvider: DataProvider {
             // Store day purpose if generated
             if let dayPurpose = dayPurpose {
                 self.currentDayPurpose = dayPurpose
-                // TODO: Save to Firestore once we add the field
+                
+                // Save day purpose to Firestore
+                let dateString = ISO8601DateFormatter.yyyyMMdd.string(from: date)
+                let dayPurposeRef = userRef.collection("dayPurposes").document(dateString)
+                try? await dayPurposeRef.setData([
+                    "nutritionalStrategy": dayPurpose.nutritionalStrategy,
+                    "energyManagement": dayPurpose.energyManagement,
+                    "performanceOptimization": dayPurpose.performanceOptimization,
+                    "recoveryFocus": dayPurpose.recoveryFocus,
+                    "keyPriorities": dayPurpose.keyPriorities,
+                    "generatedAt": Date()
+                ])
             }
             
             // Save all windows to Firebase
@@ -544,6 +566,20 @@ class FirebaseDataProvider: DataProvider {
             hasRestrictions: hasRestrictions,
             restrictions: restrictions,
             timestamp: timestamp
+        )
+    }
+    
+    func getDayPurpose(for date: Date) async throws -> DayPurpose? {
+        let dateString = ISO8601DateFormatter.yyyyMMdd.string(from: date)
+        let doc = try await userRef.collection("dayPurposes").document(dateString).getDocument()
+        guard let data = doc.data() else { return nil }
+        
+        return DayPurpose(
+            nutritionalStrategy: data["nutritionalStrategy"] as? String ?? "",
+            energyManagement: data["energyManagement"] as? String ?? "",
+            performanceOptimization: data["performanceOptimization"] as? String ?? "",
+            recoveryFocus: data["recoveryFocus"] as? String ?? "",
+            keyPriorities: data["keyPriorities"] as? [String] ?? []
         )
     }
     

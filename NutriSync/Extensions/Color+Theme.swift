@@ -32,6 +32,10 @@ extension Color {
     static let nutriSyncTabInactive = Color(hex: "FAFAFA").opacity(0.3)
     static let nutriSyncTabActive = Color.nutriSyncAccent
     
+    // Phyllo aliases for compatibility
+    static let phylloBackground = nutriSyncBackground
+    static let phylloCard = Color.white.opacity(0.03)
+    static let phylloAccent = nutriSyncAccent
 }
 
 // Hex color initializer

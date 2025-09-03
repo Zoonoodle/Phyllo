@@ -761,47 +761,115 @@ extension ScheduleViewModel {
 extension ScheduleViewModel {
     
     /// Status of a micronutrient compared to daily recommended values
-    enum MicronutrientStatus {
-        case deficient(percentage: Double, recommendation: String)
+    enum MicronutrientStatusOld {
+        case deficient(percentage: Double, data: (amount: Double, unit: String, recommendation: String))
         case optimal(percentage: Double)
-        case excess(percentage: Double, recommendation: String)
-        
-        var name: String {
-            switch self {
-            case .deficient(_, _): return "deficient"
-            case .optimal(_): return "optimal"
-            case .excess(_, _): return "excess"
-            }
-        }
+        case excess(percentage: Double, data: (amount: Double, unit: String, recommendation: String))
     }
     
     /// Comprehensive daily nutrition summary
-    struct DailyNutritionSummary {
-        let date: Date
-        let totalCalories: Int
-        let totalProtein: Int
-        let totalFat: Int
-        let totalCarbs: Int
-        let micronutrients: [String: Double]
-        let meals: [LoggedMeal]
-        let windows: [MealWindow]
-        let dayPurpose: DayPurpose?
+    public struct DailyNutritionSummary {
+        public let date: Date
+        public let totalCalories: Int
+        public let targetCalories: Int
+        public let totalProtein: Int
+        public let targetProtein: Int
+        public let totalFat: Int
+        public let targetFat: Int
+        public let totalCarbs: Int
+        public let targetCarbs: Int
+        public let completedWindows: Int
+        public let totalWindows: Int
+        public let micronutrients: [String: Double]
+        public let meals: [LoggedMeal]
+        public let windows: [MealWindow]
+        public let dayPurpose: DayPurpose?
+        
+        public init(date: Date, totalCalories: Int, targetCalories: Int, totalProtein: Int, targetProtein: Int, totalFat: Int, targetFat: Int, totalCarbs: Int, targetCarbs: Int, completedWindows: Int, totalWindows: Int, micronutrients: [String: Double], meals: [LoggedMeal], windows: [MealWindow], dayPurpose: DayPurpose?) {
+            self.date = date
+            self.totalCalories = totalCalories
+            self.targetCalories = targetCalories
+            self.totalProtein = totalProtein
+            self.targetProtein = targetProtein
+            self.totalFat = totalFat
+            self.targetFat = targetFat
+            self.totalCarbs = totalCarbs
+            self.targetCarbs = targetCarbs
+            self.completedWindows = completedWindows
+            self.totalWindows = totalWindows
+            self.micronutrients = micronutrients
+            self.meals = meals
+            self.windows = windows
+            self.dayPurpose = dayPurpose
+        }
     }
     
     /// Timeline entry for chronological food list
-    struct TimelineEntry {
-        let timestamp: Date
-        let meal: LoggedMeal
-        let windowName: String?
+    public struct TimelineEntry {
+        public let id: String
+        public let timestamp: Date
+        public let meal: LoggedMeal
+        public let windowName: String
+        public let windowColor: Color
+        
+        public init(id: String? = nil, timestamp: Date, meal: LoggedMeal, windowName: String, windowColor: Color = .phylloAccent) {
+            self.id = id ?? UUID().uuidString
+            self.timestamp = timestamp
+            self.meal = meal
+            self.windowName = windowName
+            self.windowColor = windowColor
+        }
+    }
+    
+    /// Micronutrient status for daily view
+    public struct MicronutrientStatus {
+        public let name: String
+        public let status: Status
+        public let percentage: Double
+        public let amount: Double
+        public let unit: String
+        public let recommendation: String?
+        
+        public init(name: String, status: Status, percentage: Double, amount: Double, unit: String, recommendation: String?) {
+            self.name = name
+            self.status = status
+            self.percentage = percentage
+            self.amount = amount
+            self.unit = unit
+            self.recommendation = recommendation
+        }
+        
+        public enum Status {
+            case deficient
+            case optimal
+            case excess
+        }
     }
     
     /// Aggregate all daily nutrition data
     func aggregateDailyNutrition() -> DailyNutritionSummary {
         // Calculate totals from all meals
-        let totalCalories = todaysMeals.reduce(0) { $0 + $1.totalCalories }
-        let totalProtein = todaysMeals.reduce(0) { $0 + $1.totalProtein }
-        let totalFat = todaysMeals.reduce(0) { $0 + $1.totalFat }
-        let totalCarbs = todaysMeals.reduce(0) { $0 + $1.totalCarbs }
+        let totalCalories = todaysMeals.reduce(0) { $0 + $1.calories }
+        let totalProtein = todaysMeals.reduce(0) { $0 + $1.protein }
+        let totalFat = todaysMeals.reduce(0) { $0 + $1.fat }
+        let totalCarbs = todaysMeals.reduce(0) { $0 + $1.carbs }
+        
+        // Calculate daily targets from all windows
+        let targetCalories = mealWindows.reduce(0) { $0 + $1.effectiveCalories }
+        let targetProtein = mealWindows.reduce(0) { $0 + $1.effectiveMacros.protein }
+        let targetFat = mealWindows.reduce(0) { $0 + $1.effectiveMacros.fat }
+        let targetCarbs = mealWindows.reduce(0) { $0 + $1.effectiveMacros.carbs }
+        
+        // Count completed windows (windows with at least one meal)
+        let completedWindows = mealWindows.filter { window in
+            todaysMeals.contains { meal in
+                if let windowId = meal.windowId {
+                    return windowId == window.id
+                } else {
+                    return meal.timestamp >= window.startTime && meal.timestamp <= window.endTime
+                }
+            }
+        }.count
         
         // Aggregate micronutrients
         var micronutrients: [String: Double] = [:]
@@ -822,9 +890,15 @@ extension ScheduleViewModel {
         return DailyNutritionSummary(
             date: timeProvider.currentTime,
             totalCalories: totalCalories,
+            targetCalories: targetCalories,
             totalProtein: totalProtein,
+            targetProtein: targetProtein,
             totalFat: totalFat,
+            targetFat: targetFat,
             totalCarbs: totalCarbs,
+            targetCarbs: targetCarbs,
+            completedWindows: completedWindows,
+            totalWindows: mealWindows.count,
             micronutrients: micronutrients,
             meals: todaysMeals,
             windows: mealWindows,
@@ -833,72 +907,68 @@ extension ScheduleViewModel {
     }
     
     /// Calculate micronutrient status compared to daily recommendations
-    func calculateMicronutrientStatus() -> [(nutrient: String, status: MicronutrientStatus)] {
+    func calculateMicronutrientStatus() -> [MicronutrientStatus] {
         let summary = aggregateDailyNutrition()
-        var statuses: [(nutrient: String, status: MicronutrientStatus)] = []
+        var statuses: [MicronutrientStatus] = []
         
-        // Daily recommended values (simplified - should be personalized)
-        let dailyRecommendations: [String: Double] = [
-            "Vitamin A": 900,  // mcg
-            "Vitamin C": 90,   // mg
-            "Vitamin D": 20,   // mcg
-            "Vitamin E": 15,   // mg
-            "Vitamin K": 120,  // mcg
-            "Thiamin": 1.2,    // mg
-            "Riboflavin": 1.3, // mg
-            "Niacin": 16,      // mg
-            "Vitamin B6": 1.7, // mg
-            "Folate": 400,     // mcg
-            "Vitamin B12": 2.4,// mcg
-            "Calcium": 1000,   // mg
-            "Iron": 8,         // mg
-            "Magnesium": 400,  // mg
-            "Phosphorus": 700, // mg
-            "Potassium": 2600, // mg
-            "Sodium": 2300,    // mg (max)
-            "Zinc": 11,        // mg
-            "Fiber": 28        // g
+        // Daily recommended values with units (simplified - should be personalized)
+        let dailyRecommendations: [String: (value: Double, unit: String)] = [
+            "Vitamin A": (900, "mcg"),
+            "Vitamin C": (90, "mg"),
+            "Vitamin D": (20, "mcg"),
+            "Vitamin E": (15, "mg"),
+            "Vitamin K": (120, "mcg"),
+            "Thiamin": (1.2, "mg"),
+            "Riboflavin": (1.3, "mg"),
+            "Niacin": (16, "mg"),
+            "Vitamin B6": (1.7, "mg"),
+            "Folate": (400, "mcg"),
+            "Vitamin B12": (2.4, "mcg"),
+            "Calcium": (1000, "mg"),
+            "Iron": (8, "mg"),
+            "Magnesium": (400, "mg"),
+            "Phosphorus": (700, "mg"),
+            "Potassium": (2600, "mg"),
+            "Sodium": (2300, "mg"),
+            "Zinc": (11, "mg"),
+            "Fiber": (28, "g")
         ]
         
-        for (nutrient, recommended) in dailyRecommendations {
+        for (nutrient, rec) in dailyRecommendations {
             let consumed = summary.micronutrients[nutrient] ?? 0
-            let percentage = (consumed / recommended) * 100
+            let percentage = (consumed / rec.value) * 100
             
-            let status: MicronutrientStatus
+            let status: MicronutrientStatus.Status
+            let recommendation: String?
+            
             if percentage < 80 {
-                let recommendation = "Increase intake of \(nutrient)-rich foods"
-                status = .deficient(percentage: percentage, recommendation: recommendation)
+                status = .deficient
+                recommendation = "Increase intake of \(nutrient)-rich foods"
             } else if percentage > 150 {
-                let recommendation = nutrient == "Sodium" ? "Reduce sodium intake" : "Monitor \(nutrient) intake"
-                status = .excess(percentage: percentage, recommendation: recommendation)
+                status = .excess
+                recommendation = nutrient == "Sodium" ? "Reduce sodium intake" : "Monitor \(nutrient) intake"
             } else {
-                status = .optimal(percentage: percentage)
+                status = .optimal
+                recommendation = nil
             }
             
             // Only include deficient or excess nutrients
-            if case .deficient = status {
-                statuses.append((nutrient: nutrient, status: status))
-            } else if case .excess = status {
-                statuses.append((nutrient: nutrient, status: status))
+            if status != .optimal {
+                statuses.append(MicronutrientStatus(
+                    name: nutrient,
+                    status: status,
+                    percentage: percentage,
+                    amount: consumed,
+                    unit: rec.unit,
+                    recommendation: recommendation
+                ))
             }
         }
         
         // Sort by severity (furthest from 100%)
         statuses.sort { first, second in
-            let firstPercentage: Double
-            let secondPercentage: Double
-            
-            switch first.status {
-            case .deficient(let p, _), .optimal(let p), .excess(let p, _):
-                firstPercentage = p
-            }
-            
-            switch second.status {
-            case .deficient(let p, _), .optimal(let p), .excess(let p, _):
-                secondPercentage = p
-            }
-            
-            return abs(firstPercentage - 100) > abs(secondPercentage - 100)
+            // Use the percentage property directly from MicronutrientStatus
+            return abs(first.percentage - 100) > abs(second.percentage - 100)
         }
         
         // Return max 8 nutrients
@@ -911,18 +981,20 @@ extension ScheduleViewModel {
         
         for meal in todaysMeals.sorted(by: { $0.timestamp < $1.timestamp }) {
             // Find which window this meal belongs to
-            let windowName = mealWindows.first { window in
+            let window = mealWindows.first { window in
                 if let windowId = meal.windowId {
                     return windowId == window.id
                 } else {
                     return meal.timestamp >= window.startTime && meal.timestamp <= window.endTime
                 }
-            }?.name
+            }
             
             timeline.append(TimelineEntry(
+                id: meal.id.uuidString,
                 timestamp: meal.timestamp,
                 meal: meal,
-                windowName: windowName
+                windowName: window?.name ?? "Unassigned",
+                windowColor: window?.purpose.color ?? .gray
             ))
         }
         
