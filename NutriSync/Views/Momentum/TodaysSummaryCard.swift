@@ -11,25 +11,26 @@ struct TodaysSummaryCard: View {
     @EnvironmentObject var viewModel: NutritionDashboardViewModel
     
     private var completedWindows: Int {
-        viewModel.currentDayWindows.filter { $0.status == .logged }.count
+        // Count windows that have meals logged in them
+        viewModel.mealWindows.filter { window in
+            !viewModel.mealsInWindow(window).isEmpty
+        }.count
     }
     
     private var totalWindows: Int {
-        viewModel.currentDayWindows.count
+        viewModel.mealWindows.count
     }
     
     private var mealsLogged: Int {
-        viewModel.meals.count
+        viewModel.todaysMeals.count
     }
     
     private var calories: Int {
-        viewModel.meals.reduce(0) { total, meal in
-            total + (meal.analysis?.nutrition.calories ?? 0)
-        }
+        viewModel.totalCalories
     }
     
     private var targetCalories: Int {
-        viewModel.userProfile?.nutritionGoals.dailyCalories ?? 2400
+        viewModel.dailyCalorieTarget
     }
     
     var body: some View {
