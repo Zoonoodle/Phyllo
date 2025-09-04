@@ -643,6 +643,7 @@ struct NotificationPreferences: Codable, Equatable {
 extension Notification.Name {
     static let navigateToTab = Notification.Name("navigateToTab")
     static let clearAllDataNotification = Notification.Name("clearAllDataNotification")
+    static let appDataRefreshed = Notification.Name("appDataRefreshed")
 }
 
 // MARK: - Helper Extensions

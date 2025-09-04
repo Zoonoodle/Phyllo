@@ -207,6 +207,14 @@ class ScheduleViewModel: ObservableObject {
             name: .clearAllDataNotification,
             object: nil
         )
+        
+        // Listen for app data refresh notification
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleAppDataRefresh),
+            name: .appDataRefreshed,
+            object: nil
+        )
     }
     
     @objc private func handleClearAllData() {
@@ -217,6 +225,15 @@ class ScheduleViewModel: ObservableObject {
         analyzingMeals.removeAll()
         
         DebugLogger.shared.success("ScheduleViewModel: Cleared all in-memory data")
+    }
+    
+    @objc private func handleAppDataRefresh() {
+        // Refresh all data when app comes back from background
+        Task {
+            DebugLogger.shared.info("ScheduleViewModel: Refreshing data after app became active")
+            await loadTodaysData()
+            await loadUserProfile()
+        }
     }
     
     // MARK: - Data Loading
