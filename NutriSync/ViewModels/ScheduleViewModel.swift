@@ -21,6 +21,10 @@ class ScheduleViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var errorMessage: String?
     
+    // Redistribution nudge properties
+    @Published var pendingRedistribution: RedistributionResult?
+    @Published var showingRedistributionNudge = false
+    
     // Computed property for compatibility with DayNavigationHeader
     var meals: [LoggedMeal] {
         todaysMeals
@@ -771,6 +775,64 @@ extension ScheduleViewModel {
             errorMessage = "Failed to process meals: \(error.localizedDescription)"
             DebugLogger.shared.error("Failed to process retrospective meals: \(error)")
         }
+    }
+    
+    // MARK: - Redistribution Handling
+    
+    /// Handle a redistribution proposal from the redistribution manager
+    func handleRedistributionProposal(_ result: RedistributionResult) {
+        pendingRedistribution = result
+        showingRedistributionNudge = true
+        
+        DebugLogger.shared.info("Showing redistribution nudge for \(result.trigger) with \(result.adjustedWindows.count) windows affected")
+    }
+    
+    /// Apply the pending redistribution
+    func applyRedistribution() async {
+        guard let redistribution = pendingRedistribution else { 
+            DebugLogger.shared.warning("No pending redistribution to apply")
+            return 
+        }
+        
+        DebugLogger.shared.info("Applying redistribution: \(redistribution.adjustmentReason ?? "No reason provided")")
+        
+        do {
+            if let firebaseProvider = dataProvider as? FirebaseDataProvider {
+                // Apply the redistribution through the data provider
+                try await firebaseProvider.applyRedistribution(redistribution)
+                
+                // Update local windows
+                mealWindows = redistribution.adjustedWindows
+                
+                DebugLogger.shared.success("Redistribution applied successfully")
+            } else {
+                DebugLogger.shared.error("Data provider is not FirebaseDataProvider, cannot apply redistribution")
+            }
+        } catch {
+            errorMessage = "Failed to apply redistribution: \(error.localizedDescription)"
+            DebugLogger.shared.error("Failed to apply redistribution: \(error)")
+        }
+        
+        // Clear the nudge
+        showingRedistributionNudge = false
+        pendingRedistribution = nil
+    }
+    
+    /// Reject the pending redistribution
+    func rejectRedistribution() {
+        guard let redistribution = pendingRedistribution else { 
+            DebugLogger.shared.warning("No pending redistribution to reject")
+            return 
+        }
+        
+        DebugLogger.shared.info("User rejected redistribution for \(redistribution.trigger)")
+        
+        // Clear the nudge
+        showingRedistributionNudge = false
+        pendingRedistribution = nil
+        
+        // Log the rejection for analytics/learning
+        DebugLogger.shared.info("Redistribution rejected: \(redistribution.adjustmentReason ?? "No reason")")
     }
 }
 

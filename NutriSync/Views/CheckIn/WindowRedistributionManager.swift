@@ -10,6 +10,8 @@ import Foundation
 class WindowRedistributionManager {
     
     static let shared = WindowRedistributionManager()
+    private let engine = ProximityBasedEngine()
+    private let triggerManager = RedistributionTriggerManager()
     
     private init() {}
     
@@ -28,8 +30,141 @@ class WindowRedistributionManager {
         case lateConsumption
     }
     
-    // Main redistribution function
+    // Main redistribution function - now uses proximity-based engine
     func redistributeWindows(
+        allWindows: [MealWindow],
+        consumedMeals: [LoggedMeal],
+        userProfile: UserProfile,
+        currentTime: Date
+    ) -> [RedistributedWindow] {
+        
+        // Check if we should use the new engine based on trigger evaluation
+        if let lastMeal = consumedMeals.last,
+           let windowForMeal = findWindowForMeal(meal: lastMeal, windows: allWindows) {
+            
+            // Evaluate if this triggers redistribution
+            if triggerManager.evaluateTrigger(meal: lastMeal, window: windowForMeal) {
+                return redistributeWithProximityEngine(
+                    meal: lastMeal,
+                    window: windowForMeal,
+                    allWindows: allWindows,
+                    userProfile: userProfile,
+                    currentTime: currentTime
+                )
+            }
+        }
+        
+        // Fall back to original redistribution logic if no trigger
+        return originalRedistributeWindows(
+            allWindows: allWindows,
+            consumedMeals: consumedMeals,
+            userProfile: userProfile,
+            currentTime: currentTime
+        )
+    }
+    
+    // New proximity-based redistribution method
+    private func redistributeWithProximityEngine(
+        meal: LoggedMeal,
+        window: MealWindow,
+        allWindows: [MealWindow],
+        userProfile: UserProfile,
+        currentTime: Date
+    ) -> [RedistributedWindow] {
+        
+        // Calculate deviation
+        let deviation = triggerManager.calculateDeviation(meal: meal, window: window)
+        
+        // Create trigger
+        let triggerType: RedistributionTrigger.TriggerType
+        if deviation > 0 {
+            triggerType = .overconsumption(percentOver: Int(deviation * 100))
+        } else {
+            triggerType = .underconsumption(percentUnder: Int(abs(deviation) * 100))
+        }
+        
+        let trigger = RedistributionTrigger(
+            triggerWindow: window,
+            triggerType: triggerType,
+            deviation: deviation,
+            totalConsumed: MacroTargets(
+                calories: meal.calories,
+                protein: meal.protein,
+                carbs: meal.carbs,
+                fat: meal.fat
+            ),
+            currentTime: currentTime
+        )
+        
+        // Calculate redistribution with proximity engine
+        let constraints = RedistributionConstraints()
+        let result = engine.calculateRedistribution(
+            trigger: trigger,
+            windows: allWindows,
+            constraints: constraints,
+            currentTime: currentTime
+        )
+        
+        // Convert result to RedistributedWindow format
+        var redistributedWindows: [RedistributedWindow] = []
+        
+        for window in allWindows {
+            if let adjustment = result.adjustedWindows.first(where: { $0.windowId == window.id }) {
+                // Apply adjustment from engine
+                let reason = mapTriggerToReason(trigger: result.trigger)
+                redistributedWindows.append(
+                    RedistributedWindow(
+                        originalWindow: window,
+                        adjustedCalories: adjustment.adjustedMacros.calories,
+                        adjustedMacros: MacroTargets(
+                            protein: adjustment.adjustedMacros.protein,
+                            carbs: adjustment.adjustedMacros.carbs,
+                            fat: adjustment.adjustedMacros.fat
+                        ),
+                        redistributionReason: reason
+                    )
+                )
+            } else {
+                // Keep original values for non-adjusted windows
+                redistributedWindows.append(
+                    RedistributedWindow(
+                        originalWindow: window,
+                        adjustedCalories: window.targetCalories,
+                        adjustedMacros: window.targetMacros,
+                        redistributionReason: nil
+                    )
+                )
+            }
+        }
+        
+        return redistributedWindows
+    }
+    
+    // Helper to find window for a meal
+    private func findWindowForMeal(meal: LoggedMeal, windows: [MealWindow]) -> MealWindow? {
+        return windows.first { window in
+            meal.loggedAt >= window.startTime && meal.loggedAt <= window.endTime
+        }
+    }
+    
+    // Helper to map trigger type to redistribution reason
+    private func mapTriggerToReason(trigger: RedistributionTrigger.TriggerType) -> RedistributionReason {
+        switch trigger {
+        case .overconsumption(let percent):
+            return .overconsumption(percentOver: percent)
+        case .underconsumption(let percent):
+            return .underconsumption(percentUnder: percent)
+        case .missedWindow:
+            return .missedWindow
+        case .earlyConsumption:
+            return .earlyConsumption
+        case .lateConsumption:
+            return .lateConsumption
+        }
+    }
+    
+    // Original redistribution function (renamed)
+    private func originalRedistributeWindows(
         allWindows: [MealWindow],
         consumedMeals: [LoggedMeal],
         userProfile: UserProfile,

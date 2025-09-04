@@ -140,6 +140,22 @@ struct AIScheduleView: View {
                 showDayDetail: $showDayDetail
             )
         }
+        .sheet(isPresented: .constant(viewModel.legacyViewModel.showingRedistributionNudge)) {
+            if let redistribution = viewModel.legacyViewModel.pendingRedistribution {
+                RedistributionNudge(
+                    result: redistribution,
+                    currentWindows: viewModel.mealWindows,
+                    onAccept: {
+                        Task {
+                            await viewModel.legacyViewModel.applyRedistribution()
+                        }
+                    },
+                    onDecline: {
+                        viewModel.legacyViewModel.rejectRedistribution()
+                    }
+                )
+            }
+        }
         .onChange(of: showMorningCheckIn) { wasShowing, isShowing in
             // When check-in sheet dismisses, show loading while windows generate
             if wasShowing && !isShowing {

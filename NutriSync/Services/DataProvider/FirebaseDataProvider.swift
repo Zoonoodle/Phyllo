@@ -11,6 +11,12 @@ class FirebaseDataProvider: DataProvider {
     // Cache for current day purpose
     var currentDayPurpose: DayPurpose?
     
+    // Redistribution trigger manager
+    private let redistributionTriggerManager = RedistributionTriggerManager()
+    
+    // Handler for redistribution nudge presentation
+    var onRedistributionProposed: ((RedistributionResult) -> Void)?
+    
     // Current user ID (will be replaced with Auth in Phase 8)
     private var currentUserId: String {
         // For now, use a development user ID
@@ -44,6 +50,9 @@ class FirebaseDataProvider: DataProvider {
         
         // Update daily analytics
         await updateDailyAnalyticsForMeal(meal)
+        
+        // Check for redistribution triggers after meal save
+        await checkRedistributionTrigger(for: meal)
     }
     
     func getMeals(for date: Date) async throws -> [LoggedMeal] {
@@ -1055,6 +1064,93 @@ class FirebaseDataProvider: DataProvider {
     // REMOVED: generateBasicWindows - NO FALLBACK ALLOWED
     // All window generation MUST go through AI service
     // This ensures we always provide rich, personalized content
+    
+    // MARK: - Redistribution Trigger Check
+    
+    private func checkRedistributionTrigger(for meal: LoggedMeal) async {
+        do {
+            // Get current windows
+            let windows = try await getWindows(for: meal.loggedAt)
+            
+            // Find the window this meal belongs to
+            guard let mealWindow = windows.first(where: { window in
+                meal.loggedAt >= window.startTime && meal.loggedAt <= window.endTime
+            }) else {
+                Task { @MainActor in
+                    DebugLogger.shared.info("No matching window found for meal, skipping redistribution check")
+                }
+                return
+            }
+            
+            // Check if redistribution should be triggered
+            if let redistributionResult = await redistributionTriggerManager.handleMealLogged(
+                meal,
+                window: mealWindow,
+                allWindows: windows
+            ) {
+                Task { @MainActor in
+                    DebugLogger.shared.success("Redistribution triggered: \(redistributionResult.explanation)")
+                }
+                
+                // Notify handler if set (will be connected to ScheduleViewModel)
+                await MainActor.run {
+                    onRedistributionProposed?(redistributionResult)
+                }
+            } else {
+                Task { @MainActor in
+                    DebugLogger.shared.info("No redistribution needed (within threshold)")
+                }
+            }
+        } catch {
+            Task { @MainActor in
+                DebugLogger.shared.error("Failed to check redistribution trigger: \(error)")
+            }
+        }
+    }
+    
+    // Apply redistribution after user accepts
+    func applyRedistribution(_ result: RedistributionResult) async throws {
+        guard !result.adjustedWindows.isEmpty else { return }
+        
+        // Get current windows
+        let windows = try await getWindows(for: Date())
+        
+        // Update windows with adjusted values
+        for adjustment in result.adjustedWindows {
+            if let window = windows.first(where: { $0.id == adjustment.windowId }) {
+                // Create updated window with adjusted values
+                var updatedWindow = window
+                updatedWindow.adjustedCalories = adjustment.adjustedMacros.calories
+                updatedWindow.adjustedProtein = adjustment.adjustedMacros.protein
+                updatedWindow.adjustedCarbs = adjustment.adjustedMacros.carbs
+                updatedWindow.adjustedFat = adjustment.adjustedMacros.fat
+                
+                // Map trigger type to redistribution reason
+                switch result.trigger {
+                case .overconsumption(let percent):
+                    updatedWindow.redistributionReason = .overconsumption(percentOver: percent)
+                case .underconsumption(let percent):
+                    updatedWindow.redistributionReason = .underconsumption(percentUnder: percent)
+                case .missedWindow:
+                    updatedWindow.redistributionReason = .missedWindow
+                case .earlyConsumption:
+                    updatedWindow.redistributionReason = .earlyConsumption
+                case .lateConsumption:
+                    updatedWindow.redistributionReason = .lateConsumption
+                }
+                
+                // Save updated window
+                try await saveWindow(updatedWindow)
+            }
+        }
+        
+        // Mark redistribution as applied
+        redistributionTriggerManager.applyRedistribution(result)
+        
+        Task { @MainActor in
+            DebugLogger.shared.success("Applied redistribution to \(result.adjustedWindows.count) windows")
+        }
+    }
 }
 
 // Removed duplicate ISO8601DateFormatter.yyyyMMdd extension (defined in NotificationManager)
