@@ -152,27 +152,51 @@ struct HourRowView: View {
         }
     }
     
+    // Check if this is a new day marker (for schedules crossing midnight)
+    private var isNewDay: Bool {
+        // If this is midnight and there are previous hours > 12, we crossed midnight
+        if hour == 0 {
+            return true // Always show midnight as new day
+        }
+        return false
+    }
+    
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            // Time label
-            Text(timeString)
-                .font(isCurrentHour ? TimelineTypography.hourLabelCurrent : TimelineTypography.hourLabel)
-                .foregroundColor(isCurrentHour ? .white.opacity(TimelineOpacity.currentHour) : .white.opacity(TimelineOpacity.otherHour))
-                .frame(width: 48, alignment: .leading)
-                .padding(.top, -8)
+        VStack(spacing: 0) {
+            // Show "Next Day" indicator if this is midnight
+            if isNewDay {
+                HStack {
+                    Text("— Next Day —")
+                        .font(.caption)
+                        .foregroundColor(.white.opacity(0.5))
+                        .padding(.vertical, 4)
+                    Spacer()
+                }
+                .padding(.horizontal)
+                .padding(.leading, 48)
+            }
             
-            // Hour divider line
-            VStack(spacing: 0) {
-                Rectangle()
-                    .fill(Color.white.opacity(isCurrentHour ? 0.12 : 0.08))
-                    .frame(height: 1)
+            HStack(alignment: .top, spacing: 12) {
+                // Time label
+                Text(timeString)
+                    .font(isCurrentHour ? TimelineTypography.hourLabelCurrent : TimelineTypography.hourLabel)
+                    .foregroundColor(isCurrentHour ? .white.opacity(TimelineOpacity.currentHour) : .white.opacity(TimelineOpacity.otherHour))
+                    .frame(width: 48, alignment: .leading)
+                    .padding(.top, -8)
                 
-                Spacer()
+                // Hour divider line
+                VStack(spacing: 0) {
+                    Rectangle()
+                        .fill(Color.white.opacity(isCurrentHour ? 0.12 : 0.08))
+                        .frame(height: 1)
+                    
+                    Spacer()
+                }
+                .frame(height: height)
             }
             .frame(height: height)
+            .padding(.horizontal)
         }
-        .frame(height: height)
-        .padding(.horizontal)
     }
 }
 

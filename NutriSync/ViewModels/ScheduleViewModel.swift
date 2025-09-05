@@ -41,14 +41,27 @@ class ScheduleViewModel: ObservableObject {
         // First, check morning check-in wake time and planned bedtime
         var earliestHour: Int? = nil
         var latestHour: Int? = nil
+        var crossesMidnight = false
+        
         if let checkIn = morningCheckIn {
             let wakeHour = calendar.component(.hour, from: checkIn.wakeTime)
+            let bedHour = calendar.component(.hour, from: checkIn.plannedBedtime)
+            
             // Always show at least 1 hour before wake time
             earliestHour = max(0, wakeHour - buffer)
             
-            // Use planned bedtime if available
-            let bedHour = calendar.component(.hour, from: checkIn.plannedBedtime)
-            latestHour = min(23, bedHour)
+            // Check if this is a night shift schedule (bedtime before wake time numerically)
+            // e.g., wake at 8 PM (20), bed at 2 AM (2)
+            if bedHour < wakeHour - 12 {
+                // This crosses midnight - extend to next day
+                crossesMidnight = true
+                latestHour = min(23, 23) // Show until 11 PM, then we'll add early morning hours
+                Task { @MainActor in
+                    DebugLogger.shared.info("🌙 Night shift detected: Wake \(wakeHour):00, Bed \(bedHour):00 (next day)")
+                }
+            } else {
+                latestHour = min(23, bedHour + buffer)
+            }
         }
         
         // Check meal windows to ensure all are visible
@@ -138,6 +151,23 @@ class ScheduleViewModel: ObservableObject {
         startHour = max(0, startHour)
         endHour = min(23, endHour)
         
+        // Handle schedules that cross midnight (night shift workers)
+        // If we detected crossing midnight OR if windows extend past midnight
+        if crossesMidnight || windowsCrossMidnight() {
+            // For schedules crossing midnight, show from wake time through next morning
+            if let checkIn = morningCheckIn {
+                let bedHour = calendar.component(.hour, from: checkIn.plannedBedtime)
+                // Return hours from wake time to 23, then 0 to bedtime
+                // e.g., wake at 20 (8 PM), bed at 2 (2 AM) = [19,20,21,22,23,0,1,2,3]
+                var hours: [Int] = Array(startHour...23)
+                hours.append(contentsOf: Array(0...(bedHour + buffer)))
+                Task { @MainActor in
+                    DebugLogger.shared.info("🌙 Timeline spans midnight: \(hours)")
+                }
+                return hours
+            }
+        }
+        
         // Ensure we have a minimum reasonable range
         // If the range is too small or invalid, show a default day view
         if endHour <= startHour {
@@ -178,6 +208,19 @@ class ScheduleViewModel: ObservableObject {
         // Debug logging removed - was causing infinite loops
         
         return Array(startHour...endHour)
+    }
+    
+    // Helper to check if any windows cross midnight
+    private func windowsCrossMidnight() -> Bool {
+        for window in mealWindows {
+            let calendar = Calendar.current
+            let startDay = calendar.component(.day, from: window.startTime)
+            let endDay = calendar.component(.day, from: window.endTime)
+            if endDay != startDay {
+                return true
+            }
+        }
+        return false
     }
     
     // MARK: - Dependencies
