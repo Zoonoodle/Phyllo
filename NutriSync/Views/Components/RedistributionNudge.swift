@@ -35,11 +35,11 @@ struct RedistributionNudge: View {
                 VStack(spacing: 8) {
                     Text("Adjusting Your Day")
                         .font(.headline)
-                        .foregroundColor(.phylloText)
+                        .foregroundColor(.white)
                     
                     Text(redistribution.explanation)
                         .font(.subheadline)
-                        .foregroundColor(.phylloTextSecondary)
+                        .foregroundColor(.white.opacity(0.7))
                         .multilineTextAlignment(.center)
                         .lineLimit(3)
                         .fixedSize(horizontal: false, vertical: true)
@@ -63,7 +63,7 @@ struct RedistributionNudge: View {
                     }) {
                         Text("Keep Original")
                             .font(.callout.weight(.medium))
-                            .foregroundColor(.phylloTextSecondary)
+                            .foregroundColor(.white.opacity(0.7))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
                             .background(Color.white.opacity(colorScheme == .dark ? 0.05 : 0.1))
@@ -80,9 +80,9 @@ struct RedistributionNudge: View {
                             .foregroundColor(colorScheme == .dark ? .black : .white)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
-                            .background(Color.phylloAccent)
+                            .background(Color(hex: "10b981"))
                             .cornerRadius(12)
-                            .shadow(color: Color.phylloAccent.opacity(0.3), radius: 8, y: 4)
+                            .shadow(color: Color(hex: "10b981").opacity(0.3), radius: 8, y: 4)
                     }
                 }
                 .opacity(animationProgress)
@@ -101,7 +101,7 @@ struct RedistributionNudge: View {
                                 .font(.caption)
                                 .lineLimit(showingDetails ? nil : 1)
                         }
-                        .foregroundColor(.phylloTextTertiary)
+                        .foregroundColor(.white.opacity(0.5))
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
                         .background(Color.white.opacity(colorScheme == .dark ? 0.03 : 0.05))
@@ -113,12 +113,12 @@ struct RedistributionNudge: View {
             .padding(24)
             .background(
                 RoundedRectangle(cornerRadius: 20)
-                    .fill(Color.phylloCard)
+                    .fill(Color.white.opacity(0.03))
                     .shadow(color: Color.black.opacity(0.1), radius: 20, y: 10)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 20)
-                    .stroke(Color.phylloAccent.opacity(0.1), lineWidth: 1)
+                    .stroke(Color(hex: "10b981").opacity(0.1), lineWidth: 1)
             )
         }
         .transition(.asymmetric(
@@ -147,7 +147,7 @@ struct RedistributionVisualizationPreview: View {
                         // Window name (truncated)
                         Text(windowName(for: window))
                             .font(.system(size: 10))
-                            .foregroundColor(.phylloTextTertiary)
+                            .foregroundColor(.white.opacity(0.5))
                             .lineLimit(1)
                         
                         // Before/After bars
@@ -259,15 +259,15 @@ struct RedistributionNudge_Previews: PreviewProvider {
             adjustedWindows: [
                 AdjustedWindow(
                     windowId: "morning-window",
-                    originalMacros: MacroTargets(calories: 400, protein: 30, carbs: 40, fat: 15),
-                    adjustedMacros: MacroTargets(calories: 350, protein: 28, carbs: 35, fat: 12),
+                    originalMacros: MacroTargets(protein: 30, carbs: 40, fat: 15),
+                    adjustedMacros: MacroTargets(protein: 28, carbs: 35, fat: 12),
                     adjustmentRatio: 0.875,
                     reason: "Reduced due to earlier overconsumption"
                 ),
                 AdjustedWindow(
                     windowId: "lunch-window",
-                    originalMacros: MacroTargets(calories: 600, protein: 40, carbs: 60, fat: 20),
-                    adjustedMacros: MacroTargets(calories: 500, protein: 35, carbs: 50, fat: 18),
+                    originalMacros: MacroTargets(protein: 40, carbs: 60, fat: 20),
+                    adjustedMacros: MacroTargets(protein: 35, carbs: 50, fat: 18),
                     adjustmentRatio: 0.833,
                     reason: "Adjusted for balance"
                 )
@@ -276,7 +276,7 @@ struct RedistributionNudge_Previews: PreviewProvider {
             educationalTip: "Try adding more protein and fiber to feel fuller with smaller portions.",
             trigger: .overconsumption(percentOver: 30),
             confidenceScore: 0.85,
-            totalRedistributed: MacroTargets(calories: 150, protein: 15, carbs: 15, fat: 5)
+            totalRedistributed: MacroTargets(protein: 15, carbs: 15, fat: 5)
         )
     }
 }

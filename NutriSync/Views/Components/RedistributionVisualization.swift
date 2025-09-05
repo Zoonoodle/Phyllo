@@ -6,39 +6,38 @@ struct RedistributionVisualization: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            ForEach(redistribution.adjustedWindows) { window in
+            ForEach(Array(redistribution.adjustedWindows.enumerated()), id: \.offset) { index, window in
                 HStack(spacing: 12) {
                     // Window time label
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(window.name)
+                        Text("Window \(index + 1)")
                             .font(.caption.weight(.semibold))
-                            .foregroundColor(.phylloText)
+                            .foregroundColor(.white)
                         
-                        Text(formatTimeRange(window))
+                        Text(window.reason)
                             .font(.caption2)
-                            .foregroundColor(.phylloTextTertiary)
+                            .foregroundColor(.white.opacity(0.7))
+                            .lineLimit(2)
                     }
                     .frame(width: 80, alignment: .leading)
                     
                     // Before/After bars
                     HStack(spacing: 0) {
                         // Original bar (semi-transparent)
-                        if let original = findOriginalWindow(for: window) {
-                            CalorieBar(
-                                value: original.targetCalories,
-                                maxValue: 1000,
-                                color: .phylloTextTertiary.opacity(0.3),
-                                label: "\(original.targetCalories)",
-                                isAnimated: false
-                            )
-                        }
+                        CalorieBar(
+                            value: window.originalMacros.totalCalories,
+                            maxValue: 1000,
+                            color: Color.white.opacity(0.1),
+                            label: "\(window.originalMacros.totalCalories)",
+                            isAnimated: false
+                        )
                         
                         // Adjusted bar (highlighted)
                         CalorieBar(
-                            value: window.targetCalories,
+                            value: window.adjustedMacros.totalCalories,
                             maxValue: 1000,
                             color: colorForWindow(window),
-                            label: "\(window.targetCalories)",
+                            label: "\(window.adjustedMacros.totalCalories)",
                             isAnimated: animateChanges
                         )
                     }
@@ -55,12 +54,12 @@ struct RedistributionVisualization: View {
             
             // Legend
             HStack(spacing: 20) {
-                LegendItem(color: .phylloTextTertiary.opacity(0.3), label: "Original")
-                LegendItem(color: .phylloAccent, label: "Adjusted")
+                RedistributionLegendItem(color: Color.white.opacity(0.1), label: "Original")
+                RedistributionLegendItem(color: Color(hex: "10b981"), label: "Adjusted")
                 
                 Spacer()
                 
-                if redistribution.isPreview {
+                if false { // Remove preview badge for now
                     Text("PREVIEW")
                         .font(.caption2.weight(.bold))
                         .foregroundColor(.orange)
@@ -79,35 +78,16 @@ struct RedistributionVisualization: View {
         }
     }
     
-    private func findOriginalWindow(for window: MealWindow) -> MealWindow? {
-        redistribution.originalWindows.first { $0.id == window.id }
-    }
-    
-    private func calculateChange(for window: MealWindow) -> Int? {
-        guard let original = findOriginalWindow(for: window) else { return nil }
-        let change = window.targetCalories - original.targetCalories
+    private func calculateChange(for window: AdjustedWindow) -> Int? {
+        let change = window.adjustedMacros.totalCalories - window.originalMacros.totalCalories
         return change != 0 ? change : nil
     }
     
-    private func colorForWindow(_ window: MealWindow) -> Color {
-        if let trigger = redistribution.triggerWindowId,
-           window.id == trigger {
-            return .orange // Highlight trigger window
-        }
-        
+    private func colorForWindow(_ window: AdjustedWindow) -> Color {
         if let change = calculateChange(for: window) {
-            return change > 0 ? .phylloAccent : .blue
+            return change > 0 ? Color(hex: "10b981") : .blue
         }
-        
-        return .phylloTextSecondary
-    }
-    
-    private func formatTimeRange(_ window: MealWindow) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "h:mm a"
-        let start = formatter.string(from: window.startTime)
-        let end = formatter.string(from: window.endTime)
-        return "\(start)"
+        return Color.white.opacity(0.5)
     }
 }
 
@@ -179,7 +159,7 @@ struct ChangeIndicator: View {
     }
 }
 
-struct LegendItem: View {
+private struct RedistributionLegendItem: View {
     let color: Color
     let label: String
     
@@ -191,7 +171,7 @@ struct LegendItem: View {
             
             Text(label)
                 .font(.caption2)
-                .foregroundColor(.phylloTextSecondary)
+                .foregroundColor(Color.white.opacity(0.5))
         }
     }
 }
@@ -199,45 +179,34 @@ struct LegendItem: View {
 #Preview {
     RedistributionVisualization(
         redistribution: RedistributionResult(
-            originalWindows: [
-                MealWindow(
-                    id: "1",
-                    name: "Morning Fuel",
-                    startTime: Date(),
-                    endTime: Date().addingTimeInterval(7200),
-                    targetCalories: 400,
-                    targetProtein: 30,
-                    targetCarbs: 45,
-                    targetFat: 12,
-                    purpose: .sustainedEnergy,
-                    order: 1,
-                    isConsumed: false
-                )
-            ],
             adjustedWindows: [
-                MealWindow(
-                    id: "1",
-                    name: "Morning Fuel",
-                    startTime: Date(),
-                    endTime: Date().addingTimeInterval(7200),
-                    targetCalories: 450,
-                    targetProtein: 35,
-                    targetCarbs: 50,
-                    targetFat: 14,
-                    purpose: .sustainedEnergy,
-                    order: 1,
-                    isConsumed: false
+                AdjustedWindow(
+                    windowId: "morning-fuel",
+                    originalMacros: MacroTargets(
+                        protein: 30,
+                        carbs: 45,
+                        fat: 12
+                    ),
+                    adjustedMacros: MacroTargets(
+                        protein: 35,
+                        carbs: 50,
+                        fat: 14
+                    ),
+                    adjustmentRatio: 1.125,
+                    reason: "Increased to compensate for earlier underconsumption"
                 )
             ],
-            trigger: .underconsumption(percent: 25),
-            triggerWindowId: "1",
-            adjustmentReason: "You ate less than planned",
-            isPreview: false,
-            affectedWindowIds: ["1"],
-            totalCaloriesDelta: 50,
-            appliedConstraints: []
+            explanation: "You ate 25% less than planned in your previous window. I've distributed those nutrients across your remaining meals.",
+            educationalTip: "💡 Eating consistently helps maintain stable energy levels throughout the day.",
+            trigger: .underconsumption(percentUnder: 25),
+            confidenceScore: 0.85,
+            totalRedistributed: MacroTargets(
+                protein: 5,
+                carbs: 5,
+                fat: 2
+            )
         )
     )
     .padding()
-    .background(Color.phylloBackground)
+    .background(Color.black)
 }

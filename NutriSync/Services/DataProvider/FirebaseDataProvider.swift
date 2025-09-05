@@ -1070,11 +1070,11 @@ class FirebaseDataProvider: DataProvider {
     private func checkRedistributionTrigger(for meal: LoggedMeal) async {
         do {
             // Get current windows
-            let windows = try await getWindows(for: meal.loggedAt)
+            let windows = try await getWindows(for: meal.timestamp)
             
             // Find the window this meal belongs to
             guard let mealWindow = windows.first(where: { window in
-                meal.loggedAt >= window.startTime && meal.loggedAt <= window.endTime
+                meal.timestamp >= window.startTime && meal.timestamp <= window.endTime
             }) else {
                 Task { @MainActor in
                     DebugLogger.shared.info("No matching window found for meal, skipping redistribution check")
@@ -1117,10 +1117,10 @@ class FirebaseDataProvider: DataProvider {
         
         // Update windows with adjusted values
         for adjustment in result.adjustedWindows {
-            if let window = windows.first(where: { $0.id == adjustment.windowId }) {
+            if let window = windows.first(where: { $0.id.uuidString == adjustment.windowId }) {
                 // Create updated window with adjusted values
                 var updatedWindow = window
-                updatedWindow.adjustedCalories = adjustment.adjustedMacros.calories
+                updatedWindow.adjustedCalories = adjustment.adjustedMacros.totalCalories
                 updatedWindow.adjustedProtein = adjustment.adjustedMacros.protein
                 updatedWindow.adjustedCarbs = adjustment.adjustedMacros.carbs
                 updatedWindow.adjustedFat = adjustment.adjustedMacros.fat
@@ -1128,15 +1128,15 @@ class FirebaseDataProvider: DataProvider {
                 // Map trigger type to redistribution reason
                 switch result.trigger {
                 case .overconsumption(let percent):
-                    updatedWindow.redistributionReason = .overconsumption(percentOver: percent)
+                    updatedWindow.redistributionReason = WindowRedistributionManager.RedistributionReason.overconsumption(percentOver: percent)
                 case .underconsumption(let percent):
-                    updatedWindow.redistributionReason = .underconsumption(percentUnder: percent)
+                    updatedWindow.redistributionReason = WindowRedistributionManager.RedistributionReason.underconsumption(percentUnder: percent)
                 case .missedWindow:
-                    updatedWindow.redistributionReason = .missedWindow
+                    updatedWindow.redistributionReason = WindowRedistributionManager.RedistributionReason.missedWindow
                 case .earlyConsumption:
-                    updatedWindow.redistributionReason = .earlyConsumption
+                    updatedWindow.redistributionReason = WindowRedistributionManager.RedistributionReason.earlyConsumption
                 case .lateConsumption:
-                    updatedWindow.redistributionReason = .lateConsumption
+                    updatedWindow.redistributionReason = WindowRedistributionManager.RedistributionReason.lateConsumption
                 }
                 
                 // Save updated window

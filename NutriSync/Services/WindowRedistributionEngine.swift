@@ -58,15 +58,14 @@ struct AdjustedWindow {
     let reason: String
 }
 
-struct MacroTargets: Equatable {
-    let calories: Int
-    let protein: Int
-    let carbs: Int
-    let fat: Int
+// Extension to add operators to the MacroTargets struct from MealWindow.swift
+extension MacroTargets: Equatable {
+    var calories: Int {
+        totalCalories
+    }
     
     static func +(lhs: MacroTargets, rhs: MacroTargets) -> MacroTargets {
         MacroTargets(
-            calories: lhs.calories + rhs.calories,
             protein: lhs.protein + rhs.protein,
             carbs: lhs.carbs + rhs.carbs,
             fat: lhs.fat + rhs.fat
@@ -75,7 +74,6 @@ struct MacroTargets: Equatable {
     
     static func -(lhs: MacroTargets, rhs: MacroTargets) -> MacroTargets {
         MacroTargets(
-            calories: max(0, lhs.calories - rhs.calories),
             protein: max(0, lhs.protein - rhs.protein),
             carbs: max(0, lhs.carbs - rhs.carbs),
             fat: max(0, lhs.fat - rhs.fat)
@@ -84,11 +82,16 @@ struct MacroTargets: Equatable {
     
     static func *(lhs: MacroTargets, rhs: Double) -> MacroTargets {
         MacroTargets(
-            calories: Int(Double(lhs.calories) * rhs),
             protein: Int(Double(lhs.protein) * rhs),
             carbs: Int(Double(lhs.carbs) * rhs),
             fat: Int(Double(lhs.fat) * rhs)
         )
+    }
+    
+    static func ==(lhs: MacroTargets, rhs: MacroTargets) -> Bool {
+        lhs.protein == rhs.protein && 
+        lhs.carbs == rhs.carbs && 
+        lhs.fat == rhs.fat
     }
 }
 
@@ -105,7 +108,7 @@ class ProximityBasedEngine: RedistributionEngine {
         
         // Filter for upcoming windows only
         let upcomingWindows = windows.filter { window in
-            window.startTime > currentTime && !window.isComplete
+            window.startTime > currentTime && window.consumed.calories == 0
         }
         
         guard !upcomingWindows.isEmpty else {
@@ -115,7 +118,7 @@ class ProximityBasedEngine: RedistributionEngine {
                 educationalTip: nil,
                 trigger: trigger.triggerType,
                 confidenceScore: 0.0,
-                totalRedistributed: MacroTargets(calories: 0, protein: 0, carbs: 0, fat: 0)
+                totalRedistributed: MacroTargets(protein: 0, carbs: 0, fat: 0)
             )
         }
         
@@ -139,7 +142,7 @@ class ProximityBasedEngine: RedistributionEngine {
                 educationalTip: "Try to complete your meals earlier to avoid late-night eating.",
                 trigger: trigger.triggerType,
                 confidenceScore: 0.5,
-                totalRedistributed: MacroTargets(calories: 0, protein: 0, carbs: 0, fat: 0)
+                totalRedistributed: MacroTargets(protein: 0, carbs: 0, fat: 0)
             )
         }
         
@@ -194,14 +197,12 @@ class ProximityBasedEngine: RedistributionEngine {
     ) -> MacroTargets {
         
         let consumed = MacroTargets(
-            calories: trigger.totalConsumed.calories,
             protein: trigger.totalConsumed.protein,
             carbs: trigger.totalConsumed.carbs,
             fat: trigger.totalConsumed.fat
         )
         
         let target = MacroTargets(
-            calories: triggerWindow.effectiveCalories,
             protein: triggerWindow.effectiveProtein,
             carbs: triggerWindow.effectiveCarbs,
             fat: triggerWindow.effectiveFat
@@ -216,7 +217,7 @@ class ProximityBasedEngine: RedistributionEngine {
         case .missedWindow:
             return target // Full window amount to redistribute
         default:
-            return MacroTargets(calories: 0, protein: 0, carbs: 0, fat: 0)
+            return MacroTargets(protein: 0, carbs: 0, fat: 0)
         }
     }
     
@@ -286,7 +287,7 @@ class ProximityBasedEngine: RedistributionEngine {
             // Apply window purpose modifier
             let purposeModifier = getPurposeModifier(for: window.purpose)
             
-            weights[window.id] = max(0.1, proximityWeight * purposeModifier)
+            weights[window.id.uuidString] = max(0.1, proximityWeight * purposeModifier)
         }
         
         // Normalize weights to sum to 1.0
@@ -304,7 +305,7 @@ class ProximityBasedEngine: RedistributionEngine {
         switch purpose {
         case .preWorkout, .postWorkout:
             return 0.8 // Protect workout windows slightly
-        case .sleepOptimized:
+        case .sleepOptimization:
             return 0.5 // Strongly protect sleep windows
         case .metabolicBoost:
             return 1.2 // More flexible for adjustment
@@ -324,10 +325,9 @@ class ProximityBasedEngine: RedistributionEngine {
         var adjustedWindows: [AdjustedWindow] = []
         
         for window in windows {
-            guard let weight = weights[window.id] else { continue }
+            guard let weight = weights[window.id.uuidString] else { continue }
             
             let originalMacros = MacroTargets(
-                calories: window.effectiveCalories,
                 protein: window.effectiveProtein,
                 carbs: window.effectiveCarbs,
                 fat: window.effectiveFat
@@ -357,10 +357,10 @@ class ProximityBasedEngine: RedistributionEngine {
                 windowPurpose: window.purpose
             )
             
-            let adjustmentRatio = Double(constrainedMacros.calories) / Double(originalMacros.calories)
+            let adjustmentRatio = Double(constrainedMacros.totalCalories) / Double(originalMacros.totalCalories)
             
             adjustedWindows.append(AdjustedWindow(
-                windowId: window.id,
+                windowId: window.id.uuidString,
                 originalMacros: originalMacros,
                 adjustedMacros: constrainedMacros,
                 adjustmentRatio: adjustmentRatio,
@@ -400,7 +400,6 @@ class ProximityBasedEngine: RedistributionEngine {
         let constrainedFat = min(constraints.maxFatPerWindow, max(0, macros.fat))
         
         return MacroTargets(
-            calories: constrainedCalories,
             protein: constrainedProtein,
             carbs: constrainedCarbs,
             fat: constrainedFat
@@ -436,7 +435,7 @@ class ProximityBasedEngine: RedistributionEngine {
         }
         
         let totalCalorieChange = adjustedWindows.reduce(0) { sum, window in
-            sum + abs(window.adjustedMacros.calories - window.originalMacros.calories)
+            sum + abs(window.adjustedMacros.totalCalories - window.originalMacros.totalCalories)
         }
         
         switch trigger.triggerType {
@@ -469,9 +468,8 @@ class ProximityBasedEngine: RedistributionEngine {
     }
     
     private func calculateTotalRedistributed(adjustedWindows: [AdjustedWindow]) -> MacroTargets {
-        let totalChange = adjustedWindows.reduce(MacroTargets(calories: 0, protein: 0, carbs: 0, fat: 0)) { sum, window in
+        let totalChange = adjustedWindows.reduce(MacroTargets(protein: 0, carbs: 0, fat: 0)) { sum, window in
             let change = MacroTargets(
-                calories: abs(window.adjustedMacros.calories - window.originalMacros.calories),
                 protein: abs(window.adjustedMacros.protein - window.originalMacros.protein),
                 carbs: abs(window.adjustedMacros.carbs - window.originalMacros.carbs),
                 fat: abs(window.adjustedMacros.fat - window.originalMacros.fat)

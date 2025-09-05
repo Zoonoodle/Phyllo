@@ -1,0 +1,35 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Development mode rules - ONLY for testing
+    // WARNING: Replace these with production rules before deployment
+    
+    // Allow development user access during testing
+    match /users/dev_user_001/{document=**} {
+      allow read, write: if true;
+    }
+    
+    // Allow preview user access for testing
+    match /users/preview-user/{document=**} {
+      allow read, write: if true;
+    }
+    
+    // Production rules (commented out during development)
+    // Uncomment and remove dev rules before production deployment
+    /*
+    match /users/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    match /recipes/{document=**} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.token.admin == true;
+    }
+    
+    match /foodDatabase/{document=**} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.token.admin == true;
+    }
+    */
+  }
+}

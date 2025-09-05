@@ -88,7 +88,6 @@ class WindowRedistributionManager {
             triggerType: triggerType,
             deviation: deviation,
             totalConsumed: MacroTargets(
-                calories: meal.calories,
                 protein: meal.protein,
                 carbs: meal.carbs,
                 fat: meal.fat
@@ -109,13 +108,13 @@ class WindowRedistributionManager {
         var redistributedWindows: [RedistributedWindow] = []
         
         for window in allWindows {
-            if let adjustment = result.adjustedWindows.first(where: { $0.windowId == window.id }) {
+            if let adjustment = result.adjustedWindows.first(where: { $0.windowId == window.id.uuidString }) {
                 // Apply adjustment from engine
                 let reason = mapTriggerToReason(trigger: result.trigger)
                 redistributedWindows.append(
                     RedistributedWindow(
                         originalWindow: window,
-                        adjustedCalories: adjustment.adjustedMacros.calories,
+                        adjustedCalories: adjustment.adjustedMacros.totalCalories,
                         adjustedMacros: MacroTargets(
                             protein: adjustment.adjustedMacros.protein,
                             carbs: adjustment.adjustedMacros.carbs,
@@ -143,7 +142,7 @@ class WindowRedistributionManager {
     // Helper to find window for a meal
     private func findWindowForMeal(meal: LoggedMeal, windows: [MealWindow]) -> MealWindow? {
         return windows.first { window in
-            meal.loggedAt >= window.startTime && meal.loggedAt <= window.endTime
+            meal.timestamp >= window.startTime && meal.timestamp <= window.endTime
         }
     }
     
@@ -233,9 +232,9 @@ class WindowRedistributionManager {
         
         // Calculate total original targets for upcoming windows
         let totalUpcomingCalories = upcomingWindows.reduce(0) { $0 + $1.targetCalories }
-        let totalUpcomingProtein = upcomingWindows.reduce(0) { $0 + $1.targetMacros.protein }
-        let totalUpcomingCarbs = upcomingWindows.reduce(0) { $0 + $1.targetMacros.carbs }
-        let totalUpcomingFat = upcomingWindows.reduce(0) { $0 + $1.targetMacros.fat }
+        let _ = upcomingWindows.reduce(0) { $0 + $1.targetMacros.protein }
+        let _ = upcomingWindows.reduce(0) { $0 + $1.targetMacros.carbs }
+        let _ = upcomingWindows.reduce(0) { $0 + $1.targetMacros.fat }
         
         // Determine redistribution reason
         let caloriePercentDiff = (remainingCalories - totalUpcomingCalories) * 100 / totalUpcomingCalories
@@ -256,7 +255,7 @@ class WindowRedistributionManager {
             var adjustedCalories = Int(Double(remainingCalories) * proportionOfTotal)
             var adjustedProtein = Int(Double(remainingProtein) * proportionOfTotal)
             var adjustedCarbs = Int(Double(remainingCarbs) * proportionOfTotal)
-            var adjustedFat = Int(Double(remainingFat) * proportionOfTotal)
+            let adjustedFat = Int(Double(remainingFat) * proportionOfTotal)
             
             // Apply goal-specific adjustments
             switch userProfile.primaryGoal {

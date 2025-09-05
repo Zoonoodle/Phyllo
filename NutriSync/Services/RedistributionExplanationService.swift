@@ -19,20 +19,17 @@ class RedistributionExplanationService {
         case .missedWindow:
             return generateMissedWindowExplanation(redistribution: redistribution)
             
-        case .mealTiming:
+        case .earlyConsumption:
             return "I've adjusted your upcoming windows based on when you actually ate. This helps align your schedule with your natural eating patterns."
             
-        case .userRequest:
-            return "Windows adjusted as requested. Your upcoming meals have been rebalanced to maintain your daily targets."
-            
-        case .none:
-            return redistribution.adjustmentReason ?? "Your meal windows have been optimized for better balance throughout the day."
+        case .lateConsumption:
+            return "Windows adjusted for late consumption. Your upcoming meals have been rebalanced to maintain your daily targets."
         }
     }
     
     /// Generate explanation for overconsumption
     private func generateOverconsumptionExplanation(percent: Int, redistribution: RedistributionResult) -> String {
-        let calorieChange = abs(redistribution.totalCaloriesDelta)
+        let calorieChange = redistribution.totalRedistributed.calories
         
         if percent > 50 {
             return "You ate \(percent)% more than planned (\(calorieChange) extra calories). I've significantly reduced your upcoming meals, with the biggest adjustment to your next window to help you stay on track."
@@ -45,7 +42,7 @@ class RedistributionExplanationService {
     
     /// Generate explanation for underconsumption
     private func generateUnderconsumptionExplanation(percent: Int, redistribution: RedistributionResult) -> String {
-        let calorieChange = abs(redistribution.totalCaloriesDelta)
+        let calorieChange = redistribution.totalRedistributed.calories
         
         if percent > 50 {
             return "You ate \(percent)% less than planned (\(calorieChange) calories remaining). I've increased your upcoming meals to help you reach your daily goals, with more added to your next window."
@@ -58,7 +55,7 @@ class RedistributionExplanationService {
     
     /// Generate explanation for missed windows
     private func generateMissedWindowExplanation(redistribution: RedistributionResult) -> String {
-        let affectedCount = redistribution.affectedWindowIds.count
+        let affectedCount = redistribution.adjustedWindows.count
         
         if affectedCount > 1 {
             return "You missed a meal window. I've redistributed those calories and nutrients across your \(affectedCount) remaining windows to help you meet your daily goals."
@@ -73,8 +70,8 @@ class RedistributionExplanationService {
         case .consistentOvereating:
             return "💡 Tip: You often eat more than planned at lunch. Consider having a protein-rich snack 30 minutes before to reduce hunger."
             
-        case .morningSkipping:
-            return "💡 Tip: Skipping breakfast regularly? Try preparing overnight oats or a smoothie the night before for a quick morning option."
+        case .frequentMissedWindows:
+            return "💡 Tip: Missing meals regularly? Try preparing meals in advance or setting reminders for your meal windows."
             
         case .eveningOvereating:
             return "💡 Tip: Evening overeating is common when earlier meals are too small. Try distributing calories more evenly throughout the day."
@@ -82,14 +79,11 @@ class RedistributionExplanationService {
         case .weekendPattern:
             return "💡 Tip: Weekends have different patterns. Consider creating a separate weekend schedule that matches your lifestyle."
             
-        case .workoutDayPattern:
-            return "💡 Tip: On workout days, your body needs more fuel. I'll automatically adjust your windows when you log a workout."
+        case .morningOvereating:
+            return "💡 Tip: Morning overeating may indicate you're too hungry after fasting. Consider a balanced evening snack."
             
-        case .stressEating:
-            return "💡 Tip: Stress can affect eating patterns. Try a 5-minute breathing exercise before meals to eat more mindfully."
-            
-        case .socialMealPattern:
-            return "💡 Tip: Social meals tend to be larger. When you know you're eating out, I can pre-adjust your other windows."
+        case .consistentUndereating:
+            return "💡 Tip: You're consistently eating less than planned. Let's adjust your targets to better match your natural appetite."
             
         default:
             return generateGeneralTip()
@@ -110,28 +104,21 @@ class RedistributionExplanationService {
     }
     
     /// Generate constraint explanation for UI
-    func explainConstraints(_ constraints: [RedistributionResult.AppliedConstraint]) -> [String] {
-        return constraints.map { constraint in
-            switch constraint {
-            case .minimumCalories(let window, let adjusted):
-                return "✓ \(window) kept above 200 calorie minimum (set to \(adjusted))"
-                
-            case .maximumCalories(let window, let adjusted):
-                return "✓ \(window) kept below 1000 calorie maximum (set to \(adjusted))"
-                
-            case .proteinPreservation(let window, let preserved):
-                return "✓ \(window) protein preserved at \(preserved)g minimum"
-                
-            case .bedtimeBuffer(let window):
-                return "✓ \(window) protected due to 3-hour bedtime buffer"
-                
-            case .workoutProtection(let window):
-                return "✓ \(window) maintained for workout performance"
+    func explainConstraints(_ windows: [AdjustedWindow]) -> [String] {
+        return windows.map { window in
+            let calorieChange = window.adjustedMacros.calories - window.originalMacros.calories
+            if calorieChange > 0 {
+                return "✓ \(window.windowId): +\(calorieChange) calories added - \(window.reason)"
+            } else if calorieChange < 0 {
+                return "✓ \(window.windowId): \(calorieChange) calories removed - \(window.reason)"
+            } else {
+                return "✓ \(window.windowId): unchanged - \(window.reason)"
             }
         }
     }
     
     /// Analyze user's response patterns to learn preferences
+    @MainActor
     func analyzeUserResponse(accepted: Bool, redistribution: RedistributionResult) {
         if accepted {
             DebugLogger.shared.info("User accepted redistribution for \(redistribution.trigger)")
@@ -156,7 +143,7 @@ class RedistributionExplanationService {
         case .missedWindow:
             return .medium
             
-        default:
+        case .earlyConsumption, .lateConsumption:
             return .low
         }
     }
@@ -180,16 +167,4 @@ class RedistributionExplanationService {
             }
         }
     }
-}
-
-/// Patterns detected in user behavior
-enum RedistributionPattern {
-    case consistentOvereating
-    case morningSkipping
-    case eveningOvereating
-    case weekendPattern
-    case workoutDayPattern
-    case stressEating
-    case socialMealPattern
-    case none
 }

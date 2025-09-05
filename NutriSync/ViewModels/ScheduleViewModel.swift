@@ -235,8 +235,7 @@ class ScheduleViewModel: ObservableObject {
         // Refresh all data when app comes back from background
         Task {
             DebugLogger.shared.info("ScheduleViewModel: Refreshing data after app became active")
-            await loadTodaysData()
-            await loadUserProfile()
+            await loadInitialData()
         }
     }
     
@@ -474,8 +473,14 @@ class ScheduleViewModel: ObservableObject {
     func completeMorningCheckIn(_ checkIn: MorningCheckInData) async {
         do {
             // Save check-in
+            Task { @MainActor in
+                DebugLogger.shared.info("Saving morning check-in data...")
+            }
             try await dataProvider.saveMorningCheckIn(checkIn)
             morningCheckIn = checkIn
+            Task { @MainActor in
+                DebugLogger.shared.success("Morning check-in saved successfully")
+            }
             
             // Only generate windows if none exist (don't overwrite AI windows)
             if mealWindows.isEmpty {
@@ -498,7 +503,15 @@ class ScheduleViewModel: ObservableObject {
             
         } catch {
             errorMessage = "Failed to save check-in: \(error.localizedDescription)"
-            DebugLogger.shared.error("Failed to save morning check-in: \(error)")
+            Task { @MainActor in
+                DebugLogger.shared.error("Failed to save morning check-in: \(error)")
+                // Log specific Firestore error for debugging
+                if error.localizedDescription.contains("Missing or insufficient permissions") {
+                    DebugLogger.shared.error("⚠️ Firestore permission denied! Please deploy the development rules using:")
+                    DebugLogger.shared.error("firebase deploy --only firestore:rules")
+                    DebugLogger.shared.error("Or update rules in Firebase Console")
+                }
+            }
         }
     }
     
@@ -546,6 +559,12 @@ class ScheduleViewModel: ObservableObject {
                 }
             } else {
                 errorMessage = "Failed to generate windows: \(error.localizedDescription)"
+                if error.localizedDescription.contains("Missing or insufficient permissions") {
+                    Task { @MainActor in
+                        DebugLogger.shared.error("⚠️ Firestore permission error during window generation!")
+                        DebugLogger.shared.error("Deploy rules: firebase deploy --only firestore:rules")
+                    }
+                }
             }
             DebugLogger.shared.error("Failed to generate windows: \(error)")
             Task { @MainActor in
@@ -794,7 +813,7 @@ extension ScheduleViewModel {
             return 
         }
         
-        DebugLogger.shared.info("Applying redistribution: \(redistribution.adjustmentReason ?? "No reason provided")")
+        DebugLogger.shared.info("Applying redistribution: \(redistribution.explanation)")
         
         do {
             if let firebaseProvider = dataProvider as? FirebaseDataProvider {
@@ -802,7 +821,7 @@ extension ScheduleViewModel {
                 try await firebaseProvider.applyRedistribution(redistribution)
                 
                 // Update local windows
-                mealWindows = redistribution.adjustedWindows
+                // Note: The windows will be refreshed through the observer
                 
                 DebugLogger.shared.success("Redistribution applied successfully")
             } else {
@@ -832,7 +851,7 @@ extension ScheduleViewModel {
         pendingRedistribution = nil
         
         // Log the rejection for analytics/learning
-        DebugLogger.shared.info("Redistribution rejected: \(redistribution.adjustmentReason ?? "No reason")")
+        DebugLogger.shared.info("Redistribution rejected: \(redistribution.explanation)")
     }
 }
 

@@ -16,180 +16,223 @@ struct AIScheduleView: View {
     @Namespace private var animationNamespace
     
     var body: some View {
+        mainContent
+            .overlay(alignment: .center) {
+                windowDetailOverlayView
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .navigateToMealDetails)) { notification in
+                handleMealDetailsNavigation(notification)
+            }
+            .onChange(of: selectedDate) { _, newDate in
+                Task {
+                    await viewModel.loadDailyPlan(for: newDate)
+                }
+            }
+            .onAppear {
+                handleOnAppear()
+            }
+            .onChange(of: viewModel.legacyViewModel.isLoading) { _, newValue in
+                handleLoadingChange(newValue)
+            }
+            .sheet(isPresented: $showMissedMealsRecovery) {
+                missedMealsSheet
+            }
+            .sheet(isPresented: $showMorningCheckIn) {
+                morningCheckInSheet
+            }
+            .sheet(isPresented: $showDayDetail) {
+                dayDetailSheet
+            }
+            .sheet(isPresented: .constant(viewModel.legacyViewModel.showingRedistributionNudge)) {
+                redistributionNudgeSheet
+            }
+            .onChange(of: showMorningCheckIn) { wasShowing, isShowing in
+                handleMorningCheckInChange(wasShowing: wasShowing, isShowing: isShowing)
+            }
+    }
+    
+    // MARK: - View Components
+    
+    @ViewBuilder
+    private var mainContent: some View {
         ZStack {
-            // Background color that extends to edges
             Color.nutriSyncBackground
                 .ignoresSafeArea()
             
             VStack(spacing: 0) {
-                // Add safe area top padding
                 Color.clear
                     .frame(height: 50)
                 
                 VStack(spacing: 2) {
-                    // Day navigation header with integrated logo and settings
-                    DayNavigationHeader(
-                        selectedDate: $selectedDate,
-                        showDeveloperDashboard: $showDeveloperDashboard,
-                        showDayDetail: $showDayDetail,
-                        meals: viewModel.meals,
-                        userProfile: viewModel.userProfile
-                    )
-                    .background(Color.nutriSyncBackground)
-                    .zIndex(2) // Keep header above timeline content
-                    .opacity(showWindowDetail ? 0 : 1)
-                    
-                    // Content based on state
-                    if viewModel.legacyViewModel.isLoading || !viewModel.hasLoadedInitialData || viewModel.isGeneratingWindows {
-                        loadingView
-                    } else if viewModel.mealWindows.isEmpty {
-                        emptyStateView
-                    } else {
-                        // Use the simplified TimelineView for correct positioning
-                        SimpleTimelineView(
-                            viewModel: viewModel.legacyViewModel,
-                            selectedWindow: $selectedWindow,
-                            showWindowDetail: $showWindowDetail,
-                            animationNamespace: animationNamespace
-                        )
-                        .frame(maxWidth: .infinity) // Constrain width to prevent horizontal expansion
-                        .opacity(showWindowDetail ? 0 : 1)
-                    }
+                    headerView
+                    contentView
                 }
                 .frame(maxWidth: .infinity)
             }
         }
-        .overlay(alignment: .center) {
-            // Window detail overlay
-            if showWindowDetail, let window = selectedWindow {
-                WindowDetailOverlay(
-                    window: window,
-                    viewModel: viewModel.legacyViewModel,
-                    showWindowDetail: $showWindowDetail,
-                    selectedMealId: $selectedMealId,
-                    animationNamespace: animationNamespace
-                )
-                .transition(.asymmetric(
-                    insertion: .identity,
-                    removal: .opacity.animation(.easeInOut(duration: 0.2))
-                ))
-            }
+    }
+    
+    @ViewBuilder
+    private var headerView: some View {
+        DayNavigationHeader(
+            selectedDate: $selectedDate,
+            showDeveloperDashboard: $showDeveloperDashboard,
+            showDayDetail: $showDayDetail,
+            meals: viewModel.meals,
+            userProfile: viewModel.userProfile
+        )
+        .background(Color.nutriSyncBackground)
+        .zIndex(2)
+        .opacity(showWindowDetail ? 0 : 1)
+    }
+    
+    @ViewBuilder
+    private var contentView: some View {
+        if viewModel.legacyViewModel.isLoading || !viewModel.hasLoadedInitialData || viewModel.isGeneratingWindows {
+            loadingView
+        } else if viewModel.mealWindows.isEmpty {
+            emptyStateView
+        } else {
+            timelineView
         }
-        .onReceive(NotificationCenter.default.publisher(for: .navigateToMealDetails)) { notification in
-            if let meal = notification.object as? LoggedMeal {
-                // Find the window containing this meal
-                if let window = viewModel.mealWindows.first(where: { window in
-                    meal.timestamp >= window.startTime && meal.timestamp <= window.endTime
-                }) {
-                    // Navigate to window detail with specific meal selected
-                    selectedWindow = window
-                    selectedMealId = meal.id.uuidString
-                    withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
-                        showWindowDetail = true
+    }
+    
+    @ViewBuilder
+    private var timelineView: some View {
+        SimpleTimelineView(
+            viewModel: viewModel.legacyViewModel,
+            selectedWindow: $selectedWindow,
+            showWindowDetail: $showWindowDetail,
+            animationNamespace: animationNamespace
+        )
+        .frame(maxWidth: .infinity)
+        .opacity(showWindowDetail ? 0 : 1)
+    }
+    
+    @ViewBuilder
+    private var windowDetailOverlayView: some View {
+        if showWindowDetail, let window = selectedWindow {
+            WindowDetailOverlay(
+                window: window,
+                viewModel: viewModel.legacyViewModel,
+                showWindowDetail: $showWindowDetail,
+                selectedMealId: $selectedMealId,
+                animationNamespace: animationNamespace
+            )
+            .transition(.asymmetric(
+                insertion: .identity,
+                removal: .opacity.animation(.easeInOut(duration: 0.2))
+            ))
+        }
+    }
+    
+    @ViewBuilder
+    private var missedMealsSheet: some View {
+        MissedMealsRecoveryView(
+            viewModel: viewModel.legacyViewModel,
+            missedWindows: viewModel.missedWindows
+        )
+    }
+    
+    @ViewBuilder
+    private var morningCheckInSheet: some View {
+        MorningCheckInCoordinator(isMandatory: viewModel.mealWindows.isEmpty)
+            .interactiveDismissDisabled(viewModel.mealWindows.isEmpty)
+    }
+    
+    @ViewBuilder
+    private var dayDetailSheet: some View {
+        DayDetailView(
+            viewModel: viewModel.legacyViewModel,
+            showDayDetail: $showDayDetail
+        )
+    }
+    
+    @ViewBuilder
+    private var redistributionNudgeSheet: some View {
+        if let redistribution = viewModel.legacyViewModel.pendingRedistribution {
+            RedistributionNudge(
+                redistribution: redistribution,
+                onAccept: {
+                    Task {
+                        await viewModel.legacyViewModel.applyRedistribution()
                     }
+                },
+                onReject: {
+                    viewModel.legacyViewModel.rejectRedistribution()
+                }
+            )
+        }
+    }
+    
+    // MARK: - Helper Methods
+    
+    private func handleMealDetailsNavigation(_ notification: NotificationCenter.Publisher.Output) {
+        if let meal = notification.object as? LoggedMeal {
+            if let window = viewModel.mealWindows.first(where: { window in
+                meal.timestamp >= window.startTime && meal.timestamp <= window.endTime
+            }) {
+                selectedWindow = window
+                selectedMealId = meal.id.uuidString
+                withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+                    showWindowDetail = true
                 }
             }
         }
-        .onChange(of: selectedDate) { _, newDate in
-            Task {
-                await viewModel.loadDailyPlan(for: newDate)
-            }
+    }
+    
+    private func handleOnAppear() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            checkForMissedMeals()
         }
-        .onAppear {
-            // Wait a moment for the legacyViewModel to initialize properly
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                checkForMissedMeals()
-            }
-            
-            // Mark as loaded once the legacyViewModel finishes loading
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                // Check if loading is complete
-                if !viewModel.legacyViewModel.isLoading {
-                    viewModel.hasLoadedInitialData = true
-                }
-            }
-            
-            // Only load daily plan if not already loading
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             if !viewModel.legacyViewModel.isLoading {
-                Task {
-                    await viewModel.loadDailyPlan(for: selectedDate)
-                }
+                viewModel.hasLoadedInitialData = true
             }
         }
-        .onChange(of: viewModel.legacyViewModel.isLoading) { _, newValue in
-            // When loading completes, mark initial data as loaded
-            if !newValue {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                    viewModel.hasLoadedInitialData = true
-                }
+        
+        if !viewModel.legacyViewModel.isLoading {
+            Task {
+                await viewModel.loadDailyPlan(for: selectedDate)
             }
         }
-        .sheet(isPresented: $showMissedMealsRecovery) {
-            MissedMealsRecoveryView(
-                viewModel: viewModel.legacyViewModel,
-                missedWindows: viewModel.missedWindows
-            )
-        }
-        .sheet(isPresented: $showMorningCheckIn) {
-            MorningCheckInCoordinator(isMandatory: viewModel.mealWindows.isEmpty)
-                .interactiveDismissDisabled(viewModel.mealWindows.isEmpty) // Can't dismiss if no windows
-        }
-        .sheet(isPresented: $showDayDetail) {
-            DayDetailView(
-                viewModel: viewModel.legacyViewModel,
-                showDayDetail: $showDayDetail
-            )
-        }
-        .sheet(isPresented: .constant(viewModel.legacyViewModel.showingRedistributionNudge)) {
-            if let redistribution = viewModel.legacyViewModel.pendingRedistribution {
-                RedistributionNudge(
-                    result: redistribution,
-                    currentWindows: viewModel.mealWindows,
-                    onAccept: {
-                        Task {
-                            await viewModel.legacyViewModel.applyRedistribution()
-                        }
-                    },
-                    onDecline: {
-                        viewModel.legacyViewModel.rejectRedistribution()
-                    }
-                )
+    }
+    
+    private func handleLoadingChange(_ newValue: Bool) {
+        if !newValue {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                viewModel.hasLoadedInitialData = true
             }
         }
-        .onChange(of: showMorningCheckIn) { wasShowing, isShowing in
-            // When check-in sheet dismisses, show loading while windows generate
-            if wasShowing && !isShowing {
-                // User completed or dismissed check-in
-                viewModel.isGeneratingWindows = true
-                
-                // Trigger window generation
-                Task {
-                    // Get the latest morning check-in data
-                    if let checkIn = CheckInManager.shared.getLatestMorningCheckIn() {
-                        // Convert to the format expected by ScheduleViewModel
-                        let checkInData = MorningCheckInData(
-                            date: checkIn.date,
-                            wakeTime: checkIn.wakeTime,
-                            plannedBedtime: checkIn.plannedBedtime,
-                            sleepQuality: checkIn.sleepQuality,
-                            energyLevel: checkIn.energyLevel,
-                            hungerLevel: checkIn.hungerLevel,
-                            dayFocus: checkIn.dayFocus,
-                            morningMood: checkIn.morningMood,
-                            plannedActivities: checkIn.plannedActivities,
-                            windowPreference: checkIn.windowPreference,
-                            hasRestrictions: checkIn.hasRestrictions,
-                            restrictions: checkIn.restrictions
-                        )
-                        
-                        // Save check-in and generate windows
-                        await viewModel.legacyViewModel.completeMorningCheckIn(checkInData)
-                    }
+    }
+    
+    private func handleMorningCheckInChange(wasShowing: Bool, isShowing: Bool) {
+        if wasShowing && !isShowing {
+            viewModel.isGeneratingWindows = true
+            
+            Task {
+                if let checkIn = CheckInManager.shared.getLatestMorningCheckIn() {
+                    let checkInData = MorningCheckInData(
+                        date: checkIn.date,
+                        wakeTime: checkIn.wakeTime,
+                        plannedBedtime: checkIn.plannedBedtime,
+                        sleepQuality: checkIn.sleepQuality,
+                        energyLevel: checkIn.energyLevel,
+                        hungerLevel: checkIn.hungerLevel,
+                        dayFocus: checkIn.dayFocus,
+                        morningMood: checkIn.morningMood,
+                        plannedActivities: checkIn.plannedActivities,
+                        windowPreference: checkIn.windowPreference,
+                        hasRestrictions: checkIn.hasRestrictions,
+                        restrictions: checkIn.restrictions
+                    )
                     
-                    // Monitor for windows to appear
-                    await MainActor.run {
-                        checkForWindowGeneration()
-                    }
+                    await viewModel.legacyViewModel.completeMorningCheckIn(checkInData)
+                }
+                
+                await MainActor.run {
+                    checkForWindowGeneration()
                 }
             }
         }

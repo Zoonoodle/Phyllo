@@ -5,7 +5,7 @@ import Combine
 // MARK: - Redistribution Preview Service
 
 @Observable
-class RedistributionPreviewService {
+class RedistributionPreviewService: NSObject {
     
     // MARK: - Properties
     
@@ -16,6 +16,10 @@ class RedistributionPreviewService {
     private let engine = ProximityBasedEngine()
     private let constraints = RedistributionConstraints()
     private var cancellables = Set<AnyCancellable>()
+    
+    override init() {
+        super.init()
+    }
     
     // MARK: - Preview Generation
     
@@ -32,7 +36,6 @@ class RedistributionPreviewService {
         
         // Convert analyzing meal to macro targets
         let macros = MacroTargets(
-            calories: meal.estimatedCalories,
             protein: meal.estimatedProtein ?? 0,
             carbs: meal.estimatedCarbs ?? 0,
             fat: meal.estimatedFat ?? 0
@@ -42,7 +45,7 @@ class RedistributionPreviewService {
         let targetCalories = window.effectiveCalories
         guard targetCalories > 0 else { return nil }
         
-        let deviation = Double(macros.calories - targetCalories) / Double(targetCalories)
+        let deviation = Double(macros.totalCalories - targetCalories) / Double(targetCalories)
         
         // Only preview if it would actually trigger (25% threshold)
         guard abs(deviation) > constraints.deviationThreshold else {
@@ -105,14 +108,14 @@ class RedistributionPreviewService {
     private func generateImpactSummary(result: RedistributionResult) -> RedistributionImpactSummary {
         
         let totalCaloriesAffected = result.adjustedWindows.reduce(0) { sum, window in
-            sum + abs(window.adjustedMacros.calories - window.originalMacros.calories)
+            sum + abs(window.adjustedMacros.totalCalories - window.originalMacros.totalCalories)
         }
         
         let affectedWindowCount = result.adjustedWindows.count
         
         let largestChange = result.adjustedWindows.max { a, b in
-            abs(a.adjustedMacros.calories - a.originalMacros.calories) <
-            abs(b.adjustedMacros.calories - b.originalMacros.calories)
+            abs(a.adjustedMacros.totalCalories - a.originalMacros.totalCalories) <
+            abs(b.adjustedMacros.totalCalories - b.originalMacros.totalCalories)
         }
         
         let severity: RedistributionImpactSummary.ImpactSeverity

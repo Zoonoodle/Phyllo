@@ -117,7 +117,9 @@ struct ContentView: View {
             
             // Trigger notification updates
             await notificationManager.checkAuthorizationStatus()
-            await notificationManager.updateScheduledNotifications()
+            if let windows = try? await provider.getWindows(for: today) {
+                await notificationManager.scheduleWindowNotifications(for: windows)
+            }
             
             // Notify other managers to refresh their data
             await MainActor.run {
