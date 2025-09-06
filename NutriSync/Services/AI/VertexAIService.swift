@@ -71,7 +71,10 @@ class VertexAIService: ObservableObject {
             Task { @MainActor in
                 DebugLogger.shared.mealAnalysis("Compressing image for analysis")
             }
-            imageData = compressImage(image)
+            // Release original image memory after compression
+            imageData = autoreleasepool {
+                compressImage(image)
+            }
             if imageData == nil {
                 Task { @MainActor in
                     DebugLogger.shared.error("Image compression failed")
@@ -326,7 +329,9 @@ class VertexAIService: ObservableObject {
         // Handle image upload if provided
         if let imageData = imageData {
             // Upload image to Firebase Storage temporarily
-            let imagePath = "temp_meal_images/\(UUID().uuidString).jpg"
+            // Use the temp folder with user ID to match Storage rules
+            let userId = Auth.auth().currentUser?.uid ?? "anonymous"
+            let imagePath = "temp/\(userId)/\(UUID().uuidString).jpg"
             imageRef = storage.reference().child(imagePath)
             
             Task { @MainActor in

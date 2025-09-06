@@ -126,7 +126,11 @@ class MealCaptureService: ObservableObject {
         }
         
         // Create analyzing meal
-        let previewData = image.flatMap { makePreviewData(from: $0) }
+        // Use autoreleasepool to ensure memory is freed immediately
+        let previewData = autoreleasepool { () -> Data? in
+            guard let img = image else { return nil }
+            return makePreviewData(from: img)
+        }
         
         Task { @MainActor in
             if let image = image {
@@ -729,16 +733,27 @@ class MealCaptureService: ObservableObject {
 
 private func makePreviewData(from image: UIImage) -> Data? {
     // Create a small preview image suitable for Firestore (<1 MB)
-    let maxDimension: CGFloat = 640
+    // Reduce dimensions for lower memory usage
+    let maxDimension: CGFloat = 480  // Reduced from 640
     let widthScale = maxDimension / image.size.width
     let heightScale = maxDimension / image.size.height
     let scale = min(1.0, min(widthScale, heightScale))
+    
+    // Skip if already small enough
+    guard scale < 1.0 else {
+        return image.jpegData(compressionQuality: 0.5)  // Lower quality for small images
+    }
+    
     let newSize = CGSize(width: image.size.width * scale, height: image.size.height * scale)
-    UIGraphicsBeginImageContextWithOptions(newSize, false, 1.0)
-    image.draw(in: CGRect(origin: .zero, size: newSize))
-    let resized = UIGraphicsGetImageFromCurrentImageContext()
-    UIGraphicsEndImageContext()
-    return resized?.jpegData(compressionQuality: 0.65)
+    
+    // Use autoreleasepool to free memory immediately
+    return autoreleasepool {
+        UIGraphicsBeginImageContextWithOptions(newSize, false, 1.0)
+        defer { UIGraphicsEndImageContext() }
+        image.draw(in: CGRect(origin: .zero, size: newSize))
+        guard let resized = UIGraphicsGetImageFromCurrentImageContext() else { return nil }
+        return resized.jpegData(compressionQuality: 0.5)  // Reduced from 0.65
+    }
 }
 
 // MARK: - Metadata Management

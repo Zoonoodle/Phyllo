@@ -47,6 +47,24 @@ class FirebaseConfig {
         // Enable offline persistence
         Firestore.firestore().settings.isPersistenceEnabled = true
         
+        // Sign in anonymously to enable Storage access
+        Task {
+            do {
+                if Auth.auth().currentUser == nil {
+                    let result = try await Auth.auth().signInAnonymously()
+                    await MainActor.run {
+                        DebugLogger.shared.firebase("Signed in anonymously with uid: \(result.user.uid)")
+                    }
+                    print("✅ Anonymous auth successful: \(result.user.uid)")
+                }
+            } catch {
+                await MainActor.run {
+                    DebugLogger.shared.error("Anonymous auth failed: \(error)")
+                }
+                print("❌ Anonymous auth failed: \(error)")
+            }
+        }
+        
         Task { @MainActor in
             DebugLogger.shared.firebase("Firebase configured successfully")
             DebugLogger.shared.info("App Check: \(AppCheck.appCheck().isTokenAutoRefreshEnabled ? "Enabled" : "Disabled")")
