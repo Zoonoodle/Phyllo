@@ -56,13 +56,14 @@ enum HealthImpactPetal: String, CaseIterable {
     }
     
     var color: Color {
+        // Muted shadcn palette for Performance view consistency
         switch self {
-        case .energy: return .orange
-        case .strength: return .blue
-        case .focus: return .purple
-        case .immune: return .green
-        case .heart: return .red
-        case .antioxidant: return .yellow
+        case .energy: return Color.white.opacity(0.7)
+        case .strength: return Color.white.opacity(0.6)
+        case .focus: return Color.white.opacity(0.5)
+        case .immune: return Color.white.opacity(0.5)
+        case .heart: return Color.white.opacity(0.6)
+        case .antioxidant: return Color.white.opacity(0.7)
         }
     }
     

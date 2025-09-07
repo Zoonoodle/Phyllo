@@ -133,11 +133,12 @@ struct HexagonFlowerView: View {
     
     
     private func colorForPercentage(_ percentage: Double) -> Color {
+        // Muted shadcn palette instead of saturated colors
         switch percentage {
-        case 0..<0.5: return .red
-        case 0.5..<0.7: return .orange
-        case 0.7..<0.9: return .yellow
-        default: return Color.nutriSyncAccent
+        case 0..<0.5: return Color.white.opacity(0.2)
+        case 0.5..<0.7: return Color.white.opacity(0.4)
+        case 0.7..<0.9: return Color.white.opacity(0.6)
+        default: return PerformanceDesignSystem.successMuted
         }
     }
     
@@ -177,14 +178,10 @@ struct HexagonFlowerView: View {
                     Circle()
                         .trim(from: 0, to: CGFloat(min(Double(overallScore) / 100.0, 1.0)))
                         .stroke(
-                            AngularGradient(
-                                gradient: Gradient(colors: [.nutriSyncAccent, .nutriSyncAccent.opacity(0.4), .white.opacity(0.2)]),
-                                center: .center
-                            ),
-                            style: StrokeStyle(lineWidth: 3, lineCap: .round)
+                            PerformanceDesignSystem.successMuted,
+                            style: StrokeStyle(lineWidth: 2, lineCap: .round)
                         )
                         .rotationEffect(.degrees(-90))
-                        .shadow(color: Color.nutriSyncAccent.opacity(0.25), radius: 3)
                 )
                 .overlay(
                     VStack(spacing: 2) {
@@ -274,20 +271,20 @@ struct HealthImpactPetalView: View {
     var showPurposeText: Bool = true
     var shouldBurst: Bool = false
     
-    // Calculate opacity based on score - similar to ring effect
+    // Calculate opacity based on score - muted shadcn approach
     private var fillOpacity: Double {
-        // Start very transparent (0.05) and gradually increase to 0.3 at 100%
-        let minOpacity = 0.05
-        let maxOpacity = 0.3
+        // Muted palette: starts at 0.1, max 0.5 for shadcn theme
+        let minOpacity = 0.1
+        let maxOpacity = 0.5
         return minOpacity + (maxOpacity - minOpacity) * score
     }
     
     private var strokeOpacity: Double {
-        // Stroke starts invisible and becomes fully visible at 50%
+        // Muted stroke: max 0.7 opacity for shadcn consistency
         if score < 0.5 {
-            return score * 2 // 0-0.5 maps to 0-1 opacity
+            return score * 1.4 // 0-0.5 maps to 0-0.7 opacity
         } else {
-            return 1.0
+            return 0.7
         }
     }
     

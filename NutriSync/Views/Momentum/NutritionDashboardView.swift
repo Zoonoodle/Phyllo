@@ -947,19 +947,20 @@ struct NutritionDashboardView: View {
     }
     
     private var nutrientBreakdownSection: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            Text("Nutrient Status")
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundColor(.white)
-            
-            // Large NutriSync Petals visualization
-            HexagonFlowerView(
-                micronutrients: topNutrients.map { ($0.name, $0.percentage) },
-                size: 240,
-                showLabels: false,
-                showPurposeText: true  // Show nutrient names in petals
-            )
-            .frame(maxWidth: .infinity)
+        PerformanceCard {
+            VStack(alignment: .leading, spacing: 20) {
+                Text("Today's Micronutrients")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(.white)
+                
+                // Redesigned NutriSync Petals - smaller and shadcn themed
+                HexagonFlowerView(
+                    micronutrients: topNutrients.map { ($0.name, $0.percentage) },
+                    size: 180,  // Reduced from 240px
+                    showLabels: false,
+                    showPurposeText: true  // Show nutrient names in petals
+                )
+                .frame(maxWidth: .infinity)
             
             // Nutrient detail grid - 2 columns with flexible sizing
             LazyVGrid(columns: [
@@ -972,11 +973,12 @@ struct NutritionDashboardView: View {
                 }
             }
         }
-        .padding(20)
-        .background(Color.white.opacity(0.03))
-        .cornerRadius(16)
     }
-    
+}
+
+// MARK: - Nested Types
+
+extension NutritionDashboardView {
     struct NutrientDetailCard: View {
         let nutrient: NutrientInfo
         @State private var isExpanded = false
@@ -1109,117 +1111,11 @@ struct NutritionDashboardView: View {
             }
         }
     }
-    
-    
-    // MARK: - Data
-    
-    private var ringData: [(id: String, diameter: CGFloat)] {
-        [
-            (id: "outer", diameter: 240),
-            (id: "middle", diameter: 200),
-            (id: "inner", diameter: 160)
-        ]
-    }
-    
-    private var weekTimingValues: [Double] {
-        [0.9, 0.85, 0.95, 0.8, 0.9, 0.7, 0.85]
-    }
-    
-    private var weekNutrientValues: [Double] {
-        [0.8, 0.75, 0.85, 0.9, 0.8, 0.65, 0.7]
-    }
-    
-    private var weekAdherenceValues: [Double] {
-        [0.95, 0.9, 0.85, 0.9, 0.95, 0.8, 0.9]
-    }
-    
-    private var insights: [NutritionInsight] {
-        [
-            NutritionInsight(
-                title: "Best Energy Days",
-                description: "You report 40% higher energy levels when you eat your first meal between 8-10 AM. Your current average is 11:30 AM.",
-                icon: "bolt.fill",
-                color: .yellow,
-                actionText: "Adjust morning routine"
-            ),
-            NutritionInsight(
-                title: "Protein Timing Pattern",
-                description: "Your muscle recovery improves when you distribute protein across 3-4 meals rather than 2 large portions.",
-                icon: "figure.strengthtraining.traditional",
-                color: .blue,
-                actionText: nil
-            ),
-            NutritionInsight(
-                title: "Weekend Challenge",
-                description: "Your adherence drops 25% on weekends. Pre-planning Friday night can help maintain your momentum.",
-                icon: "calendar",
-                color: .orange,
-                actionText: "Set weekend reminder"
-            )
-        ]
-    }
-    
-    private var topNutrients: [NutrientInfo] {
-        // Calculate actual nutrient percentages from today's meals
-        var nutrientTotals: [String: Double] = [:]
-        
-        // Aggregate all micronutrients from today's meals
-        for meal in viewModel.todaysMeals {
-            for (nutrientName, amount) in meal.micronutrients {
-                nutrientTotals[nutrientName, default: 0] += amount
-            }
-        }
-        
-        // Debug logging
-        if !nutrientTotals.isEmpty {
-            print("🔬 Micronutrient totals: \(nutrientTotals)")
-        }
-        
-        // Select top 6 nutrients to display
-        let displayNutrients = [
-            ("Iron", Color.red),
-            ("Vitamin D", Color.orange),
-            ("Calcium", Color.blue),
-            ("B12", Color.purple),
-            ("Folate", Color.green),
-            ("Zinc", Color.pink)
-        ]
-        
-        return displayNutrients.compactMap { nutrientPair in
-            let (displayName, color) = nutrientPair
-            
-            // Find the matching nutrient in our data with more flexible matching
-            let matchingKey = nutrientTotals.keys.first { key in
-                let normalizedKey = key.lowercased().replacingOccurrences(of: " ", with: "")
-                let normalizedDisplay = displayName.lowercased().replacingOccurrences(of: " ", with: "")
-                
-                // Check various matching patterns
-                return normalizedKey.contains(normalizedDisplay) ||
-                       normalizedDisplay.contains(normalizedKey) ||
-                       (displayName == "Vitamin D" && (key == "Vitamin D" || key == "Vit D" || key.lowercased().contains("vitamin d"))) ||
-                       (displayName == "B12" && (key.contains("B12") || key.contains("B-12") || key.lowercased().contains("vitamin b12"))) ||
-                       (displayName == "Iron" && (key == "Iron" || key.lowercased() == "fe")) ||
-                       (displayName == "Calcium" && (key == "Calcium" || key.lowercased() == "ca")) ||
-                       (displayName == "Zinc" && (key == "Zinc" || key.lowercased() == "zn")) ||
-                       (displayName == "Folate" && (key == "Folate" || key.contains("Folic") || key.contains("B9")))
-            }
-            
-            guard let key = matchingKey,
-                  let totalAmount = nutrientTotals[key],
-                  let micronutrient = MicronutrientData.getAllNutrients().first(where: { $0.name == key }) else {
-                // Return 0 if no data
-                return NutrientInfo(name: displayName, percentage: 0.0, color: color)
-            }
-            
-            // Calculate percentage of RDA (cap at 100%)
-            let percentage = min((totalAmount / micronutrient.rda), 1.0)
-            
-            return NutrientInfo(name: displayName, percentage: percentage, color: color)
-        }
-    }
-    
-    // MARK: - Helper Methods
-    
+}
+
+// MARK: - Helper Methods
+
+extension NutritionDashboardView {
     private func getMealType(for window: MealWindow) -> String {
         let hour = Calendar.current.component(.hour, from: window.startTime)
         
