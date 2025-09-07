@@ -14,7 +14,6 @@ struct NutritionDashboardView: View {
     @StateObject private var checkInManager = CheckInManager.shared
     @StateObject private var timeProvider = TimeProvider.shared
     
-    @State private var selectedView: DashboardView = .now
     @State private var ringAnimations = RingAnimationState()
     @State private var refreshing = false
     @State private var infoPopupData: InfoPopupData? = nil
@@ -24,10 +23,6 @@ struct NutritionDashboardView: View {
         let description: String
         let color: Color
         let position: CGPoint
-    }
-    
-    enum DashboardView {
-        case now, today, week, insights
     }
     
     enum RingSegment {
@@ -48,30 +43,64 @@ struct NutritionDashboardView: View {
             ZStack {
                 Color.nutriSyncBackground.ignoresSafeArea()
                 
-                VStack(spacing: 0) {
-                    // Header with tabs
-                    headerSection
-                    
-                    // Main content
-                    ScrollView(showsIndicators: false) {
-                        VStack(spacing: 20) {
-                            switch selectedView {
-                            case .now:
-                                nowView
-                            case .today:
-                                todayView
-                            case .week:
-                                weekView
-                            case .insights:
-                                insightsView
-                            }
+                // Main content - single scrollable view
+                ScrollView(showsIndicators: false) {
+                    if viewModel.isLoading {
+                        // Loading skeleton
+                        loadingContent
+                    } else {
+                        VStack(spacing: 0) {
+                            // Header section
+                            headerSection
+                            
+                            // Main performance content
+                            VStack(spacing: PerformanceDesignSystem.cardSpacing) {
+                                // Hero: Three performance pillars
+                                heroSection
+                                
+                                // Current window card (if active)
+                                if let activeWindow = viewModel.mealWindows.first(where: { window in
+                                    let now = TimeProvider.shared.currentTime
+                                    return now >= window.startTime && now <= window.endTime
+                                }) {
+                                    CurrentWindowCard(window: activeWindow, viewModel: viewModel)
+                                        .animation(PerformanceDesignSystem.springAnimation, value: activeWindow.id)
+                                        .transition(.opacity.combined(with: .move(edge: .top)))
+                                }
+                                
+                                // Next window card
+                                if let nextWindow = viewModel.mealWindows.first(where: { $0.startTime > TimeProvider.shared.currentTime }) {
+                                    NextWindowCard(window: nextWindow)
+                                        .animation(PerformanceDesignSystem.springAnimation, value: nextWindow.id)
+                                        .transition(.opacity.combined(with: .move(edge: .top)))
+                                }
+                                
+                                // Insight card
+                                if let topInsight = viewModel.insights.first {
+                                    PerformanceInsightCard(
+                                        insight: topInsight.message,
+                                        action: topInsight.title.contains("Alert") ? "Fix Now" : nil
+                                    )
+                                    .animation(PerformanceDesignSystem.springAnimation, value: topInsight.id)
+                                    .transition(.opacity.combined(with: .scale(scale: 0.95)))
+                                }
+                                
+                                // Current metrics
+                                liveMetricsGrid
+                            
+                            // Daily macros
+                            dailyMacrosSection
+                            
+                            // Nutrient breakdown
+                            nutrientBreakdownSection
                         }
                         .padding(.horizontal, 16)
                         .padding(.bottom, 100)
                     }
-                    .refreshable {
-                        await refresh()
                     }
+                }
+                .refreshable {
+                    await refresh()
                 }
                 
                 // Info popup overlay
@@ -89,238 +118,144 @@ struct NutritionDashboardView: View {
         }
     }
     
+    // MARK: - Hero Section
+    
+    private var heroSection: some View {
+        HStack(spacing: PerformanceDesignSystem.cardSpacing) {
+            PerformancePillarCard(
+                title: "Timing",
+                value: Int(timingPercentage),
+                trend: .up,
+                trendValue: "+12%",
+                status: determineStatus(for: timingPercentage),
+                message: getTimingMessage(for: timingPercentage)
+            )
+            .animation(PerformanceDesignSystem.springAnimation, value: timingPercentage)
+            .transition(.opacity.combined(with: .scale(scale: 0.98)))
+            
+            PerformancePillarCard(
+                title: "Nutrients",
+                value: Int(nutrientPercentage),
+                trend: .down,
+                trendValue: "-5%",
+                status: determineStatus(for: nutrientPercentage),
+                message: getNutrientMessage(for: nutrientPercentage)
+            )
+            .animation(PerformanceDesignSystem.springAnimation, value: nutrientPercentage)
+            .transition(.opacity.combined(with: .scale(scale: 0.98)))
+            
+            PerformancePillarCard(
+                title: "Adherence",
+                value: Int(adherencePercentage),
+                trend: .stable,
+                trendValue: "0%",
+                status: determineStatus(for: adherencePercentage),
+                message: getAdherenceMessage(for: adherencePercentage)
+            )
+            .animation(PerformanceDesignSystem.springAnimation, value: adherencePercentage)
+            .transition(.opacity.combined(with: .scale(scale: 0.98)))
+        }
+    }
+    
+    private func determineStatus(for percentage: Double) -> PerformancePillarCard.PerformanceStatus {
+        if percentage >= 80 {
+            return .excellent
+        } else if percentage >= 60 {
+            return .good
+        } else {
+            return .needsWork
+        }
+    }
+    
+    private func getTimingMessage(for percentage: Double) -> String {
+        if percentage >= 80 {
+            return "On track today"
+        } else if percentage >= 60 {
+            return "Stay consistent"
+        } else {
+            return "Check schedule"
+        }
+    }
+    
+    private func getNutrientMessage(for percentage: Double) -> String {
+        if percentage >= 80 {
+            return "Great balance"
+        } else if percentage >= 60 {
+            return "Add protein"
+        } else {
+            return "Focus nutrients"
+        }
+    }
+    
+    private func getAdherenceMessage(for percentage: Double) -> String {
+        if percentage >= 80 {
+            return "Strong week"
+        } else if percentage >= 60 {
+            return "Building habits"
+        } else {
+            return "Start fresh"
+        }
+    }
+    
+    // MARK: - Loading State
+    
+    private var loadingContent: some View {
+        VStack(spacing: PerformanceDesignSystem.cardSpacing) {
+            // Header skeleton
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color.white.opacity(0.05))
+                .frame(height: 60)
+                .shimmering()
+            
+            // Hero cards skeleton
+            HStack(spacing: PerformanceDesignSystem.cardSpacing) {
+                ForEach(0..<3, id: \.self) { _ in
+                    RoundedRectangle(cornerRadius: PerformanceDesignSystem.cornerRadius)
+                        .fill(Color.white.opacity(0.05))
+                        .frame(height: 100)
+                        .shimmering()
+                }
+            }
+            
+            // Metric cards skeleton
+            ForEach(0..<3, id: \.self) { _ in
+                RoundedRectangle(cornerRadius: PerformanceDesignSystem.cornerRadius)
+                    .fill(Color.white.opacity(0.05))
+                    .frame(height: 80)
+                    .shimmering()
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 20)
+    }
+    
     // MARK: - Header Section
     
     private var headerSection: some View {
-        VStack(spacing: 12) {
-            // Centered title with settings button
-            ZStack {
-                // Settings button on the right
-                HStack {
-                    Spacer()
-                    
-                    Button(action: { showDeveloperDashboard = true }) {
-                        Image(systemName: "gearshape.fill")
-                            .font(.system(size: 20))
-                            .foregroundColor(.white.opacity(0.6))
-                            .frame(width: 36, height: 36)
-                            .background(Color.white.opacity(0.1))
-                            .clipShape(Circle())
-                    }
-                }
+        ZStack {
+            // Settings button on the right
+            HStack {
+                Spacer()
                 
-                // Centered title
-                Text("Performance")
-                    .font(.system(size: 24, weight: .bold))
-                    .foregroundColor(.white)
-            }
-            .padding(.horizontal, 24)
-            
-            
-            // View selector tabs
-            viewSelector
-                .padding(.horizontal, 24)
-        }
-    }
-    
-    private var viewSelector: some View {
-        HStack(spacing: 0) {
-            ForEach([DashboardView.now, .today, .week, .insights], id: \.self) { view in
-                Button(action: { 
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        selectedView = view
-                    }
-                }) {
-                    VStack(spacing: 4) {
-                        Text(viewTitle(for: view))
-                            .font(.system(size: 13, weight: selectedView == view ? .semibold : .regular))
-                            .foregroundColor(selectedView == view ? .white : .nutriSyncTextSecondary)
-                        
-                        Rectangle()
-                            .fill(selectedView == view ? Color.nutriSyncAccent : Color.clear)
-                            .frame(height: 2)
-                            .animation(.easeInOut(duration: 0.2), value: selectedView)
-                    }
-                    .frame(maxWidth: .infinity)
+                Button(action: { showDeveloperDashboard = true }) {
+                    Image(systemName: "gearshape.fill")
+                        .font(.system(size: 20))
+                        .foregroundColor(PerformanceDesignSystem.textSecondary)
+                        .frame(width: 36, height: 36)
+                        .background(PerformanceDesignSystem.cardBorder)
+                        .clipShape(Circle())
                 }
             }
+            
+            // Centered title
+            Text("Performance")
+                .font(.system(size: 24, weight: .bold))
+                .foregroundColor(PerformanceDesignSystem.textPrimary)
         }
+        .padding(.horizontal, 24)
+        .padding(.vertical, 16)
     }
     
-    private func viewTitle(for view: DashboardView) -> String {
-        switch view {
-        case .now: return "NOW"
-        case .today: return "TODAY"
-        case .week: return "WEEK"
-        case .insights: return "INSIGHTS"
-        }
-    }
-    
-    // MARK: - NOW View
-    
-    private var nowView: some View {
-        VStack(spacing: 24) {
-            // Activity Rings
-            activityRingsSection
-            
-            // Live Metrics Grid
-            liveMetricsGrid
-            
-            // Current Window Status
-            currentWindowCard
-            
-            // Quick Actions
-            quickActionsRow
-        }
-    }
-    
-    private var activityRingsSection: some View {
-        VStack(spacing: 20) {
-            // Three concentric activity rings
-            ZStack {
-                // Timing Ring (Outer)
-                AppleStyleRing(
-                    progress: ringAnimations.timingProgress,
-                    diameter: 260,
-                    lineWidth: 24,
-                    backgroundColor: Color(hex: "FF3B30").opacity(0.2),
-                    foregroundColors: [Color(hex: "FF3B30"), Color(hex: "FF6B6B")],
-                    icon: "clock.fill",
-                    iconAngle: 0
-                )
-                .animation(.spring(response: 1.0, dampingFraction: 0.8), value: ringAnimations.timingProgress)
-                
-                // Nutrients Ring (Middle)
-                AppleStyleRing(
-                    progress: ringAnimations.nutrientProgress,
-                    diameter: 210,
-                    lineWidth: 24,
-                    backgroundColor: Color(hex: "34C759").opacity(0.2),
-                    foregroundColors: [Color(hex: "34C759"), Color(hex: "5EDD79")],
-                    icon: "leaf.fill",
-                    iconAngle: 0
-                )
-                .animation(.spring(response: 1.0, dampingFraction: 0.8).delay(0.1), value: ringAnimations.nutrientProgress)
-                
-                // Adherence Ring (Inner)
-                AppleStyleRing(
-                    progress: ringAnimations.adherenceProgress,
-                    diameter: 160,
-                    lineWidth: 24,
-                    backgroundColor: Color(hex: "007AFF").opacity(0.2),
-                    foregroundColors: [Color(hex: "007AFF"), Color(hex: "4FA0FF")],
-                    icon: "checkmark.circle.fill",
-                    iconAngle: 0
-                )
-                .animation(.spring(response: 1.0, dampingFraction: 0.8).delay(0.2), value: ringAnimations.adherenceProgress)
-                
-                // Center metrics with subtle glass background
-                ZStack {
-                    // Glass circle
-                    Circle()
-                        .fill(Color.white.opacity(0.03))
-                        .frame(width: 138, height: 138)
-                        .overlay(
-                            Circle()
-                                .stroke(Color.white.opacity(0.06), lineWidth: 1)
-                        )
-                        .shadow(color: .black.opacity(0.4), radius: 12, x: 0, y: 6)
-                    
-                    VStack(spacing: 6) {
-                        Text("\(totalPercentage)%")
-                            .font(.system(size: 44, weight: .bold, design: .rounded))
-                            .foregroundColor(.white)
-                            .monospacedDigit()
-                        
-                        Text("Overall")
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundColor(.white.opacity(0.8))
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 4)
-                            .background(
-                                Capsule().fill(Color.white.opacity(0.06))
-                            )
-                    }
-                }
-            }
-            .frame(height: 300)
-            
-            // Ring labels with info buttons
-            HStack(spacing: 20) {
-                ringLabelWithInfo(
-                    color: Color(hex: "FF3B30"), 
-                    label: "TIMING", 
-                    value: Int(timingPercentage), 
-                    icon: "clock.fill",
-                    infoTitle: "Timing Score",
-                    infoDescription: "Measures how well you eat within your scheduled windows:\n\n• 100% = Meal within window\n• -10% per 30min early\n• -15% per 30min late\n\nEating on time optimizes digestion, energy, and circadian rhythm."
-                )
-                
-                ringLabelWithInfo(
-                    color: Color(hex: "34C759"), 
-                    label: "NUTRIENTS", 
-                    value: Int(nutrientPercentage), 
-                    icon: "leaf.fill",
-                    infoTitle: "Nutrient Score",
-                    infoDescription: "Complete nutrition assessment:\n\n• 20% - Calorie accuracy\n• 30% - Macro balance (protein, fat, carbs)\n• 50% - Micronutrient coverage (vitamins & minerals)\n\nBalanced nutrition supports all body functions."
-                )
-                
-                ringLabelWithInfo(
-                    color: Color(hex: "007AFF"), 
-                    label: "ADHERENCE", 
-                    value: Int(adherencePercentage), 
-                    icon: "checkmark.circle.fill",
-                    infoTitle: "Adherence Score",
-                    infoDescription: "How well you follow your plan:\n\n• 40% - Meal frequency\n• 30% - Window utilization\n• 30% - Consistent spacing (3-5hrs)\n\nConsistency builds sustainable habits."
-                )
-            }
-        }
-        .padding(.vertical, 20)
-    }
-    
-    private func ringLabelWithInfo(
-        color: Color, 
-        label: String, 
-        value: Int, 
-        icon: String,
-        infoTitle: String,
-        infoDescription: String
-    ) -> some View {
-        HStack(spacing: 8) {
-            Image(systemName: icon)
-                .font(.system(size: 14, weight: .medium))
-                .foregroundColor(color)
-            
-            VStack(alignment: .leading, spacing: 0) {
-                HStack(spacing: 4) {
-                    Text(label)
-                        .font(.system(size: 10, weight: .medium))
-                        .foregroundColor(.nutriSyncTextSecondary)
-                    
-                    GeometryReader { geo in
-                        Button(action: { 
-                            let frame = geo.frame(in: .global)
-                            infoPopupData = InfoPopupData(
-                                title: infoTitle,
-                                description: infoDescription,
-                                color: color,
-                                position: CGPoint(x: frame.midX, y: frame.midY)
-                            )
-                        }) {
-                            Image(systemName: "info.circle.fill")
-                                .font(.system(size: 10))
-                                .foregroundColor(.nutriSyncTextTertiary)
-                        }
-                    }
-                    .frame(width: 12, height: 12)
-                }
-                
-                Text("\(value)%")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(.white)
-            }
-        }
-    }
     
     private var liveMetricsGrid: some View {
         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
@@ -342,26 +277,6 @@ struct NutritionDashboardView: View {
                 progress: Double(nutrientsHit) / 18.0,
                 color: .green,
                 icon: "leaf.fill"
-            )
-            
-            // Fasting Timer
-            MetricCard(
-                title: "FASTING TIME",
-                mainValue: fastingTime,
-                subValue: fastingStatus,
-                progress: fastingProgress,
-                color: .purple,
-                icon: "timer"
-            )
-            
-            // Streak Counter
-            MetricCard(
-                title: "STREAK",
-                mainValue: "\(viewModel.currentStreak) days",
-                subValue: "Personal best: 14",
-                progress: Double(viewModel.currentStreak) / 14.0,
-                color: .orange,
-                icon: "flame.fill"
             )
         }
     }
@@ -523,247 +438,7 @@ struct NutritionDashboardView: View {
         .frame(height: 16)
     }
     
-    private var quickActionsRow: some View {
-        HStack(spacing: 12) {
-            QuickActionButton(
-                icon: "plus.circle.fill",
-                label: "Log Meal",
-                color: .nutriSyncAccent
-            ) {
-                NotificationCenter.default.post(name: .switchToScanTab, object: nil)
-            }
-            
-            QuickActionButton(
-                icon: "chart.line.uptrend.xyaxis",
-                label: "View Trends",
-                color: .blue
-            ) {
-                withAnimation {
-                    selectedView = .week
-                }
-            }
-            
-            QuickActionButton(
-                icon: "lightbulb.fill",
-                label: "Get Tips",
-                color: .orange
-            ) {
-                withAnimation {
-                    selectedView = .insights
-                }
-            }
-        }
-    }
     
-    struct QuickActionButton: View {
-        let icon: String
-        let label: String
-        let color: Color
-        let action: () -> Void
-        
-        var body: some View {
-            Button(action: action) {
-                VStack(spacing: 8) {
-                    Image(systemName: icon)
-                        .font(.system(size: 24))
-                        .foregroundColor(color)
-                    
-                    Text(label)
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundColor(.white)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
-                .background(color.opacity(0.1))
-                .cornerRadius(12)
-            }
-        }
-    }
-    
-    // MARK: - TODAY View
-    
-    private var todayView: some View {
-        VStack(spacing: 20) {
-            // Daily summary card
-            dailySummaryCard
-            
-            // Daily macros (replacing meal timeline)
-            dailyMacrosSection
-            
-            // Nutrient breakdown
-            nutrientBreakdownSection
-        }
-    }
-    
-    private var dailySummaryCard: some View {
-        VStack(spacing: 16) {
-            HStack {
-                Text("Today's Summary")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundColor(.white)
-                Spacer()
-                Text(formattedDate)
-                    .font(.system(size: 14))
-                    .foregroundColor(.nutriSyncTextSecondary)
-            }
-            
-            // Summary metrics
-            HStack(spacing: 20) {
-                SummaryMetric(label: "Meals", value: "\(viewModel.todaysMeals.count)", icon: "fork.knife")
-                SummaryMetric(label: "Windows Hit", value: "\(windowsHit)/\(totalWindows)", icon: "clock.fill")
-                SummaryMetric(label: "Calories", value: "\(totalCalories)", icon: "flame.fill")
-                SummaryMetric(label: "Score", value: "\(todayScore)", icon: "star.fill")
-            }
-        }
-        .padding(20)
-        .background(Color.white.opacity(0.03))
-        .cornerRadius(16)
-    }
-    
-    struct SummaryMetric: View {
-        let label: String
-        let value: String
-        let icon: String
-        
-        var body: some View {
-            VStack(spacing: 4) {
-                Image(systemName: icon)
-                    .font(.system(size: 16))
-                    .foregroundColor(.nutriSyncAccent)
-                Text(value)
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundColor(.white)
-                Text(label)
-                    .font(.system(size: 10))
-                    .foregroundColor(.nutriSyncTextSecondary)
-            }
-            .frame(maxWidth: .infinity)
-        }
-    }
-    
-    // MARK: - WEEK View
-    
-    private var weekView: some View {
-        VStack(spacing: 20) {
-            // Week overview
-            weekOverviewCard
-            
-            // Trend charts
-            trendChartsSection
-            
-            // Weekly achievements
-            weeklyAchievementsSection
-        }
-    }
-    
-    private var weekOverviewCard: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("7-Day Overview")
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundColor(.white)
-            
-            // Ring progress comparison
-            VStack(spacing: 12) {
-                WeekProgressBar(label: "Timing", values: weekTimingValues, color: .blue)
-                WeekProgressBar(label: "Nutrients", values: weekNutrientValues, color: .green)
-                WeekProgressBar(label: "Adherence", values: weekAdherenceValues, color: .orange)
-            }
-        }
-        .padding(20)
-        .background(Color.white.opacity(0.03))
-        .cornerRadius(16)
-    }
-    
-    struct WeekProgressBar: View {
-        let label: String
-        let values: [Double]
-        let color: Color
-        
-        var body: some View {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    Text(label)
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(.white)
-                    Spacer()
-                    Text("\(Int(values.reduce(0, +) / Double(values.count)))% avg")
-                        .font(.system(size: 12))
-                        .foregroundColor(.nutriSyncTextSecondary)
-                }
-                
-                HStack(spacing: 4) {
-                    ForEach(0..<7) { day in
-                        VStack(spacing: 4) {
-                            RoundedRectangle(cornerRadius: 2)
-                                .fill(color.opacity(0.2))
-                                .frame(height: 40)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 2)
-                                        .fill(color)
-                                        .frame(height: 40 * (values.indices.contains(day) ? values[day] : 0))
-                                        .frame(maxHeight: .infinity, alignment: .bottom)
-                                )
-                            
-                            Text(dayLabel(for: day))
-                                .font(.system(size: 9))
-                                .foregroundColor(.nutriSyncTextTertiary)
-                        }
-                    }
-                }
-            }
-        }
-        
-        func dayLabel(for day: Int) -> String {
-            ["M", "T", "W", "T", "F", "S", "S"][day]
-        }
-    }
-    
-    // MARK: - INSIGHTS View
-    
-    private var insightsView: some View {
-        VStack(spacing: 20) {
-            ForEach(insights, id: \.title) { insight in
-                InsightCard(insight: insight)
-            }
-        }
-    }
-    
-    struct InsightCard: View {
-        let insight: NutritionInsight
-        
-        var body: some View {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack {
-                    Image(systemName: insight.icon)
-                        .font(.system(size: 20))
-                        .foregroundColor(insight.color)
-                    
-                    Text(insight.title)
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(.white)
-                    
-                    Spacer()
-                }
-                
-                Text(insight.description)
-                    .font(.system(size: 14))
-                    .foregroundColor(.nutriSyncTextSecondary)
-                    .lineSpacing(4)
-                
-                if let action = insight.actionText {
-                    Button(action: {}) {
-                        Text(action)
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(insight.color)
-                    }
-                    .padding(.top, 4)
-                }
-            }
-            .padding(20)
-            .background(Color.nutriSyncElevated)
-            .cornerRadius(16)
-        }
-    }
     
     // MARK: - Helpers
     
@@ -783,12 +458,7 @@ struct NutritionDashboardView: View {
     }
     
     private func animateRings() {
-        withAnimation(.easeOut(duration: 1.5)) {
-            ringAnimations.timingProgress = timingPercentage / 100
-            ringAnimations.nutrientProgress = nutrientPercentage / 100
-            ringAnimations.adherenceProgress = adherencePercentage / 100
-            ringAnimations.animating = true
-        }
+        // No longer needed - rings removed
     }
     
     private func refresh() async {
@@ -802,6 +472,7 @@ struct NutritionDashboardView: View {
     // MARK: - Computed Properties
     
     private var timingPercentage: Double {
+        // More forgiving thresholds for better user experience
         // Calculate based on meal timing accuracy for each window
         var totalScore: Double = 0
         var relevantWindows = 0
@@ -818,28 +489,24 @@ struct NutritionDashboardView: View {
                     // Perfect timing - within window
                     windowScore = 1.0
                 } else if mealTime < window.startTime {
-                    // Early logging - give partial credit based on how early
+                    // Early logging - more forgiving
                     let minutesEarly = window.startTime.timeIntervalSince(mealTime) / 60
-                    if minutesEarly <= 15 {
-                        windowScore = 0.9 // 90% for up to 15 min early
-                    } else if minutesEarly <= 30 {
-                        windowScore = 0.7 // 70% for 15-30 min early
+                    if minutesEarly <= 30 {
+                        windowScore = 0.85 // 85% for up to 30 min early
                     } else if minutesEarly <= 60 {
-                        windowScore = 0.5 // 50% for 30-60 min early
+                        windowScore = 0.7 // 70% for 30-60 min early
                     } else {
-                        windowScore = 0.3 // 30% for over 60 min early
+                        windowScore = 0.5 // 50% for over 60 min early
                     }
                 } else {
-                    // Late logging - penalize more than early
+                    // Late logging - same forgiving thresholds
                     let minutesLate = mealTime.timeIntervalSince(window.endTime) / 60
-                    if minutesLate <= 15 {
-                        windowScore = 0.8 // 80% for up to 15 min late
-                    } else if minutesLate <= 30 {
-                        windowScore = 0.5 // 50% for 15-30 min late
+                    if minutesLate <= 30 {
+                        windowScore = 0.85 // 85% for up to 30 min late
                     } else if minutesLate <= 60 {
-                        windowScore = 0.3 // 30% for 30-60 min late
+                        windowScore = 0.7 // 70% for 30-60 min late
                     } else {
-                        windowScore = 0.1 // 10% for over 60 min late
+                        windowScore = 0.5 // 50% for over 60 min late
                     }
                 }
                 
@@ -867,15 +534,25 @@ struct NutritionDashboardView: View {
         // Calculate comprehensive nutrition score
         var scores: [Double] = []
         
+        // Check if there's an active window (don't penalize for in-progress meals)
+        let now = TimeProvider.shared.currentTime
+        let hasActiveWindow = viewModel.mealWindows.contains { window in
+            now >= window.startTime && now <= window.endTime
+        }
+        
+        // If there's an active window and day isn't complete, be more lenient
+        let leniencyFactor = hasActiveWindow ? 1.2 : 1.0
+        
         // 1. Calorie accuracy (20% weight)
-        let calorieScore = min(dailyCalorieProgress, 1.2) // Allow up to 120%
+        let adjustedCalorieProgress = dailyCalorieProgress * leniencyFactor
+        let calorieScore = min(adjustedCalorieProgress, 1.2) // Allow up to 120%
         let calorieAccuracy = 1.0 - abs(1.0 - calorieScore) // Penalize over/under
         scores.append(calorieAccuracy * 0.2)
         
         // 2. Macro balance (30% weight)
-        let proteinProgress = Double(totalProtein) / Double(max(dailyProteinTarget, 1))
-        let fatProgress = Double(totalFat) / Double(max(dailyFatTarget, 1))
-        let carbProgress = Double(totalCarbs) / Double(max(dailyCarbsTarget, 1))
+        let proteinProgress = Double(totalProtein) / Double(max(dailyProteinTarget, 1)) * leniencyFactor
+        let fatProgress = Double(totalFat) / Double(max(dailyFatTarget, 1)) * leniencyFactor
+        let carbProgress = Double(totalCarbs) / Double(max(dailyCarbsTarget, 1)) * leniencyFactor
         
         let proteinScore = min(proteinProgress, 1.2)
         let fatScore = min(fatProgress, 1.2)
@@ -898,23 +575,34 @@ struct NutritionDashboardView: View {
     }
     
     private var adherencePercentage: Double {
-        // Calculate plan adherence score
+        // Calculate plan adherence score - only count required windows
         var adherenceFactors: [Double] = []
         
-        // 1. Meal frequency (40% weight)
+        // Filter for required windows only (exclude optional snacks)
+        let requiredWindows = viewModel.mealWindows.filter { window in
+            // Consider a window required if it's a main meal (breakfast, lunch, dinner)
+            // or if it contains significant calories (>200)
+            let isMainMeal = window.name.lowercased().contains("breakfast") ||
+                           window.name.lowercased().contains("lunch") ||
+                           window.name.lowercased().contains("dinner")
+            let hasSignificantCalories = window.targetCalories > 200
+            return isMainMeal || hasSignificantCalories
+        }
+        
+        // 1. Meal frequency (40% weight) - based on required windows only
         let mealsLogged = viewModel.todaysMeals.count
-        let targetMeals = viewModel.mealWindows.count
-        let mealFrequencyScore = targetMeals > 0 ? min(Double(mealsLogged) / Double(targetMeals), 1.0) : 0
+        let targetMeals = requiredWindows.count
+        let mealFrequencyScore = targetMeals > 0 ? min(Double(mealsLogged) / Double(targetMeals), 1.0) : 1.0
         adherenceFactors.append(mealFrequencyScore * 0.4)
         
-        // 2. Window utilization (30% weight)
-        let windowsUsed = viewModel.mealWindows.filter { window in
+        // 2. Window utilization (30% weight) - for required windows
+        let windowsUsed = requiredWindows.filter { window in
             viewModel.todaysMeals.contains { meal in
                 let windowRange = window.startTime.addingTimeInterval(-3600)...window.endTime.addingTimeInterval(3600)
                 return windowRange.contains(meal.timestamp)
             }
         }.count
-        let windowUtilization = targetMeals > 0 ? Double(windowsUsed) / Double(targetMeals) : 0
+        let windowUtilization = targetMeals > 0 ? Double(windowsUsed) / Double(targetMeals) : 1.0
         adherenceFactors.append(windowUtilization * 0.3)
         
         // 3. Consistency score (30% weight)
@@ -996,9 +684,9 @@ struct NutritionDashboardView: View {
                 let minutes = Int((timeUntil.truncatingRemainder(dividingBy: 3600)) / 60)
                 
                 if hours > 0 {
-                    return ("Fasting", "\(hours)h \(minutes)m until next", 0)
+                    return ("Break", "\(hours)h \(minutes)m until next", 0)
                 } else {
-                    return ("Fasting", "\(minutes)m until next", 0)
+                    return ("Break", "\(minutes)m until next", 0)
                 }
             }
             return ("No windows", "Day complete", 1.0)
@@ -1015,44 +703,6 @@ struct NutritionDashboardView: View {
         let caloriesRemaining = max(0, activeWindow.targetCalories - calories)
         
         return (getMealType(for: activeWindow), "\(minutes)m left • \(caloriesRemaining) cal", progress)
-    }
-    
-    private var fastingTime: String {
-        // Calculate time since last meal
-        if let lastMeal = viewModel.todaysMeals.last {
-            let elapsed = TimeProvider.shared.currentTime.timeIntervalSince(lastMeal.timestamp)
-            let hours = Int(elapsed / 3600)
-            let minutes = Int((elapsed.truncatingRemainder(dividingBy: 3600)) / 60)
-            
-            if hours > 0 {
-                return "\(hours)h \(minutes)m"
-            } else {
-                return "\(minutes)m"
-            }
-        }
-        return "No meals"
-    }
-    
-    private var fastingStatus: String {
-        if let lastMeal = viewModel.todaysMeals.last {
-            let elapsed = TimeProvider.shared.currentTime.timeIntervalSince(lastMeal.timestamp)
-            let hours = elapsed / 3600
-            
-            if hours >= 16 { return "Extended fast" }
-            else if hours >= 12 { return "Optimal range" }
-            else if hours >= 3 { return "Digesting" }
-            else { return "Just ate" }
-        }
-        return "Start tracking"
-    }
-    
-    private var fastingProgress: Double {
-        if let lastMeal = viewModel.todaysMeals.last {
-            let elapsed = TimeProvider.shared.currentTime.timeIntervalSince(lastMeal.timestamp)
-            let targetFast = 16.0 * 3600 // 16 hour fast target
-            return min(elapsed / targetFast, 1.0)
-        }
-        return 0
     }
     
     private var nextWindowName: String {
@@ -1460,89 +1110,6 @@ struct NutritionDashboardView: View {
         }
     }
     
-    private var weeklyAchievementsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("This Week's Achievements")
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundColor(.white)
-            
-            VStack(spacing: 8) {
-                AchievementRow(icon: "checkmark.circle.fill", text: "Hit all meal windows 3 days", color: .green)
-                AchievementRow(icon: "flame.fill", text: "7-day streak maintained", color: .orange)
-                AchievementRow(icon: "leaf.fill", text: "90% nutrient targets met", color: .nutriSyncAccent)
-            }
-        }
-        .padding(20)
-        .background(Color.white.opacity(0.03))
-        .cornerRadius(16)
-    }
-    
-    struct AchievementRow: View {
-        let icon: String
-        let text: String
-        let color: Color
-        
-        var body: some View {
-            HStack(spacing: 12) {
-                Image(systemName: icon)
-                    .font(.system(size: 16))
-                    .foregroundColor(color)
-                
-                Text(text)
-                    .font(.system(size: 14))
-                    .foregroundColor(.white)
-                
-                Spacer()
-            }
-        }
-    }
-    
-    private var trendChartsSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Performance Trends")
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundColor(.white)
-            
-            // Simple line chart placeholder
-            ZStack {
-                // Grid lines
-                VStack(spacing: 20) {
-                    ForEach(0..<5) { _ in
-                        Rectangle()
-                            .fill(Color.nutriSyncDivider)
-                            .frame(height: 1)
-                    }
-                }
-                
-                // Trend line
-                Path { path in
-                    let points: [CGPoint] = [
-                        CGPoint(x: 0, y: 80),
-                        CGPoint(x: 50, y: 60),
-                        CGPoint(x: 100, y: 70),
-                        CGPoint(x: 150, y: 40),
-                        CGPoint(x: 200, y: 45),
-                        CGPoint(x: 250, y: 30),
-                        CGPoint(x: 300, y: 20)
-                    ]
-                    
-                    path.move(to: points[0])
-                    for point in points.dropFirst() {
-                        path.addLine(to: point)
-                    }
-                }
-                .stroke(LinearGradient(
-                    colors: [Color.nutriSyncAccent, Color.nutriSyncAccent.opacity(0.6)],
-                    startPoint: .leading,
-                    endPoint: .trailing
-                ), lineWidth: 2)
-            }
-            .frame(height: 100)
-        }
-        .padding(20)
-        .background(Color.white.opacity(0.03))
-        .cornerRadius(16)
-    }
     
     // MARK: - Data
     
@@ -1687,94 +1254,6 @@ struct NutrientInfo {
     let color: Color
 }
 
-// MARK: - Apple Style Ring Component
-
-struct AppleStyleRing: View {
-    let progress: Double
-    let diameter: CGFloat
-    let lineWidth: CGFloat
-    let backgroundColor: Color
-    let foregroundColors: [Color]
-    let icon: String
-    let iconAngle: Double
-    
-    var body: some View {
-        ZStack {
-            // Background ring (dimmed more for contrast) with ticks
-            Circle()
-                .stroke(backgroundColor.opacity(0.22), lineWidth: lineWidth)
-                .frame(width: diameter, height: diameter)
-                .overlay(
-                    // Discrete tick marks every 10%
-                    ZStack {
-                        ForEach(0..<10, id: \.self) { index in
-                            Capsule()
-                                .fill(Color.white.opacity(0.06))
-                                .frame(width: 2, height: lineWidth * 0.9)
-                                .offset(y: -(diameter / 2))
-                                .rotationEffect(.degrees(Double(index) * 36))
-                        }
-                    }
-                )
-            
-            // Active ring with 3D effect and soft outer glow
-            Circle()
-                .trim(from: 0, to: progress)
-                .stroke(
-                    LinearGradient(
-                        colors: foregroundColors,
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
-                )
-                .frame(width: diameter, height: diameter)
-                .rotationEffect(.degrees(-90))
-                .shadow(color: foregroundColors.first?.opacity(0.45) ?? .clear, radius: 10, x: 0, y: 6)
-                .overlay(
-                    // Add highlight for 3D effect
-                    Circle()
-                        .trim(from: 0, to: progress * 0.98)
-                        .stroke(
-                            LinearGradient(
-                                colors: [
-                                    foregroundColors.last?.opacity(0.4) ?? .clear,
-                                    .clear
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            style: StrokeStyle(lineWidth: lineWidth * 0.3, lineCap: .round)
-                        )
-                        .frame(width: diameter - lineWidth, height: diameter - lineWidth)
-                        .rotationEffect(.degrees(-90))
-                        .blur(radius: 1)
-                )
-            
-            // End cap dot indicating progress head
-            Circle()
-                .fill(foregroundColors.last ?? .white)
-                .frame(width: lineWidth * 0.55, height: lineWidth * 0.55)
-                .shadow(color: (foregroundColors.last ?? .white).opacity(0.6), radius: 4, x: 0, y: 2)
-                .offset(y: -(diameter / 2))
-                .rotationEffect(.degrees(progress * 360 - 90))
-                .opacity(progress > 0.01 ? 1 : 0)
-                .animation(.easeInOut(duration: 0.35), value: progress)
-
-            // Icon at starting point (top center)
-            Image(systemName: icon)
-                .font(.system(size: lineWidth * 0.9, weight: .bold))
-                .foregroundColor(progress > 0.01 ? foregroundColors.first : backgroundColor.opacity(0.5))
-                .background(
-                    Circle()
-                        .fill(Color.nutriSyncBackground)
-                        .frame(width: lineWidth * 1.3, height: lineWidth * 1.3)
-                )
-                .offset(y: -(diameter / 2))
-                .animation(.easeInOut(duration: 0.3), value: progress)
-        }
-    }
-}
 
 // MARK: - Info Floating Card
 
@@ -1882,6 +1361,34 @@ struct InfoFloatingCard: View {
                 animateIn = true
             }
         }
+    }
+}
+
+// MARK: - Shimmering Extension
+
+extension View {
+    func shimmering() -> some View {
+        self
+            .redacted(reason: .placeholder)
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                Color.white.opacity(0.05),
+                                Color.white.opacity(0.15),
+                                Color.white.opacity(0.05)
+                            ]),
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .animation(
+                        Animation.linear(duration: 1.5)
+                            .repeatForever(autoreverses: false),
+                        value: true
+                    )
+            )
     }
 }
 

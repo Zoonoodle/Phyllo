@@ -120,43 +120,67 @@ struct SimplePerformanceView: View {
     
     private var activityRingsSection: some View {
         VStack(spacing: 20) {
-            // Three concentric activity rings
+            // Three concentric activity rings - replaced with simple placeholder circles
             ZStack {
-                // Timing Ring (Outer)
-                AppleStyleRing(
-                    progress: ringAnimations.timingProgress,
-                    diameter: 260,
-                    lineWidth: 24,
-                    backgroundColor: Color(hex: "FF3B30").opacity(0.2),
-                    foregroundColors: [Color(hex: "FF3B30"), Color(hex: "FF6B6B")],
-                    icon: "clock.fill",
-                    iconAngle: 0
-                )
-                .animation(.spring(response: 1.0, dampingFraction: 0.8), value: ringAnimations.timingProgress)
+                // Timing Ring placeholder (Outer)
+                Circle()
+                    .stroke(Color(hex: "FF3B30").opacity(0.2), lineWidth: 24)
+                    .frame(width: 260, height: 260)
+                    .overlay(
+                        Circle()
+                            .trim(from: 0, to: ringAnimations.timingProgress)
+                            .stroke(
+                                LinearGradient(
+                                    colors: [Color(hex: "FF3B30"), Color(hex: "FF6B6B")],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                style: StrokeStyle(lineWidth: 24, lineCap: .round)
+                            )
+                            .frame(width: 260, height: 260)
+                            .rotationEffect(.degrees(-90))
+                    )
+                    .animation(Animation.spring(response: 1.0, dampingFraction: 0.8), value: ringAnimations.timingProgress)
                 
-                // Nutrients Ring (Middle)
-                AppleStyleRing(
-                    progress: ringAnimations.nutrientProgress,
-                    diameter: 210,
-                    lineWidth: 24,
-                    backgroundColor: Color(hex: "34C759").opacity(0.2),
-                    foregroundColors: [Color(hex: "34C759"), Color(hex: "5EDD79")],
-                    icon: "leaf.fill",
-                    iconAngle: 0
-                )
-                .animation(.spring(response: 1.0, dampingFraction: 0.8).delay(0.1), value: ringAnimations.nutrientProgress)
+                // Nutrients Ring placeholder (Middle)
+                Circle()
+                    .stroke(Color(hex: "34C759").opacity(0.2), lineWidth: 24)
+                    .frame(width: 210, height: 210)
+                    .overlay(
+                        Circle()
+                            .trim(from: 0, to: ringAnimations.nutrientProgress)
+                            .stroke(
+                                LinearGradient(
+                                    colors: [Color(hex: "34C759"), Color(hex: "5EDD79")],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                style: StrokeStyle(lineWidth: 24, lineCap: .round)
+                            )
+                            .frame(width: 210, height: 210)
+                            .rotationEffect(.degrees(-90))
+                    )
+                    .animation(Animation.spring(response: 1.0, dampingFraction: 0.8).delay(0.1), value: ringAnimations.nutrientProgress)
                 
-                // Adherence Ring (Inner)
-                AppleStyleRing(
-                    progress: ringAnimations.adherenceProgress,
-                    diameter: 160,
-                    lineWidth: 24,
-                    backgroundColor: Color(hex: "007AFF").opacity(0.2),
-                    foregroundColors: [Color(hex: "007AFF"), Color(hex: "4FA0FF")],
-                    icon: "checkmark.circle.fill",
-                    iconAngle: 0
-                )
-                .animation(.spring(response: 1.0, dampingFraction: 0.8).delay(0.2), value: ringAnimations.adherenceProgress)
+                // Adherence Ring placeholder (Inner)
+                Circle()
+                    .stroke(Color(hex: "007AFF").opacity(0.2), lineWidth: 24)
+                    .frame(width: 160, height: 160)
+                    .overlay(
+                        Circle()
+                            .trim(from: 0, to: ringAnimations.adherenceProgress)
+                            .stroke(
+                                LinearGradient(
+                                    colors: [Color(hex: "007AFF"), Color(hex: "4FA0FF")],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                style: StrokeStyle(lineWidth: 24, lineCap: .round)
+                            )
+                            .frame(width: 160, height: 160)
+                            .rotationEffect(.degrees(-90))
+                    )
+                    .animation(Animation.spring(response: 1.0, dampingFraction: 0.8).delay(0.2), value: ringAnimations.adherenceProgress)
                 
                 // Center metrics with subtle glass background
                 ZStack {

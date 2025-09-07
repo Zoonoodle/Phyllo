@@ -13,7 +13,7 @@
 ## [0:05-0:15] INTRODUCTION
 **[ON SCREEN: Face to camera]**
 
-"Hey, I'm Brennen. I'm a solo developer building NutriSync - an AI-powered nutrition coach that focuses on WHEN you eat, not just what you eat. And today I want to share why I'm building this and give you exclusive access to the beta."
+"Hey, I'm Brennen. I'm a solo developer building NutriSync - an smart meal planner that focuses on WHEN you eat, not just what you eat. And today I want to share why I'm building this and give you exclusive access to the beta."
 
 ---
 
