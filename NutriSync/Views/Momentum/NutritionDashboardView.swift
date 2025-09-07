@@ -88,10 +88,10 @@ struct NutritionDashboardView: View {
                                 // Current metrics
                                 liveMetricsGrid
                             
-                            // Daily macros
-                            dailyMacrosSection
+                            // Overall Performance Score
+                            overallScoreCard
                             
-                            // Nutrient breakdown
+                            // Nutrient breakdown (priority 2)
                             nutrientBreakdownSection
                         }
                         .padding(.horizontal, 16)
@@ -122,38 +122,38 @@ struct NutritionDashboardView: View {
     
     private var heroSection: some View {
         HStack(spacing: PerformanceDesignSystem.cardSpacing) {
-            PerformancePillarCard(
+            PerformancePillarMiniCard(
                 title: "Timing",
-                value: Int(timingPercentage),
-                trend: .up,
-                trendValue: "+12%",
-                status: determineStatus(for: timingPercentage),
-                message: getTimingMessage(for: timingPercentage)
+                percentage: timingPercentage,
+                color: timingPercentage > 80 ? PerformanceDesignSystem.successMuted : .white.opacity(0.5),
+                detail: getTimingMessage(for: timingPercentage)
             )
             .animation(PerformanceDesignSystem.springAnimation, value: timingPercentage)
-            .transition(.opacity.combined(with: .scale(scale: 0.98)))
             
-            PerformancePillarCard(
+            PerformancePillarMiniCard(
                 title: "Nutrients",
-                value: Int(nutrientPercentage),
-                trend: .down,
-                trendValue: "-5%",
-                status: determineStatus(for: nutrientPercentage),
-                message: getNutrientMessage(for: nutrientPercentage)
+                percentage: nutrientPercentage,
+                color: nutrientColorGradient,
+                detail: getNutrientMessage(for: nutrientPercentage)
             )
             .animation(PerformanceDesignSystem.springAnimation, value: nutrientPercentage)
-            .transition(.opacity.combined(with: .scale(scale: 0.98)))
             
-            PerformancePillarCard(
+            PerformancePillarMiniCard(
                 title: "Adherence",
-                value: Int(adherencePercentage),
-                trend: .stable,
-                trendValue: "0%",
-                status: determineStatus(for: adherencePercentage),
-                message: getAdherenceMessage(for: adherencePercentage)
+                percentage: adherencePercentage,
+                color: .blue.opacity(0.8),
+                detail: getAdherenceMessage(for: adherencePercentage)
             )
             .animation(PerformanceDesignSystem.springAnimation, value: adherencePercentage)
-            .transition(.opacity.combined(with: .scale(scale: 0.98)))
+        }
+    }
+    
+    private var nutrientColorGradient: Color {
+        switch nutrientPercentage {
+        case 0..<30: return .red.opacity(0.6)
+        case 30..<60: return .orange.opacity(0.6)
+        case 60..<80: return .yellow.opacity(0.6)
+        default: return PerformanceDesignSystem.successMuted
         }
     }
     
@@ -171,9 +171,9 @@ struct NutritionDashboardView: View {
         if percentage >= 80 {
             return "On track today"
         } else if percentage >= 60 {
-            return "Stay consistent"
+            return "Minor adjustments"
         } else {
-            return "Check schedule"
+            return "Room to grow"
         }
     }
     
@@ -181,9 +181,9 @@ struct NutritionDashboardView: View {
         if percentage >= 80 {
             return "Great balance"
         } else if percentage >= 60 {
-            return "Add protein"
+            return "Add variety"
         } else {
-            return "Focus nutrients"
+            return "Building diversity"
         }
     }
     
@@ -191,9 +191,9 @@ struct NutritionDashboardView: View {
         if percentage >= 80 {
             return "Strong week"
         } else if percentage >= 60 {
-            return "Building habits"
+            return "Building momentum"
         } else {
-            return "Start fresh"
+            return "Learning opportunity"
         }
     }
     
@@ -232,28 +232,11 @@ struct NutritionDashboardView: View {
     // MARK: - Header Section
     
     private var headerSection: some View {
-        ZStack {
-            // Settings button on the right
-            HStack {
-                Spacer()
-                
-                Button(action: { showDeveloperDashboard = true }) {
-                    Image(systemName: "gearshape.fill")
-                        .font(.system(size: 20))
-                        .foregroundColor(PerformanceDesignSystem.textSecondary)
-                        .frame(width: 36, height: 36)
-                        .background(PerformanceDesignSystem.cardBorder)
-                        .clipShape(Circle())
-                }
-            }
-            
-            // Centered title
-            Text("Performance")
-                .font(.system(size: 24, weight: .bold))
-                .foregroundColor(PerformanceDesignSystem.textPrimary)
-        }
-        .padding(.horizontal, 24)
-        .padding(.vertical, 16)
+        PerformanceHeaderView(
+            showDeveloperDashboard: $showDeveloperDashboard,
+            meals: viewModel.todaysMeals,
+            userProfile: viewModel.userProfile
+        )
     }
     
     
@@ -875,75 +858,44 @@ struct NutritionDashboardView: View {
         Int((timingPercentage + nutrientPercentage + adherencePercentage) / 3)
     }
     
-    private var dailyMacrosSection: some View {
-        VStack(spacing: 24) {
-            // Title
-            HStack {
-                Text("Daily Macros")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundColor(.white)
-                Spacer()
+    // Overall Performance Score Card
+    private var overallScoreCard: some View {
+        PerformanceCard {
+            VStack(spacing: 12) {
+                Text("Overall Performance")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.7))
+                
+                Text("\(todayScore)%")
+                    .font(.system(size: 48, weight: .bold))
+                    .foregroundColor(scoreColor)
+                
+                Text(scoreMessage)
+                    .font(.system(size: 14))
+                    .foregroundColor(.white.opacity(0.6))
+                    .multilineTextAlignment(.center)
             }
-            
-            // Calorie ring with more top padding
-            ZStack {
-                // Background ring with open bottom
-                Circle()
-                    .trim(from: 0.12, to: 0.88)
-                    .stroke(Color.white.opacity(0.1), lineWidth: 6)
-                    .frame(width: 180, height: 180)
-                    .rotationEffect(.degrees(90))
-                
-                // Progress ring with open bottom and tapered ends
-                Circle()
-                    .trim(from: 0, to: min(dailyCalorieProgress * 0.76, 0.76))
-                    .stroke(
-                        LinearGradient(colors: [Color.nutriSyncAccent, Color.nutriSyncAccent.opacity(0.8)], startPoint: .leading, endPoint: .trailing),
-                        style: StrokeStyle(lineWidth: 6, lineCap: .round)
-                    )
-                    .frame(width: 180, height: 180)
-                    .rotationEffect(.degrees(126))
-                    .animation(.spring(response: 0.6, dampingFraction: 0.8), value: dailyCalorieProgress)
-                
-                // Center text
-                VStack(spacing: 4) {
-                    Text("\(Int(dailyCalorieProgress * 100))% Complete")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(.white)
-                    
-                    Text("\(totalCalories) / \(dailyCalorieTarget) cal")
-                        .font(.system(size: 14))
-                        .foregroundColor(.white.opacity(0.7))
-                }
-            }
-            
-            // Macro bars with proper padding
-            HStack(spacing: 20) {
-                MacroProgressBar(
-                    title: "Protein",
-                    consumed: totalProtein,
-                    target: dailyProteinTarget,
-                    color: .orange
-                )
-                
-                MacroProgressBar(
-                    title: "Fat",
-                    consumed: totalFat,
-                    target: dailyFatTarget,
-                    color: .yellow
-                )
-                
-                MacroProgressBar(
-                    title: "Carbs",
-                    consumed: totalCarbs,
-                    target: dailyCarbsTarget,
-                    color: .blue
-                )
-            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 20)
         }
-        .padding(20)
-        .background(Color.white.opacity(0.03))
-        .cornerRadius(16)
+    }
+    
+    private var scoreColor: Color {
+        switch todayScore {
+        case 0..<40: return .red.opacity(0.8)
+        case 40..<60: return .orange.opacity(0.8)
+        case 60..<80: return .yellow.opacity(0.8)
+        default: return PerformanceDesignSystem.successMuted
+        }
+    }
+    
+    private var scoreMessage: String {
+        switch todayScore {
+        case 0..<40: return "Room to grow - let's build momentum together"
+        case 40..<60: return "Building momentum - keep pushing forward"
+        case 60..<80: return "Strong progress - you're doing great"
+        default: return "Excellent performance - crushing your goals!"
+        }
     }
     
     private var nutrientBreakdownSection: some View {
@@ -961,6 +913,7 @@ struct NutritionDashboardView: View {
                     showPurposeText: true  // Show nutrient names in petals
                 )
                 .frame(maxWidth: .infinity)
+            }
             
             // Nutrient detail grid - 2 columns with flexible sizing
             LazyVGrid(columns: [
