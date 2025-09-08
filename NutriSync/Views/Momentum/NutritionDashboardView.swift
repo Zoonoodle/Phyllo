@@ -85,8 +85,7 @@ struct NutritionDashboardView: View {
                                     .transition(.opacity.combined(with: .scale(scale: 0.95)))
                                 }
                                 
-                                // Current metrics
-                                liveMetricsGrid
+                                // Current metrics (removed Current Window and Nutrients Today cards)
                             
                             // Overall Performance Score
                             overallScoreCard
@@ -241,27 +240,8 @@ struct NutritionDashboardView: View {
     
     
     private var liveMetricsGrid: some View {
-        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-            // Current Window Metric
-            MetricCard(
-                title: "CURRENT WINDOW",
-                mainValue: currentWindowStatus.mainText,
-                subValue: currentWindowStatus.subText,
-                progress: currentWindowStatus.progress,
-                color: .blue,
-                icon: "clock.fill"
-            )
-            
-            // Nutrients Today
-            MetricCard(
-                title: "NUTRIENTS TODAY",
-                mainValue: "\(nutrientsHit)/18",
-                subValue: nutrientsStatus,
-                progress: Double(nutrientsHit) / 18.0,
-                color: .green,
-                icon: "leaf.fill"
-            )
-        }
+        // Removed Current Window and Nutrients Today cards
+        EmptyView()
     }
     
     struct MetricCard: View {
