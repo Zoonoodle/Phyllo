@@ -65,7 +65,7 @@ struct PerformancePillarMiniCard: View {
             .padding(.horizontal, 20)
             .padding(.vertical, 16)
         }
-        .frame(height: 70)
+        .frame(height: 64)
         .scaleEffect(isPressed ? 0.98 : 1.0)
         .animation(.easeInOut(duration: 0.1), value: isPressed)
         .onTapGesture {

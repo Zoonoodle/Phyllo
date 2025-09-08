@@ -57,6 +57,7 @@ struct NutritionDashboardView: View {
                             VStack(spacing: PerformanceDesignSystem.cardSpacing) {
                                 // Hero: Three performance pillars
                                 heroSection
+                                    .padding(.top, 16)
                                 
                                 // Current window card (if active)
                                 if let activeWindow = viewModel.mealWindows.first(where: { window in
@@ -120,7 +121,7 @@ struct NutritionDashboardView: View {
     // MARK: - Hero Section
     
     private var heroSection: some View {
-        VStack(spacing: PerformanceDesignSystem.cardSpacing) {
+        VStack(spacing: 10) {
             PerformancePillarMiniCard(
                 title: "Timing",
                 percentage: timingPercentage,
