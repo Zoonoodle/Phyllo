@@ -307,26 +307,6 @@ struct SimplePerformanceView: View {
     
     private var liveMetricsGrid: some View {
         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-            // Current Window Metric
-            MetricCard(
-                title: "CURRENT WINDOW",
-                mainValue: currentWindowStatus.mainText,
-                subValue: currentWindowStatus.subText,
-                progress: currentWindowStatus.progress,
-                color: .blue,
-                icon: "clock.fill"
-            )
-            
-            // Nutrients Today
-            MetricCard(
-                title: "NUTRIENTS TODAY",
-                mainValue: "\(nutrientsHit)/18",
-                subValue: nutrientsStatus,
-                progress: Double(nutrientsHit) / 18.0,
-                color: .green,
-                icon: "leaf.fill"
-            )
-            
             // Fasting Timer
             MetricCard(
                 title: "FASTING TIME",
