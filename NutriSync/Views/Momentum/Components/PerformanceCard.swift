@@ -16,5 +16,11 @@ struct PerformanceCard<Content: View>: View {
                     .stroke(PerformanceDesignSystem.cardBorder, lineWidth: PerformanceDesignSystem.borderWidth)
             )
             .cornerRadius(PerformanceDesignSystem.cornerRadius)
+            .shadow(
+                color: PerformanceDesignSystem.cardShadow,
+                radius: PerformanceDesignSystem.shadowRadius,
+                x: PerformanceDesignSystem.shadowX,
+                y: PerformanceDesignSystem.shadowY
+            )
     }
 }

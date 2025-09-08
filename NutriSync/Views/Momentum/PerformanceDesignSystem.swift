@@ -11,7 +11,7 @@ struct PerformanceDesignSystem {
     // Colors (from Schedule tab)
     static let background = Color(hex: "0a0a0a")
     static let cardBackground = Color(hex: "1A1A1A")
-    static let cardBorder = Color.white.opacity(0.08)
+    static let cardBorder = Color.white.opacity(0.18)
     static let textPrimary = Color.white
     static let textSecondary = Color.white.opacity(0.7)
     static let textTertiary = Color.white.opacity(0.5)

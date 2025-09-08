@@ -15,24 +15,20 @@ struct PerformancePillarMiniCard: View {
     var onTap: (() -> Void)? = nil
     
     @State private var isPressed = false
+    @State private var showInfoPopup = false
     
     var body: some View {
         PerformanceCard {
             VStack(alignment: .leading, spacing: 12) {
-                // Header with title and percentage
+                // Header with title
                 HStack(alignment: .center) {
                     Text(title)
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.system(size: 14, weight: .semibold))
                         .foregroundColor(.white.opacity(0.9))
-                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                        .fixedSize(horizontal: false, vertical: true)
                     
-                    Spacer(minLength: 4)
-                    
-                    // Three dots menu button (visual only for now)
-                    Image(systemName: "ellipsis")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(.white.opacity(0.4))
-                        .frame(width: 20, height: 20)
+                    Spacer(minLength: 8)
                 }
                 
                 // Progress bar
@@ -59,6 +55,7 @@ struct PerformancePillarMiniCard: View {
                     Text(detail)
                         .font(.system(size: 11, weight: .medium))
                         .foregroundColor(.white.opacity(0.5))
+                        .minimumScaleFactor(0.85)
                         .lineLimit(1)
                     
                     Spacer()
@@ -83,6 +80,7 @@ struct PerformancePillarMiniCard: View {
                 withAnimation(.easeInOut(duration: 0.1)) {
                     isPressed = false
                 }
+                showInfoPopup = true
                 onTap?()
             }
         }

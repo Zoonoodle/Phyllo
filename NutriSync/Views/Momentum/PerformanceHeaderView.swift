@@ -51,12 +51,8 @@ struct PerformanceHeaderView: View {
                     }
                 }
                 .padding(.horizontal, 16)
-                
-                // Macro bars (reusing Schedule's MacroSummaryBar)
-                MacroSummaryBar(meals: meals, userProfile: userProfile)
-                    .padding(.horizontal, 16)
             }
-            .padding(.vertical, 6)
+            .padding(.vertical, 12)
             
             // Separator line
             Divider()
