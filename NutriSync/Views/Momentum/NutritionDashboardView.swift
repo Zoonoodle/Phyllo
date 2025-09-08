@@ -933,7 +933,7 @@ struct NutritionDashboardView: View {
 
 extension NutritionDashboardView {
     struct NutrientDetailCard: View {
-        let nutrient: NutrientInfo
+        let nutrient: NutritionDashboardViewModel.NutrientInfo
         @State private var isExpanded = false
         
         // Nutrient benefits data with SF Symbol icons
@@ -1097,11 +1097,6 @@ struct NutritionInsight {
     let actionText: String?
 }
 
-struct NutrientInfo {
-    let name: String
-    let percentage: Double
-    let color: Color
-}
 
 
 // MARK: - Info Floating Card
