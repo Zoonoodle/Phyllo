@@ -121,8 +121,8 @@ struct NutritionDashboardView: View {
     // MARK: - Hero Section
     
     private var heroSection: some View {
-        VStack(spacing: 20) {
-            PerformancePillarMiniCard(
+        CombinedPerformanceCard(
+            timing: .init(
                 title: "Timing",
                 percentage: timingPercentage,
                 color: timingPercentage > 80 ? PerformanceDesignSystem.successMuted : .white.opacity(0.5),
@@ -130,10 +130,8 @@ struct NutritionDashboardView: View {
                 onTap: {
                     showTimingInfo()
                 }
-            )
-            .animation(PerformanceDesignSystem.springAnimation, value: timingPercentage)
-            
-            PerformancePillarMiniCard(
+            ),
+            nutrients: .init(
                 title: "Nutrients",
                 percentage: nutrientPercentage,
                 color: nutrientColorGradient,
@@ -141,10 +139,8 @@ struct NutritionDashboardView: View {
                 onTap: {
                     showNutrientsInfo()
                 }
-            )
-            .animation(PerformanceDesignSystem.springAnimation, value: nutrientPercentage)
-            
-            PerformancePillarMiniCard(
+            ),
+            adherence: .init(
                 title: "Adherence",
                 percentage: adherencePercentage,
                 color: .blue.opacity(0.8),
@@ -153,8 +149,10 @@ struct NutritionDashboardView: View {
                     showAdherenceInfo()
                 }
             )
-            .animation(PerformanceDesignSystem.springAnimation, value: adherencePercentage)
-        }
+        )
+        .animation(PerformanceDesignSystem.springAnimation, value: timingPercentage)
+        .animation(PerformanceDesignSystem.springAnimation, value: nutrientPercentage)
+        .animation(PerformanceDesignSystem.springAnimation, value: adherencePercentage)
     }
     
     private var nutrientColorGradient: Color {
