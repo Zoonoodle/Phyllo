@@ -125,7 +125,10 @@ struct NutritionDashboardView: View {
                 title: "Timing",
                 percentage: timingPercentage,
                 color: timingPercentage > 80 ? PerformanceDesignSystem.successMuted : .white.opacity(0.5),
-                detail: getTimingMessage(for: timingPercentage)
+                detail: getTimingMessage(for: timingPercentage),
+                onTap: {
+                    showTimingInfo()
+                }
             )
             .animation(PerformanceDesignSystem.springAnimation, value: timingPercentage)
             
@@ -133,7 +136,10 @@ struct NutritionDashboardView: View {
                 title: "Nutrients",
                 percentage: nutrientPercentage,
                 color: nutrientColorGradient,
-                detail: getNutrientMessage(for: nutrientPercentage)
+                detail: getNutrientMessage(for: nutrientPercentage),
+                onTap: {
+                    showNutrientsInfo()
+                }
             )
             .animation(PerformanceDesignSystem.springAnimation, value: nutrientPercentage)
             
@@ -141,7 +147,10 @@ struct NutritionDashboardView: View {
                 title: "Adherence",
                 percentage: adherencePercentage,
                 color: .blue.opacity(0.8),
-                detail: getAdherenceMessage(for: adherencePercentage)
+                detail: getAdherenceMessage(for: adherencePercentage),
+                onTap: {
+                    showAdherenceInfo()
+                }
             )
             .animation(PerformanceDesignSystem.springAnimation, value: adherencePercentage)
         }
@@ -194,6 +203,35 @@ struct NutritionDashboardView: View {
         } else {
             return "Learning opportunity"
         }
+    }
+    
+    // MARK: - Info Popup Methods
+    
+    private func showTimingInfo() {
+        infoPopupData = InfoPopupData(
+            title: "Timing Score",
+            description: "Your timing score measures how well you're eating within your scheduled meal windows.\n\n• Perfect timing (100%): Eating within your window\n• Good timing (80%+): Within 15 minutes of window\n• Needs work (<60%): More than 30 minutes off\n\nConsistent meal timing helps optimize your metabolism, energy levels, and circadian rhythm.",
+            color: timingPercentage > 80 ? PerformanceDesignSystem.successMuted : .white.opacity(0.5),
+            position: .zero
+        )
+    }
+    
+    private func showNutrientsInfo() {
+        infoPopupData = InfoPopupData(
+            title: "Nutrient Score",
+            description: "Your nutrient score tracks the quality and diversity of your nutrition.\n\n• Macronutrients (30%): Protein, carbs, and fats balance\n• Micronutrients (50%): Vitamins and minerals coverage\n• Calorie accuracy (20%): Meeting daily targets\n\nCurrently tracking \(nutrientsHit) out of 18 essential nutrients. Focus on eating a variety of colorful, whole foods to improve this score.",
+            color: nutrientColorGradient,
+            position: .zero
+        )
+    }
+    
+    private func showAdherenceInfo() {
+        infoPopupData = InfoPopupData(
+            title: "Adherence Score",
+            description: "Your adherence score reflects how consistently you're following your nutrition plan.\n\n• Meal frequency (40%): Logging all planned meals\n• Window utilization (30%): Using your eating windows\n• Consistent spacing (30%): 3-5 hours between meals\n\nYou've maintained a \(viewModel.currentStreak)-day streak! Keep building these healthy habits for long-term success.",
+            color: .blue.opacity(0.8),
+            position: .zero
+        )
     }
     
     // MARK: - Loading State
