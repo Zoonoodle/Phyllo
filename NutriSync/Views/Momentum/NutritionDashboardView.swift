@@ -120,7 +120,7 @@ struct NutritionDashboardView: View {
     // MARK: - Hero Section
     
     private var heroSection: some View {
-        HStack(spacing: PerformanceDesignSystem.cardSpacing) {
+        VStack(spacing: PerformanceDesignSystem.cardSpacing) {
             PerformancePillarMiniCard(
                 title: "Timing",
                 percentage: timingPercentage,

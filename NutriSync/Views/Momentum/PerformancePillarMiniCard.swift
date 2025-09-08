@@ -19,56 +19,53 @@ struct PerformancePillarMiniCard: View {
     
     var body: some View {
         PerformanceCard {
-            VStack(alignment: .leading, spacing: 12) {
-                // Header with title
-                HStack(alignment: .center) {
+            HStack(spacing: 16) {
+                // Left side: Title and detail
+                VStack(alignment: .leading, spacing: 4) {
                     Text(title)
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.white.opacity(0.9))
-                        .minimumScaleFactor(0.8)
-                        .fixedSize(horizontal: false, vertical: true)
                     
-                    Spacer(minLength: 8)
-                }
-                
-                // Progress bar
-                GeometryReader { geometry in
-                    ZStack(alignment: .leading) {
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(Color.white.opacity(0.08))
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(
-                                LinearGradient(
-                                    colors: [color, color.opacity(0.7)],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                            )
-                            .frame(width: geometry.size.width * min(percentage / 100, 1.0))
-                            .animation(.spring(response: 0.5, dampingFraction: 0.8), value: percentage)
-                    }
-                }
-                .frame(height: 8)
-                
-                // Bottom section with percentage and detail
-                HStack {
                     Text(detail)
-                        .font(.system(size: 11, weight: .medium))
+                        .font(.system(size: 12, weight: .medium))
                         .foregroundColor(.white.opacity(0.5))
-                        .minimumScaleFactor(0.85)
-                        .lineLimit(1)
+                }
+                
+                Spacer()
+                
+                // Right side: Progress and percentage
+                HStack(spacing: 12) {
+                    // Progress bar (vertical orientation)
+                    GeometryReader { geometry in
+                        ZStack(alignment: .leading) {
+                            RoundedRectangle(cornerRadius: 4)
+                                .fill(Color.white.opacity(0.08))
+                            RoundedRectangle(cornerRadius: 4)
+                                .fill(
+                                    LinearGradient(
+                                        colors: [color, color.opacity(0.7)],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
+                                .frame(width: geometry.size.width * min(percentage / 100, 1.0))
+                                .animation(.spring(response: 0.5, dampingFraction: 0.8), value: percentage)
+                        }
+                    }
+                    .frame(width: 100, height: 8)
                     
-                    Spacer()
-                    
+                    // Percentage
                     Text("\(Int(percentage))%")
-                        .font(.system(size: 18, weight: .bold, design: .rounded))
+                        .font(.system(size: 20, weight: .bold, design: .rounded))
                         .foregroundColor(color)
                         .monospacedDigit()
+                        .frame(width: 50, alignment: .trailing)
                 }
             }
-            .padding(16)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 16)
         }
-        .frame(height: 110)
+        .frame(height: 70)
         .scaleEffect(isPressed ? 0.98 : 1.0)
         .animation(.easeInOut(duration: 0.1), value: isPressed)
         .onTapGesture {
@@ -89,7 +86,7 @@ struct PerformancePillarMiniCard: View {
 
 // Preview
 #Preview {
-    HStack(spacing: 12) {
+    VStack(spacing: 12) {
         PerformancePillarMiniCard(
             title: "Timing",
             percentage: 75,
