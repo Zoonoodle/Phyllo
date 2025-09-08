@@ -21,13 +21,13 @@ struct PerformancePillarMiniCard: View {
         PerformanceCard {
             HStack(spacing: 16) {
                 // Left side: Title and detail
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: 2) {
                     Text(title)
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.system(size: 14, weight: .semibold))
                         .foregroundColor(.white.opacity(0.9))
                     
                     Text(detail)
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.system(size: 11, weight: .medium))
                         .foregroundColor(.white.opacity(0.5))
                 }
                 
@@ -56,16 +56,16 @@ struct PerformancePillarMiniCard: View {
                     
                     // Percentage
                     Text("\(Int(percentage))%")
-                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                        .font(.system(size: 18, weight: .bold, design: .rounded))
                         .foregroundColor(color)
                         .monospacedDigit()
                         .frame(width: 50, alignment: .trailing)
                 }
             }
             .padding(.horizontal, 20)
-            .padding(.vertical, 16)
+            .padding(.vertical, 12)
         }
-        .frame(height: 64)
+        .frame(height: 52)
         .scaleEffect(isPressed ? 0.98 : 1.0)
         .animation(.easeInOut(duration: 0.1), value: isPressed)
         .onTapGesture {
