@@ -81,7 +81,7 @@ struct NutritionDashboardView: View {
                                         insight: topInsight.message,
                                         action: topInsight.title.contains("Alert") ? "Fix Now" : nil
                                     )
-                                    .animation(PerformanceDesignSystem.springAnimation, value: topInsight.id)
+                                    .animation(PerformanceDesignSystem.springAnimation, value: topInsight.message)
                                     .transition(.opacity.combined(with: .scale(scale: 0.95)))
                                 }
                                 
@@ -907,7 +907,7 @@ struct NutritionDashboardView: View {
                 
                 // Redesigned NutriSync Petals - smaller and shadcn themed
                 HexagonFlowerView(
-                    micronutrients: topNutrients.map { ($0.name, $0.percentage) },
+                    micronutrients: viewModel.topNutrients.map { ($0.name, $0.percentage) },
                     size: 180,  // Reduced from 240px
                     showLabels: false,
                     showPurposeText: true  // Show nutrient names in petals
@@ -920,7 +920,7 @@ struct NutritionDashboardView: View {
                 GridItem(.flexible(minimum: 140)),
                 GridItem(.flexible(minimum: 140))
             ], spacing: 12) {
-                ForEach(topNutrients, id: \.name) { nutrient in
+                ForEach(viewModel.topNutrients, id: \.name) { nutrient in
                     NutrientDetailCard(nutrient: nutrient)
                         .frame(minHeight: 80)
                 }
