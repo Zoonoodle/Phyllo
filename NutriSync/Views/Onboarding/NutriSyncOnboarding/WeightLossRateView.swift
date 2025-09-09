@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct WeightLossRateView: View {
+    @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
     @State private var selectedRate: Double = 0.5 // Default to Standard
     
     var body: some View {
@@ -113,7 +114,7 @@ struct WeightLossRateView: View {
             // Navigation
             HStack {
                 Button {
-                    // Back action
+                    coordinator.previousScreen()
                 } label: {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 20, weight: .medium))
@@ -126,7 +127,9 @@ struct WeightLossRateView: View {
                 Spacer()
                 
                 Button {
-                    // Done action
+                    // Save weight loss rate to coordinator
+                    coordinator.weightLossRate = selectedRate
+                    coordinator.nextScreen()
                 } label: {
                     HStack(spacing: 6) {
                         Text("Done with goal")

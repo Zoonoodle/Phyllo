@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct DietPreferenceView: View {
+    @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
     @State private var selectedDiet = "Balanced"
     
     let diets = [
@@ -53,7 +54,7 @@ struct DietPreferenceView: View {
             // Navigation
             HStack {
                 Button {
-                    // Back action
+                    coordinator.previousScreen()
                 } label: {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 20, weight: .medium))
@@ -66,7 +67,9 @@ struct DietPreferenceView: View {
                 Spacer()
                 
                 Button {
-                    // Next action
+                    // Save diet preference to coordinator
+                    coordinator.dietPreference = selectedDiet
+                    coordinator.nextScreen()
                 } label: {
                     HStack(spacing: 6) {
                         Text("Next")

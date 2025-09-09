@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct WorkoutScheduleView: View {
+    @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
     @State private var selectedDays: Set<String> = []
     @State private var workoutTime = Date()
     
@@ -89,7 +90,7 @@ struct WorkoutScheduleView: View {
             // Navigation
             HStack {
                 Button {
-                    // Back action
+                    coordinator.previousScreen()
                 } label: {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 20, weight: .medium))
@@ -102,7 +103,10 @@ struct WorkoutScheduleView: View {
                 Spacer()
                 
                 Button {
-                    // Next action
+                    // Save workout schedule to coordinator
+                    coordinator.workoutDays = selectedDays
+                    coordinator.workoutTime = workoutTime
+                    coordinator.nextScreen()
                 } label: {
                     HStack(spacing: 6) {
                         Text("Next")

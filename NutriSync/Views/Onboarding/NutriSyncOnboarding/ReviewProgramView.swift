@@ -9,7 +9,7 @@ import SwiftUI
 import FirebaseAuth
 
 struct ReviewProgramView: View {
-    @EnvironmentObject var coordinator: NutriSyncOnboardingViewModel
+    @Environment(NutriSyncOnboardingViewModel.self) var coordinator
     @EnvironmentObject var dataProvider: FirebaseDataProvider
     @State private var isCreatingProfile = false
     @State private var showError = false

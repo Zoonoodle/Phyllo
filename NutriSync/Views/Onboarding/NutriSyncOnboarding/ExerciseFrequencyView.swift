@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct ExerciseFrequencyView: View {
+    @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
     @State private var selectedFrequency = "0 sessions / week"
     
     let frequencies = [
@@ -60,7 +61,7 @@ struct ExerciseFrequencyView: View {
             // Navigation
             HStack {
                 Button {
-                    // Back action
+                    coordinator.previousScreen()
                 } label: {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 20, weight: .medium))
@@ -71,7 +72,9 @@ struct ExerciseFrequencyView: View {
                 Spacer()
                 
                 Button {
-                    // Next action
+                    // Save exercise frequency to coordinator
+                    coordinator.exerciseFrequency = selectedFrequency
+                    coordinator.nextScreen()
                 } label: {
                     HStack(spacing: 6) {
                         Text("Next")

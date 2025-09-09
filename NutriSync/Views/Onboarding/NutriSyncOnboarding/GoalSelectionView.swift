@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct GoalSelectionView: View {
+    @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
     @State private var selectedGoal = "Lose Weight"
     
     let goals = [
@@ -60,7 +61,7 @@ struct GoalSelectionView: View {
             // Navigation
             HStack {
                 Button {
-                    // Back action
+                    coordinator.previousScreen()
                 } label: {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 20, weight: .medium))
@@ -73,7 +74,9 @@ struct GoalSelectionView: View {
                 Spacer()
                 
                 Button {
-                    // Next action
+                    // Save goal to coordinator
+                    coordinator.goal = selectedGoal
+                    coordinator.nextScreen()
                 } label: {
                     HStack(spacing: 6) {
                         Text("Next")

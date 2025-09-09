@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct TrainingPlanView: View {
+    @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
     @State private var selectedTraining = "None or Relaxed Activity"
     
     let trainingOptions = [
@@ -61,7 +62,7 @@ struct TrainingPlanView: View {
             // Navigation
             HStack {
                 Button {
-                    // Back action
+                    coordinator.previousScreen()
                 } label: {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 20, weight: .medium))
@@ -74,7 +75,9 @@ struct TrainingPlanView: View {
                 Spacer()
                 
                 Button {
-                    // Next action
+                    // Save training plan to coordinator
+                    coordinator.trainingPlan = selectedTraining
+                    coordinator.nextScreen()
                 } label: {
                     HStack(spacing: 6) {
                         Text("Next")

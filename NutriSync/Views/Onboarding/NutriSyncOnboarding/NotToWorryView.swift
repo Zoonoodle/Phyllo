@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct NotToWorryView: View {
+    @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
+    
     var body: some View {
         VStack(spacing: 0) {
             // Progress bar
@@ -97,7 +99,7 @@ struct NotToWorryView: View {
             // Navigation
             HStack {
                 Button {
-                    // Back action
+                    coordinator.previousScreen()
                 } label: {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 20, weight: .medium))
@@ -108,7 +110,7 @@ struct NotToWorryView: View {
                 Spacer()
                 
                 Button {
-                    // Next action
+                    coordinator.nextScreen()
                 } label: {
                     HStack(spacing: 6) {
                         Text("Done with basics")

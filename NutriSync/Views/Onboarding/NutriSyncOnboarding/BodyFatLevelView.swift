@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct BodyFatLevelView: View {
+    @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
     @State private var selectedBodyFat: String = "38-42%"
     
     let bodyFatRanges = [
@@ -69,7 +70,7 @@ struct BodyFatLevelView: View {
             // Navigation
             HStack {
                 Button {
-                    // Back action
+                    coordinator.previousScreen()
                 } label: {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 20, weight: .medium))
@@ -80,7 +81,15 @@ struct BodyFatLevelView: View {
                 Spacer()
                 
                 Button {
-                    // Next action
+                    // Save body fat percentage to coordinator
+                    if let range = selectedBodyFat.split(separator: "-").first {
+                        if let percentage = Double(range.replacingOccurrences(of: "%", with: "")) {
+                            coordinator.bodyFatPercentage = percentage
+                        }
+                    } else if selectedBodyFat.contains("+") {
+                        coordinator.bodyFatPercentage = 50.0 // Handle "50% +" case
+                    }
+                    coordinator.nextScreen()
                 } label: {
                     HStack(spacing: 6) {
                         Text("Next")

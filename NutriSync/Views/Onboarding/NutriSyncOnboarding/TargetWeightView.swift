@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct TargetWeightView: View {
+    @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
     @State private var targetWeight: Double = 130
     @State private var currentWeight: Double = 163
     @State private var selectedUnit = "lbs"
@@ -55,7 +56,7 @@ struct TargetWeightView: View {
             // Navigation
             HStack {
                 Button {
-                    // Back action
+                    coordinator.previousScreen()
                 } label: {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 20, weight: .medium))
@@ -68,7 +69,10 @@ struct TargetWeightView: View {
                 Spacer()
                 
                 Button {
-                    // Next action
+                    // Save target weight to coordinator (convert to kg if needed)
+                    let weightInKg = selectedUnit == "lbs" ? targetWeight * 0.453592 : targetWeight
+                    coordinator.targetWeight = weightInKg
+                    coordinator.nextScreen()
                 } label: {
                     HStack(spacing: 6) {
                         Text("Next")

@@ -10,7 +10,7 @@ import FirebaseAuth
 import FirebaseFirestore
 
 @Observable
-class NutriSyncOnboardingViewModel: ObservableObject {
+class NutriSyncOnboardingViewModel {
     // Navigation state
     var currentSection: NutriSyncOnboardingSection = .basics
     var currentScreenIndex: Int = 0
@@ -18,9 +18,9 @@ class NutriSyncOnboardingViewModel: ObservableObject {
     var showingSectionIntro: Bool = true
     
     // Firebase integration
-    @Published var isSaving: Bool = false
-    @Published var saveError: Error?
-    @Published var showSaveError: Bool = false
+    var isSaving: Bool = false
+    var saveError: Error?
+    var showSaveError: Bool = false
     private var dataProvider = FirebaseDataProvider.shared
     
     // Progress tracking
@@ -387,6 +387,7 @@ struct NutriSyncOnboardingCoordinator: View {
             } else {
                 currentScreenView()
                     .transition(.opacity)
+                    .environment(viewModel)
             }
         }
         .animation(.easeInOut(duration: 0.3), value: viewModel.currentScreenIndex)

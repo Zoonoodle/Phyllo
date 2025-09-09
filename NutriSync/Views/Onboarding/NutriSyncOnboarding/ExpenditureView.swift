@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct ExpenditureView: View {
+    @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
     @State private var expenditure = 1805
     
     var body: some View {
@@ -50,7 +51,9 @@ struct ExpenditureView: View {
             // Action buttons
             VStack(spacing: 16) {
                 Button {
-                    // No action
+                    // User disagrees with the estimate - proceed anyway for now
+                    coordinator.tdee = Double(expenditure)
+                    coordinator.nextScreen()
                 } label: {
                     HStack {
                         Text("No")
@@ -66,7 +69,9 @@ struct ExpenditureView: View {
                 }
                 
                 Button {
-                    // Yes action
+                    // User agrees with the estimate
+                    coordinator.tdee = Double(expenditure)
+                    coordinator.nextScreen()
                 } label: {
                     HStack {
                         Text("Yes")
@@ -82,7 +87,9 @@ struct ExpenditureView: View {
                 }
                 
                 Button {
-                    // Not sure action
+                    // User is not sure - proceed with estimate
+                    coordinator.tdee = Double(expenditure)
+                    coordinator.nextScreen()
                 } label: {
                     HStack {
                         Text("Not Sure")
@@ -103,7 +110,7 @@ struct ExpenditureView: View {
             // Back button
             HStack {
                 Button {
-                    // Back action
+                    coordinator.previousScreen()
                 } label: {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 20, weight: .medium))

@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct DietaryRestrictionsView: View {
+    @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
     @State private var dietaryRestrictions: Set<String> = []
     
     let restrictionOptions = ["Vegetarian", "Vegan", "Gluten-free", "Dairy-free", "Keto", "Paleo", "None"]
@@ -66,7 +67,7 @@ struct DietaryRestrictionsView: View {
             // Navigation
             HStack {
                 Button {
-                    // Back action
+                    coordinator.previousScreen()
                 } label: {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 20, weight: .medium))
@@ -79,7 +80,9 @@ struct DietaryRestrictionsView: View {
                 Spacer()
                 
                 Button {
-                    // Next action
+                    // Save dietary restrictions to coordinator
+                    coordinator.dietaryRestrictions = dietaryRestrictions
+                    coordinator.nextScreen()
                 } label: {
                     HStack(spacing: 6) {
                         Text("Next")

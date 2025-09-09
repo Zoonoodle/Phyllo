@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct LifestyleFactorsView: View {
+    @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
     @State private var workSchedule = ""
     @State private var socialMealsPerWeek: Double = 2
     @State private var travelFrequency = ""
@@ -102,7 +103,7 @@ struct LifestyleFactorsView: View {
             // Navigation
             HStack {
                 Button {
-                    // Back action
+                    coordinator.previousScreen()
                 } label: {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 20, weight: .medium))
@@ -115,7 +116,11 @@ struct LifestyleFactorsView: View {
                 Spacer()
                 
                 Button {
-                    // Next action
+                    // Save lifestyle factors to coordinator
+                    coordinator.workSchedule = workSchedule
+                    coordinator.socialMealsPerWeek = socialMealsPerWeek
+                    coordinator.travelFrequency = travelFrequency
+                    coordinator.nextScreen()
                 } label: {
                     HStack(spacing: 6) {
                         Text("Next")

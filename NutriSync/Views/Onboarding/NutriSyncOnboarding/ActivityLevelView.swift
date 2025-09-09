@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct ActivityLevelView: View {
+    @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
     @State private var selectedActivity = "Mostly Sedentary"
     
     let activityLevels = [
@@ -60,7 +61,7 @@ struct ActivityLevelView: View {
             // Navigation
             HStack {
                 Button {
-                    // Back action
+                    coordinator.previousScreen()
                 } label: {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 20, weight: .medium))
@@ -73,7 +74,9 @@ struct ActivityLevelView: View {
                 Spacer()
                 
                 Button {
-                    // Next action
+                    // Save activity level to coordinator
+                    coordinator.activityLevel = selectedActivity
+                    coordinator.nextScreen()
                 } label: {
                     HStack(spacing: 6) {
                         Text("Next")

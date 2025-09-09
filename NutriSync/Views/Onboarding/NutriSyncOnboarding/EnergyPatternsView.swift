@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct EnergyPatternsView: View {
+    @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
     @State private var energyPeak = ""
     @State private var caffeineSensitivity = ""
     
@@ -80,7 +81,7 @@ struct EnergyPatternsView: View {
             // Navigation
             HStack {
                 Button {
-                    // Back action
+                    coordinator.previousScreen()
                 } label: {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 20, weight: .medium))
@@ -93,7 +94,10 @@ struct EnergyPatternsView: View {
                 Spacer()
                 
                 Button {
-                    // Next action
+                    // Save energy patterns to coordinator
+                    coordinator.energyPeak = energyPeak
+                    coordinator.caffeineSensitivity = caffeineSensitivity
+                    coordinator.nextScreen()
                 } label: {
                     HStack(spacing: 6) {
                         Text("Next")

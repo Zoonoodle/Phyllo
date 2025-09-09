@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct CalorieFloorView: View {
+    @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
     @State private var selectedFloor = "Standard Floor"
     
     let floors = [
@@ -52,7 +53,7 @@ struct CalorieFloorView: View {
             // Navigation
             HStack {
                 Button {
-                    // Back action
+                    coordinator.previousScreen()
                 } label: {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 20, weight: .medium))
@@ -65,7 +66,10 @@ struct CalorieFloorView: View {
                 Spacer()
                 
                 Button {
-                    // Next action
+                    // Save calorie floor to coordinator
+                    let calorieValue = selectedFloor == "Standard Floor" ? 1200 : 800
+                    coordinator.calorieFloor = calorieValue
+                    coordinator.nextScreen()
                 } label: {
                     HStack(spacing: 6) {
                         Text("Next")

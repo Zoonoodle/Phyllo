@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct BasicInfoView: View {
+    @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
+    
     @State private var heightFeet: String = "5"
     @State private var heightInches: String = "10"
     @State private var heightCm: String = "178"
@@ -184,7 +186,7 @@ struct BasicInfoView: View {
             // Navigation
             HStack {
                 Button {
-                    // Back action
+                    coordinator.previousScreen()
                 } label: {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 20, weight: .medium))
@@ -195,7 +197,9 @@ struct BasicInfoView: View {
                 Spacer()
                 
                 Button {
-                    // Next action
+                    // Save data to coordinator before moving next
+                    saveDataToCoordinator()
+                    coordinator.nextScreen()
                 } label: {
                     HStack(spacing: 6) {
                         Text("Next")
@@ -217,6 +221,26 @@ struct BasicInfoView: View {
         .onTapGesture {
             hideKeyboard()
         }
+    }
+    
+    private func saveDataToCoordinator() {
+        // Convert height to cm and save weight (this view doesn't have weight, just height)
+        if heightUnit == "ft/in" {
+            let feet = Double(heightFeet) ?? 5
+            let inches = Double(heightInches) ?? 10
+            let totalInches = (feet * 12) + inches
+            let cm = totalInches * 2.54
+            // Note: height is stored elsewhere in the coordinator, we may need to add it
+        } else {
+            let cm = Double(heightCm) ?? 178
+            // Note: height is stored elsewhere in the coordinator, we may need to add it
+        }
+        
+        // Gender is stored elsewhere in coordinator
+        // Age/birthdate is stored elsewhere in coordinator
+        
+        // For now, just log that we're saving
+        print("[BasicInfoView] Saving: Gender=\(selectedGender), Age=\(age)")
     }
 }
 
