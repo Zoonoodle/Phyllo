@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct WindowFlexibilityView: View {
+    @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
     @State private var flexibilityLevel = ""
     @State private var autoAdjustWindows = true
     @State private var weekendDifferent = false
@@ -80,7 +81,7 @@ struct WindowFlexibilityView: View {
             // Navigation
             HStack {
                 Button {
-                    // Back action
+                    coordinator.previousScreen()
                 } label: {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 20, weight: .medium))
@@ -93,7 +94,12 @@ struct WindowFlexibilityView: View {
                 Spacer()
                 
                 Button {
-                    // Next action
+                    // Save data to coordinator before proceeding
+                    coordinator.flexibilityLevel = flexibilityLevel
+                    coordinator.autoAdjustWindows = autoAdjustWindows
+                    coordinator.weekendDifferent = weekendDifferent
+                    
+                    coordinator.nextScreen()
                 } label: {
                     HStack(spacing: 6) {
                         Text("Next")
@@ -118,6 +124,12 @@ struct WindowFlexibilityView: View {
         }
         .background(Color.nutriSyncBackground)
         .ignoresSafeArea(.keyboard)
+        .onAppear {
+            // Initialize state from coordinator
+            flexibilityLevel = coordinator.flexibilityLevel
+            autoAdjustWindows = coordinator.autoAdjustWindows
+            weekendDifferent = coordinator.weekendDifferent
+        }
     }
     
     private func getFlexibilityDescription(for option: String) -> String {

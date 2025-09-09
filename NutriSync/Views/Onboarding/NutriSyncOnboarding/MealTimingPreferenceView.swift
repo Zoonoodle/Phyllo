@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct MealTimingPreferenceView: View {
+    @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
     @State private var largerMealPreference = ""
     
     let mealSizeOptions = ["Morning", "Midday", "Evening", "No preference"]
@@ -68,7 +69,7 @@ struct MealTimingPreferenceView: View {
             // Navigation
             HStack {
                 Button {
-                    // Back action
+                    coordinator.previousScreen()
                 } label: {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 20, weight: .medium))
@@ -81,7 +82,10 @@ struct MealTimingPreferenceView: View {
                 Spacer()
                 
                 Button {
-                    // Next action
+                    // Save data to coordinator before proceeding
+                    coordinator.largerMealPreference = largerMealPreference
+                    
+                    coordinator.nextScreen()
                 } label: {
                     HStack(spacing: 6) {
                         Text("Next")
@@ -106,6 +110,10 @@ struct MealTimingPreferenceView: View {
         }
         .background(Color.nutriSyncBackground)
         .ignoresSafeArea(.keyboard)
+        .onAppear {
+            // Initialize state from coordinator
+            largerMealPreference = coordinator.largerMealPreference
+        }
     }
 }
 

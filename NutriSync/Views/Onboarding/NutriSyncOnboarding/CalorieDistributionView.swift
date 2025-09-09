@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct CalorieDistributionView: View {
+    @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
     @State private var selectedDistribution = "Shift Calories"
     
     let distributions = [
@@ -62,7 +63,7 @@ struct CalorieDistributionView: View {
             // Navigation
             HStack {
                 Button {
-                    // Back action
+                    coordinator.previousScreen()
                 } label: {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 20, weight: .medium))
@@ -75,7 +76,10 @@ struct CalorieDistributionView: View {
                 Spacer()
                 
                 Button {
-                    // Next action
+                    // Save data to coordinator before proceeding
+                    coordinator.calorieDistribution = selectedDistribution
+                    
+                    coordinator.nextScreen()
                 } label: {
                     HStack(spacing: 6) {
                         Text("Next")

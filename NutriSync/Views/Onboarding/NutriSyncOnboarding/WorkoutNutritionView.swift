@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct WorkoutNutritionView: View {
+    @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
     @State private var preworkoutTiming = ""
     @State private var postworkoutTiming = ""
     
@@ -83,7 +84,7 @@ struct WorkoutNutritionView: View {
             // Navigation
             HStack {
                 Button {
-                    // Back action
+                    coordinator.previousScreen()
                 } label: {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 20, weight: .medium))
@@ -96,7 +97,11 @@ struct WorkoutNutritionView: View {
                 Spacer()
                 
                 Button {
-                    // Next action
+                    // Save data to coordinator before proceeding
+                    coordinator.preworkoutTiming = preworkoutTiming
+                    coordinator.postworkoutTiming = postworkoutTiming
+                    
+                    coordinator.nextScreen()
                 } label: {
                     HStack(spacing: 6) {
                         Text("Next")
@@ -121,6 +126,11 @@ struct WorkoutNutritionView: View {
         }
         .background(Color.nutriSyncBackground)
         .ignoresSafeArea(.keyboard)
+        .onAppear {
+            // Initialize state from coordinator
+            preworkoutTiming = coordinator.preworkoutTiming
+            postworkoutTiming = coordinator.postworkoutTiming
+        }
     }
     
     private var canContinue: Bool {

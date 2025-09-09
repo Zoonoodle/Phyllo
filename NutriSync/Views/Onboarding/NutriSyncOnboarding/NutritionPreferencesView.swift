@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct NutritionPreferencesView: View {
+    @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
     @State private var macroPreference = ""
     @State private var foodSensitivities = ""
     
@@ -83,7 +84,7 @@ struct NutritionPreferencesView: View {
             // Navigation
             HStack {
                 Button {
-                    // Back action
+                    coordinator.previousScreen()
                 } label: {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 20, weight: .medium))
@@ -96,7 +97,11 @@ struct NutritionPreferencesView: View {
                 Spacer()
                 
                 Button {
-                    // Next action
+                    // Save data to coordinator before proceeding
+                    coordinator.macroPreference = macroPreference
+                    coordinator.foodSensitivities = foodSensitivities
+                    
+                    coordinator.nextScreen()
                 } label: {
                     HStack(spacing: 6) {
                         Text("Next")
@@ -121,6 +126,11 @@ struct NutritionPreferencesView: View {
         }
         .background(Color.nutriSyncBackground)
         .ignoresSafeArea(.keyboard)
+        .onAppear {
+            // Initialize state from coordinator
+            macroPreference = coordinator.macroPreference
+            foodSensitivities = coordinator.foodSensitivities
+        }
     }
     
     private var canContinue: Bool {

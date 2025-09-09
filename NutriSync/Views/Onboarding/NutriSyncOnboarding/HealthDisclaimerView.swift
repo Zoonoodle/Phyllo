@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct HealthDisclaimerView: View {
+    @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
     @State private var acceptHealthDisclaimer = false
     @State private var acceptPrivacyNotice = false
     
@@ -98,7 +99,7 @@ struct HealthDisclaimerView: View {
             
             // Continue button
             Button {
-                // Continue action
+                coordinator.nextScreen()
             } label: {
                 Text("Accept and Continue")
                     .font(.system(size: 17, weight: .medium))

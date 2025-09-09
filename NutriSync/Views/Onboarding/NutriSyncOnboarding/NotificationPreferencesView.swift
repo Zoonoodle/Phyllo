@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct NotificationPreferencesView: View {
+    @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
     @State private var windowStartNotifications = true
     @State private var windowEndNotifications = true
     @State private var checkInReminders = true
@@ -106,7 +107,7 @@ struct NotificationPreferencesView: View {
             // Navigation
             HStack {
                 Button {
-                    // Back action
+                    coordinator.previousScreen()
                 } label: {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 20, weight: .medium))
@@ -119,7 +120,13 @@ struct NotificationPreferencesView: View {
                 Spacer()
                 
                 Button {
-                    // Next action
+                    // Save data to coordinator before proceeding
+                    coordinator.windowStartNotifications = windowStartNotifications
+                    coordinator.windowEndNotifications = windowEndNotifications
+                    coordinator.checkInReminders = checkInReminders
+                    coordinator.notificationMinutesBefore = notificationMinutesBefore
+                    
+                    coordinator.nextScreen()
                 } label: {
                     HStack(spacing: 6) {
                         Text("Next")
@@ -143,6 +150,13 @@ struct NotificationPreferencesView: View {
         }
         .background(Color.nutriSyncBackground)
         .ignoresSafeArea(.keyboard)
+        .onAppear {
+            // Initialize state from coordinator
+            windowStartNotifications = coordinator.windowStartNotifications
+            windowEndNotifications = coordinator.windowEndNotifications
+            checkInReminders = coordinator.checkInReminders
+            notificationMinutesBefore = coordinator.notificationMinutesBefore
+        }
     }
 }
 

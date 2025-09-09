@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct GoalSettingIntroView: View {
+    @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
+    
     var body: some View {
         GeometryReader { geometry in
             ScrollView {
@@ -84,7 +86,7 @@ struct GoalSettingIntroView: View {
             
             // Continue button
             Button {
-                // Continue action
+                coordinator.nextScreen()
             } label: {
                 Text("Go to Goal Setup")
                     .font(.system(size: 17, weight: .semibold))

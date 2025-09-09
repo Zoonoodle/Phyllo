@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct AlmostThereView: View {
+    @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
+    
     var body: some View {
         GeometryReader { geometry in
             ScrollView {
@@ -92,7 +94,7 @@ struct AlmostThereView: View {
             
             // Continue button
             Button {
-                // Continue action
+                coordinator.nextScreen()
             } label: {
                 Text("Go to Program Design")
                     .font(.system(size: 17, weight: .semibold))
