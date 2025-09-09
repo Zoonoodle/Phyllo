@@ -141,6 +141,7 @@ struct LifestyleFactorsView: View {
             .padding(.horizontal, 20)
             .padding(.bottom, 34)
                 }
+                .frame(width: geometry.size.width)
                 .frame(minHeight: geometry.size.height)
             }
         }
