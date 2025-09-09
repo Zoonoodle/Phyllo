@@ -9,7 +9,9 @@ import SwiftUI
 
 struct AlmostThereView: View {
     var body: some View {
-        VStack(spacing: 0) {
+        GeometryReader { geometry in
+            ScrollView {
+                VStack(spacing: 0) {
             // Title
             HStack {
                 Text("Almost There")
@@ -102,8 +104,12 @@ struct AlmostThereView: View {
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 34)
+                }
+                .frame(minHeight: geometry.size.height)
+            }
         }
         .background(Color.nutriSyncBackground)
+        .ignoresSafeArea(.keyboard)
     }
 }
 

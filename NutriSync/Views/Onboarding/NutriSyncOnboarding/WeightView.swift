@@ -14,7 +14,9 @@ struct WeightView: View {
     let units = ["lbs", "kg"]
     
     var body: some View {
-        VStack(spacing: 0) {
+        GeometryReader { geometry in
+            ScrollView {
+                VStack(spacing: 0) {
             // Progress bar
             ProgressBar(totalSteps: 31, currentStep: 2)
                 .padding(.horizontal, 20)
@@ -119,8 +121,12 @@ struct WeightView: View {
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 34)
+                }
+                .frame(minHeight: geometry.size.height)
+            }
         }
         .background(Color.nutriSyncBackground)
+        .ignoresSafeArea(.keyboard)
         .onTapGesture {
             hideKeyboard()
         }

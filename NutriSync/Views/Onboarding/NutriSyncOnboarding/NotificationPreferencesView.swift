@@ -16,7 +16,9 @@ struct NotificationPreferencesView: View {
     let timingOptions = [5, 10, 15, 30, 60]
     
     var body: some View {
-        VStack(spacing: 0) {
+        GeometryReader { geometry in
+            ScrollView {
+                VStack(spacing: 0) {
             // Progress bar
             ProgressBar(totalSteps: 31, currentStep: 30)
                 .padding(.horizontal, 20)
@@ -134,8 +136,12 @@ struct NotificationPreferencesView: View {
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 34)
+                }
+                .frame(minHeight: geometry.size.height)
+            }
         }
         .background(Color.nutriSyncBackground)
+        .ignoresSafeArea(.keyboard)
     }
 }
 

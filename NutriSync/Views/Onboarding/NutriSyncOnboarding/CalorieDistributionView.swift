@@ -16,7 +16,9 @@ struct CalorieDistributionView: View {
     ]
     
     var body: some View {
-        VStack(spacing: 0) {
+        GeometryReader { geometry in
+            ScrollView {
+                VStack(spacing: 0) {
             // Progress bar
             ProgressBar(totalSteps: 31, currentStep: 19)
                 .padding(.horizontal, 20)
@@ -90,8 +92,12 @@ struct CalorieDistributionView: View {
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 34)
+                }
+                .frame(minHeight: geometry.size.height)
+            }
         }
         .background(Color.nutriSyncBackground)
+        .ignoresSafeArea(.keyboard)
     }
 }
 

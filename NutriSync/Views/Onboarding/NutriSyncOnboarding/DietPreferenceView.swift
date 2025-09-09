@@ -19,7 +19,9 @@ struct DietPreferenceView: View {
     ]
     
     var body: some View {
-        VStack(spacing: 0) {
+        GeometryReader { geometry in
+            ScrollView {
+                VStack(spacing: 0) {
             // Progress bar
             ProgressBar(totalSteps: 31, currentStep: 16)
                 .padding(.horizontal, 20)
@@ -31,7 +33,7 @@ struct DietPreferenceView: View {
                 .font(.system(size: 28, weight: .bold))
                 .foregroundColor(.white)
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, 40)
+                .padding(.horizontal, 20)
                 .padding(.bottom, 32)
             
             // Diet options
@@ -86,8 +88,12 @@ struct DietPreferenceView: View {
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 34)
+                }
+                .frame(minHeight: geometry.size.height)
+            }
         }
         .background(Color.nutriSyncBackground)
+        .ignoresSafeArea(.keyboard)
     }
 }
 

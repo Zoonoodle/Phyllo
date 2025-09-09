@@ -17,7 +17,9 @@ struct LifestyleFactorsView: View {
     let travelOptions = ["Rarely", "Monthly", "Weekly", "Constantly"]
     
     var body: some View {
-        VStack(spacing: 0) {
+        GeometryReader { geometry in
+            ScrollView {
+                VStack(spacing: 0) {
             // Progress bar
             ProgressBar(totalSteps: 31, currentStep: 24)
                 .padding(.horizontal, 20)
@@ -138,8 +140,12 @@ struct LifestyleFactorsView: View {
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 34)
+                }
+                .frame(minHeight: geometry.size.height)
+            }
         }
         .background(Color.nutriSyncBackground)
+        .ignoresSafeArea(.keyboard)
     }
     
     private var canContinue: Bool {

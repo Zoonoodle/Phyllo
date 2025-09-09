@@ -12,7 +12,9 @@ struct HealthDisclaimerView: View {
     @State private var acceptPrivacyNotice = false
     
     var body: some View {
-        VStack(spacing: 0) {
+        GeometryReader { geometry in
+            ScrollView {
+                VStack(spacing: 0) {
             // Title
             HStack {
                 Text("Notice")
@@ -109,8 +111,12 @@ struct HealthDisclaimerView: View {
             .disabled(!bothAccepted)
             .padding(.horizontal, 20)
             .padding(.bottom, 34)
+                }
+                .frame(minHeight: geometry.size.height)
+            }
         }
         .background(Color.nutriSyncBackground)
+        .ignoresSafeArea(.keyboard)
     }
     
     private var bothAccepted: Bool {

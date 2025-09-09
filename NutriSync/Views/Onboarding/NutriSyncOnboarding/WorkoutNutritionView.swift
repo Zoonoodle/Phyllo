@@ -15,7 +15,9 @@ struct WorkoutNutritionView: View {
     let postworkoutOptions = ["Immediate refuel", "Within 2 hours", "No preference"]
     
     var body: some View {
-        VStack(spacing: 0) {
+        GeometryReader { geometry in
+            ScrollView {
+                VStack(spacing: 0) {
             // Progress bar
             ProgressBar(totalSteps: 31, currentStep: 14)
                 .padding(.horizontal, 20)
@@ -112,8 +114,12 @@ struct WorkoutNutritionView: View {
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 34)
+                }
+                .frame(minHeight: geometry.size.height)
+            }
         }
         .background(Color.nutriSyncBackground)
+        .ignoresSafeArea(.keyboard)
     }
     
     private var canContinue: Bool {

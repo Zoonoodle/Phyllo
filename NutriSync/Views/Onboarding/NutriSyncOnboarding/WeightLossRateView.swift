@@ -12,7 +12,9 @@ struct WeightLossRateView: View {
     @State private var selectedRate: Double = 0.5 // Default to Standard
     
     var body: some View {
-        VStack(spacing: 0) {
+        GeometryReader { geometry in
+            ScrollView {
+                VStack(spacing: 0) {
             // Progress bar
             ProgressBar(totalSteps: 31, currentStep: 10)
                 .padding(.horizontal, 20)
@@ -85,7 +87,7 @@ struct WeightLossRateView: View {
                             .frame(width: 1, height: 8)
                     }
                 }
-                .padding(.horizontal, 40)
+                .padding(.horizontal, 20)
                 
                 // Rate details
                 VStack(spacing: 16) {
@@ -146,8 +148,12 @@ struct WeightLossRateView: View {
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 34)
+                }
+                .frame(minHeight: geometry.size.height)
+            }
         }
         .background(Color.nutriSyncBackground)
+        .ignoresSafeArea(.keyboard)
     }
     
     private var sliderPosition: CGFloat {

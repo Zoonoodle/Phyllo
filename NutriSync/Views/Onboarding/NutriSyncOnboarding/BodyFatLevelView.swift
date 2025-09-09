@@ -24,90 +24,96 @@ struct BodyFatLevelView: View {
     ]
     
     var body: some View {
-        VStack(spacing: 0) {
-            // Progress bar
-            ProgressBar(totalSteps: 31, currentStep: 1)
-                .padding(.horizontal, 20)
-                .padding(.top, 8)
-                .padding(.bottom, 32)
-            
-            // Title
-            Text("What is your body fat level?")
-                .font(.system(size: 28, weight: .bold))
-                .foregroundColor(.white)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 20)
-                .padding(.bottom, 12)
-            
-            // Subtitle
-            Text("Do not worry about being too precise. A visual assessment is sufficient.")
-                .font(.system(size: 17))
-                .foregroundColor(.white.opacity(0.6))
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 40)
-                .padding(.bottom, 32)
-            
-            // Body fat grid
-            LazyVGrid(columns: [
-                GridItem(.flexible()),
-                GridItem(.flexible()),
-                GridItem(.flexible())
-            ], spacing: 16) {
-                ForEach(bodyFatRanges, id: \.0) { range, imageName in
-                    BodyFatOption(
-                        percentage: range,
-                        imageName: imageName,
-                        isSelected: selectedBodyFat == range
-                    ) {
-                        selectedBodyFat = range
-                    }
-                }
-            }
-            .padding(.horizontal, 20)
-            
-            Spacer()
-            
-            // Navigation
-            HStack {
-                Button {
-                    coordinator.previousScreen()
-                } label: {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 20, weight: .medium))
+        GeometryReader { geometry in
+            ScrollView {
+                VStack(spacing: 0) {
+                    // Progress bar
+                    ProgressBar(totalSteps: 31, currentStep: 1)
+                        .padding(.horizontal, 20)
+                        .padding(.top, 8)
+                        .padding(.bottom, 32)
+                    
+                    // Title
+                    Text("What is your body fat level?")
+                        .font(.system(size: 28, weight: .bold))
                         .foregroundColor(.white)
-                        .frame(width: 44, height: 44)
-                }
-                
-                Spacer()
-                
-                Button {
-                    // Save body fat percentage to coordinator
-                    if let range = selectedBodyFat.split(separator: "-").first {
-                        if let percentage = Double(range.replacingOccurrences(of: "%", with: "")) {
-                            coordinator.bodyFatPercentage = percentage
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 12)
+                    
+                    // Subtitle
+                    Text("Do not worry about being too precise. A visual assessment is sufficient.")
+                        .font(.system(size: 17))
+                        .foregroundColor(.white.opacity(0.6))
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 32)
+                    
+                    // Body fat grid
+                    LazyVGrid(columns: [
+                        GridItem(.flexible()),
+                        GridItem(.flexible()),
+                        GridItem(.flexible())
+                    ], spacing: 16) {
+                        ForEach(bodyFatRanges, id: \.0) { range, imageName in
+                            BodyFatOption(
+                                percentage: range,
+                                imageName: imageName,
+                                isSelected: selectedBodyFat == range
+                            ) {
+                                selectedBodyFat = range
+                            }
                         }
-                    } else if selectedBodyFat.contains("+") {
-                        coordinator.bodyFatPercentage = 50.0 // Handle "50% +" case
                     }
-                    coordinator.nextScreen()
-                } label: {
-                    HStack(spacing: 6) {
-                        Text("Next")
-                            .font(.system(size: 17, weight: .semibold))
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 14, weight: .semibold))
+                    .padding(.horizontal, 20)
+                    
+                    Spacer()
+                    
+                    // Navigation
+                    HStack {
+                        Button {
+                            coordinator.previousScreen()
+                        } label: {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 20, weight: .medium))
+                                .foregroundColor(.white)
+                                .frame(width: 44, height: 44)
+                        }
+                        
+                        Spacer()
+                        
+                        Button {
+                            // Save body fat percentage to coordinator
+                            if let range = selectedBodyFat.split(separator: "-").first {
+                                if let percentage = Double(range.replacingOccurrences(of: "%", with: "")) {
+                                    coordinator.bodyFatPercentage = percentage
+                                }
+                            } else if selectedBodyFat.contains("+") {
+                                coordinator.bodyFatPercentage = 50.0 // Handle "50% +" case
+                            }
+                            coordinator.nextScreen()
+                        } label: {
+                            HStack(spacing: 6) {
+                                Text("Next")
+                                    .font(.system(size: 17, weight: .semibold))
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 14, weight: .semibold))
+                            }
+                            .foregroundColor(Color.nutriSyncBackground)
+                            .padding(.horizontal, 24)
+                            .frame(height: 44)
+                            .background(Color.white)
+                            .cornerRadius(22)
+                        }
                     }
-                    .foregroundColor(Color.nutriSyncBackground)
-                    .padding(.horizontal, 24)
-                    .frame(height: 44)
-                    .background(Color.white)
-                    .cornerRadius(22)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 34)
                 }
+                .frame(minHeight: geometry.size.height)
             }
-            .padding(.horizontal, 20)
-            .padding(.bottom, 34)
         }
         .background(Color.nutriSyncBackground)
+        .ignoresSafeArea(.keyboard)
     }
 }
 

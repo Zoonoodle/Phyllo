@@ -19,80 +19,86 @@ struct ExerciseFrequencyView: View {
     ]
     
     var body: some View {
-        VStack(spacing: 0) {
-            // Progress bar
-            ProgressBar(totalSteps: 31, currentStep: 3)
-                .padding(.horizontal, 20)
-                .padding(.top, 8)
-                .padding(.bottom, 32)
-            
-            // Title
-            Text("How often do you exercise?")
-                .font(.system(size: 28, weight: .bold))
-                .foregroundColor(.white)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 20)
-                .padding(.bottom, 12)
-            
-            // Subtitle
-            Text("Choose the number of recreational sports, cardio, or resistance training sessions you do per week.")
-                .font(.system(size: 17))
-                .foregroundColor(.white.opacity(0.6))
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 40)
-                .padding(.bottom, 40)
-            
-            // Exercise frequency options
-            VStack(spacing: 16) {
-                ForEach(frequencies, id: \.0) { frequency, icon in
-                    ExerciseFrequencyOption(
-                        text: frequency,
-                        icon: icon,
-                        isSelected: selectedFrequency == frequency
-                    ) {
-                        selectedFrequency = frequency
-                    }
-                }
-            }
-            .padding(.horizontal, 20)
-            
-            Spacer()
-            
-            // Navigation
-            HStack {
-                Button {
-                    coordinator.previousScreen()
-                } label: {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 20, weight: .medium))
+        GeometryReader { geometry in
+            ScrollView {
+                VStack(spacing: 0) {
+                    // Progress bar
+                    ProgressBar(totalSteps: 31, currentStep: 3)
+                        .padding(.horizontal, 20)
+                        .padding(.top, 8)
+                        .padding(.bottom, 32)
+                    
+                    // Title
+                    Text("How often do you exercise?")
+                        .font(.system(size: 28, weight: .bold))
                         .foregroundColor(.white)
-                        .frame(width: 44, height: 44)
-                }
-                
-                Spacer()
-                
-                Button {
-                    // Save exercise frequency to coordinator
-                    coordinator.exerciseFrequency = selectedFrequency
-                    coordinator.nextScreen()
-                } label: {
-                    HStack(spacing: 6) {
-                        Text("Next")
-                            .font(.system(size: 17, weight: .semibold))
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 14, weight: .semibold))
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 12)
+                    
+                    // Subtitle
+                    Text("Choose the number of recreational sports, cardio, or resistance training sessions you do per week.")
+                        .font(.system(size: 17))
+                        .foregroundColor(.white.opacity(0.6))
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 40)
+                    
+                    // Exercise frequency options
+                    VStack(spacing: 16) {
+                        ForEach(frequencies, id: \.0) { frequency, icon in
+                            ExerciseFrequencyOption(
+                                text: frequency,
+                                icon: icon,
+                                isSelected: selectedFrequency == frequency
+                            ) {
+                                selectedFrequency = frequency
+                            }
+                        }
                     }
-                    .foregroundColor(Color.nutriSyncBackground)
-                    .padding(.horizontal, 24)
-                    .frame(height: 44)
-                    .background(Color.white)
-                    .cornerRadius(22)
+                    .padding(.horizontal, 20)
+                    
+                    Spacer()
+                    
+                    // Navigation
+                    HStack {
+                        Button {
+                            coordinator.previousScreen()
+                        } label: {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 20, weight: .medium))
+                                .foregroundColor(.white)
+                                .frame(width: 44, height: 44)
+                        }
+                        
+                        Spacer()
+                        
+                        Button {
+                            // Save exercise frequency to coordinator
+                            coordinator.exerciseFrequency = selectedFrequency
+                            coordinator.nextScreen()
+                        } label: {
+                            HStack(spacing: 6) {
+                                Text("Next")
+                                    .font(.system(size: 17, weight: .semibold))
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 14, weight: .semibold))
+                            }
+                            .foregroundColor(Color.nutriSyncBackground)
+                            .padding(.horizontal, 24)
+                            .frame(height: 44)
+                            .background(Color.white)
+                            .cornerRadius(22)
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 34)
                 }
+                .frame(minHeight: geometry.size.height)
             }
-            .padding(.horizontal, 20)
-            .padding(.bottom, 34)
         }
         .background(Color.nutriSyncBackground)
+        .ignoresSafeArea(.keyboard)
     }
 }
 

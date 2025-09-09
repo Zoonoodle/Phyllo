@@ -18,83 +18,87 @@ struct GoalSelectionView: View {
     ]
     
     var body: some View {
-        VStack(spacing: 0) {
-            // Progress bar
-            ProgressBar(totalSteps: 31, currentStep: 8)
-                .padding(.horizontal, 20)
-                .padding(.top, 8)
-                .padding(.bottom, 32)
-            
-            // Title
-            Text("What is your goal?")
-                .font(.system(size: 28, weight: .bold))
-                .foregroundColor(.white)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 20)
-                .padding(.bottom, 12)
-            
-            // Subtitle
-            Text("Select your current goal.")
-                .font(.system(size: 17))
-                .foregroundColor(.white.opacity(0.6))
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 20)
-                .padding(.bottom, 32)
-            
-            // Goal options
-            VStack(spacing: 16) {
-                ForEach(goals, id: \.0) { goal, icon, description in
-                    GoalOption(
-                        title: goal,
-                        icon: icon,
-                        description: description,
-                        isSelected: selectedGoal == goal
-                    ) {
-                        selectedGoal = goal
-                    }
-                }
-            }
-            .padding(.horizontal, 20)
-            
-            Spacer()
-            
-            // Navigation
-            HStack {
-                Button {
-                    coordinator.previousScreen()
-                } label: {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 20, weight: .medium))
+        GeometryReader { geometry in
+            ScrollView {
+                VStack(spacing: 0) {
+                    // Progress bar
+                    ProgressBar(totalSteps: 31, currentStep: 8)
+                        .padding(.horizontal, 20)
+                        .padding(.top, 8)
+                        .padding(.bottom, 32)
+                    
+                    // Title
+                    Text("What is your goal?")
+                        .font(.system(size: 28, weight: .bold))
                         .foregroundColor(.white)
-                        .frame(width: 44, height: 44)
-                        .background(Color.white.opacity(0.1))
-                        .clipShape(Circle())
-                }
-                
-                Spacer()
-                
-                Button {
-                    // Save goal to coordinator
-                    coordinator.goal = selectedGoal
-                    coordinator.nextScreen()
-                } label: {
-                    HStack(spacing: 6) {
-                        Text("Next")
-                            .font(.system(size: 17, weight: .semibold))
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 14, weight: .semibold))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 12)
+                    
+                    // Subtitle
+                    Text("Select your current goal.")
+                        .font(.system(size: 17))
+                        .foregroundColor(.white.opacity(0.6))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 32)
+                    
+                    // Goal options
+                    VStack(spacing: 16) {
+                        ForEach(goals, id: \.0) { goal, icon, description in
+                            GoalOption(
+                                title: goal,
+                                icon: icon,
+                                description: description,
+                                isSelected: selectedGoal == goal
+                            ) {
+                                selectedGoal = goal
+                            }
+                        }
                     }
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 24)
-                    .frame(height: 44)
-                    .background(Color.white.opacity(0.1))
-                    .cornerRadius(22)
+                    .padding(.horizontal, 20)
+                    
+                    Spacer()
+                    
+                    // Navigation
+                    HStack {
+                        Button {
+                            coordinator.previousScreen()
+                        } label: {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 20, weight: .medium))
+                                .foregroundColor(.white)
+                                .frame(width: 44, height: 44)
+                        }
+                        
+                        Spacer()
+                        
+                        Button {
+                            // Save goal to coordinator
+                            coordinator.goal = selectedGoal
+                            coordinator.nextScreen()
+                        } label: {
+                            HStack(spacing: 6) {
+                                Text("Next")
+                                    .font(.system(size: 17, weight: .semibold))
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 14, weight: .semibold))
+                            }
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 24)
+                            .frame(height: 44)
+                            .background(Color.white.opacity(0.1))
+                            .cornerRadius(22)
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 34)
                 }
+                .frame(minHeight: geometry.size.height)
             }
-            .padding(.horizontal, 20)
-            .padding(.bottom, 34)
         }
         .background(Color.nutriSyncBackground)
+        .ignoresSafeArea(.keyboard)
     }
 }
 

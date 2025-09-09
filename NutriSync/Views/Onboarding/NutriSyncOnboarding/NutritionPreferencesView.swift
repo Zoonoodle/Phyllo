@@ -14,7 +14,9 @@ struct NutritionPreferencesView: View {
     let macroOptions = ["Balanced", "Higher protein", "Higher carbs", "Higher fats"]
     
     var body: some View {
-        VStack(spacing: 0) {
+        GeometryReader { geometry in
+            ScrollView {
+                VStack(spacing: 0) {
             // Progress bar
             ProgressBar(totalSteps: 31, currentStep: 26)
                 .padding(.horizontal, 20)
@@ -112,8 +114,12 @@ struct NutritionPreferencesView: View {
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 34)
+                }
+                .frame(minHeight: geometry.size.height)
+            }
         }
         .background(Color.nutriSyncBackground)
+        .ignoresSafeArea(.keyboard)
     }
     
     private var canContinue: Bool {

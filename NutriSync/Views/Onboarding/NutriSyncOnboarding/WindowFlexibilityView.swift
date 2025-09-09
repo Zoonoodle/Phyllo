@@ -15,7 +15,9 @@ struct WindowFlexibilityView: View {
     let flexibilityOptions = ["Strict timing", "Moderate flex", "Very flexible"]
     
     var body: some View {
-        VStack(spacing: 0) {
+        GeometryReader { geometry in
+            ScrollView {
+                VStack(spacing: 0) {
             // Progress bar
             ProgressBar(totalSteps: 31, currentStep: 29)
                 .padding(.horizontal, 20)
@@ -109,8 +111,12 @@ struct WindowFlexibilityView: View {
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 34)
+                }
+                .frame(minHeight: geometry.size.height)
+            }
         }
         .background(Color.nutriSyncBackground)
+        .ignoresSafeArea(.keyboard)
     }
     
     private func getFlexibilityDescription(for option: String) -> String {
