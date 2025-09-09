@@ -12,6 +12,8 @@ import UserNotifications
 struct NutriSyncApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     
+    @StateObject private var firebaseConfig = FirebaseConfig.shared
+    @StateObject private var dataProvider = FirebaseDataProvider.shared
     @StateObject private var timeProvider = TimeProvider.shared
     @StateObject private var nudgeManager = NudgeManager.shared
     @StateObject private var clarificationManager = ClarificationManager.shared
@@ -21,10 +23,10 @@ struct NutriSyncApp: App {
     @StateObject private var notificationManager = NotificationManager.shared
     
     init() {
-        // Configure Firebase on app launch
+        // Configure Firebase FIRST before anything else
         FirebaseConfig.shared.configure()
         
-        // Configure data provider based on Firebase availability
+        // Configure data provider after Firebase is ready
         configureDataProvider()
         
         // Configure notifications
@@ -34,6 +36,8 @@ struct NutriSyncApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(firebaseConfig)
+                .environmentObject(dataProvider)
                 .environmentObject(timeProvider)
                 .environmentObject(nudgeManager)
                 .environmentObject(clarificationManager)
@@ -41,6 +45,9 @@ struct NutriSyncApp: App {
                 .environmentObject(vertexAIService)
                 .environmentObject(mealCaptureService)
                 .environmentObject(notificationManager)
+                .task {
+                    await firebaseConfig.initializeAuth()
+                }
         }
     }
     
@@ -55,7 +62,7 @@ struct NutriSyncApp: App {
         }
         
         // Always use Firebase data provider now that mock is removed
-        DataSourceProvider.shared.configure(with: FirebaseDataProvider())
+        DataSourceProvider.shared.configure(with: FirebaseDataProvider.shared)
         print("🔥 Using Firebase Data Provider")
     }
     

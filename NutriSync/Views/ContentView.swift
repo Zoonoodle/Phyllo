@@ -9,7 +9,17 @@ import SwiftUI
 import SwiftData
 
 struct ContentView: View {
+    @EnvironmentObject private var firebaseConfig: FirebaseConfig
+    @EnvironmentObject private var dataProvider: FirebaseDataProvider
     @EnvironmentObject private var notificationManager: NotificationManager
+    
+    @State private var hasProfile = false
+    @State private var isCheckingProfile = true
+    @State private var showError = false
+    @State private var errorMessage = ""
+    @State private var existingProgress: OnboardingProgress?
+    
+    // Notification onboarding
     @State private var showNotificationOnboarding = false
     @AppStorage("hasSeenNotificationOnboarding") private var hasSeenNotificationOnboarding = false
     @AppStorage("lastNotificationPromptDate") private var lastNotificationPromptDate: Double = 0
@@ -23,24 +33,86 @@ struct ContentView: View {
     private let refreshThreshold: TimeInterval = 20 * 60
     
     var body: some View {
-        MainTabView()
-            .withNudges()
-            .fullScreenCover(isPresented: $showNotificationOnboarding) {
-                NotificationOnboardingView(isPresented: $showNotificationOnboarding)
-                    .environmentObject(notificationManager)
-            }
-            .task {
-                await checkNotificationOnboarding()
-            }
-            .onChange(of: scenePhase) { oldPhase, newPhase in
-                handleScenePhaseChange(from: oldPhase, to: newPhase)
-            }
-            .task(id: shouldRefreshData) {
-                if shouldRefreshData {
-                    await refreshAppData()
-                    shouldRefreshData = false
+        ZStack {
+            switch firebaseConfig.authState {
+            case .unknown, .authenticating:
+                LoadingView(message: "Initializing...")
+                
+            case .failed(let error):
+                AuthErrorView(error: error) {
+                    Task {
+                        await firebaseConfig.initializeAuth()
+                    }
+                }
+                
+            case .anonymous, .authenticated:
+                if isCheckingProfile {
+                    LoadingView(message: "Loading your profile...")
+                } else if !hasProfile {
+                    NutriSyncOnboardingCoordinator(existingProgress: existingProgress)
+                        .environmentObject(firebaseConfig)
+                        .environmentObject(dataProvider)
+                } else {
+                    MainTabView()
+                        .withNudges()
+                        .fullScreenCover(isPresented: $showNotificationOnboarding) {
+                            NotificationOnboardingView(isPresented: $showNotificationOnboarding)
+                                .environmentObject(notificationManager)
+                        }
+                        .task {
+                            await checkNotificationOnboarding()
+                        }
+                        .onChange(of: scenePhase) { oldPhase, newPhase in
+                            handleScenePhaseChange(from: oldPhase, to: newPhase)
+                        }
+                        .task(id: shouldRefreshData) {
+                            if shouldRefreshData {
+                                await refreshAppData()
+                                shouldRefreshData = false
+                            }
+                        }
                 }
             }
+        }
+        .task {
+            await checkProfileExistence()
+        }
+        .onChange(of: firebaseConfig.authState) { _, newState in
+            if case .anonymous = newState {
+                Task {
+                    await checkProfileExistence()
+                }
+            } else if case .authenticated = newState {
+                Task {
+                    await checkProfileExistence()
+                }
+            }
+        }
+        .alert("Error", isPresented: $showError) {
+            Button("OK") {}
+        } message: {
+            Text(errorMessage)
+        }
+    }
+    
+    private func checkProfileExistence() async {
+        guard firebaseConfig.isAuthenticated else { return }
+        
+        isCheckingProfile = true
+        do {
+            // Check for completed profile
+            hasProfile = try await dataProvider.hasCompletedOnboarding()
+            
+            // If no profile, check for existing progress
+            if !hasProfile {
+                existingProgress = try await dataProvider.loadOnboardingProgress()
+            }
+        } catch {
+            errorMessage = error.localizedDescription
+            showError = true
+            hasProfile = false
+        }
+        isCheckingProfile = false
     }
     
     private func checkNotificationOnboarding() async {

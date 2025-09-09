@@ -2,10 +2,34 @@ import Foundation
 import FirebaseFirestore
 import FirebaseAuth
 
+// MARK: - Data Provider Errors
+enum DataProviderError: LocalizedError {
+    case notAuthenticated
+    case profileNotFound
+    case invalidData
+    case networkError(Error)
+    
+    var errorDescription: String? {
+        switch self {
+        case .notAuthenticated:
+            return "User is not authenticated"
+        case .profileNotFound:
+            return "User profile not found"
+        case .invalidData:
+            return "Invalid data format"
+        case .networkError(let error):
+            return "Network error: \(error.localizedDescription)"
+        }
+    }
+}
+
 // MARK: - Firebase Data Provider
 /// Production implementation using Firebase Firestore
-class FirebaseDataProvider: DataProvider {
-    private let db = Firestore.firestore()
+@MainActor
+class FirebaseDataProvider: @preconcurrency DataProvider, ObservableObject {
+    static let shared = FirebaseDataProvider()
+    
+    private lazy var db = Firestore.firestore()
     private var listeners: [String: ListenerRegistration] = [:]
     
     // Cache for current day purpose
@@ -17,20 +41,24 @@ class FirebaseDataProvider: DataProvider {
     // Handler for redistribution nudge presentation
     var onRedistributionProposed: ((RedistributionResult) -> Void)?
     
-    // Current user ID (will be replaced with Auth in Phase 8)
+    // Current user ID - dynamically fetched from Firebase Auth
     private var currentUserId: String {
-        // For now, use a development user ID
-        // This will be replaced with: Auth.auth().currentUser?.uid ?? ""
-        return "dev_user_001"
+        // Use authenticated user ID or empty string if not authenticated
+        return Auth.auth().currentUser?.uid ?? ""
     }
     
-    private var userRef: DocumentReference {
-        db.collection("users").document(currentUserId)
+    private var userRef: DocumentReference? {
+        guard !currentUserId.isEmpty else { return nil }
+        return db.collection("users").document(currentUserId)
     }
     
     // MARK: - Meal Operations
     
     func saveMeal(_ meal: LoggedMeal) async throws {
+        guard let userRef = userRef else {
+            throw DataProviderError.notAuthenticated
+        }
+        
         Task { @MainActor in
             DebugLogger.shared.dataProvider("FirebaseDataProvider.saveMeal called")
             DebugLogger.shared.logMeal(meal, action: "Attempting to save")
@@ -56,6 +84,10 @@ class FirebaseDataProvider: DataProvider {
     }
     
     func getMeals(for date: Date) async throws -> [LoggedMeal] {
+        guard let userRef = userRef else {
+            throw DataProviderError.notAuthenticated
+        }
+        
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd"
         Task { @MainActor in
@@ -82,12 +114,18 @@ class FirebaseDataProvider: DataProvider {
     }
     
     func getMeal(id: String) async throws -> LoggedMeal? {
+        guard let userRef = userRef else {
+            throw DataProviderError.notAuthenticated
+        }
         let doc = try await userRef.collection("meals").document(id).getDocument()
         guard let data = doc.data() else { return nil }
         return LoggedMeal.fromFirestore(data)
     }
     
     func updateMeal(_ meal: LoggedMeal) async throws {
+        guard let userRef = userRef else {
+            throw DataProviderError.notAuthenticated
+        }
         let mealRef = userRef.collection("meals").document(meal.id.uuidString)
         try await mealRef.updateData(meal.toFirestore())
         
@@ -96,6 +134,9 @@ class FirebaseDataProvider: DataProvider {
     }
     
     func deleteMeal(id: String) async throws {
+        guard let userRef = userRef else {
+            throw DataProviderError.notAuthenticated
+        }
         try await userRef.collection("meals").document(id).delete()
         
         // TODO: Update analytics to reflect deletion
@@ -103,6 +144,9 @@ class FirebaseDataProvider: DataProvider {
     
     func getAnalyzingMeals() async throws -> [AnalyzingMeal] {
         // Fetch active analyzing meals (do not auto-delete; we want the banner to show)
+        guard let userRef = userRef else {
+            throw DataProviderError.notAuthenticated
+        }
         let snapshot = try await userRef.collection("analyzingMeals")
             .whereField("status", isEqualTo: "analyzing")
             .getDocuments()
@@ -120,6 +164,9 @@ class FirebaseDataProvider: DataProvider {
             DebugLogger.shared.logAnalyzingMeal(meal, action: "Starting analysis")
         }
         
+        guard let userRef = userRef else {
+            throw DataProviderError.notAuthenticated
+        }
         let analyzingRef = userRef.collection("analyzingMeals").document(meal.id.uuidString)
         let docPath = "users/\(currentUserId)/analyzingMeals/\(meal.id.uuidString)"
         Task { @MainActor in
@@ -142,6 +189,9 @@ class FirebaseDataProvider: DataProvider {
         }
         
         // First, get the analyzing meal to preserve its timestamp and windowId
+        guard let userRef = userRef else {
+            throw DataProviderError.notAuthenticated
+        }
         let analyzingDoc = try await userRef.collection("analyzingMeals").document(id).getDocument()
         guard let analyzingData = analyzingDoc.data(),
               let analyzingMeal = AnalyzingMeal.fromFirestore(analyzingData) else {
@@ -214,12 +264,18 @@ class FirebaseDataProvider: DataProvider {
     
     func cancelAnalyzingMeal(id: String) async throws {
         // Delete the analyzing meal
+        guard let userRef = userRef else {
+            throw DataProviderError.notAuthenticated
+        }
         try await userRef.collection("analyzingMeals").document(id).delete()
     }
     
     // MARK: - Window Operations
     
     func saveWindow(_ window: MealWindow) async throws {
+        guard let userRef = userRef else {
+            throw DataProviderError.notAuthenticated
+        }
         let windowRef = userRef.collection("windows").document(window.id.uuidString)
         let firestoreData = window.toFirestore()
         
@@ -250,6 +306,9 @@ class FirebaseDataProvider: DataProvider {
         }
         
         // Query windows by dayDate field (single field query, no index needed)
+        guard let userRef = userRef else {
+            throw DataProviderError.notAuthenticated
+        }
         let snapshot = try await userRef.collection("windows")
             .whereField("dayDate", isEqualTo: FirebaseFirestore.Timestamp(date: startOfDay))
             .getDocuments()
@@ -307,6 +366,9 @@ class FirebaseDataProvider: DataProvider {
     }
     
     func updateWindow(_ window: MealWindow) async throws {
+        guard let userRef = userRef else {
+            throw DataProviderError.notAuthenticated
+        }
         let windowRef = userRef.collection("windows").document(window.id.uuidString)
         try await windowRef.updateData(window.toFirestore())
     }
@@ -319,6 +381,10 @@ class FirebaseDataProvider: DataProvider {
         // IMPORTANT: Check if windows already exist (especially AI-generated ones)
         let calendar = Calendar.current
         let startOfDay = calendar.startOfDay(for: date)
+        guard let userRef = userRef else {
+            throw DataProviderError.notAuthenticated
+        }
+
         let existing = try await userRef.collection("windows")
             .whereField("dayDate", isEqualTo: startOfDay)
             .getDocuments()
@@ -415,6 +481,10 @@ class FirebaseDataProvider: DataProvider {
         // Clear existing windows for this date
         let calendar = Calendar.current
         let startOfDay = calendar.startOfDay(for: date)
+        guard let userRef = userRef else {
+            throw DataProviderError.notAuthenticated
+        }
+
         let existing = try await userRef.collection("windows")
             .whereField("dayDate", isEqualTo: startOfDay)
             .getDocuments()
@@ -496,6 +566,10 @@ class FirebaseDataProvider: DataProvider {
     
     func saveMorningCheckIn(_ checkIn: MorningCheckInData) async throws {
         let dateString = ISO8601DateFormatter.yyyyMMdd.string(from: checkIn.date)
+
+        guard let userRef = userRef else {
+            throw DataProviderError.notAuthenticated
+        }
         let checkInRef = userRef.collection("checkIns").document("morning").collection("data").document(dateString)
         try await checkInRef.setData([
             "id": checkIn.id.uuidString,
@@ -517,6 +591,10 @@ class FirebaseDataProvider: DataProvider {
     
     func getMorningCheckIn(for date: Date) async throws -> MorningCheckInData? {
         let dateString = ISO8601DateFormatter.yyyyMMdd.string(from: date)
+
+        guard let userRef = userRef else {
+            throw DataProviderError.notAuthenticated
+        }
         let doc = try await userRef.collection("checkIns").document("morning").collection("data").document(dateString).getDocument()
         guard let data = doc.data() else { return nil }
         // Map Firestore fields back to model
@@ -580,6 +658,10 @@ class FirebaseDataProvider: DataProvider {
     
     func getDayPurpose(for date: Date) async throws -> DayPurpose? {
         let dateString = ISO8601DateFormatter.yyyyMMdd.string(from: date)
+
+        guard let userRef = userRef else {
+            throw DataProviderError.notAuthenticated
+        }
         let doc = try await userRef.collection("dayPurposes").document(dateString).getDocument()
         guard let data = doc.data() else { return nil }
         
@@ -593,6 +675,9 @@ class FirebaseDataProvider: DataProvider {
     }
     
     func savePostMealCheckIn(_ checkIn: PostMealCheckIn) async throws {
+        guard let userRef = userRef else {
+            throw DataProviderError.notAuthenticated
+        }
         let checkInRef = userRef.collection("checkIns").document("postMeal").collection("data").document(checkIn.id.uuidString)
         try await checkInRef.setData([
             "id": checkIn.id.uuidString,
@@ -609,6 +694,9 @@ class FirebaseDataProvider: DataProvider {
         let startOfDay = Calendar.current.startOfDay(for: date)
         let endOfDay = Calendar.current.date(byAdding: .day, value: 1, to: startOfDay)!
         
+        guard let userRef = userRef else {
+            throw DataProviderError.notAuthenticated
+        }
         let snapshot = try await userRef.collection("checkIns").document("postMeal").collection("data")
             .whereField("timestamp", isGreaterThanOrEqualTo: startOfDay)
             .whereField("timestamp", isLessThan: endOfDay)
@@ -651,6 +739,9 @@ class FirebaseDataProvider: DataProvider {
             DebugLogger.shared.dataProvider("Fetching user profile from Firebase")
         }
         
+        guard let userRef = userRef else {
+            throw DataProviderError.notAuthenticated
+        }
         let doc = try await userRef.collection("profile").document("current").getDocument()
         
         if let data = doc.data() {
@@ -687,10 +778,16 @@ class FirebaseDataProvider: DataProvider {
     }
     
     func saveUserProfile(_ profile: UserProfile) async throws {
+        guard let userRef = userRef else {
+            throw DataProviderError.notAuthenticated
+        }
         try await userRef.collection("profile").document("current").setData(profile.toFirestore())
     }
     
     func getUserGoals() async throws -> UserGoals? {
+        guard let userRef = userRef else {
+            throw DataProviderError.notAuthenticated
+        }
         let doc = try await userRef.collection("goals").document("current").getDocument()
         guard let data = doc.data() else { 
             // Return default goals if not found
@@ -700,6 +797,9 @@ class FirebaseDataProvider: DataProvider {
     }
     
     func saveUserGoals(_ goals: UserGoals) async throws {
+        guard let userRef = userRef else {
+            throw DataProviderError.notAuthenticated
+        }
         try await userRef.collection("goals").document("current").setData(goals.toFirestore())
     }
     
@@ -707,6 +807,10 @@ class FirebaseDataProvider: DataProvider {
     
     func getDailyAnalytics(for date: Date) async throws -> DailyAnalytics? {
         let dateString = ISO8601DateFormatter.yyyyMMdd.string(from: date)
+
+        guard let userRef = userRef else {
+            throw DataProviderError.notAuthenticated
+        }
         let doc = try await userRef.collection("analytics").document("daily").collection("data").document(dateString).getDocument()
         
         guard let data = doc.data() else { return nil }
@@ -732,6 +836,10 @@ class FirebaseDataProvider: DataProvider {
     
     func updateDailyAnalytics(_ analytics: DailyAnalytics) async throws {
         let dateString = ISO8601DateFormatter.yyyyMMdd.string(from: analytics.date)
+
+        guard let userRef = userRef else {
+            throw DataProviderError.notAuthenticated
+        }
         let analyticsRef = userRef.collection("analytics").document("daily").collection("data").document(dateString)
         
         try await analyticsRef.setData([
@@ -843,6 +951,10 @@ class FirebaseDataProvider: DataProvider {
         let startOfDay = Calendar.current.startOfDay(for: from)
         let endOfDay = Calendar.current.date(byAdding: .day, value: 1, to: Calendar.current.startOfDay(for: to))!
         
+        guard let userRef = userRef else {
+            throw DataProviderError.notAuthenticated
+        }
+
         let docs = try await userRef.collection("meals")
             .whereField("timestamp", isGreaterThanOrEqualTo: startOfDay)
             .whereField("timestamp", isLessThan: endOfDay)
@@ -867,6 +979,10 @@ class FirebaseDataProvider: DataProvider {
         let startOfDay = Calendar.current.startOfDay(for: from)
         let endOfDay = Calendar.current.startOfDay(for: Calendar.current.date(byAdding: .day, value: 1, to: to)!)
         
+        guard let userRef = userRef else {
+            throw DataProviderError.notAuthenticated
+        }
+
         let docs = try await userRef.collection("windows")
             .whereField("dayDate", isGreaterThanOrEqualTo: startOfDay)
             .whereField("dayDate", isLessThan: endOfDay)
@@ -921,6 +1037,11 @@ class FirebaseDataProvider: DataProvider {
         let startOfDay = Calendar.current.startOfDay(for: date)
         let endOfDay = Calendar.current.date(byAdding: .day, value: 1, to: startOfDay)!
         
+        guard let userRef = userRef else {
+            // Return empty token if not authenticated
+            return ObservationToken {}
+        }
+        
         let listener = userRef.collection("meals")
             .whereField("timestamp", isGreaterThanOrEqualTo: startOfDay)
             .whereField("timestamp", isLessThan: endOfDay)
@@ -935,8 +1056,10 @@ class FirebaseDataProvider: DataProvider {
         listeners[token] = listener
         
         return ObservationToken { [weak self] in
-            self?.listeners[token]?.remove()
-            self?.listeners[token] = nil
+            Task { @MainActor in
+                self?.listeners[token]?.remove()
+                self?.listeners[token] = nil
+            }
         }
     }
     
@@ -944,6 +1067,11 @@ class FirebaseDataProvider: DataProvider {
         // Use start of day to match how we save dayDate
         let calendar = Calendar.current
         let startOfDay = calendar.startOfDay(for: date)
+        
+        guard let userRef = userRef else {
+            // Return empty token if not authenticated
+            return ObservationToken {}
+        }
         
         let listener = userRef.collection("windows")
             .whereField("dayDate", isEqualTo: startOfDay)
@@ -958,12 +1086,19 @@ class FirebaseDataProvider: DataProvider {
         listeners[token] = listener
         
         return ObservationToken { [weak self] in
-            self?.listeners[token]?.remove()
-            self?.listeners[token] = nil
+            Task { @MainActor in
+                self?.listeners[token]?.remove()
+                self?.listeners[token] = nil
+            }
         }
     }
     
     func observeAnalyzingMeals(onChange: @escaping ([AnalyzingMeal]) -> Void) -> ObservationToken {
+        guard let userRef = userRef else {
+            // Return empty token if not authenticated
+            return ObservationToken {}
+        }
+        
         let listener = userRef.collection("analyzingMeals")
             .whereField("status", isEqualTo: "analyzing")
             .addSnapshotListener { snapshot, error in
@@ -976,8 +1111,10 @@ class FirebaseDataProvider: DataProvider {
         listeners[token] = listener
         
         return ObservationToken { [weak self] in
-            self?.listeners[token]?.remove()
-            self?.listeners[token] = nil
+            Task { @MainActor in
+                self?.listeners[token]?.remove()
+                self?.listeners[token] = nil
+            }
         }
     }
     
@@ -1004,6 +1141,10 @@ class FirebaseDataProvider: DataProvider {
         ]
         
         // Clear each collection
+        guard let userRef = userRef else {
+            throw DataProviderError.notAuthenticated
+        }
+        
         for collectionName in collections {
             let snapshot = try await userRef.collection(collectionName).getDocuments()
             
@@ -1158,6 +1299,90 @@ class FirebaseDataProvider: DataProvider {
 // MARK: - Firestore Extensions
 
 // Extension removed - using built-in Firestore conversion in saveMorningCheckIn/getMorningCheckIn
+
+// MARK: - Onboarding Operations
+
+extension FirebaseDataProvider {
+    func hasCompletedOnboarding() async throws -> Bool {
+        guard let userRef = userRef else {
+            throw DataProviderError.notAuthenticated
+        }
+        
+        let profileDoc = userRef.collection("profile").document("current")
+        
+        let snapshot = try await profileDoc.getDocument()
+        
+        // Check if profile exists and has minimum required fields
+        if let data = snapshot.data(),
+           data["name"] != nil,
+           data["age"] != nil,
+           data["heightCM"] != nil,
+           data["weightKG"] != nil {
+            return true
+        }
+        
+        return false
+    }
+    
+    func saveOnboardingProgress(_ progress: OnboardingProgress) async throws {
+        guard let userRef = userRef else {
+            throw DataProviderError.notAuthenticated
+        }
+        
+        let progressRef = userRef.collection("onboarding").document("progress")
+        
+        try await progressRef.setData(progress.toFirestore())
+    }
+    
+    func loadOnboardingProgress() async throws -> OnboardingProgress? {
+        guard let userRef = userRef else {
+            throw DataProviderError.notAuthenticated
+        }
+        
+        let progressRef = userRef.collection("onboarding").document("progress")
+        
+        let snapshot = try await progressRef.getDocument()
+        
+        guard let data = snapshot.data() else { return nil }
+        
+        return OnboardingProgress.fromFirestore(data)
+    }
+    
+    func createUserProfile(
+        profile: UserProfile,
+        goals: UserGoals,
+        deleteProgress: Bool = true
+    ) async throws {
+        guard let userRef = userRef else {
+            throw DataProviderError.notAuthenticated
+        }
+        
+        let batch = db.batch()
+        
+        // Create profile document
+        let profileRef = userRef.collection("profile").document("current")
+        batch.setData(profile.toFirestore(), forDocument: profileRef)
+        
+        // Create goals document
+        let goalsRef = userRef.collection("goals").document("current")
+        batch.setData(goals.toFirestore(), forDocument: goalsRef)
+        
+        // Delete progress if requested
+        if deleteProgress {
+            let progressRef = userRef.collection("onboarding").document("progress")
+            batch.deleteDocument(progressRef)
+        }
+        
+        // Commit transaction
+        try await batch.commit()
+    }
+    
+    func generateInitialWindows() async throws {
+        // This will be implemented in Phase 2
+        // For now, just mark completion
+        print("Initial windows generation would happen here")
+    }
+}
 
 // MARK: - Helper Methods
 

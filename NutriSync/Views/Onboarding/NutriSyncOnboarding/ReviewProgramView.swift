@@ -6,14 +6,22 @@
 //
 
 import SwiftUI
+import FirebaseAuth
 
 struct ReviewProgramView: View {
-    // Mock data for preview - would come from onboarding responses
-    let wakeTime = Date(timeIntervalSince1970: 25200) // 7 AM
-    let bedTime = Date(timeIntervalSince1970: 82800) // 11 PM
-    let mealFrequency = "2-3 meals"
-    let eatingWindow = "Early Bird"
-    let breakfastHabit = "always"
+    @EnvironmentObject var coordinator: NutriSyncOnboardingViewModel
+    @EnvironmentObject var dataProvider: FirebaseDataProvider
+    @State private var isCreatingProfile = false
+    @State private var showError = false
+    @State private var errorMessage = ""
+    @State private var navigateToApp = false
+    
+    // Use data from coordinator instead of mock
+    private var wakeTime: Date { coordinator.wakeTime }
+    private var bedTime: Date { coordinator.bedTime }
+    private var mealFrequency: String { coordinator.mealFrequency }
+    private var eatingWindow: String { coordinator.eatingWindow }
+    private var breakfastHabit: String { coordinator.breakfastHabit }
     
     var body: some View {
         ZStack {
@@ -122,9 +130,29 @@ struct ReviewProgramView: View {
                 
                 // Start button
                 VStack(spacing: 12) {
-                    PrimaryButton(title: "Start Your Journey") {
-                        // Handle completion
+                    Button(action: startJourney) {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(Color.nutriSyncAccent)
+                                .frame(height: 56)
+                            
+                            if isCreatingProfile {
+                                HStack(spacing: 12) {
+                                    ProgressView()
+                                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                        .scaleEffect(0.9)
+                                    Text("Creating your profile...")
+                                        .font(.system(size: 17, weight: .semibold))
+                                        .foregroundColor(.white)
+                                }
+                            } else {
+                                Text("Start Your Journey")
+                                    .font(.system(size: 17, weight: .semibold))
+                                    .foregroundColor(.white)
+                            }
+                        }
                     }
+                    .disabled(isCreatingProfile)
                     
                     Text("You can adjust your schedule anytime")
                         .font(.system(size: 14))
@@ -133,6 +161,56 @@ struct ReviewProgramView: View {
                 .padding(.horizontal, 24)
                 .padding(.bottom, 40)
             }
+        }
+        .navigationDestination(isPresented: $navigateToApp) {
+            MainTabView()
+                .navigationBarBackButtonHidden(true)
+        }
+        .alert("Setup Error", isPresented: $showError) {
+            Button("Retry") {
+                startJourney()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text(errorMessage)
+        }
+    }
+    
+    private func startJourney() {
+        Task {
+            isCreatingProfile = true
+            
+            do {
+                print("[ReviewProgramView] Starting profile creation")
+                
+                // Complete onboarding and create profile atomically
+                try await coordinator.completeOnboarding()
+                
+                // Add haptic feedback for success
+                await MainActor.run {
+                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                }
+                
+                print("[ReviewProgramView] Profile created successfully")
+                
+                // Navigate to main app
+                await MainActor.run {
+                    navigateToApp = true
+                }
+                
+            } catch {
+                print("[ReviewProgramView] Profile creation failed: \(error.localizedDescription)")
+                
+                await MainActor.run {
+                    errorMessage = "Failed to create your profile: \(error.localizedDescription)\n\nPlease check your internet connection and try again."
+                    showError = true
+                    
+                    // Add haptic feedback for error
+                    UINotificationFeedbackGenerator().notificationOccurred(.error)
+                }
+            }
+            
+            isCreatingProfile = false
         }
     }
 }
