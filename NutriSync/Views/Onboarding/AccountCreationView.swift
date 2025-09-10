@@ -136,10 +136,10 @@ struct AccountCreationView: View {
                 return
             }
             
-            let credential = OAuthProvider.credential(
-                withProviderID: "apple.com",
-                idToken: idTokenString,
-                rawNonce: ""
+            let credential = OAuthProvider.appleCredential(
+                withIDToken: idTokenString,
+                rawNonce: "",
+                fullName: appleIDCredential.fullName
             )
             
             Task {
