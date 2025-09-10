@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct BreakfastHabitView: View {
+    @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
     @State private var selectedOption: BreakfastOption?
     
     enum BreakfastOption: String, CaseIterable {
@@ -49,88 +50,94 @@ struct BreakfastHabitView: View {
     }
     
     var body: some View {
-        ZStack {
-            Color.nutriSyncBackground
-                .ignoresSafeArea()
-            
+        GeometryReader { geometry in
             VStack(spacing: 0) {
-                NavigationHeader(
-                    currentStep: 3,
-                    totalSteps: 4,
-                    onBack: {},
-                    onClose: {}
-                )
+                // Progress bar
+                ProgressBar(totalSteps: 31, currentStep: 3)
+                    .padding(.horizontal, 20)
+                    .padding(.top, 8)
+                    .padding(.bottom, 32)
                 
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 24) {
-                        // Title
-                        Text("Do you usually eat breakfast?")
-                            .font(.system(size: 28, weight: .bold))
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 24)
-                            .padding(.top, 24)
-                        
-                        // Explanation
-                        Text("Your breakfast habits affect your circadian rhythm and metabolic rate. We'll optimize your meal windows based on your preference.")
-                            .font(.system(size: 16))
-                            .foregroundColor(.white.opacity(0.7))
-                            .lineSpacing(4)
-                            .padding(.horizontal, 24)
-                        
-                        // Options
-                        VStack(spacing: 16) {
-                            ForEach(BreakfastOption.allCases, id: \.self) { option in
-                                BreakfastOptionCard(
-                                    option: option,
-                                    isSelected: selectedOption == option,
-                                    onTap: {
-                                        withAnimation(.easeInOut(duration: 0.2)) {
-                                            selectedOption = option
-                                        }
-                                    }
-                                )
+                // Title
+                Text("Do you usually eat breakfast?")
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 12)
+                
+                // Subtitle
+                Text("Your breakfast habits affect your circadian rhythm and metabolic rate. We'll optimize your meal windows based on your preference.")
+                    .font(.system(size: 17))
+                    .foregroundColor(.white.opacity(0.6))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 40)
+                
+                // Options
+                VStack(spacing: 16) {
+                    ForEach(BreakfastOption.allCases, id: \.self) { option in
+                        BreakfastOptionCard(
+                            option: option,
+                            isSelected: selectedOption == option,
+                            onTap: {
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    selectedOption = option
+                                }
                             }
-                        }
-                        .padding(.horizontal, 24)
-                        .padding(.top, 16)
-                        
-                        // Science info cards
-                        VStack(spacing: 16) {
-                            // Morning eating benefits
-                            InfoCard(
-                                icon: "sun.max.fill",
-                                iconColor: .orange,
-                                title: "Morning Eating Benefits",
-                                description: "Eating breakfast can synchronize peripheral clocks, boost cortisol response, and improve glucose metabolism throughout the day."
-                            )
-                            
-                            // Fasting benefits
-                            InfoCard(
-                                icon: "clock.badge.checkmark.fill",
-                                iconColor: .nutriSyncAccent,
-                                title: "Extended Fasting Benefits",
-                                description: "Extending your overnight fast can enhance autophagy, improve insulin sensitivity, and support metabolic flexibility."
-                            )
-                        }
-                        .padding(.horizontal, 24)
-                        .padding(.top, 24)
+                        )
                     }
-                    .padding(.bottom, 100)
                 }
+                .padding(.horizontal, 20)
                 
                 Spacer()
                 
-                // Continue button
-                PrimaryButton(
-                    title: "Continue",
-                    isEnabled: selectedOption != nil
-                ) {
-                    // Handle continue
+                // Navigation
+                HStack {
+                    Button {
+                        coordinator.previousScreen()
+                    } label: {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 20, weight: .medium))
+                            .foregroundColor(.white)
+                            .frame(width: 44, height: 44)
+                            .background(Color.white.opacity(0.1))
+                            .clipShape(Circle())
+                    }
+                    
+                    Spacer()
+                    
+                    Button {
+                        // Save data to coordinator before proceeding
+                        if let selected = selectedOption {
+                            coordinator.breakfastHabit = selected.rawValue
+                        }
+                        
+                        coordinator.nextScreen()
+                    } label: {
+                        HStack(spacing: 6) {
+                            Text("Next")
+                                .font(.system(size: 17, weight: .semibold))
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 14, weight: .semibold))
+                        }
+                        .foregroundColor(Color.nutriSyncBackground)
+                        .padding(.horizontal, 24)
+                        .frame(height: 44)
+                        .background(selectedOption != nil ? Color.white : Color.white.opacity(0.3))
+                        .cornerRadius(22)
+                    }
+                    .disabled(selectedOption == nil)
                 }
-                .padding(.horizontal, 24)
-                .padding(.bottom, 40)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 34)
             }
+            .frame(width: geometry.size.width)
+            .frame(minHeight: geometry.size.height)
         }
+        .background(Color.nutriSyncBackground)
+        .ignoresSafeArea(.keyboard)
     }
 }
 

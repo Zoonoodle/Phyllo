@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct SleepScheduleView: View {
+    @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
     @State private var wakeTime: Date = {
         let components = DateComponents(hour: 7, minute: 0)
         return Calendar.current.date(from: components) ?? Date()
@@ -17,6 +18,7 @@ struct SleepScheduleView: View {
         let components = DateComponents(hour: 23, minute: 0)
         return Calendar.current.date(from: components) ?? Date()
     }()
+    @State private var hasInteracted = false
     
     var body: some View {
         ZStack {
@@ -27,7 +29,7 @@ struct SleepScheduleView: View {
                 NavigationHeader(
                     currentStep: 1,
                     totalSteps: 4,
-                    onBack: {},
+                    onBack: { coordinator.previousScreen() },
                     onClose: {}
                 )
                 
@@ -54,13 +56,22 @@ struct SleepScheduleView: View {
                                 .foregroundColor(.white.opacity(0.7))
                                 .padding(.horizontal, 24)
                             
-                            DatePicker("", selection: $wakeTime, displayedComponents: .hourAndMinute)
+                            DatePicker("", selection: Binding(
+                                get: { wakeTime },
+                                set: { 
+                                    wakeTime = $0
+                                    hasInteracted = true
+                                }
+                            ), displayedComponents: .hourAndMinute)
                                 .datePickerStyle(WheelDatePickerStyle())
                                 .labelsHidden()
-                                .colorInvert()
-                                .colorMultiply(.white)
+                                .environment(\.colorScheme, .dark)
                                 .padding(.horizontal, 24)
                                 .frame(height: 120)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .fill(Color.white.opacity(0.05))
+                                )
                         }
                         .padding(.top, 16)
                         
@@ -71,13 +82,22 @@ struct SleepScheduleView: View {
                                 .foregroundColor(.white.opacity(0.7))
                                 .padding(.horizontal, 24)
                             
-                            DatePicker("", selection: $bedTime, displayedComponents: .hourAndMinute)
+                            DatePicker("", selection: Binding(
+                                get: { bedTime },
+                                set: { 
+                                    bedTime = $0
+                                    hasInteracted = true
+                                }
+                            ), displayedComponents: .hourAndMinute)
                                 .datePickerStyle(WheelDatePickerStyle())
                                 .labelsHidden()
-                                .colorInvert()
-                                .colorMultiply(.white)
+                                .environment(\.colorScheme, .dark)
                                 .padding(.horizontal, 24)
                                 .frame(height: 120)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .fill(Color.white.opacity(0.05))
+                                )
                         }
                         
                         // Info card
@@ -111,8 +131,13 @@ struct SleepScheduleView: View {
                 Spacer()
                 
                 // Continue button
-                PrimaryButton(title: "Continue") {
-                    // Handle continue
+                PrimaryButton(
+                    title: "Continue",
+                    isEnabled: hasInteracted
+                ) {
+                    coordinator.wakeTime = wakeTime
+                    coordinator.bedTime = bedTime
+                    coordinator.nextScreen()
                 }
                 .padding(.horizontal, 24)
                 .padding(.bottom, 40)

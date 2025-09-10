@@ -61,6 +61,7 @@ class NutriSyncOnboardingViewModel {
     var dietaryRestrictions: Set<String> = []
     var foodSensitivities: String = ""
     var macroPreference: String = ""
+    var calorieDistribution: String = ""
     
     // Circadian data
     var energyPeak: String = ""

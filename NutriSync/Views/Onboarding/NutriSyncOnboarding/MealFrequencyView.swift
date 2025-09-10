@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct MealFrequencyView: View {
+    @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
     @State private var selectedFrequency: MealFrequency?
     
     enum MealFrequency: String, CaseIterable {
@@ -57,85 +58,93 @@ struct MealFrequencyView: View {
                 .ignoresSafeArea()
             
             VStack(spacing: 0) {
-                NavigationHeader(
-                    currentStep: 2,
-                    totalSteps: 4,
-                    onBack: {},
-                    onClose: {}
-                )
+                // Progress bar
+                ProgressBar(totalSteps: 31, currentStep: 21)
+                    .padding(.horizontal, 20)
+                    .padding(.top, 8)
+                    .padding(.bottom, 32)
                 
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 24) {
-                        // Title
-                        Text("How many meals do you prefer daily?")
-                            .font(.system(size: 28, weight: .bold))
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 24)
-                            .padding(.top, 24)
+                VStack(spacing: 0) {
+                    // Title
+                    Text("How many meals do you prefer daily?")
+                        .font(.system(size: 28, weight: .bold))
+                        .foregroundColor(.white)
+                        .multilineTextAlignment(.leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 12)
                         
-                        // Science-based explanation
-                        Text("Research shows that eating 2-3 meals per day with adequate fasting periods can improve metabolic health, reduce inflammation, and enhance circadian rhythms.")
-                            .font(.system(size: 16))
-                            .foregroundColor(.white.opacity(0.7))
-                            .lineSpacing(4)
-                            .padding(.horizontal, 24)
+                    // Subtitle
+                    Text("Research shows that eating 2-3 meals per day with adequate fasting periods can improve metabolic health, reduce inflammation, and enhance circadian rhythms.")
+                        .font(.system(size: 17))
+                        .foregroundColor(.white.opacity(0.6))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 40)
                         
-                        // Options
-                        VStack(spacing: 16) {
-                            ForEach(MealFrequency.allCases, id: \.self) { frequency in
-                                MealFrequencyOption(
-                                    frequency: frequency,
-                                    isSelected: selectedFrequency == frequency,
-                                    onTap: {
-                                        withAnimation(.easeInOut(duration: 0.2)) {
-                                            selectedFrequency = frequency
-                                        }
+                    // Options
+                    VStack(spacing: 16) {
+                        ForEach(MealFrequency.allCases, id: \.self) { frequency in
+                            MealFrequencyOption(
+                                frequency: frequency,
+                                isSelected: selectedFrequency == frequency,
+                                onTap: {
+                                    withAnimation(.easeInOut(duration: 0.2)) {
+                                        selectedFrequency = frequency
                                     }
-                                )
-                            }
+                                }
+                            )
                         }
-                        .padding(.horizontal, 24)
-                        .padding(.top, 16)
-                        
-                        // Info card
-                        HStack(spacing: 16) {
-                            Image(systemName: "clock.arrow.circlepath")
-                                .font(.system(size: 24))
-                                .foregroundColor(.nutriSyncAccent)
-                            
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Time-Restricted Eating")
-                                    .font(.system(size: 16, weight: .semibold))
-                                    .foregroundColor(.white)
-                                
-                                Text("Fewer meals create natural fasting periods that activate autophagy and improve insulin sensitivity.")
-                                    .font(.system(size: 14))
-                                    .foregroundColor(.white.opacity(0.7))
-                                    .lineSpacing(2)
-                            }
-                            
-                            Spacer()
-                        }
-                        .padding(20)
-                        .background(Color.white.opacity(0.05))
-                        .cornerRadius(16)
-                        .padding(.horizontal, 24)
-                        .padding(.top, 16)
                     }
-                    .padding(.bottom, 100)
-                }
+                    .padding(.horizontal, 20)
+                        
+                    Spacer()
                 
-                Spacer()
-                
-                // Continue button
-                PrimaryButton(
-                    title: "Continue",
-                    isEnabled: selectedFrequency != nil
-                ) {
-                    // Handle continue
+                // Navigation
+                HStack {
+                    Button {
+                        coordinator.previousScreen()
+                    } label: {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 20, weight: .medium))
+                            .foregroundColor(.white)
+                            .frame(width: 44, height: 44)
+                            .background(Color.white.opacity(0.1))
+                            .clipShape(Circle())
+                    }
+                    
+                    Spacer()
+                    
+                    Button {
+                        // Save data to coordinator before proceeding
+                        if let frequency = selectedFrequency {
+                            switch frequency {
+                            case .twoToThree:
+                                coordinator.mealFrequency = "3"
+                            case .fourToFive:
+                                coordinator.mealFrequency = "4"
+                            case .sixPlus:
+                                coordinator.mealFrequency = "6"
+                            }
+                        }
+                        coordinator.nextScreen()
+                    } label: {
+                        HStack(spacing: 6) {
+                            Text("Next")
+                                .font(.system(size: 17, weight: .semibold))
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 14, weight: .semibold))
+                        }
+                        .foregroundColor(selectedFrequency != nil ? Color.nutriSyncBackground : Color.white.opacity(0.3))
+                        .padding(.horizontal, 24)
+                        .frame(height: 44)
+                        .background(selectedFrequency != nil ? Color.white : Color.white.opacity(0.1))
+                        .cornerRadius(22)
+                    }
+                    .disabled(selectedFrequency == nil)
                 }
-                .padding(.horizontal, 24)
-                .padding(.bottom, 40)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 34)
             }
         }
     }
@@ -186,6 +195,7 @@ struct MealFrequencyOption: View {
                 Spacer()
             }
             .padding(20)
+            .frame(maxWidth: .infinity)
             .background(
                 RoundedRectangle(cornerRadius: 16)
                     .fill(isSelected ? Color.white.opacity(0.1) : Color.white.opacity(0.05))

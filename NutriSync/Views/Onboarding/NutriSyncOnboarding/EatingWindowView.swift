@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct EatingWindowView: View {
+    @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
     @State private var selectedWindow: EatingWindow?
     
     enum EatingWindow: String, CaseIterable {
@@ -83,95 +84,98 @@ struct EatingWindowView: View {
     }
     
     var body: some View {
-        ZStack {
-            Color.nutriSyncBackground
-                .ignoresSafeArea()
-            
+        GeometryReader { geometry in
             VStack(spacing: 0) {
-                NavigationHeader(
-                    currentStep: 4,
-                    totalSteps: 4,
-                    onBack: {},
-                    onClose: {}
-                )
+                // Progress bar
+                ProgressBar(totalSteps: 31, currentStep: 4)
+                    .padding(.horizontal, 20)
+                    .padding(.top, 8)
+                    .padding(.bottom, 32)
                 
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 24) {
-                        // Title
-                        Text("When do you prefer to eat?")
-                            .font(.system(size: 28, weight: .bold))
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 24)
-                            .padding(.top, 24)
-                        
-                        // Science explanation
-                        Text("Research shows that eating earlier in the day, when insulin sensitivity is highest, can improve metabolic health and weight management.")
-                            .font(.system(size: 16))
-                            .foregroundColor(.white.opacity(0.7))
-                            .lineSpacing(4)
-                            .padding(.horizontal, 24)
-                        
-                        // Visual timeline
-                        CircadianTimelineView(selectedWindow: selectedWindow)
-                            .padding(.vertical, 16)
-                        
-                        // Options
-                        VStack(spacing: 16) {
-                            ForEach(EatingWindow.allCases, id: \.self) { window in
-                                EatingWindowCard(
-                                    window: window,
-                                    isSelected: selectedWindow == window,
-                                    onTap: {
-                                        withAnimation(.easeInOut(duration: 0.2)) {
-                                            selectedWindow = window
-                                        }
-                                    }
-                                )
+                // Title
+                Text("When do you prefer to eat?")
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 12)
+                
+                // Subtitle
+                Text("Research shows that eating earlier in the day, when insulin sensitivity is highest, can improve metabolic health and weight management.")
+                    .font(.system(size: 17))
+                    .foregroundColor(.white.opacity(0.6))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 40)
+                
+                // Visual timeline
+                CircadianTimelineView(selectedWindow: selectedWindow)
+                    .padding(.vertical, 16)
+                
+                // Options
+                VStack(spacing: 16) {
+                    ForEach(EatingWindow.allCases, id: \.self) { window in
+                        EatingWindowCard(
+                            window: window,
+                            isSelected: selectedWindow == window,
+                            onTap: {
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    selectedWindow = window
+                                }
                             }
-                        }
-                        .padding(.horizontal, 24)
-                        
-                        // Research insight
-                        HStack(spacing: 16) {
-                            Image(systemName: "lightbulb.fill")
-                                .font(.system(size: 24))
-                                .foregroundColor(.yellow)
-                            
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Research Insight")
-                                    .font(.system(size: 16, weight: .semibold))
-                                    .foregroundColor(.white)
-                                
-                                Text("Studies show that consuming a higher proportion of calories earlier in the day is associated with better weight loss outcomes and metabolic health.")
-                                    .font(.system(size: 14))
-                                    .foregroundColor(.white.opacity(0.7))
-                                    .lineSpacing(2)
-                            }
-                            
-                            Spacer()
-                        }
-                        .padding(20)
-                        .background(Color.white.opacity(0.05))
-                        .cornerRadius(16)
-                        .padding(.horizontal, 24)
-                        .padding(.top, 16)
+                        )
                     }
-                    .padding(.bottom, 100)
                 }
+                .padding(.horizontal, 20)
                 
                 Spacer()
                 
-                // Continue button
-                PrimaryButton(
-                    title: "Continue",
-                    isEnabled: selectedWindow != nil
-                ) {
-                    // Handle continue
+                // Navigation
+                HStack {
+                    Button {
+                        coordinator.previousScreen()
+                    } label: {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 20, weight: .medium))
+                            .foregroundColor(.white)
+                            .frame(width: 44, height: 44)
+                            .background(Color.white.opacity(0.1))
+                            .clipShape(Circle())
+                    }
+                    
+                    Spacer()
+                    
+                    Button {
+                        // Save data to coordinator before proceeding
+                        if let selected = selectedWindow {
+                            coordinator.eatingWindow = selected.rawValue
+                        }
+                        
+                        coordinator.nextScreen()
+                    } label: {
+                        HStack(spacing: 6) {
+                            Text("Next")
+                                .font(.system(size: 17, weight: .semibold))
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 14, weight: .semibold))
+                        }
+                        .foregroundColor(Color.nutriSyncBackground)
+                        .padding(.horizontal, 24)
+                        .frame(height: 44)
+                        .background(selectedWindow != nil ? Color.white : Color.white.opacity(0.3))
+                        .cornerRadius(22)
+                    }
+                    .disabled(selectedWindow == nil)
                 }
-                .padding(.horizontal, 24)
-                .padding(.bottom, 40)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 34)
             }
+            .frame(width: geometry.size.width)
+            .frame(minHeight: geometry.size.height)
         }
+        .background(Color.nutriSyncBackground)
+        .ignoresSafeArea(.keyboard)
     }
 }
 
