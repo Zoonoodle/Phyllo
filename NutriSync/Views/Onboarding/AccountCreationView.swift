@@ -139,7 +139,7 @@ struct AccountCreationView: View {
             let credential = OAuthProvider.credential(
                 withProviderID: "apple.com",
                 idToken: idTokenString,
-                rawNonce: nil
+                rawNonce: ""
             )
             
             Task {
@@ -175,7 +175,7 @@ struct AccountCreationView: View {
         
         do {
             guard let user = Auth.auth().currentUser, user.isAnonymous else {
-                throw FirebaseConfig.AuthError.notAnonymous
+                throw AuthError.notAnonymous
             }
             
             let result = try await user.link(with: credential)
