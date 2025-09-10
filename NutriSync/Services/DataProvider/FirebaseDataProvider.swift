@@ -1426,6 +1426,28 @@ private extension FirebaseDataProvider {
         
         return cleanedName
     }
+    
+    // MARK: - Account Management
+    
+    func deleteAllUserData(userId: String) async throws {
+        // Delete all user data from Firestore
+        let userDocRef = db.collection("users").document(userId)
+        
+        // Delete subcollections
+        let subcollections = ["profile", "goals", "meals", "windows", "checkIns", "onboarding", "insights", "dayPurposes"]
+        
+        for subcollection in subcollections {
+            let documents = try await userDocRef.collection(subcollection).getDocuments()
+            for document in documents.documents {
+                try await document.reference.delete()
+            }
+        }
+        
+        // Delete the main user document
+        try await userDocRef.delete()
+        
+        print("[FirebaseDataProvider] Deleted all data for user: \(userId)")
+    }
 }
 
 // UserProfile extensions moved to UserProfile.swift

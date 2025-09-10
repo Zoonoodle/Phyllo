@@ -23,6 +23,10 @@ class NutriSyncOnboardingViewModel {
     var showSaveError: Bool = false
     private var dataProvider = FirebaseDataProvider.shared
     
+    // Account creation prompt
+    var showAccountCreation: Bool = false
+    var hasSkippedAccountCreation: Bool = UserDefaults.standard.bool(forKey: "skippedAccountCreation")
+    
     // Progress tracking
     var progress: OnboardingProgress?
     
@@ -146,6 +150,11 @@ class NutriSyncOnboardingViewModel {
             await saveProgressToFirebase()
         }
         
+        // Show account creation prompt after Section 1 (basics) if still anonymous
+        if currentSection == .basics && shouldShowAccountPrompt() {
+            showAccountCreation = true
+        }
+        
         // Move to next section
         if let currentIndex = NutriSyncOnboardingSection.allCases.firstIndex(of: currentSection),
            currentIndex < NutriSyncOnboardingSection.allCases.count - 1 {
@@ -153,6 +162,19 @@ class NutriSyncOnboardingViewModel {
             showingSectionIntro = true
             currentScreenIndex = 0
         }
+    }
+    
+    func shouldShowAccountPrompt() -> Bool {
+        // Only if still anonymous
+        guard Auth.auth().currentUser?.isAnonymous == true else { return false }
+        
+        // Check if already dismissed once
+        return !hasSkippedAccountCreation
+    }
+    
+    func markAccountCreationSkipped() {
+        hasSkippedAccountCreation = true
+        UserDefaults.standard.set(true, forKey: "skippedAccountCreation")
     }
     
     // MARK: - Firebase Integration
@@ -383,6 +405,7 @@ struct NutriSyncOnboardingCoordinator: View {
     @State private var viewModel = NutriSyncOnboardingViewModel()
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var dataProvider: FirebaseDataProvider
+    @EnvironmentObject private var firebaseConfig: FirebaseConfig
     
     let existingProgress: OnboardingProgress?
     
@@ -427,6 +450,16 @@ struct NutriSyncOnboardingCoordinator: View {
             Button("Continue", role: .cancel) {}
         } message: {
             Text(viewModel.saveError?.localizedDescription ?? "Failed to save your progress. You can retry or continue.")
+        }
+        .sheet(isPresented: $viewModel.showAccountCreation) {
+            AccountCreationView()
+                .environmentObject(firebaseConfig)
+                .onDisappear {
+                    // Mark as skipped if dismissed without creating account
+                    if firebaseConfig.isAnonymous {
+                        viewModel.markAccountCreationSkipped()
+                    }
+                }
         }
         .overlay(alignment: .top) {
             // Show saving indicator
