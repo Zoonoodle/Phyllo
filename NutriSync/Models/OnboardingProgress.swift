@@ -9,6 +9,16 @@ import Foundation
 import FirebaseFirestore
 import FirebaseAuth
 
+// Firebase Timestamp valid range helper
+extension Date {
+    var isValidForFirebaseTimestamp: Bool {
+        // Firebase Timestamps must be between 0001-01-01 00:00:00 UTC and 9999-12-31 23:59:59 UTC
+        // In Unix time, this is approximately between -62135596800 and 253402300799
+        let timestamp = self.timeIntervalSince1970
+        return timestamp >= -62135596800 && timestamp <= 253402300799
+    }
+}
+
 struct OnboardingProgress: Codable {
     let userId: String
     var currentSection: Int
@@ -92,8 +102,12 @@ struct OnboardingProgress: Codable {
         if let weeklyWeightChangeKG = weeklyWeightChangeKG { dict["weeklyWeightChangeKG"] = weeklyWeightChangeKG }
         if let minimumCalories = minimumCalories { dict["minimumCalories"] = minimumCalories }
         
-        if let wakeTime = wakeTime { dict["wakeTime"] = Timestamp(date: wakeTime) }
-        if let bedTime = bedTime { dict["bedTime"] = Timestamp(date: bedTime) }
+        if let wakeTime = wakeTime, wakeTime.isValidForFirebaseTimestamp { 
+            dict["wakeTime"] = Timestamp(date: wakeTime) 
+        }
+        if let bedTime = bedTime, bedTime.isValidForFirebaseTimestamp { 
+            dict["bedTime"] = Timestamp(date: bedTime) 
+        }
         if let mealsPerDay = mealsPerDay { dict["mealsPerDay"] = mealsPerDay }
         if let eatingWindowHours = eatingWindowHours { dict["eatingWindowHours"] = eatingWindowHours }
         if let breakfastPreference = breakfastPreference { dict["breakfastPreference"] = breakfastPreference }
@@ -103,7 +117,11 @@ struct OnboardingProgress: Codable {
         if let workoutsPerWeek = workoutsPerWeek { dict["workoutsPerWeek"] = workoutsPerWeek }
         if let workoutDays = workoutDays { dict["workoutDays"] = workoutDays }
         if let workoutTimes = workoutTimes { 
-            dict["workoutTimes"] = workoutTimes.map { Timestamp(date: $0) }
+            // Filter out invalid dates before converting to Timestamp
+            let validTimes = workoutTimes.filter { $0.isValidForFirebaseTimestamp }
+            if !validTimes.isEmpty {
+                dict["workoutTimes"] = validTimes.map { Timestamp(date: $0) }
+            }
         }
         if let trainingType = trainingType { dict["trainingType"] = trainingType }
         

@@ -145,6 +145,7 @@ struct MealFrequencyView: View {
                 }
                 .padding(.horizontal, 20)
                 .padding(.bottom, 34)
+                }
             }
         }
     }

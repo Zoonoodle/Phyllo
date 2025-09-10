@@ -40,15 +40,30 @@ class NutriSyncOnboardingViewModel {
     var trainingPlan: String = ""
     
     // Meal timing data
-    var wakeTime: Date = Date()
-    var bedTime: Date = Date()
+    var wakeTime: Date = {
+        var components = Calendar.current.dateComponents([.year, .month, .day], from: Date())
+        components.hour = 7
+        components.minute = 0
+        return Calendar.current.date(from: components) ?? Date()
+    }()
+    var bedTime: Date = {
+        var components = Calendar.current.dateComponents([.year, .month, .day], from: Date())
+        components.hour = 23
+        components.minute = 0
+        return Calendar.current.date(from: components) ?? Date()
+    }()
     var mealFrequency: String = ""
     var breakfastHabit: String = ""
     var eatingWindow: String = ""
     
     // Workout data
     var workoutDays: Set<String> = []
-    var workoutTime: Date = Date()
+    var workoutTime: Date = {
+        var components = Calendar.current.dateComponents([.year, .month, .day], from: Date())
+        components.hour = 9
+        components.minute = 0
+        return Calendar.current.date(from: components) ?? Date()
+    }()
     var preworkoutTiming: String = ""
     var postworkoutTiming: String = ""
     
@@ -187,6 +202,7 @@ class NutriSyncOnboardingViewModel {
         progress.minimumCalories = calorieFloor
         
         // Section 3: Lifestyle
+        // Always set wake/bed times since they now have proper default values
         progress.wakeTime = wakeTime
         progress.bedTime = bedTime
         if !mealFrequency.isEmpty { progress.mealsPerDay = Int(mealFrequency) ?? 3 }
@@ -196,11 +212,14 @@ class NutriSyncOnboardingViewModel {
         if !dietPreference.isEmpty { progress.dietType = dietPreference }
         
         // Section 4: Training
-        if !workoutDays.isEmpty { progress.workoutsPerWeek = workoutDays.count }
-        progress.workoutDays = workoutDays.compactMap { dayString in
-            ["Monday": 1, "Tuesday": 2, "Wednesday": 3, "Thursday": 4, "Friday": 5, "Saturday": 6, "Sunday": 0][dayString]
+        if !workoutDays.isEmpty { 
+            progress.workoutsPerWeek = workoutDays.count
+            progress.workoutDays = workoutDays.compactMap { dayString in
+                ["Monday": 1, "Tuesday": 2, "Wednesday": 3, "Thursday": 4, "Friday": 5, "Saturday": 6, "Sunday": 0][dayString]
+            }
+            // Only set workout times if workout days are configured
+            progress.workoutTimes = [workoutTime]
         }
-        progress.workoutTimes = [workoutTime]
         if !trainingPlan.isEmpty { progress.trainingType = trainingPlan }
         
         // Section 5: Optimization
@@ -354,7 +373,7 @@ class NutriSyncOnboardingViewModel {
             dailyProtein: Int((weight * 2.2) * 0.8), // 0.8g per lb
             dailyCarbs: 200,
             dailyFat: 65,
-            targetWeight: targetWeight != nil ? targetWeight! * 2.20462 : nil, // Convert to pounds
+            targetWeight: targetWeight.map { $0 * 2.20462 }, // Convert to pounds safely
             timeline: 12 // Default 12 weeks
         )
     }
