@@ -49,9 +49,11 @@ struct ContentView: View {
                 if isCheckingProfile {
                     LoadingView(message: "Loading your profile...")
                 } else if !hasProfile {
-                    NutriSyncOnboardingCoordinator(existingProgress: existingProgress)
-                        .environmentObject(firebaseConfig)
-                        .environmentObject(dataProvider)
+                    NavigationStack {
+                        NutriSyncOnboardingCoordinator(existingProgress: existingProgress)
+                            .environmentObject(firebaseConfig)
+                            .environmentObject(dataProvider)
+                    }
                 } else {
                     MainTabView()
                         .withNudges()
