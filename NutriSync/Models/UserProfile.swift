@@ -138,7 +138,7 @@ struct UserProfile: Codable, Identifiable {
     }
     
     func toFirestore() -> [String: Any] {
-        return [
+        var data: [String: Any] = [
             "id": id.uuidString,
             "name": name,
             "age": age,
@@ -155,14 +155,28 @@ struct UserProfile: Codable, Identifiable {
             "dailyFatTarget": dailyFatTarget,
             "preferredMealTimes": preferredMealTimes,
             "micronutrientPriorities": micronutrientPriorities,
-            "earliestMealHour": earliestMealHour as Any,
-            "latestMealHour": latestMealHour as Any,
             "workSchedule": workSchedule.rawValue,
-            "typicalWakeTime": typicalWakeTime as Any,
-            "typicalSleepTime": typicalSleepTime as Any,
-            "fastingProtocol": fastingProtocol.rawValue,
-            "lastBulkLogDate": lastBulkLogDate as Any
+            "fastingProtocol": fastingProtocol.rawValue
         ]
+        
+        // Only add optional values if they're not nil
+        if let earliestMealHour = earliestMealHour {
+            data["earliestMealHour"] = earliestMealHour
+        }
+        if let latestMealHour = latestMealHour {
+            data["latestMealHour"] = latestMealHour
+        }
+        if let typicalWakeTime = typicalWakeTime {
+            data["typicalWakeTime"] = typicalWakeTime
+        }
+        if let typicalSleepTime = typicalSleepTime {
+            data["typicalSleepTime"] = typicalSleepTime
+        }
+        if let lastBulkLogDate = lastBulkLogDate {
+            data["lastBulkLogDate"] = lastBulkLogDate
+        }
+        
+        return data
     }
     
     static func fromFirestore(_ data: [String: Any]) -> UserProfile? {
