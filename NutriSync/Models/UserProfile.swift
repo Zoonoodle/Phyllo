@@ -117,6 +117,57 @@ struct UserProfile: Codable, Identifiable {
     var fastingProtocol: FastingProtocol = .none
     var lastBulkLogDate: Date?      // Track when we last prompted for missed meals
     
+    // MARK: - Initializer
+    init(
+        id: UUID = UUID(),
+        name: String,
+        age: Int,
+        gender: Gender,
+        height: Double,
+        weight: Double,
+        activityLevel: ActivityLevel,
+        primaryGoal: NutritionGoal,
+        dietaryPreferences: [String],
+        dietaryRestrictions: [String],
+        dailyCalorieTarget: Int,
+        dailyProteinTarget: Int,
+        dailyCarbTarget: Int,
+        dailyFatTarget: Int,
+        preferredMealTimes: [String],
+        micronutrientPriorities: [String],
+        earliestMealHour: Int? = nil,
+        latestMealHour: Int? = nil,
+        workSchedule: WorkSchedule = .standard,
+        typicalWakeTime: Date? = nil,
+        typicalSleepTime: Date? = nil,
+        fastingProtocol: FastingProtocol = .none,
+        lastBulkLogDate: Date? = nil
+    ) {
+        self.id = id
+        self.name = name
+        self.age = age
+        self.gender = gender
+        self.height = height
+        self.weight = weight
+        self.activityLevel = activityLevel
+        self.primaryGoal = primaryGoal
+        self.dietaryPreferences = dietaryPreferences
+        self.dietaryRestrictions = dietaryRestrictions
+        self.dailyCalorieTarget = dailyCalorieTarget
+        self.dailyProteinTarget = dailyProteinTarget
+        self.dailyCarbTarget = dailyCarbTarget
+        self.dailyFatTarget = dailyFatTarget
+        self.preferredMealTimes = preferredMealTimes
+        self.micronutrientPriorities = micronutrientPriorities
+        self.earliestMealHour = earliestMealHour
+        self.latestMealHour = latestMealHour
+        self.workSchedule = workSchedule
+        self.typicalWakeTime = typicalWakeTime
+        self.typicalSleepTime = typicalSleepTime
+        self.fastingProtocol = fastingProtocol
+        self.lastBulkLogDate = lastBulkLogDate
+    }
+    
     // MARK: - Firestore Conversion
     private func primaryGoalForFirestore() -> [String: Any] {
         do {
@@ -167,13 +218,13 @@ struct UserProfile: Codable, Identifiable {
             data["latestMealHour"] = latestMealHour
         }
         if let typicalWakeTime = typicalWakeTime {
-            data["typicalWakeTime"] = typicalWakeTime
+            data["typicalWakeTime"] = Timestamp(date: typicalWakeTime)
         }
         if let typicalSleepTime = typicalSleepTime {
-            data["typicalSleepTime"] = typicalSleepTime
+            data["typicalSleepTime"] = Timestamp(date: typicalSleepTime)
         }
         if let lastBulkLogDate = lastBulkLogDate {
-            data["lastBulkLogDate"] = lastBulkLogDate
+            data["lastBulkLogDate"] = Timestamp(date: lastBulkLogDate)
         }
         
         return data
