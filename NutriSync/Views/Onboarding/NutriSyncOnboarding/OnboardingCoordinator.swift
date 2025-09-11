@@ -9,6 +9,14 @@ import SwiftUI
 import FirebaseAuth
 import FirebaseFirestore
 
+extension Date {
+    var timeIntervalSinceStartOfDay: TimeInterval {
+        let calendar = Calendar.current
+        let startOfDay = calendar.startOfDay(for: self)
+        return self.timeIntervalSince(startOfDay)
+    }
+}
+
 @Observable
 @MainActor
 class NutriSyncOnboardingViewModel {
@@ -51,13 +59,19 @@ class NutriSyncOnboardingViewModel {
         var components = Calendar.current.dateComponents([.year, .month, .day], from: Date())
         components.hour = 7
         components.minute = 0
-        return Calendar.current.date(from: components) ?? Date()
+        components.second = 0
+        components.nanosecond = 0
+        // Ensure we get a valid date, fallback to 7am today if calendar fails
+        return Calendar.current.date(from: components) ?? Date().addingTimeInterval(-Date().timeIntervalSinceStartOfDay + 7 * 3600)
     }()
     var bedTime: Date = {
         var components = Calendar.current.dateComponents([.year, .month, .day], from: Date())
         components.hour = 23
         components.minute = 0
-        return Calendar.current.date(from: components) ?? Date()
+        components.second = 0
+        components.nanosecond = 0
+        // Ensure we get a valid date, fallback to 11pm today if calendar fails
+        return Calendar.current.date(from: components) ?? Date().addingTimeInterval(-Date().timeIntervalSinceStartOfDay + 23 * 3600)
     }()
     var mealFrequency: String = ""
     var eatingWindow: String = ""
@@ -254,7 +268,7 @@ class NutriSyncOnboardingViewModel {
     
     @MainActor
     func completeOnboarding() async throws {
-        guard let userId = Auth.auth().currentUser?.uid else {
+        guard Auth.auth().currentUser?.uid != nil else {
             throw DataProviderError.notAuthenticated
         }
         
@@ -452,7 +466,8 @@ struct NutriSyncOnboardingCoordinator: View {
         case "Weight":
             WeightView()
         case "Body Fat":
-            BodyFatLevelView()
+            Text("Body Fat screen removed")
+                .foregroundColor(.white)
         case "Exercise":
             ExerciseFrequencyView()
         case "Activity":
@@ -476,7 +491,8 @@ struct NutriSyncOnboardingCoordinator: View {
         case "Weight Loss Rate":
             WeightLossRateView()
         case "Workout Schedule":
-            WorkoutScheduleView()
+            Text("Workout Schedule screen removed")
+                .foregroundColor(.white)
         case "Pre-Workout Nutrition":
             PreWorkoutNutritionView()
         case "Post-Workout Nutrition":
@@ -492,7 +508,8 @@ struct NutriSyncOnboardingCoordinator: View {
         case "Calorie Floor":
             CalorieFloorView()
         case "Calorie Distribution":
-            CalorieDistributionView()
+            Text("Calorie Distribution screen removed")
+                .foregroundColor(.white)
             
         // New Meal Timing Screens
         case "Sleep Schedule":
@@ -500,23 +517,28 @@ struct NutriSyncOnboardingCoordinator: View {
         case "Meal Frequency":
             MealFrequencyView()
         case "Breakfast Habit":
-            BreakfastHabitView()
+            Text("Breakfast Habit screen removed")
+                .foregroundColor(.white)
         case "Eating Window":
             EatingWindowView()
         case "Lifestyle Factors":
-            LifestyleFactorsView()
+            Text("Lifestyle Factors screen removed")
+                .foregroundColor(.white)
         case "Dietary Restrictions":
             DietaryRestrictionsView()
         case "Nutrition Preferences":
-            NutritionPreferencesView()
+            Text("Nutrition Preferences screen removed")
+                .foregroundColor(.white)
         case "Energy Patterns":
-            EnergyPatternsView()
+            Text("Energy Patterns screen removed")
+                .foregroundColor(.white)
         case "Meal Timing":
             MealTimingPreferenceView()
         case "Window Flexibility":
             WindowFlexibilityView()
         case "Notification Preferences":
-            NotificationPreferencesView()
+            Text("Notification Preferences screen removed")
+                .foregroundColor(.white)
             
         // Finish Section
         case "Review Program":

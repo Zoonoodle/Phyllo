@@ -18,7 +18,7 @@ struct ExpenditureView: View {
             ScrollView {
                 VStack(spacing: 0) {
                     // Progress bar
-                    ProgressBar(totalSteps: 23, currentStep: 5)
+                    ProgressBar(totalSteps: 24, currentStep: 5)
                         .padding(.horizontal, 20)
                         .padding(.top, 8)
                         .padding(.bottom, 40)

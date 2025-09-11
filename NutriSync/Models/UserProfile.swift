@@ -217,13 +217,19 @@ struct UserProfile: Codable, Identifiable {
         if let latestMealHour = latestMealHour {
             data["latestMealHour"] = latestMealHour
         }
-        if let typicalWakeTime = typicalWakeTime {
+        
+        // Safely convert dates to Firebase Timestamps
+        // Firebase Timestamps require dates after year 1 AD (Unix epoch - 62135596800 seconds)
+        if let typicalWakeTime = typicalWakeTime,
+           typicalWakeTime.timeIntervalSince1970 > -62135596800 {
             data["typicalWakeTime"] = Timestamp(date: typicalWakeTime)
         }
-        if let typicalSleepTime = typicalSleepTime {
+        if let typicalSleepTime = typicalSleepTime,
+           typicalSleepTime.timeIntervalSince1970 > -62135596800 {
             data["typicalSleepTime"] = Timestamp(date: typicalSleepTime)
         }
-        if let lastBulkLogDate = lastBulkLogDate {
+        if let lastBulkLogDate = lastBulkLogDate,
+           lastBulkLogDate.timeIntervalSince1970 > -62135596800 {
             data["lastBulkLogDate"] = Timestamp(date: lastBulkLogDate)
         }
         

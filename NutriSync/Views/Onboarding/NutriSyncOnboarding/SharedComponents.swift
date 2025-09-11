@@ -185,5 +185,38 @@ struct OnboardingOptionButton: View {
     }
 }
 
+// MARK: - Multi Select Button (for multiple selection screens)
+struct MultiSelectButton: View {
+    let title: String
+    let isSelected: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            HStack {
+                Text(title)
+                    .font(.system(size: 17, weight: isSelected ? .semibold : .regular))
+                    .foregroundColor(.white)
+                
+                Spacer()
+                
+                Image(systemName: isSelected ? "checkmark.square.fill" : "square")
+                    .font(.system(size: 22))
+                    .foregroundColor(isSelected ? .white : .white.opacity(0.4))
+            }
+            .padding(16)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color.white.opacity(isSelected ? 0.1 : 0.05))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(Color.white.opacity(isSelected ? 0.3 : 0.1), lineWidth: 1)
+            )
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+}
+
 // Note: SectionProgressHeader is in its own file
 // Note: OnboardingBottomNav is in its own file
