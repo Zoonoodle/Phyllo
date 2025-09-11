@@ -53,32 +53,30 @@ struct MealFrequencyView: View {
     }
     
     var body: some View {
-        ZStack {
-            Color.nutriSyncBackground
-                .ignoresSafeArea()
-            
-            VStack(spacing: 0) {
+        GeometryReader { geometry in
+            ScrollView {
+                VStack(spacing: 0) {
                 // Progress bar
                 ProgressBar(totalSteps: 31, currentStep: 21)
                     .padding(.horizontal, 20)
                     .padding(.top, 8)
                     .padding(.bottom, 32)
                 
-                VStack(spacing: 0) {
-                    // Title
+                    // Title - centered
                     Text("How many meals do you prefer daily?")
                         .font(.system(size: 28, weight: .bold))
                         .foregroundColor(.white)
-                        .multilineTextAlignment(.leading)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: .infinity)
                         .padding(.horizontal, 20)
                         .padding(.bottom, 12)
                         
-                    // Subtitle
+                    // Subtitle - centered
                     Text("Research shows that eating 2-3 meals per day with adequate fasting periods can improve metabolic health, reduce inflammation, and enhance circadian rhythms.")
-                        .font(.system(size: 17))
+                        .font(.system(size: 15))
                         .foregroundColor(.white.opacity(0.6))
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: .infinity)
                         .padding(.horizontal, 20)
                         .padding(.bottom, 40)
                         
@@ -146,8 +144,12 @@ struct MealFrequencyView: View {
                 .padding(.horizontal, 20)
                 .padding(.bottom, 34)
                 }
+                .frame(width: geometry.size.width)
+                .frame(minHeight: geometry.size.height)
             }
         }
+        .background(Color.nutriSyncBackground)
+        .ignoresSafeArea(.keyboard)
     }
 }
 

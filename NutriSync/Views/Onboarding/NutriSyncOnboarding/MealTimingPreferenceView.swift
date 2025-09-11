@@ -18,12 +18,12 @@ struct MealTimingPreferenceView: View {
             ScrollView {
                 VStack(spacing: 0) {
             // Progress bar
-            ProgressBar(totalSteps: 31, currentStep: 28)
+            ProgressBar(totalSteps: 24, currentStep: 22)
                 .padding(.horizontal, 20)
                 .padding(.top, 8)
                 .padding(.bottom, 40)
             
-            VStack(alignment: .leading, spacing: 24) {
+            VStack(alignment: .leading, spacing: 20) {
                 // Title
                 Text("Meal Timing")
                     .font(.system(size: 28, weight: .bold))
@@ -37,12 +37,12 @@ struct MealTimingPreferenceView: View {
                     .padding(.bottom, 20)
                 
                 // Meal size preference
-                VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: 12) {
                     Text("Larger Meal Preference")
                         .font(.system(size: 20, weight: .semibold))
                         .foregroundColor(.white)
                     
-                    VStack(spacing: 12) {
+                    VStack(spacing: 10) {
                         ForEach(mealSizeOptions, id: \.self) { option in
                             OptionButton(
                                 title: option,

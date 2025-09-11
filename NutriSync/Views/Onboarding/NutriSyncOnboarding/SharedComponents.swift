@@ -94,17 +94,15 @@ struct PrimaryButton: View {
         } label: {
             Text(title)
                 .font(.system(size: 18, weight: .semibold))
-                .foregroundColor(.white)
+                .foregroundColor(isEnabled ? Color.nutriSyncBackground : .white.opacity(0.5))
                 .frame(maxWidth: .infinity)
                 .frame(height: 56)
-                .background(Color.nutriSyncBackground)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16)
-                        .stroke(Color.white.opacity(isEnabled ? 0.2 : 0.1), lineWidth: 1)
-                )
-                .cornerRadius(16)
+                .background(isEnabled ? Color.white : Color.white.opacity(0.1))
+                .cornerRadius(28)
         }
-        .opacity(isEnabled ? 1 : 0.6)
         .disabled(!isEnabled)
     }
 }
+
+// Note: SectionProgressHeader is in its own file
+// Note: OnboardingBottomNav is in its own file
