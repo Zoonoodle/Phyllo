@@ -15,6 +15,8 @@ struct SimpleTimelineView: View {
     
     @State private var currentTime = Date()
     private let timer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
+    @State private var showJumpToNowButton = true  // Always show for now, TODO: detect scroll position
+    @State private var scrollViewProxy: ScrollViewProxy?
     
     // Dynamic layout manager for content-based heights
     @StateObject private var layoutManager = TimelineLayoutManager()
@@ -28,23 +30,52 @@ struct SimpleTimelineView: View {
     
     var body: some View {
         ScrollViewReader { proxy in
-            timelineContent
-                .onAppear {
-                    updateLayouts()
-                    scrollToCurrentTimeOrFirstWindow(proxy: proxy)
+            ZStack(alignment: .bottom) {
+                timelineContent
+                    .onAppear {
+                        scrollViewProxy = proxy
+                        updateLayouts()
+                        scrollToCurrentTimeOrFirstWindow(proxy: proxy)
+                    }
+                    .onChange(of: viewModel.mealWindows.count) { _, _ in
+                        updateLayouts()
+                    }
+                    .onChange(of: viewModel.todaysMeals.count) { _, _ in
+                        updateLayouts()
+                    }
+                    .onChange(of: viewModel.analyzingMeals.count) { _, _ in
+                        updateLayouts()
+                    }
+                    .onReceive(timer) { _ in
+                        currentTime = Date()
+                    }
+                
+                // Jump to Now button
+                if showJumpToNowButton {
+                    Button(action: {
+                        withAnimation(.easeInOut(duration: 0.5)) {
+                            scrollToCurrentTime(proxy: proxy)
+                        }
+                    }) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "clock.fill")
+                                .font(.system(size: 14))
+                            Text("Now")
+                                .font(.system(size: 14, weight: .medium))
+                        }
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .background(
+                            Capsule()
+                                .fill(Color.nutriSyncAccent)
+                                .shadow(color: Color.black.opacity(0.3), radius: 8, x: 0, y: 4)
+                        )
+                    }
+                    .padding(.bottom, 20)
+                    .transition(.scale.combined(with: .opacity))
                 }
-                .onChange(of: viewModel.mealWindows.count) { _, _ in
-                    updateLayouts()
-                }
-                .onChange(of: viewModel.todaysMeals.count) { _, _ in
-                    updateLayouts()
-                }
-                .onChange(of: viewModel.analyzingMeals.count) { _, _ in
-                    updateLayouts()
-                }
-                .onReceive(timer) { _ in
-                    currentTime = Date()
-                }
+            }
         }
     }
     
@@ -107,24 +138,52 @@ struct SimpleTimelineView: View {
     }
     
     private func scrollToCurrentTimeOrFirstWindow(proxy: ScrollViewProxy) {
-        // Scroll to first window if available, otherwise current time
-        if let firstWindow = viewModel.mealWindows.first {
-            let calendar = Calendar.current
+        let now = Date()
+        let calendar = Calendar.current
+        let currentHour = calendar.component(.hour, from: now)
+        let currentMinute = calendar.component(.minute, from: now)
+        
+        // Always scroll to current time if it's within our timeline hours
+        if hours.contains(currentHour) {
+            // Calculate the anchor position based on how far through the hour we are
+            // This provides more accurate positioning than just using .top or .center
+            let minuteProgress = CGFloat(currentMinute) / 60.0
+            let anchor: UnitPoint = UnitPoint(x: 0.5, y: 0.3 - (minuteProgress * 0.15))
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                withAnimation(.easeInOut(duration: 0.5)) {
+                    proxy.scrollTo("hour-\(currentHour)", anchor: anchor)
+                }
+            }
+        } else if let firstWindow = viewModel.mealWindows.first {
+            // Fallback: If current time is not in timeline, scroll to first window
             let windowHour = calendar.component(.hour, from: firstWindow.startTime)
             
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                withAnimation(.easeInOut(duration: 0.3)) {
+                withAnimation(.easeInOut(duration: 0.5)) {
                     proxy.scrollTo("hour-\(windowHour)", anchor: .top)
                 }
             }
-        } else {
-            let currentHour = Calendar.current.component(.hour, from: Date())
-            if hours.contains(currentHour) {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    withAnimation(.easeInOut(duration: 0.3)) {
-                        proxy.scrollTo("hour-\(currentHour)", anchor: .center)
-                    }
-                }
+        }
+    }
+    
+    private func scrollToCurrentTime(proxy: ScrollViewProxy) {
+        let now = Date()
+        let calendar = Calendar.current
+        let currentHour = calendar.component(.hour, from: now)
+        let currentMinute = calendar.component(.minute, from: now)
+        
+        // Only scroll if current time is within our timeline hours
+        if hours.contains(currentHour) {
+            // Calculate the anchor position based on how far through the hour we are
+            let minuteProgress = CGFloat(currentMinute) / 60.0
+            let anchor: UnitPoint = UnitPoint(x: 0.5, y: 0.3 - (minuteProgress * 0.15))
+            
+            proxy.scrollTo("hour-\(currentHour)", anchor: anchor)
+            
+            // Hide the button after scrolling
+            withAnimation(.easeOut(duration: 0.3).delay(0.5)) {
+                showJumpToNowButton = false
             }
         }
     }

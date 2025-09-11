@@ -14,6 +14,7 @@ struct DayDetailView: View {
     @State private var isLoadingDetails = true
     @State private var micronutrientStatus: [ScheduleViewModel.MicronutrientStatus] = []
     @State private var foodTimeline: [ScheduleViewModel.TimelineEntry] = []
+    @Environment(\.dismiss) private var dismiss
     
     // Progressive loading states
     @State private var basicDataLoaded = false
@@ -32,21 +33,11 @@ struct DayDetailView: View {
     }
     
     var body: some View {
-        ZStack {
-            // Background
-            Color.nutriSyncBackground
-                .ignoresSafeArea()
-            
-            // Main content
-            VStack(spacing: 0) {
-                // Safe area padding
-                Color.clear
-                    .frame(height: 50)
-                
-                // Navigation bar
-                customNavigationBar
-                    .padding(.top, 8)
-                    .background(Color.nutriSyncBackground)
+        NavigationStack {
+            ZStack {
+                // Background
+                Color.nutriSyncBackground
+                    .ignoresSafeArea()
                 
                 // Scrollable content with progressive loading
                 ScrollView {
@@ -54,42 +45,65 @@ struct DayDetailView: View {
                         // Phase 1: Basic stats (immediate)
                         if basicDataLoaded {
                             DailyNutriSyncRing(dailySummary: dailySummary)
-                                .padding(.horizontal, 16)
                                 .transition(.opacity.combined(with: .scale))
                         } else {
                             // Loading placeholder for ring
                             RoundedRectangle(cornerRadius: 16)
                                 .fill(Color.phylloCard)
                                 .frame(height: 200)
-                                .padding(.horizontal, 16)
                                 .shimmer()
                         }
                         
                         // Phase 2: Day Purpose (0.5s delay)
                         if dayPurposeLoaded, let dayPurpose = dailySummary.dayPurpose {
                             DayPurposeCard(dayPurpose: dayPurpose)
-                                .padding(.horizontal, 16)
                                 .transition(.opacity.combined(with: .move(edge: .top)))
                         }
                         
                         // Phase 3: Food Timeline (1s delay)
                         if timelineLoaded && !foodTimeline.isEmpty {
                             ChronologicalFoodList(foodTimeline: foodTimeline)
-                                .padding(.horizontal, 16)
                                 .transition(.opacity.combined(with: .move(edge: .bottom)))
                         }
                         
                         // Phase 4: Micronutrients (1.5s delay)
                         if micronutrientsLoaded && !micronutrientStatus.isEmpty {
                             DailyMicronutrientStatusView(micronutrientStatus: micronutrientStatus)
-                                .padding(.horizontal, 16)
                                 .padding(.bottom, 32)
                                 .transition(.opacity)
                         }
                     }
-                    .padding(.top, 16)
+                    .padding(.top, 10) // Increased padding to avoid Dynamic Island/notch
+                    .padding(.horizontal, 32) // Add consistent horizontal padding to entire content
                 }
             }
+            .navigationTitle("Daily Summary")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button {
+                        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                            showDayDetail = false
+                        }
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 16, weight: .medium))
+                            Text("Back")
+                                .font(.system(size: 17))
+                        }
+                        .foregroundColor(.white)
+                    }
+                }
+                
+                ToolbarItem(placement: .principal) {
+                    Text(dateFormatter.string(from: Date()))
+                        .font(.system(size: 13))
+                        .foregroundColor(.white.opacity(0.6))
+                }
+            }
+            .toolbarBackground(Color.nutriSyncBackground, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
         }
         .opacity(animateContent ? 1 : 0)
         .onAppear {
@@ -98,42 +112,6 @@ struct DayDetailView: View {
                 animateContent = true
             }
         }
-    }
-    
-    private var customNavigationBar: some View {
-        HStack {
-            // Back button
-            Button {
-                withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                    showDayDetail = false
-                }
-            } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 16, weight: .medium))
-                    Text("Back")
-                        .font(.system(size: 16))
-                }
-                .foregroundColor(.white)
-            }
-            .buttonStyle(PlainButtonStyle())
-            
-            Spacer()
-            
-            // Title
-            Text("Daily Summary")
-                .font(.system(size: 20, weight: .bold))
-                .foregroundColor(.white)
-            
-            Spacer()
-            
-            // Date
-            Text(dateFormatter.string(from: Date()))
-                .font(.system(size: 14))
-                .foregroundColor(.white.opacity(0.6))
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
     }
     
     private func startProgressiveLoading() {

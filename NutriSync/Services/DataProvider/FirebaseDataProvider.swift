@@ -1439,9 +1439,11 @@ private extension FirebaseDataProvider {
         
         return cleanedName
     }
-    
-    // MARK: - Account Management
-    
+}
+
+// MARK: - Account Management
+
+extension FirebaseDataProvider {
     func deleteAllUserData(userId: String) async throws {
         // Delete all user data from Firestore
         let userDocRef = db.collection("users").document(userId)

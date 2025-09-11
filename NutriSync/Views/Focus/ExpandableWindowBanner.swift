@@ -425,9 +425,11 @@ struct ExpandableWindowBanner: View {
         case .completed, .missed, .fasted:
             return Color(red: 0.08, green: 0.08, blue: 0.09)  // Darker for passed windows
         case .lateButDoable:
-            return Color(red: 0.12, green: 0.11, blue: 0.10)  // Slightly yellow tint
-        case .active, .upcoming:
-            return Color(red: 0.11, green: 0.11, blue: 0.12)  // Normal dark gray
+            return Color(red: 0.10, green: 0.10, blue: 0.09)  // Slightly yellow tint
+        case .active:
+            return Color(red: 0.09, green: 0.09, blue: 0.10)  // Slightly darker for active
+        case .upcoming:
+            return Color(red: 0.10, green: 0.10, blue: 0.11)  // Normal dark gray
         }
     }
     
@@ -477,12 +479,7 @@ struct ExpandableWindowBanner: View {
                     ))
             }
             
-            // Show additional content for active windows when empty
-            if window.isActive && meals.isEmpty && analyzingMealsInWindow.isEmpty {
-                windowInsightsSection
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 10)
-            }
+            // Removed additional content section to keep consistent height
             
             // Remove spacer - let content determine height naturally
             
@@ -562,9 +559,9 @@ struct ExpandableWindowBanner: View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 6) {
                 Image(systemName: mealIcon)
-                    .font(.system(size: { if case .active = windowStatus { return 18 } else { return 16 } }()))
+                    .font(.system(size: 16))
                 Text(mealType)
-                    .font(.system(size: { if case .active = windowStatus { return 16 } else { return 15 } }(), weight: .semibold))
+                    .font(.system(size: 15, weight: .semibold))
                     .lineLimit(2)
                     .minimumScaleFactor(0.75)
                     .truncationMode(.tail)
@@ -1233,22 +1230,22 @@ struct ExpandableWindowBanner: View {
     @ViewBuilder
     private var optimalTimeIndicators: some View {
         ZStack {
-            // Glowing border for optimal eating time
-            if (isOptimalTime || isCircadianOptimal) && meals.isEmpty {
-                RoundedRectangle(cornerRadius: { if case .active = windowStatus { return 16 } else { return 12 } }())
+            // Glowing border for active windows
+            if case .active = windowStatus {
+                RoundedRectangle(cornerRadius: 8)
                     .strokeBorder(
                         LinearGradient(
                             colors: [
-                                Color.nutriSyncAccent.opacity(0.6),
-                                Color.nutriSyncAccent.opacity(0.3)
+                                Color.nutriSyncAccent.opacity(0.5),
+                                Color.nutriSyncAccent.opacity(0.25)
                             ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         ),
-                        lineWidth: 2
+                        lineWidth: 1.5
                     )
-                    .shadow(color: Color.nutriSyncAccent.opacity(0.3), radius: pulseAnimation ? 8 : 4)
-                    .animation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true), value: pulseAnimation)
+                    .shadow(color: Color.nutriSyncAccent.opacity(0.25), radius: pulseAnimation ? 6 : 3)
+                    .animation(.easeInOut(duration: 2).repeatForever(autoreverses: true), value: pulseAnimation)
             }
             
             // Starting soon indicator

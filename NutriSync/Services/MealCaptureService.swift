@@ -202,7 +202,7 @@ class MealCaptureService: ObservableObject {
                         // Preserve captured image from the session when coming from photo library/camera
                         if savedMeal.imageData == nil, let img = analyzingMeal.imageData {
                             savedMeal.imageData = img
-                            try? await dataProvider.updateMeal(savedMeal)
+                            savedMeal = try await dataProvider.updateMeal(savedMeal)
                         }
                         
                         // Store metadata for celebration nudge
@@ -668,7 +668,7 @@ class MealCaptureService: ObservableObject {
         if savedMeal.imageData == nil {
             savedMeal.imageData = analyzingMeal.imageData
         }
-        try? await dataProvider.updateMeal(savedMeal)
+        savedMeal = try await dataProvider.updateMeal(savedMeal)
         
         // Schedule post-meal check-in reminder
         await notificationManager.schedulePostMealCheckIn(for: savedMeal)
