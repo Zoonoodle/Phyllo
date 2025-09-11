@@ -85,20 +85,7 @@ struct WindowDetailView: View {
     }
     
     private var windowTitle: String {
-        let hour = Calendar.current.component(.hour, from: window.startTime)
-        
-        switch hour {
-        case 5...10:
-            return "Breakfast Window"
-        case 11...14:
-            return "Lunch Window"
-        case 15...17:
-            return "Snack Window"
-        case 18...21:
-            return "Dinner Window"
-        default:
-            return "Late Snack Window"
-        }
+        return window.name
     }
 }
 
