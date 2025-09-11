@@ -634,6 +634,11 @@ struct ExpandableWindowBanner: View {
                     .font(.system(size: 13))
                     .monospacedDigit()
                     .foregroundColor(getTimeTextColor())
+                    
+            case .fasted:
+                Text("Fasting period")
+                    .font(.system(size: 13))
+                    .foregroundColor(.white.opacity(0.6))
             }
         }
     }
