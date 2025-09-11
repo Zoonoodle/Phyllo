@@ -31,6 +31,9 @@ class NutriSyncOnboardingViewModel {
     var progress: OnboardingProgress?
     
     // User data
+    var height: Double = 178 // in cm
+    var gender: String = "Male"
+    var age: Int = 30
     var weight: Double = 0
     var exerciseFrequency: String = ""
     var activityLevel: String = ""

@@ -231,22 +231,23 @@ struct BasicInfoView: View {
     }
     
     private func saveDataToCoordinator() {
-        // Convert height to cm and save weight (this view doesn't have weight, just height)
+        // Convert height to cm and save
         if heightUnit == "ft/in" {
             let feet = Double(heightFeet) ?? 5
             let inches = Double(heightInches) ?? 10
             let totalInches = (feet * 12) + inches
             let cm = totalInches * 2.54
-            // Note: height is stored elsewhere in the coordinator, we may need to add it
+            coordinator.height = cm
         } else {
             let cm = Double(heightCm) ?? 178
-            // Note: height is stored elsewhere in the coordinator, we may need to add it
+            coordinator.height = cm
         }
         
-        // Gender is stored elsewhere in coordinator
-        // Age/birthdate is stored elsewhere in coordinator
+        // Save gender
+        coordinator.gender = selectedGender
         
-        // For now, just log that we're saving
+        // Save age
+        coordinator.age = age
         print("[BasicInfoView] Saving: Gender=\(selectedGender), Age=\(age)")
     }
 }
