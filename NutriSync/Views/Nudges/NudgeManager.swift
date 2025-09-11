@@ -152,18 +152,8 @@ class NudgeManager: ObservableObject {
                 }
                 
                 // Check for missed window
-                if window.isPast && window.endTime.timeIntervalSince(currentTime) > -300 { // Within 5 minutes of closing
-                    let windowMeals = meals.filter { meal in
-                        meal.timestamp >= window.startTime && meal.timestamp <= window.endTime
-                    }
-                    
-                    if windowMeals.isEmpty && !hasShownNudgeRecently(for: "missed_\(window.id)") {
-                        await MainActor.run {
-                            self.triggerNudge(.missedWindow(window: window))
-                            self.markNudgeAsShown(for: "missed_\(window.id)")
-                        }
-                    }
-                }
+                // Removed missedWindow nudge logic as per Phase A requirements
+                // This functionality has been removed from the app
             }
         } catch {
             await DebugLogger.shared.error("Error checking window status: \(error)")
@@ -226,7 +216,7 @@ class NudgeManager: ObservableObject {
         switch nudge {
         case .firstTimeTutorial, .mealLoggedCelebration, .voiceInputTips:
             return true
-        case .morningCheckIn, .missedWindow, .activeWindowReminder, .postMealCheckIn:
+        case .morningCheckIn, .activeWindowReminder, .postMealCheckIn:
             return false // Can reappear
         }
     }
