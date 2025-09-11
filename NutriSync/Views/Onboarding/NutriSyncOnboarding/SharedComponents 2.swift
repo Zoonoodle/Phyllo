@@ -7,30 +7,6 @@
 
 import SwiftUI
 
-// MARK: - Progress Bar
-struct ProgressBar: View {
-    let totalSteps: Int
-    let currentStep: Int
-    
-    var body: some View {
-        GeometryReader { geometry in
-            ZStack(alignment: .leading) {
-                // Background track
-                RoundedRectangle(cornerRadius: 2)
-                    .fill(Color.white.opacity(0.2))
-                    .frame(height: 4)
-                
-                // Progress fill
-                RoundedRectangle(cornerRadius: 2)
-                    .fill(Color.white)
-                    .frame(width: geometry.size.width * (CGFloat(currentStep) / CGFloat(totalSteps)), height: 4)
-                    .animation(.easeInOut(duration: 0.3), value: currentStep)
-            }
-        }
-        .frame(height: 4)
-    }
-}
-
 struct ProgressIcon: View {
     let icon: String
     let isActive: Bool

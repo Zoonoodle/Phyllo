@@ -33,7 +33,7 @@ struct BasicInfoView: View {
             ScrollView {
                 VStack(spacing: 0) {
             // Progress bar
-            ProgressBar(totalSteps: 31, currentStep: 2)
+            ProgressBar(totalSteps: 24, currentStep: 1)
                 .padding(.horizontal, 20)
                 .padding(.top, 8)
                 .padding(.bottom, 32)

@@ -87,7 +87,7 @@ struct EatingWindowView: View {
         GeometryReader { geometry in
             VStack(spacing: 0) {
                 // Progress bar
-                ProgressBar(totalSteps: 31, currentStep: 4)
+                ProgressBar(totalSteps: 24, currentStep: 20)
                     .padding(.horizontal, 20)
                     .padding(.top, 8)
                     .padding(.bottom, 32)

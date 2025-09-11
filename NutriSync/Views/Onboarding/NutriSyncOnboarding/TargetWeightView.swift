@@ -26,7 +26,7 @@ struct TargetWeightView: View {
             ScrollView {
                 VStack(spacing: 0) {
             // Progress bar
-            ProgressBar(totalSteps: 23, currentStep: 9)
+            ProgressBar(totalSteps: 24, currentStep: 10)
                 .padding(.horizontal, 20)
                 .padding(.top, 8)
                 .padding(.bottom, 32)

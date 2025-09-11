@@ -23,7 +23,7 @@ struct DietPreferenceView: View {
             ScrollView {
                 VStack(spacing: 0) {
             // Progress bar
-            ProgressBar(totalSteps: 31, currentStep: 16)
+            ProgressBar(totalSteps: 24, currentStep: 15)
                 .padding(.horizontal, 20)
                 .padding(.top, 8)
                 .padding(.bottom, 32)

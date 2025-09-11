@@ -23,7 +23,7 @@ struct TrainingPlanView: View {
             ScrollView {
                 VStack(spacing: 0) {
             // Progress bar
-            ProgressBar(totalSteps: 31, currentStep: 17)
+            ProgressBar(totalSteps: 24, currentStep: 16)
                 .padding(.horizontal, 20)
                 .padding(.top, 8)
                 .padding(.bottom, 32)

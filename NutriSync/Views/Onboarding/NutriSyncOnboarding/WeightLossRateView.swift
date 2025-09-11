@@ -82,7 +82,7 @@ struct WeightLossRateView: View {
             ScrollView {
                 VStack(spacing: 0) {
                     // Progress bar
-                    ProgressBar(totalSteps: 23, currentStep: 11)
+                    ProgressBar(totalSteps: 24, currentStep: 11)
                         .padding(.horizontal, 20)
                         .padding(.top, 8)
                         .padding(.bottom, 32)

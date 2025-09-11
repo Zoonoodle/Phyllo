@@ -24,7 +24,7 @@ struct PreWorkoutNutritionView: View {
             ScrollView {
                 VStack(spacing: 0) {
                     // Progress bar
-                    ProgressBar(totalSteps: 23, currentStep: 14)
+                    ProgressBar(totalSteps: 24, currentStep: 12)
                         .padding(.horizontal, 20)
                         .padding(.top, 8)
                         .padding(.bottom, 40)

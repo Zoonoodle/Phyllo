@@ -14,14 +14,13 @@ struct NotToWorryView: View {
         GeometryReader { geometry in
             ScrollView {
                 VStack(spacing: 0) {
-            // Progress bar
-            ProgressBar(totalSteps: 31, currentStep: 6)
-                .padding(.horizontal, 20)
-                .padding(.top, 8)
-                .padding(.bottom, 40)
-            
-            ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
+                    // Progress bar
+                    ProgressBar(totalSteps: 24, currentStep: 7)
+                        .padding(.horizontal, 20)
+                        .padding(.top, 8)
+                        .padding(.bottom, 40)
+                    
+                    VStack(alignment: .leading, spacing: 24) {
                     // Title
                     Text("Not to worry!")
                         .font(.system(size: 28, weight: .bold))
@@ -94,7 +93,6 @@ struct NotToWorryView: View {
                     }
                 }
                 .padding(.horizontal, 20)
-            }
             
             Spacer()
             

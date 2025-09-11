@@ -22,7 +22,7 @@ struct ActivityLevelView: View {
             ScrollView {
                 VStack(spacing: 0) {
                     // Progress bar
-                    ProgressBar(totalSteps: 31, currentStep: 4)
+                    ProgressBar(totalSteps: 24, currentStep: 4)
                         .padding(.horizontal, 20)
                         .padding(.top, 8)
                         .padding(.bottom, 32)
