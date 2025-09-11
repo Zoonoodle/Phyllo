@@ -32,7 +32,6 @@ class NutriSyncOnboardingViewModel {
     
     // User data
     var weight: Double = 0
-    var bodyFatPercentage: Double? = nil
     var exerciseFrequency: String = ""
     var activityLevel: String = ""
     var tdee: Double? = nil
@@ -57,46 +56,20 @@ class NutriSyncOnboardingViewModel {
         return Calendar.current.date(from: components) ?? Date()
     }()
     var mealFrequency: String = ""
-    var breakfastHabit: String = ""
     var eatingWindow: String = ""
     
     // Workout data
-    var workoutDays: Set<String> = []
-    var workoutTime: Date = {
-        var components = Calendar.current.dateComponents([.year, .month, .day], from: Date())
-        components.hour = 9
-        components.minute = 0
-        return Calendar.current.date(from: components) ?? Date()
-    }()
     var preworkoutTiming: String = ""
     var postworkoutTiming: String = ""
     
-    // Lifestyle data
-    var workSchedule: String = ""
-    var socialMealsPerWeek: Double = 2
-    var travelFrequency: String = ""
-    
     // Nutrition preferences
     var dietaryRestrictions: Set<String> = []
-    var foodSensitivities: String = ""
-    var macroPreference: String = ""
-    var calorieDistribution: String = ""
-    
-    // Circadian data
-    var energyPeak: String = ""
-    var caffeineSensitivity: String = ""
     var largerMealPreference: String = ""
     
     // Window preferences
     var flexibilityLevel: String = ""
     var autoAdjustWindows: Bool = true
     var weekendDifferent: Bool = false
-    
-    // Notifications
-    var windowStartNotifications: Bool = true
-    var windowEndNotifications: Bool = true
-    var checkInReminders: Bool = true
-    var notificationMinutesBefore: Int = 15
     
     // Computed properties
     var currentSectionScreens: [String] {
@@ -214,7 +187,6 @@ class NutriSyncOnboardingViewModel {
         
         // Section 1: Basic Info
         if weight > 0 { progress.weightKG = weight }
-        progress.bodyFatPercentage = bodyFatPercentage
         if !activityLevel.isEmpty { progress.activityLevel = UserGoals.ActivityLevel(rawValue: activityLevel) }
         
         // Section 2: Goals
@@ -229,32 +201,14 @@ class NutriSyncOnboardingViewModel {
         progress.bedTime = bedTime
         if !mealFrequency.isEmpty { progress.mealsPerDay = Int(mealFrequency) ?? 3 }
         if !eatingWindow.isEmpty { progress.eatingWindowHours = Int(eatingWindow.components(separatedBy: " ").first ?? "16") ?? 16 }
-        if !breakfastHabit.isEmpty { progress.breakfastPreference = breakfastHabit == "yes" }
         if !dietaryRestrictions.isEmpty { progress.dietaryRestrictions = Array(dietaryRestrictions) }
         if !dietPreference.isEmpty { progress.dietType = dietPreference }
         
         // Section 4: Training
-        if !workoutDays.isEmpty { 
-            progress.workoutsPerWeek = workoutDays.count
-            progress.workoutDays = workoutDays.compactMap { dayString in
-                ["Monday": 1, "Tuesday": 2, "Wednesday": 3, "Thursday": 4, "Friday": 5, "Saturday": 6, "Sunday": 0][dayString]
-            }
-            // Only set workout times if workout days are configured
-            progress.workoutTimes = [workoutTime]
-        }
         if !trainingPlan.isEmpty { progress.trainingType = trainingPlan }
         
         // Section 5: Optimization
-        if !energyPeak.isEmpty {
-            progress.energyPatterns = ["peak": energyPeak == "morning" ? 0 : (energyPeak == "afternoon" ? 1 : 2)]
-        }
         if !flexibilityLevel.isEmpty { progress.scheduleFlexibility = flexibilityLevel == "flexible" ? 2 : (flexibilityLevel == "moderate" ? 1 : 0) }
-        progress.notificationSettings = NotificationSettings(
-            windowStart: windowStartNotifications,
-            windowEnd: windowEndNotifications,
-            checkInReminders: checkInReminders,
-            minutesBefore: notificationMinutesBefore
-        )
         
         return progress
     }
@@ -273,7 +227,6 @@ class NutriSyncOnboardingViewModel {
         
         // Restore user data
         if let weight = existingProgress.weightKG { self.weight = weight }
-        self.bodyFatPercentage = existingProgress.bodyFatPercentage
         if let activityLevel = existingProgress.activityLevel { self.activityLevel = activityLevel.rawValue }
         
         if let goal = existingProgress.primaryGoal { self.goal = goal.rawValue }
@@ -285,7 +238,6 @@ class NutriSyncOnboardingViewModel {
         if let bedTime = existingProgress.bedTime { self.bedTime = bedTime }
         if let mealsPerDay = existingProgress.mealsPerDay { self.mealFrequency = String(mealsPerDay) }
         if let eatingWindowHours = existingProgress.eatingWindowHours { self.eatingWindow = "\(eatingWindowHours) hours" }
-        if let breakfastPreference = existingProgress.breakfastPreference { self.breakfastHabit = breakfastPreference ? "yes" : "no" }
         if let dietaryRestrictions = existingProgress.dietaryRestrictions { self.dietaryRestrictions = Set(dietaryRestrictions) }
         if let dietType = existingProgress.dietType { self.dietPreference = dietType }
         

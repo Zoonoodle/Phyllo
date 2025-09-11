@@ -19,46 +19,38 @@ struct OnboardingPreview: View {
             onContinue: {}
         ))),
         
-        // Basics (6 screens)
+        // Basics (5 screens)
         ("1. Basic Info", AnyView(BasicInfoView())),
         ("2. Weight", AnyView(WeightView())),
-        ("3. Body Fat", AnyView(BodyFatLevelView())),
-        ("4. Exercise", AnyView(ExerciseFrequencyView())),
-        ("5. Activity", AnyView(ActivityLevelView())),
-        ("6. Expenditure", AnyView(ExpenditureView())),
+        ("3. Exercise", AnyView(ExerciseFrequencyView())),
+        ("4. Activity", AnyView(ActivityLevelView())),
+        ("5. Expenditure", AnyView(ExpenditureView())),
         
         // Notice (2 screens)
-        ("7. Health Disclaimer", AnyView(HealthDisclaimerView())),
-        ("8. Not to Worry", AnyView(NotToWorryView())),
+        ("6. Health Disclaimer", AnyView(HealthDisclaimerView())),
+        ("7. Not to Worry", AnyView(NotToWorryView())),
         
-        // Goal Setting (6 screens)
-        ("9. Goal Intro", AnyView(GoalSettingIntroView())),
-        ("10. Goal Selection", AnyView(GoalSelectionView())),
-        ("11. Target Weight", AnyView(TargetWeightView())),
-        ("12. Weight Loss Rate", AnyView(WeightLossRateView())),
-        ("13. Workout Schedule", AnyView(WorkoutScheduleView())),
-        ("14. Workout Nutrition", AnyView(WorkoutNutritionView())),
+        // Goal Setting (5 screens)
+        ("8. Goal Intro", AnyView(GoalSettingIntroView())),
+        ("9. Goal Selection", AnyView(GoalSelectionView())),
+        ("10. Target Weight", AnyView(TargetWeightView())),
+        ("11. Weight Loss Rate", AnyView(WeightLossRateView())),
+        ("12. Workout Nutrition", AnyView(WorkoutNutritionView())),
         
-        // Program (16 screens)
-        ("15. Almost There", AnyView(AlmostThereView())),
-        ("16. Diet Preference", AnyView(DietPreferenceView())),
-        ("17. Training Plan", AnyView(TrainingPlanView())),
-        ("18. Calorie Floor", AnyView(CalorieFloorView())),
-        ("19. Calorie Distribution", AnyView(CalorieDistributionView())),
-        ("20. Sleep Schedule", AnyView(SleepScheduleView())),
-        ("21. Meal Frequency", AnyView(MealFrequencyView())),
-        ("22. Breakfast Habit", AnyView(BreakfastHabitView())),
-        ("23. Eating Window", AnyView(EatingWindowView())),
-        ("24. Lifestyle Factors", AnyView(LifestyleFactorsView())),
-        ("25. Dietary Restrictions", AnyView(DietaryRestrictionsView())),
-        ("26. Nutrition Preferences", AnyView(NutritionPreferencesView())),
-        ("27. Energy Patterns", AnyView(EnergyPatternsView())),
-        ("28. Meal Timing", AnyView(MealTimingPreferenceView())),
-        ("29. Window Flexibility", AnyView(WindowFlexibilityView())),
-        ("30. Notification Preferences", AnyView(NotificationPreferencesView())),
+        // Program (10 screens)
+        ("13. Almost There", AnyView(AlmostThereView())),
+        ("14. Diet Preference", AnyView(DietPreferenceView())),
+        ("15. Training Plan", AnyView(TrainingPlanView())),
+        ("16. Calorie Floor", AnyView(CalorieFloorView())),
+        ("17. Sleep Schedule", AnyView(SleepScheduleView())),
+        ("18. Meal Frequency", AnyView(MealFrequencyView())),
+        ("19. Eating Window", AnyView(EatingWindowView())),
+        ("20. Dietary Restrictions", AnyView(DietaryRestrictionsView())),
+        ("21. Meal Timing", AnyView(MealTimingPreferenceView())),
+        ("22. Window Flexibility", AnyView(WindowFlexibilityView())),
         
         // Finish (1 screen)
-        ("31. Review Program", AnyView(ReviewProgramView()))
+        ("23. Review Program", AnyView(ReviewProgramView()))
     ]
     
     var body: some View {

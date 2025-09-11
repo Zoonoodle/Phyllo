@@ -26,7 +26,6 @@ class NudgeManager: ObservableObject {
         case morningCheckIn
         case firstTimeTutorial(page: Int)
         case mealLoggedCelebration(meal: LoggedMeal, metadata: AnalysisMetadata?)
-        case missedWindow(window: MealWindow)
         case activeWindowReminder(window: MealWindow, timeRemaining: Int)
         case postMealCheckIn(meal: LoggedMeal)
         case voiceInputTips
@@ -39,8 +38,6 @@ class NudgeManager: ObservableObject {
                 return "tutorial_\(page)"
             case .mealLoggedCelebration(let meal, _):
                 return "celebration_\(meal.id)"
-            case .missedWindow(let window):
-                return "missed_\(window.id)"
             case .activeWindowReminder(let window, _):
                 return "reminder_\(window.id)"
             case .postMealCheckIn(let meal):
@@ -52,7 +49,7 @@ class NudgeManager: ObservableObject {
         
         var priority: NudgePriority {
             switch self {
-            case .morningCheckIn, .missedWindow:
+            case .morningCheckIn:
                 return .critical
             case .activeWindowReminder, .postMealCheckIn:
                 return .prominent

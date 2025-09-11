@@ -74,17 +74,6 @@ struct NudgeContainer: View {
                     .zIndex(10001)
                     .transition(.opacity.combined(with: .scale(scale: 0.9)))
                     
-                case .missedWindow(let window):
-                    MissedWindowNudge(window: window) { ate in
-                        nudgeManager.dismissCurrentNudge()
-                        if ate {
-                            // Switch to scan tab to log meal
-                            NotificationCenter.default.post(name: .switchToScanTab, object: nil)
-                        }
-                    }
-                    .zIndex(10001)
-                    .transition(.opacity.combined(with: .scale(scale: 0.9)))
-                    
                 case .activeWindowReminder(let window, let timeRemaining):
                     ActiveWindowNudge(
                         window: window,

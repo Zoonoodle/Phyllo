@@ -57,7 +57,6 @@ struct NutriSyncOnboardingFlow {
         .basics: [
             "Basic Info",
             "Weight",
-            "Body Fat",
             "Exercise",
             "Activity",
             "Expenditure"
@@ -71,7 +70,6 @@ struct NutriSyncOnboardingFlow {
             "Goal Selection",
             "Target Weight",
             "Weight Loss Rate",
-            "Workout Schedule",
             "Workout Nutrition"
         ],
         .program: [
@@ -79,18 +77,12 @@ struct NutriSyncOnboardingFlow {
             "Diet Preference",
             "Training Plan",
             "Calorie Floor",
-            "Calorie Distribution",
             "Sleep Schedule",
             "Meal Frequency",
-            "Breakfast Habit",
             "Eating Window",
-            "Lifestyle Factors",
             "Dietary Restrictions",
-            "Nutrition Preferences",
-            "Energy Patterns",
             "Meal Timing",
-            "Window Flexibility",
-            "Notification Preferences"
+            "Window Flexibility"
         ],
         .finish: [
             "Review Program"
