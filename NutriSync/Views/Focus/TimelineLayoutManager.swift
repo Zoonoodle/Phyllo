@@ -180,10 +180,9 @@ class TimelineLayoutManager: ObservableObject {
                     contentHeight += 15 // Extra spacing to prevent overlap with hour markers
                 }
                 
-                // Add space for active window UI (insights, suggestions)
-                if window.isActive && totalMealCards == 0 {
-                    contentHeight += 120 // Space for insights section when empty
-                }
+                // Don't add extra space for active window insights when empty
+                // The insights are rendered inside the banner itself, not as extra height
+                // The banner should only be sized based on its time duration
                 
                 // Calculate what portion of window falls in this hour
                 let calendar = Calendar.current
@@ -224,18 +223,9 @@ class TimelineLayoutManager: ObservableObject {
         // Start with minimal base height
         var contentHeight: CGFloat = 60 // Window header
         
-        // Add space for window insights section based on state
-        if window.isActive {
-            // For active windows with no meals, allocate space for expanded insights section
-            // This includes: purpose insight, remaining macros, and suggested meals
-            if mealCount == 0 && analyzingCount == 0 {
-                // Expanded state with full insights section visible
-                contentHeight += 150 // Space for divider + purpose + macros + suggestions + padding
-            } else {
-                // Collapsed state when meals are present
-                contentHeight += 20 // Just minimal space for transition
-            }
-        }
+        // Don't add space for window insights section here
+        // The insights are rendered inside the banner and should not affect timeline height
+        // The banner height should be based purely on time duration
         
         // Add space for meal cards (both logged and analyzing)
         if totalCards > 0 {
