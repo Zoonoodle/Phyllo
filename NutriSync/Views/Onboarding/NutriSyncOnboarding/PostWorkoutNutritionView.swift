@@ -45,7 +45,7 @@ struct PostWorkoutNutritionView: View {
                         // Post-workout options
                         VStack(spacing: 12) {
                             ForEach(postworkoutOptions, id: \.self) { option in
-                                OptionButton(
+                                OnboardingOptionButton(
                                     title: option,
                                     subtitle: getSubtitle(for: option),
                                     isSelected: postworkoutTiming == option,
@@ -133,62 +133,6 @@ struct PostWorkoutNutritionView: View {
     }
 }
 
-// Enhanced OptionButton with subtitle support
-struct OptionButton: View {
-    let title: String
-    let subtitle: String?
-    let isSelected: Bool
-    let action: () -> Void
-    
-    init(title: String, subtitle: String? = nil, isSelected: Bool, action: @escaping () -> Void) {
-        self.title = title
-        self.subtitle = subtitle
-        self.isSelected = isSelected
-        self.action = action
-    }
-    
-    var body: some View {
-        Button(action: action) {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(title)
-                        .font(.system(size: 17, weight: isSelected ? .semibold : .regular))
-                        .foregroundColor(.white)
-                    
-                    if let subtitle = subtitle {
-                        Text(subtitle)
-                            .font(.system(size: 14))
-                            .foregroundColor(.white.opacity(0.6))
-                    }
-                }
-                
-                Spacer()
-                
-                ZStack {
-                    Circle()
-                        .stroke(Color.white.opacity(0.4), lineWidth: 2)
-                        .frame(width: 24, height: 24)
-                    
-                    if isSelected {
-                        Circle()
-                            .fill(Color.white)
-                            .frame(width: 16, height: 16)
-                    }
-                }
-            }
-            .padding(16)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color.white.opacity(isSelected ? 0.1 : 0.05))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(Color.white.opacity(isSelected ? 0.3 : 0.1), lineWidth: 1)
-            )
-        }
-        .buttonStyle(PlainButtonStyle())
-    }
-}
 
 struct PostWorkoutNutritionView_Previews: PreviewProvider {
     static var previews: some View {

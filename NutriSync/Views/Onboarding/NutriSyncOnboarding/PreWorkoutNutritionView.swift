@@ -45,7 +45,7 @@ struct PreWorkoutNutritionView: View {
                         // Pre-workout options
                         VStack(spacing: 12) {
                             ForEach(preworkoutOptions, id: \.self) { option in
-                                OptionButton(
+                                OnboardingOptionButton(
                                     title: option,
                                     subtitle: getSubtitle(for: option),
                                     isSelected: preworkoutTiming == option,

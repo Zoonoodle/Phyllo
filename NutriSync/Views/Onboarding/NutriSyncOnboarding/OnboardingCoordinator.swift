@@ -10,6 +10,7 @@ import FirebaseAuth
 import FirebaseFirestore
 
 @Observable
+@MainActor
 class NutriSyncOnboardingViewModel {
     // Navigation state
     var currentSection: NutriSyncOnboardingSection = .basics

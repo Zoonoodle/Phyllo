@@ -44,7 +44,7 @@ struct MealTimingPreferenceView: View {
                     
                     VStack(spacing: 10) {
                         ForEach(mealSizeOptions, id: \.self) { option in
-                            OptionButton(
+                            OnboardingOptionButton(
                                 title: option,
                                 isSelected: largerMealPreference == option,
                                 action: {

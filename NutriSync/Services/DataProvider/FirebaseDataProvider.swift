@@ -1429,7 +1429,7 @@ private extension FirebaseDataProvider {
     
     // MARK: - Account Management
     
-    public func deleteAllUserData(userId: String) async throws {
+    func deleteAllUserData(userId: String) async throws {
         // Delete all user data from Firestore
         let userDocRef = db.collection("users").document(userId)
         
