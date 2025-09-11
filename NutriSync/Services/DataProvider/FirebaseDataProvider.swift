@@ -1312,15 +1312,28 @@ extension FirebaseDataProvider {
         
         let snapshot = try await profileDoc.getDocument()
         
+        // Log what we found for debugging
+        if snapshot.exists {
+            print("📱 Profile document exists for user")
+            if let data = snapshot.data() {
+                print("📱 Profile fields found: \(data.keys.sorted())")
+            }
+        } else {
+            print("📱 No profile document found for user")
+        }
+        
         // Check if profile exists and has minimum required fields
+        // These field names must match what's saved in UserProfile.toFirestore()
         if let data = snapshot.data(),
            data["name"] != nil,
            data["age"] != nil,
-           data["heightCM"] != nil,
-           data["weightKG"] != nil {
+           data["height"] != nil,  // Changed from heightCM to height
+           data["weight"] != nil {  // Changed from weightKG to weight
+            print("✅ User has completed onboarding")
             return true
         }
         
+        print("⚠️ User needs to complete onboarding")
         return false
     }
     
