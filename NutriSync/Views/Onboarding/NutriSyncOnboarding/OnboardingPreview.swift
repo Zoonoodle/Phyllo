@@ -30,27 +30,28 @@ struct OnboardingPreview: View {
         ("6. Health Disclaimer", AnyView(HealthDisclaimerView())),
         ("7. Not to Worry", AnyView(NotToWorryView())),
         
-        // Goal Setting (5 screens)
+        // Goal Setting (6 screens)
         ("8. Goal Intro", AnyView(GoalSettingIntroView())),
         ("9. Goal Selection", AnyView(GoalSelectionView())),
         ("10. Target Weight", AnyView(TargetWeightView())),
         ("11. Weight Loss Rate", AnyView(WeightLossRateView())),
-        ("12. Workout Nutrition", AnyView(WorkoutNutritionView())),
+        ("12. Pre-Workout Nutrition", AnyView(PreWorkoutNutritionView())),
+        ("13. Post-Workout Nutrition", AnyView(PostWorkoutNutritionView())),
         
         // Program (10 screens)
-        ("13. Almost There", AnyView(AlmostThereView())),
-        ("14. Diet Preference", AnyView(DietPreferenceView())),
-        ("15. Training Plan", AnyView(TrainingPlanView())),
-        ("16. Calorie Floor", AnyView(CalorieFloorView())),
-        ("17. Sleep Schedule", AnyView(SleepScheduleView())),
-        ("18. Meal Frequency", AnyView(MealFrequencyView())),
-        ("19. Eating Window", AnyView(EatingWindowView())),
-        ("20. Dietary Restrictions", AnyView(DietaryRestrictionsView())),
-        ("21. Meal Timing", AnyView(MealTimingPreferenceView())),
-        ("22. Window Flexibility", AnyView(WindowFlexibilityView())),
+        ("14. Almost There", AnyView(AlmostThereView())),
+        ("15. Diet Preference", AnyView(DietPreferenceView())),
+        ("16. Training Plan", AnyView(TrainingPlanView())),
+        ("17. Calorie Floor", AnyView(CalorieFloorView())),
+        ("18. Sleep Schedule", AnyView(SleepScheduleView())),
+        ("19. Meal Frequency", AnyView(MealFrequencyView())),
+        ("20. Eating Window", AnyView(EatingWindowView())),
+        ("21. Dietary Restrictions", AnyView(DietaryRestrictionsView())),
+        ("22. Meal Timing", AnyView(MealTimingPreferenceView())),
+        ("23. Window Flexibility", AnyView(WindowFlexibilityView())),
         
         // Finish (1 screen)
-        ("23. Review Program", AnyView(ReviewProgramView()))
+        ("24. Review Program", AnyView(ReviewProgramView()))
     ]
     
     var body: some View {

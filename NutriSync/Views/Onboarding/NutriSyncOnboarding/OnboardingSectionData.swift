@@ -70,7 +70,8 @@ struct NutriSyncOnboardingFlow {
             "Goal Selection",
             "Target Weight",
             "Weight Loss Rate",
-            "Workout Nutrition"
+            "Pre-Workout Nutrition",
+            "Post-Workout Nutrition"
         ],
         .program: [
             "Almost There",

@@ -316,10 +316,11 @@ struct ExpandableWindowBanner: View {
         case lateButDoable
         case completed(consumed: Int, target: Int, redistribution: WindowRedistributionManager.RedistributionReason?)
         case missed(redistribution: WindowRedistributionManager.RedistributionReason?)
+        case fasted  // User was fasting during this window
         
         static func == (lhs: WindowStatus, rhs: WindowStatus) -> Bool {
             switch (lhs, rhs) {
-            case (.upcoming, .upcoming), (.active, .active), (.lateButDoable, .lateButDoable):
+            case (.upcoming, .upcoming), (.active, .active), (.lateButDoable, .lateButDoable), (.fasted, .fasted):
                 return true
             case (.completed(let lConsumed, let lTarget, _), .completed(let rConsumed, let rTarget, _)):
                 return lConsumed == rConsumed && lTarget == rTarget
@@ -361,6 +362,8 @@ struct ExpandableWindowBanner: View {
                 
                 if window.isLateButDoable(nextWindow: nextWindow) {
                     return .lateButDoable
+                } else if window.isMarkedAsFasted {
+                    return .fasted
                 } else {
                     return .missed(redistribution: window.redistributionReason)
                 }
@@ -379,7 +382,7 @@ struct ExpandableWindowBanner: View {
     // Window opacity based on status
     private var windowOpacity: Double {
         switch windowStatus {
-        case .completed, .missed:
+        case .completed, .missed, .fasted:
             return 0.7
         case .lateButDoable:
             return 0.85
@@ -399,6 +402,8 @@ struct ExpandableWindowBanner: View {
             return Color.white.opacity(0.08)
         case .missed:
             return Color.orange.opacity(0.2)
+        case .fasted:
+            return Color.phylloFasted.opacity(0.3)
         case .upcoming:
             return Color.white.opacity(0.08)
         }
@@ -407,7 +412,7 @@ struct ExpandableWindowBanner: View {
     // Window background color based on status
     private var windowBackgroundColor: Color {
         switch windowStatus {
-        case .completed, .missed:
+        case .completed, .missed, .fasted:
             return Color(red: 0.08, green: 0.08, blue: 0.09)  // Darker for passed windows
         case .lateButDoable:
             return Color(red: 0.12, green: 0.11, blue: 0.10)  // Slightly yellow tint
@@ -448,7 +453,7 @@ struct ExpandableWindowBanner: View {
         // Container only; tap/drag handled by overlay layer wrapper
         VStack(spacing: 0) {
             // Replace banner content with actions when showing missed actions
-            if case .missed = windowStatus, showInlineMissedActions {
+            if case .missed = windowStatus || case .fasted = windowStatus, showInlineMissedActions {
                 missedWindowActionsContent
                     .transition(.asymmetric(
                         insertion: .opacity,
@@ -493,7 +498,7 @@ struct ExpandableWindowBanner: View {
         .frame(minHeight: nil, idealHeight: bannerHeight, maxHeight: bannerHeight, alignment: .top)
         .onTapGesture {
             // Check if this is a missed window
-            if case .missed = windowStatus {
+            if case .missed = windowStatus || case .fasted = windowStatus {
                 withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
                     showInlineMissedActions.toggle()
                 }
@@ -687,6 +692,23 @@ struct ExpandableWindowBanner: View {
                         .foregroundColor(.orange.opacity(0.7))
                 }
                 
+            case .fasted:
+                HStack(spacing: 2) {
+                    Text("\(window.effectiveCalories)")
+                        .font(.system(size: window.effectiveCalories >= 1000 ? 15 : 16, weight: .semibold))
+                        .monospacedDigit()
+                        .foregroundColor(.phylloFasted)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                    Text("cal")
+                        .font(.system(size: 12))
+                        .foregroundColor(.phylloFasted.opacity(0.8))
+                }
+                
+                Text("fasted")
+                    .font(TimelineTypography.statusLabel)
+                    .foregroundColor(.phylloFasted)
+                
             case .lateButDoable:
                 HStack(spacing: 2) {
                     Text("\(window.effectiveCalories)")
@@ -750,6 +772,8 @@ struct ExpandableWindowBanner: View {
             completedIndicator
         case .missed:
             missedIndicator
+        case .fasted:
+            fastedIndicator
         case .lateButDoable:
             lateButDoableIndicator
         case .upcoming:
@@ -817,6 +841,19 @@ struct ExpandableWindowBanner: View {
             Text("Missed")
                 .font(.system(size: 10, weight: .semibold))
                 .foregroundColor(.orange)
+        }
+    }
+    
+    @ViewBuilder
+    private var fastedIndicator: some View {
+        ZStack {
+            Circle()
+                .fill(Color.phylloFasted.opacity(0.15))
+                .frame(width: 50, height: 50)
+            
+            Image(systemName: "checkmark")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundColor(.phylloFasted)
         }
     }
     

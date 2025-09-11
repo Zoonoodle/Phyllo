@@ -472,8 +472,10 @@ struct NutriSyncOnboardingCoordinator: View {
             WeightLossRateView()
         case "Workout Schedule":
             WorkoutScheduleView()
-        case "Workout Nutrition":
-            WorkoutNutritionView()
+        case "Pre-Workout Nutrition":
+            PreWorkoutNutritionView()
+        case "Post-Workout Nutrition":
+            PostWorkoutNutritionView()
             
         // Program Section
         case "Almost There":

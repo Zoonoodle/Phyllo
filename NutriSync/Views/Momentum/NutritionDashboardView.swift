@@ -273,6 +273,7 @@ struct NutritionDashboardView: View {
             meals: viewModel.todaysMeals,
             userProfile: viewModel.userProfile
         )
+        .safeAreaPadding(.top)
     }
     
     

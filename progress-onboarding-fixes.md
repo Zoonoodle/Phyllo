@@ -1,6 +1,6 @@
 # Onboarding Fixes - Implementation Progress
 
-## Current Status: PHASE A COMPLETE ✅
+## Current Status: PHASE B COMPLETE ✅
 
 ### Completed Tasks (Phase A: Screen Removal & Flow Simplification)
 
@@ -42,32 +42,33 @@ Successfully deleted the following files:
 - All edited files compile successfully
 - Changes committed to git
 
-## Next Steps: PHASE B (Fix Broken Functionality)
+## PHASE B Progress (Fix Broken Functionality)
 
-### B1. Implement TDEE Calculation ⏳
-- [ ] Create TDEECalculator utility with Mifflin-St Jeor formula
-- [ ] Add activity level selection in ExpenditureView
-- [ ] Implement +/- manual adjustment buttons when user selects "No"
-- [ ] Display calculated value instead of hardcoded 1805
+### B1. Implement TDEE Calculation ✅ COMPLETE
+- ✅ Created TDEECalculator utility with Mifflin-St Jeor formula
+- ✅ Added activity level selection in ExpenditureView
+- ✅ Implemented +/- manual adjustment buttons when user selects "No"
+- ✅ Display calculated value instead of hardcoded 1805
 
-### B2. Fix Weight Loss Rate Slider ⏳
-- [ ] Make slider interactive with real drag gesture
-- [ ] Calculate actual weight loss projections based on position
-- [ ] Update display values dynamically (lbs/week and lbs/month)
-- [ ] Add haptic feedback on value changes
+### B2. Fix Weight Loss Rate Slider ✅ COMPLETE
+- ✅ Made slider interactive with real drag gesture
+- ✅ Calculate actual weight loss projections based on position
+- ✅ Update display values dynamically (lbs/week and lbs/month)
+- ✅ Add haptic feedback on value changes
+- ✅ Added gradient colors and warnings for extreme rates
 
-### B3. Fix Target Weight Slider ⏳
-- [ ] Simplify drag gesture (remove damping factor)
-- [ ] Add sub-header text: "Drag to select your goal weight"
-- [ ] Improve ruler sensitivity
-- [ ] Add unit switching (lbs/kg)
-- [ ] Fix snapping to whole numbers
+### B3. Fix Target Weight Slider ✅ COMPLETE
+- ✅ Simplified drag gesture (removed damping factor)
+- ✅ Added sub-header text: "Drag to select your goal weight"
+- ✅ Improved ruler sensitivity
+- ✅ Added unit switching (lbs/kg)
+- ✅ Fixed snapping to whole numbers
 
-### B4. Split Workout Nutrition Screen ⏳
-- [ ] Create PreWorkoutNutritionView.swift
-- [ ] Create PostWorkoutNutritionView.swift
-- [ ] Update navigation flow to include both screens
-- [ ] Move relevant options to each screen
+### B4. Split Workout Nutrition Screen ✅ COMPLETE
+- ✅ Created PreWorkoutNutritionView.swift
+- ✅ Created PostWorkoutNutritionView.swift
+- ✅ Updated navigation flow to include both screens
+- ✅ Moved relevant options to each screen with enhanced UI
 
 ## Files Modified in Phase A
 
@@ -94,5 +95,28 @@ Phase A successfully reduced the onboarding flow from 31 to 23 screens by removi
 
 Ready to proceed with Phase B: Fix Broken Functionality.
 
-## Context Usage
-Approximately 35% of context used. Safe to continue with Phase B implementation.
+## Files Created/Modified in Phase B
+
+### Created (3 files)
+1. TDEECalculator.swift - New utility for TDEE calculations
+2. PreWorkoutNutritionView.swift - Pre-workout nutrition preferences
+3. PostWorkoutNutritionView.swift - Post-workout recovery preferences
+
+### Modified (8 files)
+1. OnboardingCoordinator.swift - Added height, gender, age properties, updated navigation
+2. BasicInfoView.swift - Now saves user data to coordinator
+3. ExpenditureView.swift - Complete rewrite with TDEE calculation
+4. WeightLossRateView.swift - Complete rewrite with interactive slider
+5. TargetWeightView.swift - Enhanced with unit switching, better drag, sub-header
+6. OnboardingSectionData.swift - Split workout nutrition into two screens
+7. OnboardingPreview.swift - Updated screen numbering for new flow
+8. WorkoutNutritionView.swift - Still exists but no longer used in flow
+
+## Phase B Summary
+Successfully fixed all broken functionality:
+- TDEE now calculates based on real user data with Mifflin-St Jeor equation
+- Weight Loss Rate slider is fully interactive with dynamic projections
+- Target Weight slider has improved UX with unit switching and better sensitivity
+- Workout nutrition split into dedicated pre and post-workout screens
+
+Total screens: 24 (up from 23 due to workout nutrition split, but still down from original 31)

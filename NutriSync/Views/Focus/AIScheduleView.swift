@@ -40,7 +40,7 @@ struct AIScheduleView: View {
             .sheet(isPresented: $showMorningCheckIn) {
                 morningCheckInSheet
             }
-            .sheet(isPresented: $showDayDetail) {
+            .fullScreenCover(isPresented: $showDayDetail) {
                 dayDetailSheet
             }
             .sheet(isPresented: .constant(viewModel.legacyViewModel.showingRedistributionNudge)) {
