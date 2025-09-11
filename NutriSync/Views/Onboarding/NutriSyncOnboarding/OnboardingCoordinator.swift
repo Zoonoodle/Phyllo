@@ -80,6 +80,10 @@ class NutriSyncOnboardingViewModel {
         NutriSyncOnboardingFlow.screens(for: currentSection)
     }
     
+    var currentScreen: String? {
+        currentSectionScreens[safe: currentScreenIndex]
+    }
+    
     var isLastScreenInSection: Bool {
         currentScreenIndex >= currentSectionScreens.count - 1
     }

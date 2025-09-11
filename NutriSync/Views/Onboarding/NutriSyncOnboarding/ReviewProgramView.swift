@@ -21,7 +21,6 @@ struct ReviewProgramView: View {
     private var bedTime: Date { coordinator.bedTime }
     private var mealFrequency: String { coordinator.mealFrequency }
     private var eatingWindow: String { coordinator.eatingWindow }
-    private var breakfastHabit: String { coordinator.breakfastHabit }
     
     var body: some View {
         ZStack {
