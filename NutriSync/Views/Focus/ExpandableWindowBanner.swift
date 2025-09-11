@@ -371,6 +371,16 @@ struct ExpandableWindowBanner: View {
         }
     }
     
+    // Check if window is missed or fasted
+    private var isMissedOrFasted: Bool {
+        switch windowStatus {
+        case .missed, .fasted:
+            return true
+        default:
+            return false
+        }
+    }
+    
     // Check if it's optimal time to eat (within first 30% of window)
     private var isOptimalTime: Bool {
         guard case .active = windowStatus, meals.isEmpty else { return false }
@@ -453,7 +463,7 @@ struct ExpandableWindowBanner: View {
         // Container only; tap/drag handled by overlay layer wrapper
         VStack(spacing: 0) {
             // Replace banner content with actions when showing missed actions
-            if case .missed = windowStatus || case .fasted = windowStatus, showInlineMissedActions {
+            if showInlineMissedActions && (isMissedOrFasted) {
                 missedWindowActionsContent
                     .transition(.asymmetric(
                         insertion: .opacity,
@@ -498,7 +508,7 @@ struct ExpandableWindowBanner: View {
         .frame(minHeight: nil, idealHeight: bannerHeight, maxHeight: bannerHeight, alignment: .top)
         .onTapGesture {
             // Check if this is a missed window
-            if case .missed = windowStatus || case .fasted = windowStatus {
+            if isMissedOrFasted {
                 withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
                     showInlineMissedActions.toggle()
                 }
