@@ -53,11 +53,11 @@ struct DayDetailView: View {
                         }
                     }
                     .padding(.top, 10) // Increased padding to avoid Dynamic Island/notch
-                    .padding(.horizontal, 32) // Add consistent horizontal padding to entire content
+                    .padding(.horizontal, 16) // Reduced padding for wider cards
                 }
             }
             .navigationTitle("Daily Summary")
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button {
@@ -73,12 +73,6 @@ struct DayDetailView: View {
                         }
                         .foregroundColor(.white)
                     }
-                }
-                
-                ToolbarItem(placement: .principal) {
-                    Text(dateFormatter.string(from: Date()))
-                        .font(.system(size: 13))
-                        .foregroundColor(.white.opacity(0.6))
                 }
             }
             .toolbarBackground(Color.nutriSyncBackground, for: .navigationBar)
