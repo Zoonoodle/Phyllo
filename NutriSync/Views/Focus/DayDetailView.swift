@@ -10,17 +10,9 @@ import SwiftUI
 struct DayDetailView: View {
     @ObservedObject var viewModel: ScheduleViewModel
     @Binding var showDayDetail: Bool
-    @State private var animateContent = false
-    @State private var isLoadingDetails = true
     @State private var micronutrientStatus: [ScheduleViewModel.MicronutrientStatus] = []
     @State private var foodTimeline: [ScheduleViewModel.TimelineEntry] = []
     @Environment(\.dismiss) private var dismiss
-    
-    // Progressive loading states
-    @State private var basicDataLoaded = false
-    @State private var dayPurposeLoaded = false
-    @State private var micronutrientsLoaded = false
-    @State private var timelineLoaded = false
     
     private var dailySummary: ScheduleViewModel.DailyNutritionSummary {
         viewModel.aggregateDailyNutrition()
@@ -39,38 +31,25 @@ struct DayDetailView: View {
                 Color.nutriSyncBackground
                     .ignoresSafeArea()
                 
-                // Scrollable content with progressive loading
                 ScrollView {
                     VStack(spacing: 24) {
-                        // Phase 1: Basic stats (immediate)
-                        if basicDataLoaded {
-                            DailyNutriSyncRing(dailySummary: dailySummary)
-                                .transition(.opacity.combined(with: .scale))
-                        } else {
-                            // Loading placeholder for ring
-                            RoundedRectangle(cornerRadius: 16)
-                                .fill(Color.phylloCard)
-                                .frame(height: 200)
-                                .shimmer()
-                        }
+                        // Daily nutrition ring
+                        DailyNutriSyncRing(dailySummary: dailySummary)
                         
-                        // Phase 2: Day Purpose (0.5s delay)
-                        if dayPurposeLoaded, let dayPurpose = dailySummary.dayPurpose {
+                        // Day Purpose card
+                        if let dayPurpose = dailySummary.dayPurpose {
                             DayPurposeCard(dayPurpose: dayPurpose)
-                                .transition(.opacity.combined(with: .move(edge: .top)))
                         }
                         
-                        // Phase 3: Food Timeline (1s delay)
-                        if timelineLoaded && !foodTimeline.isEmpty {
+                        // Food Timeline
+                        if !foodTimeline.isEmpty {
                             ChronologicalFoodList(foodTimeline: foodTimeline)
-                                .transition(.opacity.combined(with: .move(edge: .bottom)))
                         }
                         
-                        // Phase 4: Micronutrients (1.5s delay)
-                        if micronutrientsLoaded && !micronutrientStatus.isEmpty {
+                        // Micronutrients
+                        if !micronutrientStatus.isEmpty {
                             DailyMicronutrientStatusView(micronutrientStatus: micronutrientStatus)
                                 .padding(.bottom, 32)
-                                .transition(.opacity)
                         }
                     }
                     .padding(.top, 10) // Increased padding to avoid Dynamic Island/notch
@@ -105,45 +84,11 @@ struct DayDetailView: View {
             .toolbarBackground(Color.nutriSyncBackground, for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
         }
-        .opacity(animateContent ? 1 : 0)
         .onAppear {
-            startProgressiveLoading()
-            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                animateContent = true
-            }
-        }
-    }
-    
-    private func startProgressiveLoading() {
-        // Phase 1: Basic data (immediate)
-        withAnimation(.easeOut(duration: 0.3)) {
-            basicDataLoaded = true
-        }
-        
-        // Phase 2: Day Purpose (0.5s)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            withAnimation(.easeOut(duration: 0.3)) {
-                dayPurposeLoaded = true
-            }
-        }
-        
-        // Phase 3: Food Timeline (1s)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            // Load all data immediately
             Task { @MainActor in
                 foodTimeline = viewModel.getDailyFoodTimeline()
-                withAnimation(.easeOut(duration: 0.3)) {
-                    timelineLoaded = true
-                }
-            }
-        }
-        
-        // Phase 4: Micronutrients (1.5s)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-            Task { @MainActor in
                 micronutrientStatus = viewModel.calculateMicronutrientStatus()
-                withAnimation(.easeOut(duration: 0.3)) {
-                    micronutrientsLoaded = true
-                }
             }
         }
     }

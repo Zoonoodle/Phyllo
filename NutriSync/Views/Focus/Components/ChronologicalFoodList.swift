@@ -88,8 +88,16 @@ struct ChronologicalFoodList: View {
             }
         }
         .padding(20)
-        .background(Color.phylloCard)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .frame(maxWidth: .infinity)
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(Color.white.opacity(0.03))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .strokeBorder(Color.nutriSyncBorder, lineWidth: 1)
+                )
+        )
+        .clipped()
     }
 }
 

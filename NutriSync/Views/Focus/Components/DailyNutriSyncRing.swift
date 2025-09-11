@@ -103,8 +103,16 @@ struct DailyNutriSyncRing: View {
             .padding(.horizontal, 16)
         }
         .padding(.vertical, 24)
-        .background(Color.phylloCard)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .frame(maxWidth: .infinity)
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(Color.white.opacity(0.03))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .strokeBorder(Color.nutriSyncBorder, lineWidth: 1)
+                )
+        )
+        .clipped()
         .onAppear {
             withAnimation(.easeInOut(duration: 0.5).delay(0.2)) {
                 animateProgress = true
