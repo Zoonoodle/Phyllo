@@ -218,13 +218,50 @@ class NutritionDashboardViewModel: ObservableObject {
     }
     
     var topNutrients: [NutrientInfo] {
-        // Return top micronutrients for the day
-        let nutrients = [
-            NutrientInfo(name: "Vitamin D", current: 12, target: 20, unit: "μg", color: .orange),
-            NutrientInfo(name: "Iron", current: 8, target: 18, unit: "mg", color: .red),
-            NutrientInfo(name: "Calcium", current: 600, target: 1000, unit: "mg", color: .white),
-            NutrientInfo(name: "Vitamin B12", current: 1.8, target: 2.4, unit: "μg", color: .purple)
+        // Calculate actual micronutrients from today's meals
+        var nutrientTotals: [String: Double] = [:]
+        
+        // Aggregate all micronutrients from today's meals
+        for meal in todaysMeals {
+            for (nutrientName, amount) in meal.micronutrients {
+                nutrientTotals[nutrientName, default: 0] += amount
+            }
+        }
+        
+        // Define nutrients to track with their RDA values and colors
+        let nutrientDefinitions: [(name: String, target: Double, unit: String, color: Color)] = [
+            ("Vitamin D", 20, "μg", .orange),
+            ("Iron", 18, "mg", .red),
+            ("Calcium", 1000, "mg", .white),
+            ("Vitamin B12", 2.4, "μg", .purple)
         ]
+        
+        // Build nutrient info array with actual consumed values
+        var nutrients: [NutrientInfo] = []
+        for def in nutrientDefinitions {
+            let current = nutrientTotals[def.name] ?? 0
+            nutrients.append(NutrientInfo(
+                name: def.name,
+                current: current,
+                target: def.target,
+                unit: def.unit,
+                color: def.color
+            ))
+        }
+        
+        // If no meals logged yet, return empty array instead of fake data
+        if todaysMeals.isEmpty {
+            return nutrients.map { nutrient in
+                NutrientInfo(
+                    name: nutrient.name,
+                    current: 0,
+                    target: nutrient.target,
+                    unit: nutrient.unit,
+                    color: nutrient.color
+                )
+            }
+        }
+        
         return nutrients.sorted { $0.percentage > $1.percentage }
     }
     

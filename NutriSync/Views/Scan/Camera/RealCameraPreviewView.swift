@@ -30,7 +30,12 @@ class CameraSessionManager: ObservableObject {
             let newPhotoOutput = AVCapturePhotoOutput()
             // Use modern API for high resolution capture
             if #available(iOS 16.0, *) {
-                newPhotoOutput.maxPhotoDimensions = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back)?.activeFormat.supportedMaxPhotoDimensions.last ?? CMVideoDimensions(width: 0, height: 0)
+                // Safely configure max photo dimensions
+                if let camera = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
+                   let maxDimensions = camera.activeFormat.supportedMaxPhotoDimensions.last,
+                   maxDimensions.width > 0 && maxDimensions.height > 0 {
+                    newPhotoOutput.maxPhotoDimensions = maxDimensions
+                }
             } else {
                 newPhotoOutput.isHighResolutionCaptureEnabled = true
             }
@@ -174,7 +179,11 @@ struct RealCameraPreviewView: UIViewRepresentable {
             photoOutput = AVCapturePhotoOutput()
             // Use modern API for high resolution capture
             if #available(iOS 16.0, *) {
-                photoOutput.maxPhotoDimensions = camera.activeFormat.supportedMaxPhotoDimensions.last ?? CMVideoDimensions(width: 0, height: 0)
+                // Safely configure max photo dimensions
+                if let maxDimensions = camera.activeFormat.supportedMaxPhotoDimensions.last,
+                   maxDimensions.width > 0 && maxDimensions.height > 0 {
+                    photoOutput.maxPhotoDimensions = maxDimensions
+                }
             } else {
                 photoOutput.isHighResolutionCaptureEnabled = true
             }
