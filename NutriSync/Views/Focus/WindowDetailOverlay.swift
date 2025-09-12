@@ -15,6 +15,7 @@ struct WindowDetailOverlay: View {
     let animationNamespace: Namespace.ID
     @State private var animateContent = false
     @State private var currentPage = 0
+    @State private var showEditWindow = false
     
     var body: some View {
         ZStack {
@@ -70,6 +71,9 @@ struct WindowDetailOverlay: View {
                 animateContent = true
             }
         }
+        .sheet(isPresented: $showEditWindow) {
+            EditWindowView(window: window, viewModel: viewModel)
+        }
     }
     
     private var customNavigationBar: some View {
@@ -102,7 +106,7 @@ struct WindowDetailOverlay: View {
             // Menu button
             Menu {
                 Button {
-                    // Edit window action
+                    showEditWindow = true
                 } label: {
                     Label("Edit Window", systemImage: "pencil")
                 }

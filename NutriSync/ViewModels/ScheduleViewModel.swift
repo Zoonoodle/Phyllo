@@ -33,7 +33,8 @@ class ScheduleViewModel: ObservableObject {
     // Dynamic timeline hours based on user profile
     var timelineHours: [Int] {
         // Start with user's typical schedule if available
-        let buffer = 1 // hour before/after
+        let bufferBefore = 1 // hour before first window
+        let bufferAfter = 2 // 2 hours after last window for scroll spacing
         // CRITICAL: Use local calendar with proper timezone
         var calendar = Calendar.current
         calendar.timeZone = TimeZone.current
@@ -48,7 +49,7 @@ class ScheduleViewModel: ObservableObject {
             let bedHour = calendar.component(.hour, from: checkIn.plannedBedtime)
             
             // Always show at least 1 hour before wake time
-            earliestHour = max(0, wakeHour - buffer)
+            earliestHour = max(0, wakeHour - bufferBefore)
             
             // Check if this is a night shift schedule (bedtime before wake time numerically)
             // e.g., wake at 8 PM (20), bed at 2 AM (2)
@@ -60,7 +61,7 @@ class ScheduleViewModel: ObservableObject {
                     DebugLogger.shared.info("🌙 Night shift detected: Wake \(wakeHour):00, Bed \(bedHour):00 (next day)")
                 }
             } else {
-                latestHour = min(23, bedHour + buffer)
+                latestHour = min(23, bedHour + bufferAfter)
             }
         }
         
@@ -69,21 +70,29 @@ class ScheduleViewModel: ObservableObject {
         var windowLatestHour: Int? = nil
         if !mealWindows.isEmpty {
             let windowStartHours = mealWindows.map { calendar.component(.hour, from: $0.startTime) }
-            let windowEndHours = mealWindows.map { calendar.component(.hour, from: $0.endTime) }
+            
+            // For end hours, we need to account for minutes and round up
+            let windowEndHoursWithMinutes = mealWindows.map { window -> Int in
+                let hour = calendar.component(.hour, from: window.endTime)
+                let minute = calendar.component(.minute, from: window.endTime)
+                // If there are any minutes past the hour, we need to include the next hour
+                return minute > 0 ? hour + 1 : hour
+            }
             
             if let minStartHour = windowStartHours.min() {
-                windowEarliestHour = max(0, minStartHour - buffer)
+                windowEarliestHour = max(0, minStartHour - bufferBefore)
             }
-            if let maxEndHour = windowEndHours.max() {
-                windowLatestHour = min(23, maxEndHour + buffer)
+            if let maxEndHour = windowEndHoursWithMinutes.max() {
+                // Use 2-hour buffer after last window for scroll spacing
+                windowLatestHour = min(23, maxEndHour + bufferAfter)
             }
         }
         
         // Check for explicitly set meal hours
         if let firstMeal = userProfile.earliestMealHour,
            let lastMeal = userProfile.latestMealHour {
-            var startHour = max(0, firstMeal - buffer)
-            var endHour = min(23, lastMeal + buffer)
+            var startHour = max(0, firstMeal - bufferBefore)
+            var endHour = min(23, lastMeal + bufferAfter)
             
             // Ensure we include wake time if available
             if let earliestFromWake = earliestHour {
@@ -142,8 +151,8 @@ class ScheduleViewModel: ObservableObject {
             let mealHours = todaysMeals.map { calendar.component(.hour, from: $0.timestamp) }
             if let minHour = mealHours.min(),
                let maxHour = mealHours.max() {
-                startHour = min(startHour, max(0, minHour - buffer))
-                endHour = max(endHour, min(23, maxHour + buffer))
+                startHour = min(startHour, max(0, minHour - bufferBefore))
+                endHour = max(endHour, min(23, maxHour + bufferAfter))
             }
         }
         
@@ -160,7 +169,7 @@ class ScheduleViewModel: ObservableObject {
                 // Return hours from wake time to 23, then 0 to bedtime
                 // e.g., wake at 20 (8 PM), bed at 2 (2 AM) = [19,20,21,22,23,0,1,2,3]
                 var hours: [Int] = Array(startHour...23)
-                hours.append(contentsOf: Array(0...(bedHour + buffer)))
+                hours.append(contentsOf: Array(0...(bedHour + bufferAfter)))
                 Task { @MainActor in
                     DebugLogger.shared.info("🌙 Timeline spans midnight: \(hours)")
                 }

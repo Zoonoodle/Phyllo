@@ -50,31 +50,8 @@ struct SimpleTimelineView: View {
                         currentTime = Date()
                     }
                 
-                // Jump to Now button
-                if showJumpToNowButton {
-                    Button(action: {
-                        withAnimation(.easeInOut(duration: 0.5)) {
-                            scrollToCurrentTime(proxy: proxy)
-                        }
-                    }) {
-                        HStack(spacing: 6) {
-                            Image(systemName: "clock.fill")
-                                .font(.system(size: 14))
-                            Text("Now")
-                                .font(.system(size: 14, weight: .medium))
-                        }
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 8)
-                        .background(
-                            Capsule()
-                                .fill(Color.nutriSyncAccent)
-                                .shadow(color: Color.black.opacity(0.3), radius: 8, x: 0, y: 4)
-                        )
-                    }
-                    .padding(.bottom, 20)
-                    .transition(.scale.combined(with: .opacity))
-                }
+                // Jump to Now button - REMOVED per user request
+                // The NOW indicator has been removed from the timeline view
             }
         }
     }

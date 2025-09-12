@@ -12,6 +12,7 @@ struct WindowDetailView: View {
     @ObservedObject var viewModel: ScheduleViewModel
     @Environment(\.dismiss) private var dismiss
     @State private var currentPage = 0
+    @State private var showEditWindow = false
     
     var body: some View {
         NavigationStack {
@@ -62,7 +63,7 @@ struct WindowDetailView: View {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Menu {
                         Button {
-                            // Edit window action
+                            showEditWindow = true
                         } label: {
                             Label("Edit Window", systemImage: "pencil")
                         }
@@ -81,6 +82,9 @@ struct WindowDetailView: View {
             }
             .toolbarBackground(Color.nutriSyncBackground, for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
+        }
+        .sheet(isPresented: $showEditWindow) {
+            EditWindowView(window: window, viewModel: viewModel)
         }
     }
     
