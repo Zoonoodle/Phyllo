@@ -61,7 +61,11 @@ struct RedistributedWindowCard: View {
                 // Progress bars showing original vs adjusted
                 if isRedistributed {
                     RedistributedProgressBars(
-                        current: window.consumed,
+                        current: MacroTargets(
+                            protein: window.consumed.protein,
+                            carbs: window.consumed.carbs,
+                            fat: window.consumed.fat
+                        ),
                         adjusted: MacroTargets(
                             protein: window.effectiveProtein,
                             carbs: window.effectiveCarbs,
@@ -73,7 +77,11 @@ struct RedistributedWindowCard: View {
                 } else {
                     // Normal progress bars
                     StandardProgressBars(
-                        current: window.consumed,
+                        current: MacroTargets(
+                            protein: window.consumed.protein,
+                            carbs: window.consumed.carbs,
+                            fat: window.consumed.fat
+                        ),
                         target: MacroTargets(
                             protein: window.effectiveProtein,
                             carbs: window.effectiveCarbs,
@@ -256,7 +264,7 @@ struct RedistributedProgressBars: View {
     }
     
     private func barWidth(for calories: Int, in geometry: GeometryProxy) -> CGFloat {
-        let maxCalories = max(adjusted.totalCalories, original?.totalCalories ?? 0) * 1.2
+        let maxCalories = Double(max(adjusted.totalCalories, original?.totalCalories ?? 0)) * 1.2
         guard maxCalories > 0 else { return 0 }
         return (CGFloat(calories) / CGFloat(maxCalories)) * geometry.size.width
     }
