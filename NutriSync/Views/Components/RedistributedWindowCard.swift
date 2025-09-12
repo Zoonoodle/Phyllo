@@ -84,7 +84,7 @@ struct RedistributedWindowCard: View {
                 
                 // Macro details
                 HStack(spacing: 16) {
-                    MacroIndicator(
+                    RedistributedMacroIndicator(
                         label: "Protein",
                         current: window.consumed.protein,
                         target: window.effectiveProtein,
@@ -92,7 +92,7 @@ struct RedistributedWindowCard: View {
                         color: .blue
                     )
                     
-                    MacroIndicator(
+                    RedistributedMacroIndicator(
                         label: "Carbs",
                         current: window.consumed.carbs,
                         target: window.effectiveCarbs,
@@ -100,7 +100,7 @@ struct RedistributedWindowCard: View {
                         color: .orange
                     )
                     
-                    MacroIndicator(
+                    RedistributedMacroIndicator(
                         label: "Fat",
                         current: window.consumed.fat,
                         target: window.effectiveFat,
