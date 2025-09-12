@@ -291,9 +291,9 @@ struct StandardProgressBars: View {
     }
 }
 
-// MARK: - Macro Indicator
+// MARK: - Redistributed Macro Indicator
 
-struct MacroIndicator: View {
+struct RedistributedMacroIndicator: View {
     let label: String
     let current: Int
     let target: Int

@@ -112,6 +112,7 @@ struct SimpleTimelineView: View {
         ZStack(alignment: .topLeading) {
             CurrentTimeIndicatorDynamic(
                 hourLayouts: calculatedHourLayouts,
+                windowLayouts: calculatedWindowLayouts,
                 currentTime: currentTime
             )
             
@@ -262,6 +263,7 @@ struct HourRowView: View {
 // Current time indicator with dynamic heights
 struct CurrentTimeIndicatorDynamic: View {
     let hourLayouts: [TimelineLayoutManager.HourLayout]
+    let windowLayouts: [TimelineLayoutManager.WindowLayout]
     let currentTime: Date
     
     private var currentOffset: CGFloat {
@@ -275,6 +277,17 @@ struct CurrentTimeIndicatorDynamic: View {
         return hourLayout.yOffset + minuteOffset
     }
     
+    // Check if there's an active window at the current time
+    private var hasActiveWindow: Bool {
+        for layout in windowLayouts {
+            let window = layout.window
+            if currentTime >= window.startTime && currentTime <= window.endTime {
+                return true
+            }
+        }
+        return false
+    }
+    
     var body: some View {
         let currentHour = Calendar.current.component(.hour, from: currentTime)
         if hourLayouts.contains(where: { $0.hour == currentHour }) {
@@ -284,18 +297,21 @@ struct CurrentTimeIndicatorDynamic: View {
                     .frame(width: 8, height: 8)
                     .shadow(color: Color.green.opacity(0.5), radius: 3)
                 
-                Rectangle()
-                    .fill(Color.green.opacity(0.6))
-                    .frame(height: 1)
-                
-                Text(formatCurrentTime())
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundColor(.green)
-                    .padding(.horizontal, 6)
-                    .background(
-                        Capsule()
-                            .fill(Color.black.opacity(0.8))
-                    )
+                // Only show the line and time label if there's no active window
+                if !hasActiveWindow {
+                    Rectangle()
+                        .fill(Color.green.opacity(0.6))
+                        .frame(height: 1)
+                    
+                    Text(formatCurrentTime())
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundColor(.green)
+                        .padding(.horizontal, 6)
+                        .background(
+                            Capsule()
+                                .fill(Color.black.opacity(0.8))
+                        )
+                }
             }
             .offset(x: 56, y: currentOffset)
             .animation(.linear(duration: 0.3), value: currentOffset)

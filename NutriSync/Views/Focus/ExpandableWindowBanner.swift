@@ -1236,15 +1236,15 @@ struct ExpandableWindowBanner: View {
                     .strokeBorder(
                         LinearGradient(
                             colors: [
-                                Color.nutriSyncAccent.opacity(0.5),
-                                Color.nutriSyncAccent.opacity(0.25)
+                                window.purpose.color.opacity(0.5),
+                                window.purpose.color.opacity(0.25)
                             ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         ),
                         lineWidth: 1.5
                     )
-                    .shadow(color: Color.nutriSyncAccent.opacity(0.25), radius: pulseAnimation ? 6 : 3)
+                    .shadow(color: window.purpose.color.opacity(0.25), radius: pulseAnimation ? 6 : 3)
                     .animation(.easeInOut(duration: 2).repeatForever(autoreverses: true), value: pulseAnimation)
             }
             
