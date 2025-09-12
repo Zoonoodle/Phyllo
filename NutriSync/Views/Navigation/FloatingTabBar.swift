@@ -28,12 +28,15 @@ struct FloatingTabBar: View {
         .background(
             Group {
                 if isScanView {
-                    // Transparent background with blur for ScanView
+                    // Ultra transparent background for ScanView
                     RoundedRectangle(cornerRadius: 28)
-                        .fill(.ultraThinMaterial)
+                        .fill(Color.black.opacity(0.2))
+                        .background(
+                            .ultraThinMaterial.opacity(0.3)
+                        )
                         .overlay(
                             RoundedRectangle(cornerRadius: 28)
-                                .stroke(Color.white.opacity(0.15), lineWidth: 0.5)
+                                .stroke(Color.white.opacity(0.08), lineWidth: 0.5)
                         )
                 } else {
                     // Regular solid background for other views
@@ -46,7 +49,7 @@ struct FloatingTabBar: View {
                 }
             }
         )
-        .shadow(color: .black.opacity(isScanView ? 0.25 : 0.15), radius: 8, y: 4)
+        .shadow(color: .black.opacity(isScanView ? 0.1 : 0.15), radius: isScanView ? 4 : 8, y: isScanView ? 2 : 4)
     }
 }
 
@@ -62,8 +65,8 @@ struct FloatingTabButton: View {
                 .font(.system(size: 18, weight: .medium))
                 .foregroundColor(
                     isSelected ? 
-                    .white : 
-                    (isScanView ? .white.opacity(0.6) : .white.opacity(0.4))
+                    (isScanView ? .white.opacity(0.9) : .white) : 
+                    (isScanView ? .white.opacity(0.5) : .white.opacity(0.4))
                 )
                 .frame(maxWidth: .infinity)
                 .frame(height: 56)
