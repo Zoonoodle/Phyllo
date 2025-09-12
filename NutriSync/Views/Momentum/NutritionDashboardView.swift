@@ -525,8 +525,8 @@ struct NutritionDashboardView: View {
             }
         }
         
-        // If no relevant windows yet, show 100% (benefit of doubt)
-        guard relevantWindows > 0 else { return 100 }
+        // If no relevant windows yet, show 0% (no timing to measure)
+        guard relevantWindows > 0 else { return 0 }
         
         return (totalScore / Double(relevantWindows)) * 100
     }

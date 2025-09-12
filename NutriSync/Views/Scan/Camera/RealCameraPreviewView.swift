@@ -28,21 +28,21 @@ class CameraSessionManager: ObservableObject {
             }
             
             let newPhotoOutput = AVCapturePhotoOutput()
-            // Use modern API for high resolution capture
-            if #available(iOS 16.0, *) {
-                // Safely configure max photo dimensions
-                if let camera = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
-                   let maxDimensions = camera.activeFormat.supportedMaxPhotoDimensions.last,
-                   maxDimensions.width > 0 && maxDimensions.height > 0 {
-                    newPhotoOutput.maxPhotoDimensions = maxDimensions
-                }
-            } else {
-                newPhotoOutput.isHighResolutionCaptureEnabled = true
-            }
             
             if newSession.canAddInput(input) && newSession.canAddOutput(newPhotoOutput) {
                 newSession.addInput(input)
                 newSession.addOutput(newPhotoOutput)
+                
+                // Configure high resolution AFTER adding to session
+                if #available(iOS 16.0, *) {
+                    // Safely configure max photo dimensions after connection
+                    if let maxDimensions = backCamera.activeFormat.supportedMaxPhotoDimensions.last,
+                       maxDimensions.width > 0 && maxDimensions.height > 0 {
+                        newPhotoOutput.maxPhotoDimensions = maxDimensions
+                    }
+                } else {
+                    newPhotoOutput.isHighResolutionCaptureEnabled = true
+                }
             }
             
             // Start the session to pre-warm
@@ -177,21 +177,22 @@ struct RealCameraPreviewView: UIViewRepresentable {
             }
             
             photoOutput = AVCapturePhotoOutput()
-            // Use modern API for high resolution capture
-            if #available(iOS 16.0, *) {
-                // Safely configure max photo dimensions
-                if let maxDimensions = camera.activeFormat.supportedMaxPhotoDimensions.last,
-                   maxDimensions.width > 0 && maxDimensions.height > 0 {
-                    photoOutput.maxPhotoDimensions = maxDimensions
-                }
-            } else {
-                photoOutput.isHighResolutionCaptureEnabled = true
-            }
             
             if captureSession.canAddInput(input) && captureSession.canAddOutput(photoOutput) {
                 captureSession.addInput(input)
                 captureSession.addOutput(photoOutput)
                 print("✅ Camera input and output configured")
+                
+                // Configure high resolution AFTER adding to session
+                if #available(iOS 16.0, *) {
+                    // Safely configure max photo dimensions after connection
+                    if let maxDimensions = camera.activeFormat.supportedMaxPhotoDimensions.last,
+                       maxDimensions.width > 0 && maxDimensions.height > 0 {
+                        photoOutput.maxPhotoDimensions = maxDimensions
+                    }
+                } else {
+                    photoOutput.isHighResolutionCaptureEnabled = true
+                }
             } else {
                 print("❌ Failed to add input/output to capture session")
                 return view
