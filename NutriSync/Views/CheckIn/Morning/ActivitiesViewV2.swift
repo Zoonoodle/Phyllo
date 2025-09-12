@@ -7,6 +7,36 @@
 
 import SwiftUI
 
+// MARK: - PlannedActivityInput
+// Moved from deleted EnhancedActivitiesView.swift - still needed by V2
+struct PlannedActivityInput: Identifiable {
+    let id = UUID()
+    var type: ActivityType
+    var startTime: String
+    var endTime: String
+    
+    enum ActivityType: String, CaseIterable {
+        case workout = "Workout"
+        case cardio = "Cardio"
+        case weights = "Weight Training"
+        case meal = "Meal Event"
+        case meeting = "Meeting"
+        case social = "Social Event"
+        case work = "Work Event"
+        case travel = "Travel"
+        
+        var icon: String {
+            switch self {
+            case .workout, .cardio, .weights: return "figure.run"
+            case .meal: return "fork.knife"
+            case .meeting, .work: return "briefcase.fill"
+            case .social: return "person.2.fill"
+            case .travel: return "car.fill"
+            }
+        }
+    }
+}
+
 struct ActivitiesViewV2: View {
     @Bindable var viewModel: MorningCheckInViewModel
     @State private var activityBlocks: [ActivityTimeBlock] = []
