@@ -11,6 +11,7 @@ struct TargetWeightView: View {
     @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
     @State private var targetWeight: Double = 130
     @State private var currentWeight: Double = 163
+    @State private var textInput: String = "130"
     @State private var selectedUnit = "lbs"
     
     var minWeight: Double {
@@ -60,10 +61,14 @@ struct TargetWeightView: View {
                                 selectedUnit = "kg"
                                 // Convert current value to kg
                                 targetWeight = round(targetWeight * 0.453592)
+                                currentWeight = round(currentWeight * 0.453592)
+                                textInput = String(Int(targetWeight))
                             } else {
                                 selectedUnit = "lbs"
                                 // Convert current value to lbs
                                 targetWeight = round(targetWeight / 0.453592)
+                                currentWeight = round(currentWeight / 0.453592)
+                                textInput = String(Int(targetWeight))
                             }
                         }
                     } label: {
@@ -88,6 +93,32 @@ struct TargetWeightView: View {
                 )
                 .frame(height: 80)
                 .padding(.horizontal, 20)
+                .onChange(of: targetWeight) { oldValue, newValue in
+                    textInput = String(Int(newValue))
+                }
+                
+                // Text input field
+                HStack {
+                    TextField("Enter weight", text: $textInput)
+                        .keyboardType(.numberPad)
+                        .font(.system(size: 20, weight: .semibold))
+                        .foregroundColor(.white)
+                        .multilineTextAlignment(.center)
+                        .padding(12)
+                        .background(Color.white.opacity(0.1))
+                        .cornerRadius(12)
+                        .onChange(of: textInput) { oldValue, newValue in
+                            if let weight = Double(newValue) {
+                                targetWeight = max(minWeight, min(maxWeight, weight))
+                            }
+                        }
+                    
+                    Text(selectedUnit)
+                        .font(.system(size: 17))
+                        .foregroundColor(.white.opacity(0.7))
+                }
+                .padding(.horizontal, 60)
+                .padding(.top, 20)
             }
             
             Spacer()
@@ -135,6 +166,13 @@ struct TargetWeightView: View {
         }
         .background(Color.nutriSyncBackground)
         .ignoresSafeArea(.keyboard)
+        .onAppear {
+            // Use coordinator's weight as current weight
+            currentWeight = coordinator.weight * 2.20462 // Convert kg to lbs
+            // Set initial target weight to current weight - 10 lbs for weight loss
+            targetWeight = currentWeight - 10
+            textInput = String(Int(targetWeight))
+        }
     }
 }
 
@@ -204,7 +242,7 @@ struct WeightRulerSlider: View {
                 .offset(x: geometry.size.width / 2 - CGFloat(value - minValue) * tickSpacing + baseOffset + dragOffset)
                 
                 // Green overlay for selected range from current weight
-                let referenceWeight = unit == "lbs" ? 163.0 : 74.0  // Default current weight
+                let referenceWeight = unit == "lbs" ? currentWeight : currentWeight * 0.453592  // Use actual current weight
                 if value < referenceWeight {
                     Color.nutriSyncGreen.opacity(0.3)
                         .frame(width: CGFloat(referenceWeight - value) * tickSpacing)

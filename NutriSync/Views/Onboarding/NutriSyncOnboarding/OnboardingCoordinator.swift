@@ -48,6 +48,7 @@ class NutriSyncOnboardingViewModel {
     var activityLevel: String = ""
     var tdee: Double? = nil
     var goal: String = ""
+    var maintenanceStrategy: String = ""
     var targetWeight: Double? = nil
     var weightLossRate: Double? = nil
     var dietPreference: String = ""
@@ -114,7 +115,21 @@ class NutriSyncOnboardingViewModel {
         } else if isLastScreenInSection {
             completeSection()
         } else {
-            currentScreenIndex += 1
+            // Conditional navigation based on goal selection
+            if currentScreen == "Goal Selection" {
+                if goal.lowercased() == "maintain weight" {
+                    // Skip to Maintenance Strategy screen (index 2)
+                    currentScreenIndex = 2
+                } else {
+                    // Skip Maintenance Strategy for lose/gain weight (go to Target Weight at index 3)
+                    currentScreenIndex = 3
+                }
+            } else if currentScreen == "Maintenance Strategy" {
+                // After Maintenance Strategy, skip Target Weight and Weight Loss Rate
+                currentScreenIndex = 5 // Jump to Pre-Workout Nutrition
+            } else {
+                currentScreenIndex += 1
+            }
         }
     }
     
@@ -302,7 +317,7 @@ class NutriSyncOnboardingViewModel {
         let nutritionGoal: NutritionGoal = switch goal.lowercased() {
             case "lose weight", "weight loss":
                 .weightLoss(targetPounds: (targetWeight ?? weight - 10) * 2.20462, timeline: 12)
-            case "build muscle", "muscle gain":
+            case "build muscle", "muscle gain", "gain weight":
                 .muscleGain(targetPounds: (targetWeight ?? weight + 10) * 2.20462, timeline: 12)
             case "maintain weight":
                 .maintainWeight
@@ -344,7 +359,7 @@ class NutriSyncOnboardingViewModel {
     private func buildUserGoals() -> UserGoals {
         let primaryGoal: UserGoals.Goal = switch goal.lowercased() {
             case "lose weight", "weight loss": .loseWeight
-            case "build muscle", "muscle gain": .buildMuscle
+            case "build muscle", "muscle gain", "gain weight": .buildMuscle
             case "maintain weight": .maintainWeight
             case "improve performance", "performance": .improvePerformance
             case "better sleep": .betterSleep
@@ -486,6 +501,8 @@ struct NutriSyncOnboardingCoordinator: View {
             GoalSettingIntroView()
         case "Goal Selection":
             GoalSelectionView()
+        case "Maintenance Strategy":
+            MaintenanceStrategyView()
         case "Target Weight":
             TargetWeightView()
         case "Weight Loss Rate":

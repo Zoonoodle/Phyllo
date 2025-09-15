@@ -13,13 +13,28 @@ struct WeightLossRateView: View {
     @State private var selectedRate: Double = 0.5 // % of body weight per week
     @State private var isDragging = false
     
-    // Rate options
-    let rateOptions = [
-        (label: "Conservative", rate: 0.25, color: Color.blue),
-        (label: "Standard", rate: 0.5, color: Color.green),
-        (label: "Aggressive", rate: 0.75, color: Color.orange),
-        (label: "Extreme", rate: 1.0, color: Color.red)
-    ]
+    var isWeightGain: Bool {
+        coordinator.goal.lowercased() == "gain weight"
+    }
+    
+    // Rate options - dynamic based on goal
+    var rateOptions: [(label: String, rate: Double, color: Color)] {
+        if isWeightGain {
+            return [
+                (label: "Conservative", rate: 0.25, color: Color.green),
+                (label: "Standard", rate: 0.5, color: Color.blue),
+                (label: "Moderate", rate: 0.75, color: Color.purple),
+                (label: "Aggressive", rate: 1.0, color: Color.orange)
+            ]
+        } else {
+            return [
+                (label: "Conservative", rate: 0.25, color: Color.blue),
+                (label: "Standard", rate: 0.5, color: Color.green),
+                (label: "Aggressive", rate: 0.75, color: Color.orange),
+                (label: "Extreme", rate: 1.0, color: Color.red)
+            ]
+        }
+    }
     
     var currentWeight: Double {
         coordinator.weight > 0 ? coordinator.weight : 70 // Default to 70kg if not set
@@ -29,24 +44,28 @@ struct WeightLossRateView: View {
         coordinator.targetWeight ?? (currentWeight - 10) // Default to 10kg loss
     }
     
-    var weeklyLoss: Double {
+    var weeklyChange: Double {
         currentWeight * (selectedRate / 100)
     }
     
-    var monthlyLoss: Double {
-        weeklyLoss * 4.33 // Average weeks per month
+    var monthlyChange: Double {
+        weeklyChange * 4.33 // Average weeks per month
     }
     
     var estimatedDailyCalories: Double {
         let tdee = coordinator.tdee ?? 2000
-        let dailyDeficit = (weeklyLoss * 2.2 * 3500) / 7 // Convert kg to lbs, 3500 cal per lb
-        return max(1200, tdee - dailyDeficit) // Minimum 1200 calories
+        let dailyChange = (weeklyChange * 2.2 * 3500) / 7 // Convert kg to lbs, 3500 cal per lb
+        if isWeightGain {
+            return tdee + dailyChange // Add calories for gain
+        } else {
+            return max(1200, tdee - dailyChange) // Subtract for loss, minimum 1200
+        }
     }
     
     var weeksToGoal: Int {
-        let totalLoss = currentWeight - targetWeight
-        guard totalLoss > 0 && weeklyLoss > 0 else { return 0 }
-        return Int(ceil(totalLoss / weeklyLoss))
+        let totalChange = isWeightGain ? (targetWeight - currentWeight) : (currentWeight - targetWeight)
+        guard totalChange > 0 && weeklyChange > 0 else { return 0 }
+        return Int(ceil(totalChange / weeklyChange))
     }
     
     var estimatedEndDate: Date {
@@ -54,26 +73,50 @@ struct WeightLossRateView: View {
     }
     
     var currentRateLabel: String {
-        if selectedRate <= 0.25 {
-            return "Conservative"
-        } else if selectedRate <= 0.5 {
-            return "Standard (Recommended)"
-        } else if selectedRate <= 0.75 {
-            return "Aggressive"
+        if isWeightGain {
+            if selectedRate <= 0.25 {
+                return "Conservative (Recommended)"
+            } else if selectedRate <= 0.5 {
+                return "Standard"
+            } else if selectedRate <= 0.75 {
+                return "Moderate"
+            } else {
+                return "Aggressive (Monitor closely)"
+            }
         } else {
-            return "Extreme (Not Recommended)"
+            if selectedRate <= 0.25 {
+                return "Conservative"
+            } else if selectedRate <= 0.5 {
+                return "Standard (Recommended)"
+            } else if selectedRate <= 0.75 {
+                return "Aggressive"
+            } else {
+                return "Extreme (Not Recommended)"
+            }
         }
     }
     
     var currentRateColor: Color {
-        if selectedRate <= 0.25 {
-            return .blue
-        } else if selectedRate <= 0.5 {
-            return .green
-        } else if selectedRate <= 0.75 {
-            return .orange
+        if isWeightGain {
+            if selectedRate <= 0.25 {
+                return .green
+            } else if selectedRate <= 0.5 {
+                return .blue
+            } else if selectedRate <= 0.75 {
+                return .purple
+            } else {
+                return .orange
+            }
         } else {
-            return .red
+            if selectedRate <= 0.25 {
+                return .blue
+            } else if selectedRate <= 0.5 {
+                return .green
+            } else if selectedRate <= 0.75 {
+                return .orange
+            } else {
+                return .red
+            }
         }
     }
     
@@ -96,7 +139,7 @@ struct WeightLossRateView: View {
                         .padding(.bottom, 12)
                     
                     // Subtitle
-                    Text("Set your desired rate of weight loss.")
+                    Text(isWeightGain ? "Set your desired rate of weight gain." : "Set your desired rate of weight loss.")
                         .font(.system(size: 17))
                         .foregroundColor(.white.opacity(0.6))
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -183,22 +226,24 @@ struct WeightLossRateView: View {
                         
                         // Rate details (now dynamic)
                         VStack(spacing: 16) {
-                            // Weekly loss
+                            // Weekly change
                             HStack {
                                 Image(systemName: "calendar")
                                     .foregroundColor(.white.opacity(0.6))
-                                Text(String(format: "−%.2f lbs (%.1f%% BW) / Week", 
-                                          weeklyLoss * 2.2, selectedRate))
+                                Text(String(format: "%@%.2f lbs (%.1f%% BW) / Week", 
+                                          isWeightGain ? "+" : "−",
+                                          weeklyChange * 2.2, selectedRate))
                                     .font(.system(size: 18))
                                     .foregroundColor(.white)
                             }
                             
-                            // Monthly loss
+                            // Monthly change
                             HStack {
                                 Image(systemName: "calendar.badge.clock")
                                     .foregroundColor(.white.opacity(0.6))
-                                Text(String(format: "−%.2f lbs (%.1f%% BW) / Month", 
-                                          monthlyLoss * 2.2, selectedRate * 4.33))
+                                Text(String(format: "%@%.2f lbs (%.1f%% BW) / Month", 
+                                          isWeightGain ? "+" : "−",
+                                          monthlyChange * 2.2, selectedRate * 4.33))
                                     .font(.system(size: 18))
                                     .foregroundColor(.white)
                             }
@@ -230,7 +275,7 @@ struct WeightLossRateView: View {
                                 HStack {
                                     Image(systemName: "exclamationmark.triangle.fill")
                                         .foregroundColor(.orange)
-                                    Text("This rate may be difficult to sustain")
+                                    Text(isWeightGain ? "Monitor body composition closely" : "This rate may be difficult to sustain")
                                         .font(.system(size: 14))
                                         .foregroundColor(.orange)
                                 }
@@ -258,12 +303,12 @@ struct WeightLossRateView: View {
                         Spacer()
                         
                         Button {
-                            // Save weight loss rate to coordinator (convert to kg per week)
-                            coordinator.weightLossRate = weeklyLoss
+                            // Save weight change rate to coordinator (convert to kg per week)
+                            coordinator.weightLossRate = isWeightGain ? weeklyChange : -weeklyChange
                             coordinator.nextScreen()
                         } label: {
                             HStack(spacing: 6) {
-                                Text("Done with goal")
+                                Text("Continue")
                                     .font(.system(size: 17, weight: .semibold))
                                 Image(systemName: "chevron.right")
                                     .font(.system(size: 14, weight: .semibold))
