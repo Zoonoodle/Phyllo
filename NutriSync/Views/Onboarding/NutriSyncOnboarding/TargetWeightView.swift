@@ -83,15 +83,14 @@ struct TargetWeightView: View {
                 }
                 .padding(.bottom, 24)
                 
-                // Weight ruler slider
-                WeightRulerSlider(
-                    value: $targetWeight,
-                    minValue: minWeight,
-                    maxValue: maxWeight,
-                    currentWeight: currentWeight,
-                    unit: selectedUnit
+                // Modern weight slider
+                ModernWeightSlider(
+                    selectedWeight: $targetWeight,
+                    minimumWeight: minWeight,
+                    maximumWeight: maxWeight,
+                    referenceWeight: currentWeight,
+                    weightUnit: selectedUnit
                 )
-                .frame(height: 80)
                 .padding(.horizontal, 20)
                 .onChange(of: targetWeight) { oldValue, newValue in
                     textInput = String(Int(newValue))
@@ -176,129 +175,183 @@ struct TargetWeightView: View {
     }
 }
 
-struct WeightRulerSlider: View {
-    @Binding var value: Double
-    let minValue: Double
-    let maxValue: Double
-    let currentWeight: Double
-    let unit: String
+struct ModernWeightSlider: View {
+    @Binding var selectedWeight: Double
+    let minimumWeight: Double
+    let maximumWeight: Double
+    let referenceWeight: Double
+    let weightUnit: String
     
-    @State private var baseOffset: CGFloat = 0
-    @GestureState private var dragOffset: CGFloat = 0
-    @State private var lastHapticValue: Int = 0
+    @State private var isDragging = false
+    @State private var sliderProgress: Double = 0.5
+    @State private var pulseAnimation = false
     
-    private var tickSpacing: CGFloat {
-        unit == "lbs" ? 8 : 12  // Different spacing for kg vs lbs
-    }
-    private let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+    private let vibrationGenerator = UIImpactFeedbackGenerator(style: .soft)
+    private let selectionGenerator = UISelectionFeedbackGenerator()
     
     var body: some View {
-        GeometryReader { geometry in
+        VStack(spacing: 24) {
+            // Visual weight difference indicator
+            HStack(spacing: 20) {
+                VStack(spacing: 4) {
+                    Text("Current")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.white.opacity(0.5))
+                    Text("\(Int(referenceWeight))")
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundColor(.white.opacity(0.7))
+                }
+                
+                // Animated arrow showing direction
+                Image(systemName: selectedWeight < referenceWeight ? "arrow.down.circle.fill" : "arrow.up.circle.fill")
+                    .font(.system(size: 28))
+                    .foregroundColor(Color.nutriSyncGreen)
+                    .rotationEffect(.degrees(pulseAnimation ? 5 : -5))
+                    .animation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true), value: pulseAnimation)
+                
+                VStack(spacing: 4) {
+                    Text("Target")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.white.opacity(0.5))
+                    Text("\(Int(selectedWeight))")
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundColor(Color.nutriSyncGreen)
+                }
+            }
+            .padding(.horizontal, 40)
+            
+            // New circular slider design
             ZStack {
-                // Clipping mask
-                Rectangle()
-                    .fill(Color.nutriSyncBackground)
-                    .mask(
-                        LinearGradient(
-                            gradient: Gradient(stops: [
-                                .init(color: .clear, location: 0),
-                                .init(color: .black, location: 0.1),
-                                .init(color: .black, location: 0.9),
-                                .init(color: .clear, location: 1)
-                            ]),
-                            startPoint: .leading,
-                            endPoint: .trailing
+                // Background track
+                Capsule()
+                    .fill(Color.white.opacity(0.05))
+                    .frame(height: 60)
+                
+                // Progress fill
+                GeometryReader { geo in
+                    Capsule()
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    Color.nutriSyncGreen.opacity(0.3),
+                                    Color.nutriSyncGreen.opacity(0.8)
+                                ],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
                         )
-                    )
+                        .frame(width: geo.size.width * sliderProgress, height: 60)
+                        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: sliderProgress)
+                    
+                    // Draggable thumb with glow effect
+                    Circle()
+                        .fill(Color.nutriSyncGreen)
+                        .frame(width: isDragging ? 70 : 50, height: isDragging ? 70 : 50)
+                        .overlay(
+                            Circle()
+                                .stroke(Color.white.opacity(0.3), lineWidth: 2)
+                        )
+                        .shadow(color: Color.nutriSyncGreen.opacity(isDragging ? 0.8 : 0.4), radius: isDragging ? 20 : 10)
+                        .scaleEffect(isDragging ? 1.1 : 1.0)
+                        .position(x: geo.size.width * sliderProgress, y: 30)
+                        .gesture(
+                            DragGesture()
+                                .onChanged { drag in
+                                    if !isDragging {
+                                        isDragging = true
+                                        selectionGenerator.selectionChanged()
+                                    }
+                                    
+                                    let newProgress = min(max(0, drag.location.x / geo.size.width), 1)
+                                    sliderProgress = newProgress
+                                    
+                                    let newWeight = minimumWeight + (maximumWeight - minimumWeight) * newProgress
+                                    let roundedWeight = round(newWeight)
+                                    
+                                    if Int(roundedWeight) != Int(selectedWeight) {
+                                        vibrationGenerator.impactOccurred()
+                                        selectedWeight = roundedWeight
+                                    }
+                                }
+                                .onEnded { _ in
+                                    withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
+                                        isDragging = false
+                                    }
+                                    selectionGenerator.selectionChanged()
+                                }
+                        )
+                }
+                .frame(height: 60)
                 
-                // Ruler content
-                HStack(spacing: 0) {
-                    ForEach(Int(minValue)...Int(maxValue), id: \.self) { weight in
-                        VStack(spacing: 4) {
-                            // Labels for major ticks
-                            let interval = unit == "lbs" ? 10 : 5
-                            if weight % interval == 0 {
-                                Text("\(weight)")
-                                    .font(.system(size: 12))
-                                    .foregroundColor(.white.opacity(0.6))
-                                    .frame(height: 16)
-                            } else {
-                                Color.clear
-                                    .frame(height: 16)
-                            }
-                            
-                            // Tick marks
-                            let majorInterval = unit == "lbs" ? 10 : 5
-                            let minorInterval = unit == "lbs" ? 5 : 1
-                            Rectangle()
-                                .fill(Color.white.opacity(weight % majorInterval == 0 ? 0.5 : (weight % minorInterval == 0 ? 0.3 : 0.2)))
-                                .frame(width: 0.5, height: weight % majorInterval == 0 ? 20 : (weight % minorInterval == 0 ? 15 : 10))
-                            
-                            Spacer()
+                // Weight labels at ends
+                HStack {
+                    Text("\(Int(minimumWeight))")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.white.opacity(0.4))
+                    
+                    Spacer()
+                    
+                    Text("\(Int(maximumWeight))")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.white.opacity(0.4))
+                }
+                .padding(.horizontal, 12)
+            }
+            
+            // Quick preset buttons
+            HStack(spacing: 12) {
+                ForEach(generatePresetWeights(), id: \.self) { presetWeight in
+                    Button {
+                        withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                            selectedWeight = presetWeight
+                            sliderProgress = (presetWeight - minimumWeight) / (maximumWeight - minimumWeight)
+                            selectionGenerator.selectionChanged()
                         }
-                        .frame(width: tickSpacing)
+                    } label: {
+                        VStack(spacing: 2) {
+                            Text("\(Int(presetWeight))")
+                                .font(.system(size: 14, weight: .semibold))
+                            Text(weightUnit)
+                                .font(.system(size: 10))
+                                .opacity(0.6)
+                        }
+                        .foregroundColor(selectedWeight == presetWeight ? Color.nutriSyncBackground : .white)
+                        .frame(width: 60, height: 40)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill(selectedWeight == presetWeight ? Color.nutriSyncGreen : Color.white.opacity(0.1))
+                        )
                     }
                 }
-                .offset(x: geometry.size.width / 2 - CGFloat(value - minValue) * tickSpacing + baseOffset + dragOffset)
-                
-                // Green overlay for selected range from current weight
-                let referenceWeight = unit == "lbs" ? currentWeight : currentWeight * 0.453592  // Use actual current weight
-                if value < referenceWeight {
-                    Color.nutriSyncGreen.opacity(0.3)
-                        .frame(width: CGFloat(referenceWeight - value) * tickSpacing)
-                        .frame(height: 30)
-                        .position(x: geometry.size.width / 2 - CGFloat(referenceWeight - value) * tickSpacing / 2, y: geometry.size.height / 2 + 10)
-                        .allowsHitTesting(false)
-                } else if value > referenceWeight {
-                    Color.nutriSyncGreen.opacity(0.3)
-                        .frame(width: CGFloat(value - referenceWeight) * tickSpacing)
-                        .frame(height: 30)
-                        .position(x: geometry.size.width / 2 + CGFloat(value - referenceWeight) * tickSpacing / 2, y: geometry.size.height / 2 + 10)
-                        .allowsHitTesting(false)
-                }
-                
-                // Stationary center indicator
-                Rectangle()
-                    .fill(Color.nutriSyncGreen)
-                    .frame(width: 2, height: 40)
-                    .position(x: geometry.size.width / 2, y: geometry.size.height / 2 + 10)
-                    .allowsHitTesting(false)
             }
-            .contentShape(Rectangle())
-            .onAppear {
-                impactFeedback.prepare()
-                lastHapticValue = Int(value)
-            }
-            .gesture(
-                DragGesture()
-                    .updating($dragOffset) { dragValue, state, _ in
-                        // Direct translation without damping for better responsiveness
-                        state = dragValue.translation.width
-                    }
-                    .onChanged { dragValue in
-                        // Calculate new value without damping
-                        let newValue = value - (dragValue.translation.width / tickSpacing)
-                        let clampedValue = max(minValue, min(maxValue, round(newValue)))
-                        
-                        // Haptic feedback for each weight change
-                        if Int(clampedValue) != Int(self.value) {
-                            impactFeedback.impactOccurred()
-                            self.value = clampedValue
-                            lastHapticValue = Int(clampedValue)
-                        }
-                    }
-                    .onEnded { dragValue in
-                        // Calculate final value - snap to whole numbers
-                        let newValue = value - (dragValue.translation.width / tickSpacing)
-                        let finalValue = max(minValue, min(maxValue, round(newValue)))
-                        
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                            self.value = finalValue
-                            // Update base offset to maintain position
-                            baseOffset = 0
-                        }
-                    }
-            )
+            .padding(.top, 8)
+        }
+        .onAppear {
+            vibrationGenerator.prepare()
+            selectionGenerator.prepare()
+            sliderProgress = (selectedWeight - minimumWeight) / (maximumWeight - minimumWeight)
+            pulseAnimation = true
+        }
+    }
+    
+    private func generatePresetWeights() -> [Double] {
+        let difference = abs(referenceWeight - selectedWeight)
+        if weightUnit == "lbs" {
+            return [
+                referenceWeight - 30,
+                referenceWeight - 15,
+                referenceWeight,
+                referenceWeight + 15,
+                referenceWeight + 30
+            ].filter { $0 >= minimumWeight && $0 <= maximumWeight }
+        } else {
+            return [
+                referenceWeight - 15,
+                referenceWeight - 7,
+                referenceWeight,
+                referenceWeight + 7,
+                referenceWeight + 15
+            ].filter { $0 >= minimumWeight && $0 <= maximumWeight }
         }
     }
 }
