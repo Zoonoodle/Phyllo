@@ -17,6 +17,7 @@ struct NutritionDashboardView: View {
     @State private var ringAnimations = RingAnimationState()
     @State private var refreshing = false
     @State private var infoPopupData: InfoPopupData? = nil
+    @State private var showingSettingsMenu = false
     
     struct InfoPopupData {
         let title: String
@@ -115,6 +116,9 @@ struct NutritionDashboardView: View {
         .onAppear {
             loadData()
             animateRings()
+        }
+        .sheet(isPresented: $showingSettingsMenu) {
+            SettingsMenuView()
         }
     }
     
@@ -269,7 +273,7 @@ struct NutritionDashboardView: View {
     
     private var headerSection: some View {
         PerformanceHeaderView(
-            showDeveloperDashboard: $showDeveloperDashboard,
+            showingSettingsMenu: $showingSettingsMenu,
             meals: viewModel.todaysMeals,
             userProfile: viewModel.userProfile
         )

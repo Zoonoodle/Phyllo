@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct PerformanceHeaderView: View {
-    @Binding var showDeveloperDashboard: Bool
+    @Binding var showingSettingsMenu: Bool
     let meals: [LoggedMeal]
     let userProfile: UserProfile
     
@@ -24,19 +24,22 @@ struct PerformanceHeaderView: View {
                 // Settings button and title in one row
                 ZStack {
                     HStack {
-                        Spacer()
-                        
-                        // Settings button
+                        // Settings button (left side)
                         Button(action: {
-                            showDeveloperDashboard = true
+                            showingSettingsMenu = true
                         }) {
                             Image(systemName: "gearshape.fill")
-                                .font(.system(size: 20))
+                                .font(.system(size: 20, weight: .medium))
                                 .foregroundColor(.white.opacity(0.6))
-                                .frame(width: 36, height: 36)
+                                .frame(width: 44, height: 44)
                                 .background(Color.white.opacity(0.1))
                                 .clipShape(Circle())
                         }
+                        
+                        Spacer()
+                        
+                        // Balance right side
+                        Color.clear.frame(width: 44, height: 44)
                     }
                     
                     // Title with date centered

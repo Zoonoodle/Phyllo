@@ -13,6 +13,7 @@ struct AIScheduleView: View {
     @State private var showMissedMealsRecovery = false
     @State private var showMorningCheckIn = false
     @State private var showDayDetail = false
+    @State private var showingSettingsMenu = false
     @Namespace private var animationNamespace
     
     var body: some View {
@@ -46,6 +47,9 @@ struct AIScheduleView: View {
             .sheet(isPresented: .constant(viewModel.legacyViewModel.showingRedistributionNudge)) {
                 redistributionNudgeSheet
             }
+            .sheet(isPresented: $showingSettingsMenu) {
+                SettingsMenuView()
+            }
             .onChange(of: showMorningCheckIn) { wasShowing, isShowing in
                 handleMorningCheckInChange(wasShowing: wasShowing, isShowing: isShowing)
             }
@@ -76,7 +80,7 @@ struct AIScheduleView: View {
     private var headerView: some View {
         DayNavigationHeader(
             selectedDate: $selectedDate,
-            showDeveloperDashboard: $showDeveloperDashboard,
+            showingSettingsMenu: $showingSettingsMenu,
             showDayDetail: $showDayDetail,
             meals: viewModel.meals,
             userProfile: viewModel.userProfile
