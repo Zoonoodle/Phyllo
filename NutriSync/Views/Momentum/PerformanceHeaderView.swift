@@ -32,8 +32,6 @@ struct PerformanceHeaderView: View {
                                 .font(.system(size: 20, weight: .medium))
                                 .foregroundColor(.white.opacity(0.6))
                                 .frame(width: 44, height: 44)
-                                .background(Color.white.opacity(0.1))
-                                .clipShape(Circle())
                         }
                         
                         Spacer()
