@@ -28,15 +28,17 @@ struct FloatingTabBar: View {
         .background(
             Group {
                 if isScanView {
-                    // Ultra transparent background for ScanView
+                    // Ultra transparent background for ScanView - properly clipped
                     RoundedRectangle(cornerRadius: 28)
-                        .fill(Color.black.opacity(0.2))
-                        .background(
-                            .ultraThinMaterial.opacity(0.3)
+                        .fill(Color.black.opacity(0.1))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 28)
+                                .fill(.ultraThinMaterial)
+                                .opacity(0.15)
                         )
                         .overlay(
                             RoundedRectangle(cornerRadius: 28)
-                                .stroke(Color.white.opacity(0.08), lineWidth: 0.5)
+                                .stroke(Color.white.opacity(0.05), lineWidth: 0.5)
                         )
                 } else {
                     // Regular solid background for other views
@@ -49,7 +51,8 @@ struct FloatingTabBar: View {
                 }
             }
         )
-        .shadow(color: .black.opacity(isScanView ? 0.1 : 0.15), radius: isScanView ? 4 : 8, y: isScanView ? 2 : 4)
+        .compositingGroup()
+        .shadow(color: .black.opacity(isScanView ? 0.08 : 0.15), radius: isScanView ? 3 : 8, y: isScanView ? 2 : 4)
     }
 }
 
