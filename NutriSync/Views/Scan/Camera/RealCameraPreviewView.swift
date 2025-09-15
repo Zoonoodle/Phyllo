@@ -267,6 +267,7 @@ struct CameraView: View {
     @Binding var capturePhoto: Bool
     @State private var isCameraAuthorized = false
     @State private var showingPermissionAlert = false
+    @State private var permissionStatus: AVAuthorizationStatus = .notDetermined
     
     var body: some View {
         ZStack {
@@ -277,12 +278,73 @@ struct CameraView: View {
                 )
                 .ignoresSafeArea()
             } else {
-                // Fallback to mock camera if no permission
-                CameraPreviewView()
-                    .ignoresSafeArea()
-                    .onTapGesture {
+                // Show different UI based on permission status
+                ZStack {
+                    Color.black.ignoresSafeArea()
+                    
+                    VStack(spacing: 24) {
+                        Image(systemName: "camera.fill")
+                            .font(.system(size: 60))
+                            .foregroundColor(.white.opacity(0.3))
+                        
+                        if permissionStatus == .notDetermined {
+                            Text("Camera Permission Required")
+                                .font(.system(size: 20, weight: .semibold))
+                                .foregroundColor(.white)
+                            
+                            Text("Tap to enable camera access for meal scanning")
+                                .font(.system(size: 14))
+                                .foregroundColor(.white.opacity(0.7))
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal, 40)
+                            
+                            Button(action: {
+                                requestCameraPermission()
+                            }) {
+                                Text("Enable Camera")
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .foregroundColor(.black)
+                                    .padding(.horizontal, 32)
+                                    .padding(.vertical, 12)
+                                    .background(Color.white)
+                                    .cornerRadius(25)
+                            }
+                            .padding(.top, 8)
+                        } else if permissionStatus == .denied || permissionStatus == .restricted {
+                            Text("Camera Access Disabled")
+                                .font(.system(size: 20, weight: .semibold))
+                                .foregroundColor(.white)
+                            
+                            Text("Please enable camera access in Settings to scan your meals")
+                                .font(.system(size: 14))
+                                .foregroundColor(.white.opacity(0.7))
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal, 40)
+                            
+                            Button(action: {
+                                if let settingsUrl = URL(string: UIApplication.openSettingsURLString) {
+                                    UIApplication.shared.open(settingsUrl)
+                                }
+                            }) {
+                                Text("Open Settings")
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .foregroundColor(.black)
+                                    .padding(.horizontal, 32)
+                                    .padding(.vertical, 12)
+                                    .background(Color.white)
+                                    .cornerRadius(25)
+                            }
+                            .padding(.top, 8)
+                        }
+                    }
+                }
+                .onTapGesture {
+                    if permissionStatus == .notDetermined {
+                        requestCameraPermission()
+                    } else if permissionStatus == .denied || permissionStatus == .restricted {
                         showingPermissionAlert = true
                     }
+                }
             }
         }
         .onAppear {
@@ -303,6 +365,7 @@ struct CameraView: View {
     private func checkCameraAuthorization() {
         let status = AVCaptureDevice.authorizationStatus(for: .video)
         print("📷 Camera authorization status: \(status.rawValue)")
+        permissionStatus = status
         
         switch status {
         case .authorized:
@@ -311,28 +374,33 @@ struct CameraView: View {
             // Pre-warm the camera session when authorized
             RealCameraPreviewView.sharedCameraSession.preWarmSession()
         case .notDetermined:
-            print("❓ Camera authorization not determined, requesting...")
-            AVCaptureDevice.requestAccess(for: .video) { granted in
-                DispatchQueue.main.async {
-                    print(granted ? "✅ Camera access granted" : "❌ Camera access denied")
-                    self.isCameraAuthorized = granted
-                    if granted {
-                        // Pre-warm after getting permission
-                        RealCameraPreviewView.sharedCameraSession.preWarmSession()
-                    }
-                }
-            }
+            print("❓ Camera authorization not determined")
+            // Don't automatically request - wait for user interaction
+            isCameraAuthorized = false
         case .denied:
             print("❌ Camera access denied")
             isCameraAuthorized = false
-            showingPermissionAlert = true
         case .restricted:
             print("❌ Camera access restricted")
             isCameraAuthorized = false
-            showingPermissionAlert = true
         @unknown default:
             print("❌ Unknown camera authorization status")
             isCameraAuthorized = false
+        }
+    }
+    
+    private func requestCameraPermission() {
+        print("📷 Requesting camera permission...")
+        AVCaptureDevice.requestAccess(for: .video) { granted in
+            DispatchQueue.main.async {
+                print(granted ? "✅ Camera access granted" : "❌ Camera access denied by user")
+                self.isCameraAuthorized = granted
+                self.permissionStatus = granted ? .authorized : .denied
+                if granted {
+                    // Pre-warm after getting permission
+                    RealCameraPreviewView.sharedCameraSession.preWarmSession()
+                }
+            }
         }
     }
 }
