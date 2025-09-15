@@ -33,99 +33,64 @@ struct SleepScheduleView: View {
                     onClose: {}
                 )
                 
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 24) {
-                        // Title
-                        Text("What's your typical sleep schedule?")
-                            .font(.system(size: 28, weight: .bold))
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 24)
-                            .padding(.top, 24)
-                        
-                        // Explanation
-                        Text("Your meal timing will be optimized around your circadian rhythm. Research shows that eating in sync with your biological clock improves metabolism and energy levels.")
-                            .font(.system(size: 16))
-                            .foregroundColor(.white.opacity(0.7))
-                            .lineSpacing(4)
-                            .padding(.horizontal, 24)
-                        
-                        // Wake time picker
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("Wake Time")
-                                .font(.system(size: 16, weight: .medium))
-                                .foregroundColor(.white.opacity(0.7))
-                                .padding(.horizontal, 24)
-                            
-                            DatePicker("", selection: Binding(
-                                get: { wakeTime },
-                                set: { 
-                                    wakeTime = $0
-                                    hasInteracted = true
-                                }
-                            ), displayedComponents: .hourAndMinute)
-                                .datePickerStyle(WheelDatePickerStyle())
-                                .labelsHidden()
-                                .environment(\.colorScheme, .dark)
-                                .padding(.horizontal, 24)
-                                .frame(height: 120)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .fill(Color.white.opacity(0.05))
-                                )
-                        }
-                        .padding(.top, 16)
-                        
-                        // Bed time picker
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("Bed Time")
-                                .font(.system(size: 16, weight: .medium))
-                                .foregroundColor(.white.opacity(0.7))
-                                .padding(.horizontal, 24)
-                            
-                            DatePicker("", selection: Binding(
-                                get: { bedTime },
-                                set: { 
-                                    bedTime = $0
-                                    hasInteracted = true
-                                }
-                            ), displayedComponents: .hourAndMinute)
-                                .datePickerStyle(WheelDatePickerStyle())
-                                .labelsHidden()
-                                .environment(\.colorScheme, .dark)
-                                .padding(.horizontal, 24)
-                                .frame(height: 120)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .fill(Color.white.opacity(0.05))
-                                )
-                        }
-                        
-                        // Info card
-                        HStack(spacing: 16) {
-                            Image(systemName: "moon.stars.fill")
-                                .font(.system(size: 24))
-                                .foregroundColor(.nutriSyncAccent)
-                            
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Circadian Optimization")
-                                    .font(.system(size: 16, weight: .semibold))
-                                    .foregroundColor(.white)
-                                
-                                Text("We'll schedule your last meal 3 hours before bedtime to optimize sleep quality and metabolic health.")
-                                    .font(.system(size: 14))
-                                    .foregroundColor(.white.opacity(0.7))
-                                    .lineSpacing(2)
-                            }
-                            
-                            Spacer()
-                        }
-                        .padding(20)
-                        .background(Color.white.opacity(0.05))
-                        .cornerRadius(16)
+                VStack(alignment: .leading, spacing: 24) {
+                    // Title
+                    Text("What's your typical sleep schedule?")
+                        .font(.system(size: 28, weight: .bold))
+                        .foregroundColor(.white)
                         .padding(.horizontal, 24)
-                        .padding(.top, 16)
+                        .padding(.top, 24)
+                        
+                    // Wake time picker
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Wake Time")
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundColor(.white.opacity(0.7))
+                            .padding(.horizontal, 24)
+                        
+                        DatePicker("", selection: Binding(
+                            get: { wakeTime },
+                            set: { 
+                                wakeTime = $0
+                                hasInteracted = true
+                            }
+                        ), displayedComponents: .hourAndMinute)
+                            .datePickerStyle(WheelDatePickerStyle())
+                            .labelsHidden()
+                            .environment(\.colorScheme, .dark)
+                            .padding(.horizontal, 24)
+                            .frame(height: 120)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(Color.white.opacity(0.05))
+                            )
                     }
-                    .padding(.bottom, 100)
+                    .padding(.top, 32)
+                        
+                    // Bed time picker
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Bed Time")
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundColor(.white.opacity(0.7))
+                            .padding(.horizontal, 24)
+                        
+                        DatePicker("", selection: Binding(
+                            get: { bedTime },
+                            set: { 
+                                bedTime = $0
+                                hasInteracted = true
+                            }
+                        ), displayedComponents: .hourAndMinute)
+                            .datePickerStyle(WheelDatePickerStyle())
+                            .labelsHidden()
+                            .environment(\.colorScheme, .dark)
+                            .padding(.horizontal, 24)
+                            .frame(height: 120)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(Color.white.opacity(0.05))
+                            )
+                    }
                 }
                 
                 Spacer()
