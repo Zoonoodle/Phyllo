@@ -1,8 +1,9 @@
 import SwiftUI
+import FirebaseAuth
 
 struct SettingsMenuView: View {
     @Environment(\.dismiss) private var dismiss
-    @EnvironmentObject var authService: AuthenticationService
+    @EnvironmentObject var firebaseConfig: FirebaseConfig
     @EnvironmentObject var dataProvider: FirebaseDataProvider
     @State private var showingDeleteConfirmation = false
     @State private var showingLogoutConfirmation = false
@@ -246,7 +247,7 @@ struct SettingsMenuView: View {
     
     private var versionInfoView: some View {
         VStack(spacing: 4) {
-            if let email = authService.currentUser?.email {
+            if let email = firebaseConfig.currentUser?.email {
                 Text(email)
                     .font(.system(size: 14))
                     .foregroundColor(.white.opacity(0.5))
@@ -291,7 +292,7 @@ struct SettingsMenuView: View {
     
     private func deleteAccount() async {
         do {
-            try await authService.deleteAccount()
+            try await firebaseConfig.currentUser?.delete()
             dismiss()
         } catch {
             print("Failed to delete account: \(error)")
@@ -300,7 +301,7 @@ struct SettingsMenuView: View {
     
     private func logout() async {
         do {
-            try authService.signOut()
+            try Auth.auth().signOut()
             dismiss()
         } catch {
             print("Failed to log out: \(error)")
