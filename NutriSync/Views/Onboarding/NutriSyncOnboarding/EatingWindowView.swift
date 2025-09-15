@@ -85,94 +85,97 @@ struct EatingWindowView: View {
     
     var body: some View {
         GeometryReader { geometry in
-            VStack(spacing: 0) {
-                // Progress bar
-                ProgressBar(totalSteps: 24, currentStep: 20)
-                    .padding(.horizontal, 20)
-                    .padding(.top, 8)
-                    .padding(.bottom, 32)
-                
-                // Title
-                Text("When do you prefer to eat?")
-                    .font(.system(size: 28, weight: .bold))
-                    .foregroundColor(.white)
-                    .multilineTextAlignment(.leading)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 12)
-                
-                // Subtitle
-                Text("Research shows that eating earlier in the day, when insulin sensitivity is highest, can improve metabolic health and weight management.")
-                    .font(.system(size: 17))
-                    .foregroundColor(.white.opacity(0.6))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 40)
-                
-                // Visual timeline
-                CircadianTimelineView(selectedWindow: selectedWindow)
-                    .padding(.vertical, 16)
-                
-                // Options
-                VStack(spacing: 16) {
-                    ForEach(EatingWindow.allCases, id: \.self) { window in
-                        EatingWindowCard(
-                            window: window,
-                            isSelected: selectedWindow == window,
-                            onTap: {
-                                withAnimation(.easeInOut(duration: 0.2)) {
-                                    selectedWindow = window
+            ScrollView {
+                VStack(spacing: 0) {
+                    // Progress bar
+                    ProgressBar(totalSteps: 24, currentStep: 20)
+                        .padding(.horizontal, 20)
+                        .padding(.top, 8)
+                        .padding(.bottom, 32)
+                    
+                    // Title
+                    Text("When do you prefer to eat?")
+                        .font(.system(size: 28, weight: .bold))
+                        .foregroundColor(.white)
+                        .multilineTextAlignment(.leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 12)
+                    
+                    // Subtitle
+                    Text("Research shows that eating earlier in the day, when insulin sensitivity is highest, can improve metabolic health and weight management.")
+                        .font(.system(size: 15))
+                        .foregroundColor(.white.opacity(0.6))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 24)
+                    
+                    // Visual timeline
+                    CircadianTimelineView(selectedWindow: selectedWindow)
+                        .padding(.bottom, 24)
+                    
+                    // Options
+                    VStack(spacing: 16) {
+                        ForEach(EatingWindow.allCases, id: \.self) { window in
+                            EatingWindowCard(
+                                window: window,
+                                isSelected: selectedWindow == window,
+                                onTap: {
+                                    withAnimation(.easeInOut(duration: 0.2)) {
+                                        selectedWindow = window
+                                    }
                                 }
-                            }
-                        )
+                            )
+                        }
                     }
-                }
-                .padding(.horizontal, 20)
-                
-                Spacer()
-                
-                // Navigation
-                HStack {
-                    Button {
-                        coordinator.previousScreen()
-                    } label: {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 20, weight: .medium))
-                            .foregroundColor(.white)
-                            .frame(width: 44, height: 44)
-                            .background(Color.white.opacity(0.1))
-                            .clipShape(Circle())
-                    }
+                    .padding(.horizontal, 20)
                     
-                    Spacer()
-                    
-                    Button {
-                        // Save data to coordinator before proceeding
-                        if let selected = selectedWindow {
-                            coordinator.eatingWindow = selected.rawValue
+                    Spacer(minLength: 100)
+                
+                    // Navigation
+                    HStack {
+                        Button {
+                            coordinator.previousScreen()
+                        } label: {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 20, weight: .medium))
+                                .foregroundColor(.white)
+                                .frame(width: 44, height: 44)
+                                .background(Color.white.opacity(0.1))
+                                .clipShape(Circle())
                         }
                         
-                        coordinator.nextScreen()
-                    } label: {
-                        HStack(spacing: 6) {
-                            Text("Next")
-                                .font(.system(size: 17, weight: .semibold))
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 14, weight: .semibold))
+                        Spacer()
+                        
+                        Button {
+                            // Save data to coordinator before proceeding
+                            if let selected = selectedWindow {
+                                coordinator.eatingWindow = selected.rawValue
+                            }
+                            
+                            coordinator.nextScreen()
+                        } label: {
+                            HStack(spacing: 6) {
+                                Text("Next")
+                                    .font(.system(size: 17, weight: .semibold))
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 14, weight: .semibold))
+                            }
+                            .foregroundColor(Color.nutriSyncBackground)
+                            .padding(.horizontal, 24)
+                            .frame(height: 44)
+                            .background(selectedWindow != nil ? Color.white : Color.white.opacity(0.3))
+                            .cornerRadius(22)
                         }
-                        .foregroundColor(Color.nutriSyncBackground)
-                        .padding(.horizontal, 24)
-                        .frame(height: 44)
-                        .background(selectedWindow != nil ? Color.white : Color.white.opacity(0.3))
-                        .cornerRadius(22)
+                        .disabled(selectedWindow == nil)
                     }
-                    .disabled(selectedWindow == nil)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 34)
+                    .padding(.top, 20)
                 }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 34)
+                .frame(width: geometry.size.width)
+                .frame(minHeight: geometry.size.height)
             }
-            .frame(width: geometry.size.width)
-            .frame(minHeight: geometry.size.height)
         }
         .background(Color.nutriSyncBackground)
         .ignoresSafeArea(.keyboard)
@@ -227,29 +230,29 @@ struct EatingWindowCard: View {
                 
                 // Description
                 Text(window.description)
-                    .font(.system(size: 14))
-                    .foregroundColor(.white.opacity(0.7))
+                    .font(.system(size: 13))
+                    .foregroundColor(.white.opacity(0.6))
                     .multilineTextAlignment(.leading)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 
                 // Benefits
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: 6) {
                     ForEach(window.benefits, id: \.self) { benefit in
                         HStack(spacing: 8) {
                             Image(systemName: "checkmark.circle.fill")
-                                .font(.system(size: 14))
+                                .font(.system(size: 12))
                                 .foregroundColor(.nutriSyncAccent)
                             
                             Text(benefit)
-                                .font(.system(size: 13))
-                                .foregroundColor(.white.opacity(0.6))
+                                .font(.system(size: 12))
+                                .foregroundColor(.white.opacity(0.5))
                             
                             Spacer()
                         }
                     }
                 }
             }
-            .padding(20)
+            .padding(16)
             .background(
                 RoundedRectangle(cornerRadius: 16)
                     .fill(isSelected ? Color.white.opacity(0.1) : Color.white.opacity(0.05))
@@ -268,36 +271,36 @@ struct CircadianTimelineView: View {
     let selectedWindow: EatingWindowView.EatingWindow?
     
     var body: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 8) {
             // Relative time labels
             HStack {
                 Text("Wake")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(.white.opacity(0.7))
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundColor(.white.opacity(0.6))
                 
                 Spacer()
                 
                 Text("+4h")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(.white.opacity(0.5))
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundColor(.white.opacity(0.4))
                 
                 Spacer()
                 
                 Text("+8h")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(.white.opacity(0.5))
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundColor(.white.opacity(0.4))
                 
                 Spacer()
                 
                 Text("+12h")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(.white.opacity(0.5))
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundColor(.white.opacity(0.4))
                 
                 Spacer()
                 
                 Text("Sleep")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(.white.opacity(0.7))
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundColor(.white.opacity(0.6))
             }
             .padding(.horizontal, 24)
             
@@ -318,17 +321,8 @@ struct CircadianTimelineView: View {
                     }
                 }
             }
-            .frame(height: 8)
+            .frame(height: 6)
             .padding(.horizontal, 24)
-            
-            // Window description
-            if let window = selectedWindow {
-                Text(windowDescription(for: window))
-                    .font(.system(size: 12))
-                    .foregroundColor(.white.opacity(0.6))
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 24)
-            }
         }
     }
     
