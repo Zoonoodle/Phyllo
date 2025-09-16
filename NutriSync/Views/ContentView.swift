@@ -18,6 +18,8 @@ struct ContentView: View {
     @State private var showError = false
     @State private var errorMessage = ""
     @State private var existingProgress: OnboardingProgress?
+    @State private var showGetStarted = true
+    @AppStorage("hasSeenGetStarted") private var hasSeenGetStarted = false
     
     // Notification onboarding
     @State private var showNotificationOnboarding = false
@@ -50,9 +52,18 @@ struct ContentView: View {
                     LoadingView(message: "Loading your profile...")
                 } else if !hasProfile {
                     NavigationStack {
-                        NutriSyncOnboardingCoordinator(existingProgress: existingProgress)
-                            .environmentObject(firebaseConfig)
-                            .environmentObject(dataProvider)
+                        if !hasSeenGetStarted {
+                            GetStartedView()
+                                .environmentObject(firebaseConfig)
+                                .environmentObject(dataProvider)
+                                .onDisappear {
+                                    hasSeenGetStarted = true
+                                }
+                        } else {
+                            NutriSyncOnboardingCoordinator(existingProgress: existingProgress)
+                                .environmentObject(firebaseConfig)
+                                .environmentObject(dataProvider)
+                        }
                     }
                 } else {
                     MainTabView()
