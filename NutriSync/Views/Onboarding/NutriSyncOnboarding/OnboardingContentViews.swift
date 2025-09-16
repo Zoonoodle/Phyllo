@@ -343,56 +343,42 @@ struct ExpenditureContentView: View {
     }
     
     private func determineActivityLevel() -> TDEECalculator.ActivityLevel {
-        // Map exercise frequency to base activity level
-        var exerciseLevel: TDEECalculator.ActivityLevel = .sedentary
-        
-        switch coordinator.exerciseFrequency {
-        case "0 sessions / week":
-            exerciseLevel = .sedentary
-        case "1-3 sessions / week":
-            exerciseLevel = .lightlyActive
-        case "4-6 sessions / week":
-            exerciseLevel = .moderatelyActive
-        case "7+ sessions / week":
-            exerciseLevel = .veryActive
-        default:
-            exerciseLevel = .sedentary
+        // Score-based system for clearer logic
+        // Exercise frequency scoring (0-4 points)
+        let exerciseScore: Int = switch coordinator.exerciseFrequency {
+        case "0 sessions / week": 0
+        case "1-3 sessions / week": 1
+        case "4-6 sessions / week": 2
+        case "7+ sessions / week": 3
+        default: 0
         }
         
-        // Map daily activity level
-        var dailyActivityLevel: TDEECalculator.ActivityLevel = .sedentary
-        
-        if coordinator.activityLevel.contains("Sedentary") {
-            dailyActivityLevel = .sedentary
-        } else if coordinator.activityLevel.contains("Moderately") {
-            dailyActivityLevel = .lightlyActive
-        } else if coordinator.activityLevel.contains("Very") {
-            dailyActivityLevel = .moderatelyActive
+        // Daily activity scoring (0-2 points)
+        let activityScore: Int
+        if coordinator.activityLevel.contains("Very Active") {
+            activityScore = 2
+        } else if coordinator.activityLevel.contains("Moderately Active") {
+            activityScore = 1
+        } else {
+            activityScore = 0  // Mostly Sedentary
         }
         
-        // Combine both factors - take the higher of the two
-        let combinedLevel: TDEECalculator.ActivityLevel
+        // Combine scores (max 5 points)
+        let totalScore = exerciseScore + activityScore
         
-        // If someone exercises 7+ days a week, they're at least Very Active
-        if coordinator.exerciseFrequency == "7+ sessions / week" {
-            combinedLevel = .veryActive
+        // Map total score to activity level
+        // This ensures proper progression based on both factors
+        let combinedLevel: TDEECalculator.ActivityLevel = switch totalScore {
+        case 0: .sedentary           // No exercise + sedentary
+        case 1: .lightlyActive        // Light exercise OR moderate daily activity
+        case 2: .moderatelyActive     // Moderate exercise OR very active daily
+        case 3: .moderatelyActive     // Good combination of both
+        case 4: .veryActive           // High exercise + active daily
+        case 5: .veryActive           // Maximum activity
+        default: .extremelyActive     // 6+ (7+ exercise + very active)
         }
-        // If someone exercises 4-6 days and is also active during the day
-        else if coordinator.exerciseFrequency == "4-6 sessions / week" && coordinator.activityLevel.contains("Very") {
-            combinedLevel = .veryActive
-        }
-        // If someone exercises 4-6 days OR is very active during the day
-        else if coordinator.exerciseFrequency == "4-6 sessions / week" || coordinator.activityLevel.contains("Very") {
-            combinedLevel = .moderatelyActive
-        }
-        // If someone exercises 1-3 days OR is moderately active during the day
-        else if coordinator.exerciseFrequency == "1-3 sessions / week" || coordinator.activityLevel.contains("Moderately") {
-            combinedLevel = .lightlyActive
-        }
-        // Otherwise sedentary
-        else {
-            combinedLevel = .sedentary
-        }
+        
+        print("[ActivityLevel] Exercise: \(coordinator.exerciseFrequency) (\(exerciseScore)), Daily: \(coordinator.activityLevel) (\(activityScore)), Total: \(totalScore), Result: \(combinedLevel.rawValue)")
         
         return combinedLevel
     }
