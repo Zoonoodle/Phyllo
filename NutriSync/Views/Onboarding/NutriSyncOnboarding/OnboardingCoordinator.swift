@@ -428,7 +428,7 @@ struct NutriSyncOnboardingCoordinator: View {
     
     let existingProgress: OnboardingProgress?
     
-    init(viewModel: NutriSyncOnboardingViewModel = NutriSyncOnboardingViewModel(), existingProgress: OnboardingProgress? = nil) {
+    init(viewModel: NutriSyncOnboardingViewModel, existingProgress: OnboardingProgress? = nil) {
         self._viewModel = State(initialValue: viewModel)
         self.existingProgress = existingProgress
     }
@@ -572,9 +572,6 @@ struct NutriSyncOnboardingCoordinator: View {
     
     // Handle next button action based on current screen
     private func handleNextAction() {
-        // Save data from current screen if needed
-        let screenName = viewModel.currentSectionScreens[safe: viewModel.currentScreenIndex] ?? ""
-        
         // Screen-specific data saving will be handled by the screen's onDisappear
         // Just navigate to next
         viewModel.nextScreen()

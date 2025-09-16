@@ -9,17 +9,23 @@ import SwiftUI
 
 struct OnboardingPreview: View {
     @State private var selectedScreen = 0
+    @State private var previewViewModel = NutriSyncOnboardingViewModel()
     
-    let screens = [
-        // Section Intros & Full Flow (at the beginning for easy access)
-        ("Full Onboarding", AnyView(NutriSyncOnboardingCoordinator())),
-        ("Section Nav", AnyView(SectionIntroView(
-            section: NutriSyncOnboardingSection.basics,
-            completedSections: [],
-            onContinue: {},
-            onBack: {}
-        )))
-    ]
+    let screens: [(String, AnyView)]
+    
+    init() {
+        let viewModel = NutriSyncOnboardingViewModel()
+        self.screens = [
+            // Section Intros & Full Flow (at the beginning for easy access)
+            ("Full Onboarding", AnyView(NutriSyncOnboardingCoordinator(viewModel: viewModel))),
+            ("Section Nav", AnyView(SectionIntroView(
+                section: NutriSyncOnboardingSection.basics,
+                completedSections: [],
+                onContinue: {},
+                onBack: {}
+            )))
+        ]
+    }
     
     var body: some View {
         ZStack {
