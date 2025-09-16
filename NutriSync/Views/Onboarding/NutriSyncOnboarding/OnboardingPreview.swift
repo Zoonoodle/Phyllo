@@ -16,7 +16,8 @@ struct OnboardingPreview: View {
         ("Section Nav", AnyView(SectionIntroView(
             section: NutriSyncOnboardingSection.basics,
             completedSections: [],
-            onContinue: {}
+            onContinue: {},
+            onBack: {}
         ))),
         
         // Basics (5 screens)
