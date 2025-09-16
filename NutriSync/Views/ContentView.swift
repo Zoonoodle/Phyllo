@@ -19,6 +19,7 @@ struct ContentView: View {
     @State private var errorMessage = ""
     @State private var existingProgress: OnboardingProgress?
     @State private var showGetStarted = true
+    @State private var onboardingViewModel = NutriSyncOnboardingViewModel()
     @AppStorage("hasSeenGetStarted") private var hasSeenGetStarted = false
     
     // Notification onboarding
@@ -60,7 +61,7 @@ struct ContentView: View {
                                     hasSeenGetStarted = true
                                 }
                         } else {
-                            NutriSyncOnboardingCoordinator(existingProgress: existingProgress)
+                            NutriSyncOnboardingCoordinator(viewModel: onboardingViewModel, existingProgress: existingProgress)
                                 .environmentObject(firebaseConfig)
                                 .environmentObject(dataProvider)
                         }
