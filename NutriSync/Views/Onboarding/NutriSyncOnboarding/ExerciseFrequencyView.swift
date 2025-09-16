@@ -43,6 +43,7 @@ struct ExerciseFrequencyOption: View {
 struct ExerciseFrequencyContentView: View {
     @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
     @State private var selectedFrequency = "0 sessions / week"
+    @State private var isInitialized = false
     
     let frequencies = [
         ("0 sessions / week", "calendar"),
@@ -79,6 +80,7 @@ struct ExerciseFrequencyContentView: View {
                             isSelected: selectedFrequency == frequency
                         ) {
                             selectedFrequency = frequency
+                            coordinator.exerciseFrequency = selectedFrequency
                         }
                     }
                 }
@@ -87,9 +89,21 @@ struct ExerciseFrequencyContentView: View {
                 Spacer(minLength: 80) // Space for navigation buttons
             }
         }
-        .onDisappear {
-            // Save exercise frequency to coordinator
+        .onAppear {
+            loadDataFromCoordinator()
+        }
+        .onChange(of: selectedFrequency) { _ in 
             coordinator.exerciseFrequency = selectedFrequency
+        }
+    }
+    
+    private func loadDataFromCoordinator() {
+        guard !isInitialized else { return }
+        isInitialized = true
+        
+        // Load existing value from coordinator if it exists
+        if !coordinator.exerciseFrequency.isEmpty {
+            selectedFrequency = coordinator.exerciseFrequency
         }
     }
 }

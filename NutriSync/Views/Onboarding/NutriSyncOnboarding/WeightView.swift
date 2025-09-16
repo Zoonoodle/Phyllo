@@ -19,6 +19,7 @@ struct WeightContentView: View {
     @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
     @State private var weight: String = "165"
     @State private var selectedUnit = "lbs"
+    @State private var isInitialized = false
     let units = ["lbs", "kg"]
     
     var body: some View {
@@ -89,13 +90,31 @@ struct WeightContentView: View {
         .onTapGesture {
             hideKeyboard()
         }
-        .onDisappear {
-            // Save weight to coordinator when navigating away
-            if let weightValue = Double(weight) {
-                // Convert to kg if needed (coordinator expects kg)
-                let weightInKg = selectedUnit == "lbs" ? weightValue * 0.453592 : weightValue
-                coordinator.weight = weightInKg
-            }
+        .onAppear {
+            loadDataFromCoordinator()
+        }
+        .onChange(of: weight) { _ in saveDataToCoordinator() }
+        .onChange(of: selectedUnit) { _ in saveDataToCoordinator() }
+    }
+    
+    private func loadDataFromCoordinator() {
+        guard !isInitialized else { return }
+        isInitialized = true
+        
+        // Load existing weight from coordinator if it exists
+        if coordinator.weight > 0 {
+            // Convert from kg to display unit
+            let weightInLbs = coordinator.weight * 2.20462
+            weight = String(Int(weightInLbs))
+            selectedUnit = "lbs"
+        }
+    }
+    
+    private func saveDataToCoordinator() {
+        if let weightValue = Double(weight) {
+            // Convert to kg if needed (coordinator expects kg)
+            let weightInKg = selectedUnit == "lbs" ? weightValue * 0.453592 : weightValue
+            coordinator.weight = weightInKg
         }
     }
 }

@@ -17,6 +17,7 @@ struct BasicInfoContentView: View {
     @State private var heightUnit = "ft/in"
     @State private var selectedGender = "Male"
     @State private var birthDate = Date(timeIntervalSince1970: 788918400) // Jan 1, 1995
+    @State private var isInitialized = false
     
     let heightUnits = ["ft/in", "cm"]
     let genders = ["Male", "Female", "Other"]
@@ -133,6 +134,7 @@ struct BasicInfoContentView: View {
                             ForEach(genders, id: \.self) { gender in
                                 Button {
                                     selectedGender = gender
+                                    coordinator.gender = selectedGender
                                 } label: {
                                     Text(gender)
                                         .font(.system(size: 17))
@@ -183,8 +185,46 @@ struct BasicInfoContentView: View {
         .onTapGesture {
             hideKeyboard()
         }
-        .onDisappear {
-            saveDataToCoordinator()
+        .onAppear {
+            loadDataFromCoordinator()
+        }
+        .onChange(of: heightFeet) { _ in saveDataToCoordinator() }
+        .onChange(of: heightInches) { _ in saveDataToCoordinator() }
+        .onChange(of: heightCm) { _ in saveDataToCoordinator() }
+        .onChange(of: heightUnit) { _ in saveDataToCoordinator() }
+        .onChange(of: selectedGender) { _ in saveDataToCoordinator() }
+        .onChange(of: birthDate) { _ in saveDataToCoordinator() }
+    }
+    
+    private func loadDataFromCoordinator() {
+        guard !isInitialized else { return }
+        isInitialized = true
+        
+        // Load existing values from coordinator if they exist
+        if coordinator.height > 0 {
+            let feet = Int(coordinator.height / 30.48)
+            let inches = Int((coordinator.height.truncatingRemainder(dividingBy: 30.48)) / 2.54)
+            heightFeet = String(feet)
+            heightInches = String(inches)
+            heightCm = String(Int(coordinator.height))
+        }
+        
+        if !coordinator.gender.isEmpty {
+            selectedGender = coordinator.gender
+        }
+        
+        if coordinator.age > 0 {
+            // Calculate birth date from age
+            let calendar = Calendar.current
+            let currentYear = calendar.component(.year, from: Date())
+            let birthYear = currentYear - coordinator.age
+            var components = DateComponents()
+            components.year = birthYear
+            components.month = 1
+            components.day = 1
+            if let date = calendar.date(from: components) {
+                birthDate = date
+            }
         }
     }
     

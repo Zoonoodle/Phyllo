@@ -12,6 +12,7 @@ import SwiftUI
 struct ActivityLevelContentView: View {
     @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
     @State private var selectedActivity = "Mostly Sedentary"
+    @State private var isInitialized = false
     
     let activityLevels = [
         ("Mostly Sedentary", "figure.stand", "In many cases, this would correspond to less than 5,000 steps a day."),
@@ -43,6 +44,7 @@ struct ActivityLevelContentView: View {
                     ForEach(activityLevels, id: \.0) { level, icon, description in
                         Button {
                             selectedActivity = level
+                            coordinator.activityLevel = selectedActivity
                         } label: {
                             HStack(alignment: .top, spacing: 16) {
                                 Image(systemName: icon)
@@ -79,9 +81,21 @@ struct ActivityLevelContentView: View {
                 Spacer(minLength: 80) // Space for navigation buttons
             }
         }
-        .onDisappear {
-            // Save activity level to coordinator
+        .onAppear {
+            loadDataFromCoordinator()
+        }
+        .onChange(of: selectedActivity) { _ in
             coordinator.activityLevel = selectedActivity
+        }
+    }
+    
+    private func loadDataFromCoordinator() {
+        guard !isInitialized else { return }
+        isInitialized = true
+        
+        // Load existing value from coordinator if it exists
+        if !coordinator.activityLevel.isEmpty {
+            selectedActivity = coordinator.activityLevel
         }
     }
 }
