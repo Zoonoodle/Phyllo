@@ -25,6 +25,13 @@ class NutriSyncOnboardingViewModel {
     var currentScreenIndex: Int = 0
     var completedSections: Set<NutriSyncOnboardingSection> = []
     var showingSectionIntro: Bool = true
+    var navigationDirection: NavigationDirection = .forward
+    
+    // Navigation direction for carousel transitions
+    enum NavigationDirection {
+        case forward
+        case backward
+    }
     
     // Firebase integration
     var isSaving: Bool = false
@@ -109,6 +116,7 @@ class NutriSyncOnboardingViewModel {
     
     // Navigation methods
     func nextScreen() {
+        navigationDirection = .forward
         if showingSectionIntro {
             showingSectionIntro = false
             currentScreenIndex = 0
@@ -134,6 +142,7 @@ class NutriSyncOnboardingViewModel {
     }
     
     func previousScreen() {
+        navigationDirection = .backward
         if currentScreenIndex > 0 {
             currentScreenIndex -= 1
         } else if showingSectionIntro {
@@ -149,6 +158,19 @@ class NutriSyncOnboardingViewModel {
         } else {
             // Show section intro
             showingSectionIntro = true
+        }
+    }
+    
+    func goToPreviousSection() {
+        navigationDirection = .backward
+        // Navigate to the last screen of the previous section
+        if let currentIndex = NutriSyncOnboardingSection.allCases.firstIndex(of: currentSection),
+           currentIndex > 0 {
+            let previousSection = NutriSyncOnboardingSection.allCases[currentIndex - 1]
+            currentSection = previousSection
+            let screens = NutriSyncOnboardingFlow.screens(for: previousSection)
+            currentScreenIndex = screens.count - 1
+            showingSectionIntro = false
         }
     }
     
@@ -395,6 +417,8 @@ struct NutriSyncOnboardingCoordinator: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var dataProvider: FirebaseDataProvider
     @EnvironmentObject private var firebaseConfig: FirebaseConfig
+    @State private var screenOffset: CGFloat = 0
+    @State private var previousScreenIndex: Int = 0
     
     let existingProgress: OnboardingProgress?
     
@@ -413,16 +437,85 @@ struct NutriSyncOnboardingCoordinator: View {
                     completedSections: viewModel.completedSections,
                     onContinue: {
                         viewModel.nextScreen()
+                    },
+                    onBack: {
+                        viewModel.goToPreviousSection()
                     }
                 )
                 .transition(.opacity)
             } else {
-                currentScreenView()
-                    .transition(.opacity)
-                    .environment(viewModel)
+                VStack(spacing: 0) {
+                    // Fixed progress bar at top
+                    OnboardingSectionProgressBar()
+                        .padding(.horizontal, 20)
+                        .padding(.top, 8)
+                        .padding(.bottom, 32)
+                        .environment(viewModel)
+                    
+                    // Carousel content in the middle
+                    GeometryReader { geometry in
+                        HStack(spacing: 0) {
+                            ForEach(0..<viewModel.currentSectionScreens.count, id: \.self) { index in
+                                getScreenContentView(at: index)
+                                    .frame(width: geometry.size.width, height: geometry.size.height)
+                            }
+                        }
+                        .offset(x: -CGFloat(viewModel.currentScreenIndex) * geometry.size.width + screenOffset)
+                        .animation(.spring(response: 0.5, dampingFraction: 0.85, blendDuration: 0), value: viewModel.currentScreenIndex)
+                        .gesture(
+                            DragGesture()
+                                .onChanged { value in
+                                    screenOffset = value.translation.width
+                                }
+                                .onEnded { value in
+                                    let threshold = geometry.size.width * 0.2
+                                    withAnimation(.spring(response: 0.5, dampingFraction: 0.85)) {
+                                        if value.translation.width > threshold && viewModel.currentScreenIndex > 0 {
+                                            viewModel.previousScreen()
+                                        } else if value.translation.width < -threshold && !viewModel.isLastScreenInSection {
+                                            viewModel.nextScreen()
+                                        }
+                                        screenOffset = 0
+                                    }
+                                }
+                        )
+                    }
+                    
+                    // Fixed navigation buttons at bottom
+                    HStack {
+                        Button {
+                            viewModel.previousScreen()
+                        } label: {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 20, weight: .medium))
+                                .foregroundColor(.white)
+                                .frame(width: 44, height: 44)
+                        }
+                        
+                        Spacer()
+                        
+                        Button {
+                            handleNextAction()
+                        } label: {
+                            HStack(spacing: 6) {
+                                Text("Next")
+                                    .font(.system(size: 17, weight: .semibold))
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 14, weight: .semibold))
+                            }
+                            .foregroundColor(Color.nutriSyncBackground)
+                            .padding(.horizontal, 24)
+                            .frame(height: 44)
+                            .background(Color.white)
+                            .cornerRadius(22)
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 34)
+                }
+                .environment(viewModel)
             }
         }
-        .animation(.easeInOut(duration: 0.3), value: viewModel.currentScreenIndex)
         .animation(.easeInOut(duration: 0.3), value: viewModel.showingSectionIntro)
         .onAppear {
             // Load existing progress if available
@@ -467,6 +560,210 @@ struct NutriSyncOnboardingCoordinator: View {
                 .cornerRadius(20)
                 .padding(.top, 50)
             }
+        }
+    }
+    
+    // Handle next button action based on current screen
+    private func handleNextAction() {
+        // Save data from current screen if needed
+        let screenName = viewModel.currentSectionScreens[safe: viewModel.currentScreenIndex] ?? ""
+        
+        // Screen-specific data saving will be handled by the screen's onDisappear
+        // Just navigate to next
+        viewModel.nextScreen()
+    }
+    
+    @ViewBuilder
+    private func getScreenContentView(at index: Int) -> some View {
+        let screenName = viewModel.currentSectionScreens[safe: index] ?? ""
+        
+        switch screenName {
+        // Basics Section
+        case "Basic Info":
+            BasicInfoContentView()
+        case "Weight":
+            WeightContentView()
+        case "Body Fat":
+            Text("Body Fat screen removed")
+                .foregroundColor(.white)
+        case "Exercise":
+            ExerciseFrequencyContentView()
+        case "Activity":
+            ActivityLevelContentView()
+        case "Expenditure":
+            ExpenditureContentView()
+            
+        // Notice Section
+        case "Health Disclaimer":
+            HealthDisclaimerContentView()
+        case "Not to Worry":
+            NotToWorryContentView()
+            
+        // Goal Setting Section
+        case "Goal Intro":
+            GoalSettingIntroContentView()
+        case "Goal Selection":
+            GoalSelectionContentView()
+        case "Maintenance Strategy":
+            MaintenanceStrategyContentView()
+        case "Target Weight":
+            TargetWeightContentView()
+        case "Weight Loss Rate":
+            WeightLossRateContentView()
+        case "Workout Schedule":
+            Text("Workout Schedule screen removed")
+                .foregroundColor(.white)
+        case "Pre-Workout Nutrition":
+            PreWorkoutNutritionContentView()
+        case "Post-Workout Nutrition":
+            PostWorkoutNutritionContentView()
+            
+        // Program Section
+        case "Almost There":
+            AlmostThereContentView()
+        case "Diet Preference":
+            DietPreferenceContentView()
+        case "Training Plan":
+            TrainingPlanContentView()
+        case "Calorie Floor":
+            CalorieFloorContentView()
+        case "Calorie Distribution":
+            Text("Calorie Distribution screen removed")
+                .foregroundColor(.white)
+            
+        // New Meal Timing Screens
+        case "Sleep Schedule":
+            SleepScheduleContentView()
+        case "Meal Frequency":
+            MealFrequencyContentView()
+        case "Breakfast Habit":
+            Text("Breakfast Habit screen removed")
+                .foregroundColor(.white)
+        case "Eating Window":
+            EatingWindowContentView()
+        case "Lifestyle Factors":
+            Text("Lifestyle Factors screen removed")
+                .foregroundColor(.white)
+        case "Dietary Restrictions":
+            DietaryRestrictionsContentView()
+        case "Nutrition Preferences":
+            Text("Nutrition Preferences screen removed")
+                .foregroundColor(.white)
+        case "Energy Patterns":
+            Text("Energy Patterns screen removed")
+                .foregroundColor(.white)
+        case "Meal Timing":
+            MealTimingPreferenceContentView()
+        case "Window Flexibility":
+            WindowFlexibilityContentView()
+        case "Notification Preferences":
+            Text("Notification Preferences screen removed")
+                .foregroundColor(.white)
+            
+        // Finish Section
+        case "Review Program":
+            ReviewProgramContentView()
+            
+        default:
+            Text("Screen not found: \(screenName)")
+                .foregroundColor(.white)
+        }
+    }
+    
+    @ViewBuilder
+    private func getScreenView(at index: Int) -> some View {
+        let screenName = viewModel.currentSectionScreens[safe: index] ?? ""
+        
+        switch screenName {
+        // Basics Section
+        case "Basic Info":
+            BasicInfoView()
+        case "Weight":
+            WeightView()
+        case "Body Fat":
+            Text("Body Fat screen removed")
+                .foregroundColor(.white)
+        case "Exercise":
+            ExerciseFrequencyView()
+        case "Activity":
+            ActivityLevelView()
+        case "Expenditure":
+            ExpenditureView()
+            
+        // Notice Section
+        case "Health Disclaimer":
+            HealthDisclaimerView()
+        case "Not to Worry":
+            NotToWorryView()
+            
+        // Goal Setting Section
+        case "Goal Intro":
+            GoalSettingIntroView()
+        case "Goal Selection":
+            GoalSelectionView()
+        case "Maintenance Strategy":
+            MaintenanceStrategyView()
+        case "Target Weight":
+            TargetWeightView()
+        case "Weight Loss Rate":
+            WeightLossRateView()
+        case "Workout Schedule":
+            Text("Workout Schedule screen removed")
+                .foregroundColor(.white)
+        case "Pre-Workout Nutrition":
+            PreWorkoutNutritionView()
+        case "Post-Workout Nutrition":
+            PostWorkoutNutritionView()
+            
+        // Program Section
+        case "Almost There":
+            AlmostThereView()
+        case "Diet Preference":
+            DietPreferenceView()
+        case "Training Plan":
+            TrainingPlanView()
+        case "Calorie Floor":
+            CalorieFloorView()
+        case "Calorie Distribution":
+            Text("Calorie Distribution screen removed")
+                .foregroundColor(.white)
+            
+        // New Meal Timing Screens
+        case "Sleep Schedule":
+            SleepScheduleView()
+        case "Meal Frequency":
+            MealFrequencyView()
+        case "Breakfast Habit":
+            Text("Breakfast Habit screen removed")
+                .foregroundColor(.white)
+        case "Eating Window":
+            EatingWindowView()
+        case "Lifestyle Factors":
+            Text("Lifestyle Factors screen removed")
+                .foregroundColor(.white)
+        case "Dietary Restrictions":
+            DietaryRestrictionsView()
+        case "Nutrition Preferences":
+            Text("Nutrition Preferences screen removed")
+                .foregroundColor(.white)
+        case "Energy Patterns":
+            Text("Energy Patterns screen removed")
+                .foregroundColor(.white)
+        case "Meal Timing":
+            MealTimingPreferenceView()
+        case "Window Flexibility":
+            WindowFlexibilityView()
+        case "Notification Preferences":
+            Text("Notification Preferences screen removed")
+                .foregroundColor(.white)
+            
+        // Finish Section
+        case "Review Program":
+            ReviewProgramView()
+            
+        default:
+            Text("Screen not found: \(screenName)")
+                .foregroundColor(.white)
         }
     }
     

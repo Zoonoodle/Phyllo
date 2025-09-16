@@ -141,6 +141,92 @@ extension View {
     }
 }
 
+// Content-only version for carousel
+struct WeightContentView: View {
+    @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
+    @State private var weight: String = "165"
+    @State private var selectedUnit = "lbs"
+    let units = ["lbs", "kg"]
+    
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 0) {
+                // Title
+                Text("What is your weight?")
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 12)
+                
+                // Subtitle
+                Text("It is best to measure your weight at the same time each day, ideally in the morning.")
+                    .font(.system(size: 17))
+                    .foregroundColor(.white.opacity(0.6))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 40)
+                    .padding(.bottom, 40)
+                
+                // Current Weight section
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Current Weight")
+                        .font(.system(size: 17))
+                        .foregroundColor(.white)
+                    
+                    HStack(spacing: 12) {
+                        // Weight input
+                        TextField("", text: $weight)
+                            .font(.system(size: 24))
+                            .foregroundColor(.white)
+                            .multilineTextAlignment(.center)
+                            .keyboardType(.numberPad)
+                            .padding()
+                            .frame(maxWidth: .infinity)
+                            .background(Color.white.opacity(0.1))
+                            .cornerRadius(12)
+                        
+                        // Unit picker
+                        Menu {
+                            ForEach(units, id: \.self) { unit in
+                                Button(unit) {
+                                    selectedUnit = unit
+                                }
+                            }
+                        } label: {
+                            HStack {
+                                Text(selectedUnit)
+                                    .font(.system(size: 20))
+                                    .foregroundColor(.white)
+                                Image(systemName: "chevron.down")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.white.opacity(0.6))
+                            }
+                            .padding()
+                            .frame(width: 100)
+                            .background(Color.white.opacity(0.1))
+                            .cornerRadius(12)
+                        }
+                    }
+                }
+                .padding(.horizontal, 20)
+                
+                Spacer(minLength: 80) // Space for navigation buttons
+            }
+        }
+        .onTapGesture {
+            hideKeyboard()
+        }
+        .onDisappear {
+            // Save weight to coordinator when navigating away
+            if let weightValue = Double(weight) {
+                // Convert to kg if needed (coordinator expects kg)
+                let weightInKg = selectedUnit == "lbs" ? weightValue * 0.453592 : weightValue
+                coordinator.weight = weightInKg
+            }
+        }
+    }
+}
+
 struct WeightView_Previews: PreviewProvider {
     static var previews: some View {
         WeightView()

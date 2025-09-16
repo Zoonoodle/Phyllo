@@ -73,6 +73,7 @@ struct SectionIntroView: View {
     let section: NutriSyncOnboardingSection
     let completedSections: Set<NutriSyncOnboardingSection>
     let onContinue: () -> Void
+    let onBack: () -> Void
     
     var body: some View {
         ZStack {
@@ -80,11 +81,11 @@ struct SectionIntroView: View {
                 .ignoresSafeArea()
             
             VStack(spacing: 0) {
-                // Close button placeholder
+                // Close button to go back to previous section
                 HStack {
                     Spacer()
                     Button {
-                        // Handle close
+                        onBack()
                     } label: {
                         Image(systemName: "xmark")
                             .font(.system(size: 20, weight: .medium))

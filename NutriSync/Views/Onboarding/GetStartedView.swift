@@ -16,10 +16,12 @@ struct GetStartedView: View {
     @EnvironmentObject private var firebaseConfig: FirebaseConfig
     
     let screenshots = [
-        "Simulator Screenshot - iPhone 16 Pro - 2025-09-11 at 15.59.13",
-        "Simulator Screenshot - iPhone 16 Pro - 2025-09-11 at 15.59.25",
-        "Simulator Screenshot - iPhone 16 Pro - 2025-09-12 at 06.08.10",
-        "Simulator Screenshot - iPhone 16 Pro - 2025-09-12 at 06.08.21"
+        "Image 1",
+        "Image",
+        "Image 4",
+        "Image 5",
+        "Image 6",
+        "Image 3"
     ]
     
     var body: some View {
@@ -28,82 +30,93 @@ struct GetStartedView: View {
             Color.nutriSyncBackground
                 .ignoresSafeArea()
             
+            // Device carousel layer (behind everything)
+            TabView(selection: $currentIndex) {
+                ForEach(0..<screenshots.count, id: \.self) { index in
+                    ScreenshotView(imageName: screenshots[index])
+                        .tag(index)
+                        .scaleEffect(1.1) // Slightly larger to extend into space
+                }
+            }
+            .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+            .ignoresSafeArea() // Allow it to extend beyond safe area
+            
+            // Content layer (on top)
             VStack(spacing: 0) {
-                // Tagline
-                Text("Smart meal timing,\nsimplified")
-                    .font(.system(size: 36, weight: .bold))
-                    .foregroundColor(.white)
+                // Top section with tagline
+                VStack(spacing: 0) {
+                    HStack(spacing: 0) {
+                        Text("Smart meal timing,\n")
+                            .font(.system(size: 36, weight: .bold))
+                            .foregroundColor(.white)
+                            + Text("Simplified.")
+                            .font(.system(size: 36, weight: .bold))
+                            .foregroundColor(Color(hex: "C0FF73"))
+                    }
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 40)
-                    .padding(.top, 60)
-                    .padding(.bottom, 40)
-                
-                // Carousel Container
-                ZStack {
-                    // Screenshots with iPhone frame
-                    TabView(selection: $currentIndex) {
-                        ForEach(0..<screenshots.count, id: \.self) { index in
-                            ScreenshotView(imageName: screenshots[index])
-                                .tag(index)
-                        }
-                    }
-                    .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
-                    .frame(height: 500)
-                    
-                    // Navigation arrows (optional, like MacroFactor)
-                    HStack {
-                        // Left arrow
-                        Button {
-                            withAnimation(.easeInOut(duration: 0.3)) {
-                                currentIndex = (currentIndex - 1 + screenshots.count) % screenshots.count
-                            }
-                            resetTimer()
-                        } label: {
-                            Image(systemName: "chevron.left")
-                                .font(.system(size: 20, weight: .semibold))
-                                .foregroundColor(.white.opacity(0.5))
-                                .frame(width: 44, height: 44)
-                                .background(Color.white.opacity(0.1))
-                                .clipShape(Circle())
-                        }
-                        .opacity(currentIndex > 0 ? 1 : 0.3)
-                        
-                        Spacer()
-                        
-                        // Right arrow
-                        Button {
-                            withAnimation(.easeInOut(duration: 0.3)) {
-                                currentIndex = (currentIndex + 1) % screenshots.count
-                            }
-                            resetTimer()
-                        } label: {
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 20, weight: .semibold))
-                                .foregroundColor(.white.opacity(0.5))
-                                .frame(width: 44, height: 44)
-                                .background(Color.white.opacity(0.1))
-                                .clipShape(Circle())
-                        }
-                        .opacity(currentIndex < screenshots.count - 1 ? 1 : 0.3)
-                    }
-                    .padding(.horizontal, 20)
+                    .padding(.top, 15)
+                    .padding(.bottom, 30)
+                    .shadow(color: Color(hex: "C0FF73").opacity(0.3), radius: 8, x: 0, y: 0)
                 }
-                
-                // Page dots
-                HStack(spacing: 8) {
-                    ForEach(0..<screenshots.count, id: \.self) { index in
-                        Circle()
-                            .fill(index == currentIndex ? Color.white : Color.white.opacity(0.3))
-                            .frame(width: 8, height: 8)
-                            .animation(.easeInOut(duration: 0.2), value: currentIndex)
-                    }
-                }
-                .padding(.top, 20)
+                .background(
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            Color.nutriSyncBackground,
+                            Color.nutriSyncBackground.opacity(0.8),
+                            Color.clear
+                        ]),
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .frame(height: 200)
+                    .ignoresSafeArea()
+                )
                 
                 Spacer()
                 
-                // Bottom section
-                VStack(spacing: 20) {
+                // Navigation arrows in middle
+                HStack {
+                    // Left arrow
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            currentIndex = (currentIndex - 1 + screenshots.count) % screenshots.count
+                        }
+                        resetTimer()
+                    } label: {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 20, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.5))
+                            .frame(width: 44, height: 44)
+                            .background(Color.white.opacity(0.1))
+                            .clipShape(Circle())
+                    }
+                    .opacity(currentIndex > 0 ? 1 : 0.3)
+                    
+                    Spacer()
+                    
+                    // Right arrow
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            currentIndex = (currentIndex + 1) % screenshots.count
+                        }
+                        resetTimer()
+                    } label: {
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 20, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.5))
+                            .frame(width: 44, height: 44)
+                            .background(Color.white.opacity(0.1))
+                            .clipShape(Circle())
+                    }
+                    .opacity(currentIndex < screenshots.count - 1 ? 1 : 0.3)
+                }
+                .padding(.horizontal, 20)
+                
+                Spacer()
+                
+                // Bottom section with gradient background
+                VStack(spacing: 16) {
                     // Already have an account
                     HStack(spacing: 4) {
                         Text("Already have an account?")
@@ -134,14 +147,26 @@ struct GetStartedView: View {
                     }
                     .padding(.horizontal, 20)
                     
-                    // Terms text (smaller, at bottom)
+                    // Terms text
                     Text("By continuing, you agree to our Terms of Service")
                         .font(.system(size: 12))
                         .foregroundColor(.white.opacity(0.5))
                         .multilineTextAlignment(.center)
-                        .padding(.bottom, 10)
                 }
                 .padding(.bottom, 34)
+                .background(
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            Color.clear,
+                            Color.nutriSyncBackground.opacity(0.8),
+                            Color.nutriSyncBackground
+                        ]),
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .frame(height: 250)
+                    .ignoresSafeArea()
+                )
             }
         }
         .onAppear {
@@ -184,19 +209,19 @@ struct ScreenshotView: View {
             // iPhone frame
             iPhoneFrame
             
-            // Screenshot
-            if let uiImage = UIImage(named: "\(imageName).png") {
+            // Screenshot - use imageset name directly
+            if let uiImage = UIImage(named: imageName) {
                 Image(uiImage: uiImage)
                     .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 250, height: 541) // iPhone 16 Pro aspect ratio
-                    .cornerRadius(30)
-                    .padding(8) // Inner padding for frame
+                    .aspectRatio(contentMode: .fill)
+                    .frame(width: 260, height: 580) // Larger to fill frame better
+                    .clipped()
+                    .cornerRadius(35)
             } else {
                 // Fallback placeholder
-                RoundedRectangle(cornerRadius: 30)
+                RoundedRectangle(cornerRadius: 35)
                     .fill(Color.white.opacity(0.1))
-                    .frame(width: 250, height: 541)
+                    .frame(width: 260, height: 580)
                     .overlay(
                         VStack {
                             Image(systemName: "photo")
@@ -207,31 +232,39 @@ struct ScreenshotView: View {
                                 .foregroundColor(.white.opacity(0.3))
                         }
                     )
-                    .padding(8)
             }
         }
     }
     
     var iPhoneFrame: some View {
         ZStack {
-            // Outer frame
-            RoundedRectangle(cornerRadius: 40)
-                .stroke(Color.white.opacity(0.2), lineWidth: 2)
-                .frame(width: 270, height: 560)
+            // Outer frame - taller to extend into space
+            RoundedRectangle(cornerRadius: 42)
+                .stroke(Color.white.opacity(0.15), lineWidth: 1.5)
+                .frame(width: 280, height: 620)
                 .background(
-                    RoundedRectangle(cornerRadius: 40)
-                        .fill(Color.black.opacity(0.3))
+                    RoundedRectangle(cornerRadius: 42)
+                        .fill(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    Color.black.opacity(0.2),
+                                    Color.black.opacity(0.3)
+                                ]),
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
                 )
             
             // Notch/Dynamic Island representation
             VStack {
                 Capsule()
-                    .fill(Color.black)
-                    .frame(width: 100, height: 30)
-                    .padding(.top, 10)
+                    .fill(Color.black.opacity(0.9))
+                    .frame(width: 90, height: 26)
+                    .padding(.top, 12)
                 Spacer()
             }
-            .frame(width: 270, height: 560)
+            .frame(width: 280, height: 620)
         }
     }
 }
