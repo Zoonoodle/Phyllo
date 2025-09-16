@@ -2,13 +2,12 @@
 //  OnboardingContentViews.swift
 //  NutriSync
 //
-//  Placeholder content views for onboarding screens
+//  Content views for onboarding screens carousel
 //
 
 import SwiftUI
 
-// These are temporary placeholder views for the content-only versions
-// They will be replaced with actual content views as screens are updated
+// MARK: - Basics Section
 
 struct ActivityLevelContentView: View {
     @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
@@ -91,70 +90,94 @@ struct ExpenditureContentView: View {
     @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
     @State private var expenditure: Int = 0
     @State private var showAdjustment = false
-    @State private var selectedActivityLevel: TDEECalculator.ActivityLevel = .moderatelyActive
+    @State private var calculatedActivityLevel: TDEECalculator.ActivityLevel = .moderatelyActive
     
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
                 // Title
-                Text("We estimated your initial expenditure.")
+                Text("Your Daily Calorie Expenditure")
                     .font(.system(size: 28, weight: .bold))
                     .foregroundColor(.white)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 20)
-                    .padding(.bottom, 40)
+                    .padding(.bottom, 20)
                 
-                if !showAdjustment {
-                    // Activity level selection
-                    VStack(spacing: 12) {
-                        Text("Select your activity level:")
-                            .font(.system(size: 18, weight: .medium))
-                            .foregroundColor(.white)
-                            .padding(.bottom, 8)
-                        
-                        ForEach(TDEECalculator.ActivityLevel.allCases, id: \.self) { level in
-                            Button {
-                                selectedActivityLevel = level
-                                calculateTDEE()
-                            } label: {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(level.rawValue)
-                                        .font(.system(size: 16, weight: .semibold))
-                                        .foregroundColor(.white)
-                                    Text(level.description)
-                                        .font(.system(size: 14))
-                                        .foregroundColor(.white.opacity(0.6))
-                                }
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 12)
-                                .background(
-                                    selectedActivityLevel == level ?
-                                    Color.nutriSyncAccent.opacity(0.2) :
-                                    Color.white.opacity(0.05)
-                                )
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .stroke(
-                                            selectedActivityLevel == level ?
-                                            Color.nutriSyncAccent :
-                                            Color.white.opacity(0.1),
-                                            lineWidth: 1
-                                        )
-                                )
-                                .cornerRadius(12)
-                            }
+                // Show calculation details
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Based on your profile:")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundColor(.white.opacity(0.8))
+                    
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text("Age:")
+                                .foregroundColor(.white.opacity(0.6))
+                            Text("\(coordinator.age) years")
+                                .foregroundColor(.white)
                         }
+                        .font(.system(size: 14))
+                        
+                        HStack {
+                            Text("Weight:")
+                                .foregroundColor(.white.opacity(0.6))
+                            Text("\(Int(coordinator.weight * 2.20462)) lbs")
+                                .foregroundColor(.white)
+                        }
+                        .font(.system(size: 14))
+                        
+                        HStack {
+                            Text("Height:")
+                                .foregroundColor(.white.opacity(0.6))
+                            let feet = Int(coordinator.height / 30.48)
+                            let inches = Int((coordinator.height.truncatingRemainder(dividingBy: 30.48)) / 2.54)
+                            Text("\(feet)'\(inches)\"")
+                                .foregroundColor(.white)
+                        }
+                        .font(.system(size: 14))
+                        
+                        HStack {
+                            Text("Exercise:")
+                                .foregroundColor(.white.opacity(0.6))
+                            Text(coordinator.exerciseFrequency)
+                                .foregroundColor(.white)
+                        }
+                        .font(.system(size: 14))
+                        
+                        HStack {
+                            Text("Daily Activity:")
+                                .foregroundColor(.white.opacity(0.6))
+                            Text(coordinator.activityLevel)
+                                .foregroundColor(.white)
+                        }
+                        .font(.system(size: 14))
+                        
+                        HStack {
+                            Text("Overall Activity Level:")
+                                .foregroundColor(.white.opacity(0.6))
+                            Text(calculatedActivityLevel.rawValue)
+                                .foregroundColor(.nutriSyncAccent)
+                                .fontWeight(.medium)
+                        }
+                        .font(.system(size: 14))
+                        .padding(.top, 4)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 40)
                 }
+                .padding(20)
+                .background(Color.white.opacity(0.05))
+                .cornerRadius(16)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 30)
                 
                 // Calorie display
                 VStack(spacing: 8) {
-                    Text("\(expenditure) kcal")
-                        .font(.system(size: 60, weight: .light))
+                    Text("\(expenditure)")
+                        .font(.system(size: 72, weight: .light))
                         .foregroundColor(.white)
+                    
+                    Text("calories per day")
+                        .font(.system(size: 18))
+                        .foregroundColor(.white.opacity(0.6))
                     
                     if showAdjustment {
                         // Manual adjustment buttons
@@ -177,26 +200,20 @@ struct ExpenditureContentView: View {
                         }
                         .padding(.top, 20)
                         
-                        Text("Adjust your daily expenditure")
+                        Text("Adjust in increments of 50")
                             .font(.system(size: 14))
                             .foregroundColor(.white.opacity(0.5))
                             .padding(.top, 8)
                     }
                 }
-                .padding(.bottom, 40)
-                
-                // Question
-                Text("Does this look right to you?")
-                    .font(.system(size: 22))
-                    .foregroundColor(.white)
-                    .padding(.bottom, 12)
+                .padding(.bottom, 30)
                 
                 // Description
-                Text("Expenditure is the number of calories you would need to consume to maintain your current weight.")
-                    .font(.system(size: 17))
+                Text("This is your Total Daily Energy Expenditure (TDEE) - the calories you burn each day to maintain your current weight.")
+                    .font(.system(size: 15))
                     .foregroundColor(.white.opacity(0.6))
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, 30)
                     .padding(.bottom, 30)
                 
                 // Action buttons
@@ -207,10 +224,10 @@ struct ExpenditureContentView: View {
                             showAdjustment = true
                         } label: {
                             HStack {
-                                Text("No, let me adjust")
+                                Text("Adjust manually")
                                     .font(.system(size: 18, weight: .medium))
-                                Image(systemName: "chevron.right")
-                                    .font(.system(size: 14, weight: .medium))
+                                Image(systemName: "slider.horizontal.3")
+                                    .font(.system(size: 16))
                             }
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
@@ -224,27 +241,10 @@ struct ExpenditureContentView: View {
                             coordinator.tdee = Double(expenditure)
                         } label: {
                             HStack {
-                                Text("Yes, looks good")
-                                    .font(.system(size: 18, weight: .medium))
-                                Image(systemName: "chevron.right")
-                                    .font(.system(size: 14, weight: .medium))
-                            }
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 50)
-                            .background(Color.white.opacity(0.1))
-                            .cornerRadius(25)
-                        }
-                        
-                        Button {
-                            // User is not sure - proceed with estimate
-                            coordinator.tdee = Double(expenditure)
-                        } label: {
-                            HStack {
-                                Text("Not Sure, continue")
+                                Text("Looks good")
                                     .font(.system(size: 18, weight: .semibold))
-                                Image(systemName: "chevron.right")
-                                    .font(.system(size: 14, weight: .semibold))
+                                Image(systemName: "checkmark.circle")
+                                    .font(.system(size: 16))
                             }
                             .foregroundColor(Color.nutriSyncBackground)
                             .frame(maxWidth: .infinity)
@@ -253,14 +253,16 @@ struct ExpenditureContentView: View {
                             .cornerRadius(25)
                         }
                     } else {
-                        // Back to selection button
+                        // Back button
                         Button {
+                            // Reset to calculated value
                             showAdjustment = false
+                            calculateTDEE()
                         } label: {
                             HStack {
-                                Image(systemName: "chevron.left")
-                                    .font(.system(size: 14, weight: .medium))
-                                Text("Back to Selection")
+                                Image(systemName: "arrow.backward")
+                                    .font(.system(size: 14))
+                                Text("Reset to calculated")
                                     .font(.system(size: 18, weight: .medium))
                             }
                             .foregroundColor(.white)
@@ -275,10 +277,10 @@ struct ExpenditureContentView: View {
                             coordinator.tdee = Double(expenditure)
                         } label: {
                             HStack {
-                                Text("Save and Continue")
+                                Text("Save adjusted value")
                                     .font(.system(size: 18, weight: .semibold))
-                                Image(systemName: "chevron.right")
-                                    .font(.system(size: 14, weight: .semibold))
+                                Image(systemName: "checkmark.circle")
+                                    .font(.system(size: 16))
                             }
                             .foregroundColor(Color.nutriSyncBackground)
                             .frame(maxWidth: .infinity)
@@ -297,14 +299,16 @@ struct ExpenditureContentView: View {
             calculateTDEE()
         }
         .onDisappear {
-            // Save final TDEE value if not already saved
-            if coordinator.tdee == nil {
-                coordinator.tdee = Double(expenditure)
-            }
+            // Save final TDEE value
+            coordinator.tdee = Double(expenditure)
         }
     }
     
     private func calculateTDEE() {
+        // Determine combined activity level based on exercise frequency and daily activity
+        let activityLevel = determineActivityLevel()
+        calculatedActivityLevel = activityLevel
+        
         // Get gender enum value
         let gender: TDEECalculator.Gender = coordinator.gender.lowercased() == "female" ? .female : .male
         
@@ -314,16 +318,73 @@ struct ExpenditureContentView: View {
             height: coordinator.height,
             age: coordinator.age,
             gender: gender,
-            activityLevel: selectedActivityLevel
+            activityLevel: activityLevel
         )
         
         // Round to nearest 5
         expenditure = Int((tdee / 5).rounded()) * 5
         
         // Save activity level to coordinator
-        coordinator.activityLevel = selectedActivityLevel.rawValue
+        coordinator.activityLevel = activityLevel.rawValue
+    }
+    
+    private func determineActivityLevel() -> TDEECalculator.ActivityLevel {
+        // Map exercise frequency to base activity level
+        var exerciseLevel: TDEECalculator.ActivityLevel = .sedentary
+        
+        switch coordinator.exerciseFrequency {
+        case "0 sessions / week":
+            exerciseLevel = .sedentary
+        case "1-3 sessions / week":
+            exerciseLevel = .lightlyActive
+        case "4-6 sessions / week":
+            exerciseLevel = .moderatelyActive
+        case "7+ sessions / week":
+            exerciseLevel = .veryActive
+        default:
+            exerciseLevel = .sedentary
+        }
+        
+        // Map daily activity level
+        var dailyActivityLevel: TDEECalculator.ActivityLevel = .sedentary
+        
+        if coordinator.activityLevel.contains("Sedentary") {
+            dailyActivityLevel = .sedentary
+        } else if coordinator.activityLevel.contains("Moderately") {
+            dailyActivityLevel = .lightlyActive
+        } else if coordinator.activityLevel.contains("Very") {
+            dailyActivityLevel = .moderatelyActive
+        }
+        
+        // Combine both factors - take the higher of the two
+        let combinedLevel: TDEECalculator.ActivityLevel
+        
+        // If someone exercises 7+ days a week, they're at least Very Active
+        if coordinator.exerciseFrequency == "7+ sessions / week" {
+            combinedLevel = .veryActive
+        }
+        // If someone exercises 4-6 days and is also active during the day
+        else if coordinator.exerciseFrequency == "4-6 sessions / week" && coordinator.activityLevel.contains("Very") {
+            combinedLevel = .veryActive
+        }
+        // If someone exercises 4-6 days OR is very active during the day
+        else if coordinator.exerciseFrequency == "4-6 sessions / week" || coordinator.activityLevel.contains("Very") {
+            combinedLevel = .moderatelyActive
+        }
+        // If someone exercises 1-3 days OR is moderately active during the day
+        else if coordinator.exerciseFrequency == "1-3 sessions / week" || coordinator.activityLevel.contains("Moderately") {
+            combinedLevel = .lightlyActive
+        }
+        // Otherwise sedentary
+        else {
+            combinedLevel = .sedentary
+        }
+        
+        return combinedLevel
     }
 }
+
+// MARK: - Notice Section Content Views (Placeholders)
 
 struct HealthDisclaimerContentView: View {
     @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
@@ -340,6 +401,8 @@ struct NotToWorryContentView: View {
             .foregroundColor(.white)
     }
 }
+
+// MARK: - Goal Setting Section Content Views (Placeholders)
 
 struct GoalSettingIntroContentView: View {
     @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
@@ -396,6 +459,8 @@ struct PostWorkoutNutritionContentView: View {
             .foregroundColor(.white)
     }
 }
+
+// MARK: - Program Section Content Views (Placeholders)
 
 struct AlmostThereContentView: View {
     @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
@@ -476,6 +541,8 @@ struct WindowFlexibilityContentView: View {
             .foregroundColor(.white)
     }
 }
+
+// MARK: - Finish Section Content Views (Placeholders)
 
 struct ReviewProgramContentView: View {
     @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
