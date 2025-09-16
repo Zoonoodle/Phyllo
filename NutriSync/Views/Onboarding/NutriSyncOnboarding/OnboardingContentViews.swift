@@ -111,7 +111,8 @@ struct ExpenditureContentView: View {
     @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
     @State private var expenditure: Int = 0
     @State private var showAdjustment = false
-    @State private var calculatedActivityLevel: TDEECalculator.ActivityLevel = .moderatelyActive
+    @State private var calculatedActivityLevel: TDEECalculator.ActivityLevel = .sedentary
+    @State private var isInitialized = false
     
     var body: some View {
         ScrollView {
@@ -317,6 +318,8 @@ struct ExpenditureContentView: View {
             }
         }
         .onAppear {
+            // Always recalculate when view appears
+            isInitialized = false
             calculateTDEE()
         }
         .onDisappear {
@@ -326,9 +329,16 @@ struct ExpenditureContentView: View {
     }
     
     private func calculateTDEE() {
+        print("[TDEE Calculation] Starting calculation...")
+        print("[TDEE] Input - Exercise: \(coordinator.exerciseFrequency)")
+        print("[TDEE] Input - Daily Activity: \(coordinator.dailyActivity)")
+        print("[TDEE] Input - Weight: \(coordinator.weight) kg, Height: \(coordinator.height) cm, Age: \(coordinator.age)")
+        
         // Determine combined activity level based on exercise frequency and daily activity
         let activityLevel = determineActivityLevel()
         calculatedActivityLevel = activityLevel
+        
+        print("[TDEE] Calculated Activity Level: \(activityLevel.rawValue)")
         
         // Get gender enum value
         let gender: TDEECalculator.Gender = coordinator.gender.lowercased() == "female" ? .female : .male
@@ -342,23 +352,36 @@ struct ExpenditureContentView: View {
             activityLevel: activityLevel
         )
         
+        print("[TDEE] Raw TDEE calculation: \(tdee)")
+        
         // Round to nearest 5
         expenditure = Int((tdee / 5).rounded()) * 5
+        
+        print("[TDEE] Final expenditure: \(expenditure)")
         
         // Save activity level to coordinator
         coordinator.activityLevel = activityLevel.rawValue
     }
     
     private func determineActivityLevel() -> TDEECalculator.ActivityLevel {
-        // Score-based system for clearer logic
-        // Exercise frequency scoring (0-4 points)
-        let exerciseScore: Int = switch coordinator.exerciseFrequency {
-        case "0 sessions / week": 0
-        case "1-3 sessions / week": 1
-        case "4-6 sessions / week": 2
-        case "7+ sessions / week": 3
-        default: 0
+        print("[ActivityLevel] Starting determination...")
+        
+        // Exercise frequency scoring (0-3 points)
+        let exerciseScore: Int
+        switch coordinator.exerciseFrequency {
+        case "0 sessions / week":
+            exerciseScore = 0
+        case "1-3 sessions / week":
+            exerciseScore = 1
+        case "4-6 sessions / week":
+            exerciseScore = 2
+        case "7+ sessions / week":
+            exerciseScore = 3
+        default:
+            exerciseScore = 0
         }
+        
+        print("[ActivityLevel] Exercise frequency: '\(coordinator.exerciseFrequency)' = score \(exerciseScore)")
         
         // Daily activity scoring (0-2 points)
         let activityScore: Int
@@ -368,6 +391,8 @@ struct ExpenditureContentView: View {
                                   coordinator.activityLevel == "Moderately Active" || 
                                   coordinator.activityLevel == "Very Active") ? coordinator.activityLevel : "Mostly Sedentary"
         
+        print("[ActivityLevel] Daily activity value: '\(dailyActivityValue)'")
+        
         if dailyActivityValue.contains("Very Active") {
             activityScore = 2
         } else if dailyActivityValue.contains("Moderately Active") {
@@ -376,22 +401,34 @@ struct ExpenditureContentView: View {
             activityScore = 0  // Mostly Sedentary
         }
         
+        print("[ActivityLevel] Daily activity score: \(activityScore)")
+        
         // Combine scores (max 5 points)
         let totalScore = exerciseScore + activityScore
         
+        print("[ActivityLevel] Total score: \(totalScore) (\(exerciseScore) + \(activityScore))")
+        
         // Map total score to activity level
         // This ensures proper progression based on both factors
-        let combinedLevel: TDEECalculator.ActivityLevel = switch totalScore {
-        case 0: .sedentary           // No exercise + sedentary
-        case 1: .lightlyActive        // Light exercise OR moderate daily activity
-        case 2: .moderatelyActive     // Moderate exercise OR very active daily
-        case 3: .moderatelyActive     // Good combination of both
-        case 4: .veryActive           // High exercise + active daily
-        case 5: .veryActive           // Maximum activity
-        default: .extremelyActive     // 6+ (7+ exercise + very active)
+        let combinedLevel: TDEECalculator.ActivityLevel
+        switch totalScore {
+        case 0:
+            combinedLevel = .sedentary           // No exercise + sedentary
+        case 1:
+            combinedLevel = .lightlyActive        // Light exercise OR moderate daily activity
+        case 2:
+            combinedLevel = .moderatelyActive     // Moderate exercise OR very active daily
+        case 3:
+            combinedLevel = .moderatelyActive     // Good combination of both
+        case 4:
+            combinedLevel = .veryActive           // High exercise + active daily
+        case 5:
+            combinedLevel = .veryActive           // Maximum regular activity (7+ exercise + very active)
+        default:
+            combinedLevel = .extremelyActive      // 6+ (impossible with current scoring, but future-proof)
         }
         
-        print("[ActivityLevel] Exercise: \(coordinator.exerciseFrequency) (\(exerciseScore)), Daily: \(dailyActivityValue) (\(activityScore)), Total: \(totalScore), Result: \(combinedLevel.rawValue)")
+        print("[ActivityLevel] Final result: \(combinedLevel.rawValue)")
         
         return combinedLevel
     }
