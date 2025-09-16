@@ -44,7 +44,7 @@ struct ActivityLevelContentView: View {
                     ForEach(activityLevels, id: \.0) { level, icon, description in
                         Button {
                             selectedActivity = level
-                            coordinator.activityLevel = selectedActivity
+                            coordinator.dailyActivity = selectedActivity
                         } label: {
                             HStack(alignment: .top, spacing: 16) {
                                 Image(systemName: icon)
@@ -85,7 +85,7 @@ struct ActivityLevelContentView: View {
             loadDataFromCoordinator()
         }
         .onChange(of: selectedActivity) { _ in
-            coordinator.activityLevel = selectedActivity
+            coordinator.dailyActivity = selectedActivity
         }
     }
     
@@ -94,8 +94,8 @@ struct ActivityLevelContentView: View {
         isInitialized = true
         
         // Load existing value from coordinator if it exists
-        if !coordinator.activityLevel.isEmpty {
-            selectedActivity = coordinator.activityLevel
+        if !coordinator.dailyActivity.isEmpty {
+            selectedActivity = coordinator.dailyActivity
         }
     }
 }
@@ -355,9 +355,9 @@ struct ExpenditureContentView: View {
         
         // Daily activity scoring (0-2 points)
         let activityScore: Int
-        if coordinator.activityLevel.contains("Very Active") {
+        if coordinator.dailyActivity.contains("Very Active") {
             activityScore = 2
-        } else if coordinator.activityLevel.contains("Moderately Active") {
+        } else if coordinator.dailyActivity.contains("Moderately Active") {
             activityScore = 1
         } else {
             activityScore = 0  // Mostly Sedentary
@@ -378,7 +378,7 @@ struct ExpenditureContentView: View {
         default: .extremelyActive     // 6+ (7+ exercise + very active)
         }
         
-        print("[ActivityLevel] Exercise: \(coordinator.exerciseFrequency) (\(exerciseScore)), Daily: \(coordinator.activityLevel) (\(activityScore)), Total: \(totalScore), Result: \(combinedLevel.rawValue)")
+        print("[ActivityLevel] Exercise: \(coordinator.exerciseFrequency) (\(exerciseScore)), Daily: \(coordinator.dailyActivity) (\(activityScore)), Total: \(totalScore), Result: \(combinedLevel.rawValue)")
         
         return combinedLevel
     }

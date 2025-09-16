@@ -52,7 +52,8 @@ class NutriSyncOnboardingViewModel {
     var age: Int = 30
     var weight: Double = 70 // in kg (about 154 lbs)
     var exerciseFrequency: String = "0 sessions / week"
-    var activityLevel: String = "Mostly Sedentary"
+    var dailyActivity: String = "Mostly Sedentary" // User's daily activity selection
+    var activityLevel: String = "Mostly Sedentary" // Calculated activity level for TDEE
     var tdee: Double? = nil
     var goal: String = ""
     var maintenanceStrategy: String = ""
