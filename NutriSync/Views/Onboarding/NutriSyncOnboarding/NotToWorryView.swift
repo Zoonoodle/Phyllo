@@ -15,7 +15,7 @@ struct NotToWorryView: View {
             ScrollView {
                 VStack(spacing: 0) {
                     // Progress bar
-                    ProgressBar(totalSteps: 24, currentStep: 7)
+                    OnboardingSectionProgressBar()
                         .padding(.horizontal, 20)
                         .padding(.top, 8)
                         .padding(.bottom, 40)

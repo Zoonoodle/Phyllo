@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-// MARK: - Progress Bar
+// MARK: - Progress Bar (Legacy - for backward compatibility)
 struct ProgressBar: View {
     let totalSteps: Int
     let currentStep: Int
@@ -28,6 +28,25 @@ struct ProgressBar: View {
             }
         }
         .frame(height: 4)
+    }
+}
+
+// MARK: - Section-based Segmented Progress Bar
+struct OnboardingSectionProgressBar: View {
+    @Environment(NutriSyncOnboardingViewModel.self) private var viewModel
+    
+    var body: some View {
+        let totalSteps = viewModel.currentSectionScreens.count
+        let currentStep = viewModel.currentScreenIndex + 1
+        
+        HStack(spacing: 8) {
+            ForEach(0..<totalSteps, id: \.self) { index in
+                RoundedRectangle(cornerRadius: 2)
+                    .fill(index < currentStep ? Color.white : Color.white.opacity(0.2))
+                    .frame(height: 4)
+                    .animation(.spring(response: 0.3, dampingFraction: 0.8), value: currentStep)
+            }
+        }
     }
 }
 
