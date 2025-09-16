@@ -159,6 +159,6 @@ struct NutriSyncTextFieldStyle: TextFieldStyle {
 struct LoginView_Previews: PreviewProvider {
     static var previews: some View {
         LoginView()
-            .environmentObject(FirebaseConfig())
+            .environmentObject(FirebaseConfig.shared)
     }
 }

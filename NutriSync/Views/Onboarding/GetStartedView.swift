@@ -240,6 +240,6 @@ struct ScreenshotView: View {
 struct GetStartedView_Previews: PreviewProvider {
     static var previews: some View {
         GetStartedView()
-            .environmentObject(FirebaseConfig())
+            .environmentObject(FirebaseConfig.shared)
     }
 }
