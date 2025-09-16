@@ -27,6 +27,11 @@ class NutriSyncOnboardingViewModel {
     var showingSectionIntro: Bool = true
     var navigationDirection: NavigationDirection = .forward
     
+    init() {
+        print("[NutriSyncOnboardingViewModel] INIT - Creating new coordinator instance")
+        print("[NutriSyncOnboardingViewModel] Default values - Exercise: \(exerciseFrequency), Daily: \(dailyActivity)")
+    }
+    
     // Navigation direction for carousel transitions
     enum NavigationDirection {
         case forward
@@ -414,7 +419,7 @@ class NutriSyncOnboardingViewModel {
 }
 
 struct NutriSyncOnboardingCoordinator: View {
-    @State private var viewModel = NutriSyncOnboardingViewModel()
+    @State var viewModel: NutriSyncOnboardingViewModel
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var dataProvider: FirebaseDataProvider
     @EnvironmentObject private var firebaseConfig: FirebaseConfig
@@ -423,7 +428,8 @@ struct NutriSyncOnboardingCoordinator: View {
     
     let existingProgress: OnboardingProgress?
     
-    init(existingProgress: OnboardingProgress? = nil) {
+    init(viewModel: NutriSyncOnboardingViewModel = NutriSyncOnboardingViewModel(), existingProgress: OnboardingProgress? = nil) {
+        self._viewModel = State(initialValue: viewModel)
         self.existingProgress = existingProgress
     }
     

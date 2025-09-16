@@ -45,6 +45,8 @@ struct ActivityLevelContentView: View {
                         Button {
                             selectedActivity = level
                             coordinator.dailyActivity = selectedActivity
+                            print("[ActivityLevel] Selected: \(selectedActivity)")
+                            print("[ActivityLevel] Saved to coordinator.dailyActivity: \(coordinator.dailyActivity)")
                         } label: {
                             HStack(alignment: .top, spacing: 16) {
                                 Image(systemName: icon)
@@ -318,6 +320,9 @@ struct ExpenditureContentView: View {
             }
         }
         .onAppear {
+            print("[ExpenditureView] onAppear - coordinator.exerciseFrequency: '\(coordinator.exerciseFrequency)'")
+            print("[ExpenditureView] onAppear - coordinator.dailyActivity: '\(coordinator.dailyActivity)'")
+            print("[ExpenditureView] onAppear - coordinator.activityLevel: '\(coordinator.activityLevel)'")
             // Always recalculate when view appears
             isInitialized = false
             calculateTDEE()

@@ -13,6 +13,7 @@ struct GetStartedView: View {
     @State private var dragAmount = CGSize.zero
     @State private var showLogin = false
     @State private var startOnboarding = false
+    @State private var onboardingViewModel = NutriSyncOnboardingViewModel()
     @EnvironmentObject private var firebaseConfig: FirebaseConfig
     
     let screenshots = [
@@ -176,7 +177,7 @@ struct GetStartedView: View {
             timer?.invalidate()
         }
         .fullScreenCover(isPresented: $startOnboarding) {
-            NutriSyncOnboardingCoordinator()
+            NutriSyncOnboardingCoordinator(viewModel: onboardingViewModel)
                 .environmentObject(firebaseConfig)
                 .environmentObject(FirebaseDataProvider.shared)
         }

@@ -81,6 +81,8 @@ struct ExerciseFrequencyContentView: View {
                         ) {
                             selectedFrequency = frequency
                             coordinator.exerciseFrequency = selectedFrequency
+                            print("[ExerciseFrequency] Selected: \(selectedFrequency)")
+                            print("[ExerciseFrequency] Saved to coordinator: \(coordinator.exerciseFrequency)")
                         }
                     }
                 }
