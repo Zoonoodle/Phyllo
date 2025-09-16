@@ -96,6 +96,13 @@ struct ActivityLevelContentView: View {
         // Load existing value from coordinator if it exists
         if !coordinator.dailyActivity.isEmpty {
             selectedActivity = coordinator.dailyActivity
+        } else if !coordinator.activityLevel.isEmpty && 
+                  (coordinator.activityLevel == "Mostly Sedentary" || 
+                   coordinator.activityLevel == "Moderately Active" || 
+                   coordinator.activityLevel == "Very Active") {
+            // Migration: If dailyActivity is empty but activityLevel has a valid daily activity value, use it
+            selectedActivity = coordinator.activityLevel
+            coordinator.dailyActivity = selectedActivity
         }
     }
 }
@@ -161,7 +168,7 @@ struct ExpenditureContentView: View {
                         HStack {
                             Text("Daily Activity:")
                                 .foregroundColor(.white.opacity(0.6))
-                            Text(coordinator.activityLevel)
+                            Text(coordinator.dailyActivity)
                                 .foregroundColor(.white)
                         }
                         .font(.system(size: 14))
@@ -355,9 +362,15 @@ struct ExpenditureContentView: View {
         
         // Daily activity scoring (0-2 points)
         let activityScore: Int
-        if coordinator.dailyActivity.contains("Very Active") {
+        // Check dailyActivity first, then fall back to activityLevel if needed for migration
+        let dailyActivityValue = !coordinator.dailyActivity.isEmpty ? coordinator.dailyActivity : 
+                                 (coordinator.activityLevel == "Mostly Sedentary" || 
+                                  coordinator.activityLevel == "Moderately Active" || 
+                                  coordinator.activityLevel == "Very Active") ? coordinator.activityLevel : "Mostly Sedentary"
+        
+        if dailyActivityValue.contains("Very Active") {
             activityScore = 2
-        } else if coordinator.dailyActivity.contains("Moderately Active") {
+        } else if dailyActivityValue.contains("Moderately Active") {
             activityScore = 1
         } else {
             activityScore = 0  // Mostly Sedentary
@@ -378,7 +391,7 @@ struct ExpenditureContentView: View {
         default: .extremelyActive     // 6+ (7+ exercise + very active)
         }
         
-        print("[ActivityLevel] Exercise: \(coordinator.exerciseFrequency) (\(exerciseScore)), Daily: \(coordinator.dailyActivity) (\(activityScore)), Total: \(totalScore), Result: \(combinedLevel.rawValue)")
+        print("[ActivityLevel] Exercise: \(coordinator.exerciseFrequency) (\(exerciseScore)), Daily: \(dailyActivityValue) (\(activityScore)), Total: \(totalScore), Result: \(combinedLevel.rawValue)")
         
         return combinedLevel
     }
