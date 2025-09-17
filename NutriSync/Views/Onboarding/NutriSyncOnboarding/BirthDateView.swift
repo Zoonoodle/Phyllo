@@ -60,6 +60,7 @@ struct BirthDateView: View {
         let calendar = Calendar.current
         let ageComponents = calendar.dateComponents([.year], from: selectedDate, to: Date())
         coordinator.age = ageComponents.year ?? 30
+        print("[BirthDateView] Saved age: \(coordinator.age) years")
     }
 }
 

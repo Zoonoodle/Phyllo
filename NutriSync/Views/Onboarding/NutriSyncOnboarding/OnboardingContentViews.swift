@@ -320,9 +320,14 @@ struct ExpenditureContentView: View {
             }
         }
         .onAppear {
-            print("[ExpenditureView] onAppear - coordinator.exerciseFrequency: '\(coordinator.exerciseFrequency)'")
-            print("[ExpenditureView] onAppear - coordinator.dailyActivity: '\(coordinator.dailyActivity)'")
-            print("[ExpenditureView] onAppear - coordinator.activityLevel: '\(coordinator.activityLevel)'")
+            print("[ExpenditureView] onAppear - Loading coordinator data...")
+            print("[ExpenditureView] coordinator.weight: \(coordinator.weight) kg (\(Int(coordinator.weight * 2.20462)) lbs)")
+            print("[ExpenditureView] coordinator.height: \(coordinator.height) cm (\(Int(coordinator.height / 2.54)) inches)")
+            print("[ExpenditureView] coordinator.age: \(coordinator.age) years")
+            print("[ExpenditureView] coordinator.gender: '\(coordinator.gender)'")
+            print("[ExpenditureView] coordinator.exerciseFrequency: '\(coordinator.exerciseFrequency)'")
+            print("[ExpenditureView] coordinator.dailyActivity: '\(coordinator.dailyActivity)'")
+            print("[ExpenditureView] coordinator.activityLevel: '\(coordinator.activityLevel)'")
             // Calculate TDEE when view appears
             calculateTDEE()
         }

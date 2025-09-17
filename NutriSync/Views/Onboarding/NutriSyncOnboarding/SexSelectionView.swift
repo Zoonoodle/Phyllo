@@ -29,6 +29,7 @@ struct SexSelectionView: View {
                     Button {
                         selectedSex = "Female"
                         coordinator.gender = selectedSex
+                        print("[SexSelectionView] Saved gender: \(selectedSex)")
                     } label: {
                         HStack(spacing: 20) {
                             Text("♀")
@@ -66,6 +67,7 @@ struct SexSelectionView: View {
                     Button {
                         selectedSex = "Male"
                         coordinator.gender = selectedSex
+                        print("[SexSelectionView] Saved gender: \(selectedSex)")
                     } label: {
                         HStack(spacing: 20) {
                             Text("♂")

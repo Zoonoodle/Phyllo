@@ -137,9 +137,11 @@ struct HeightSelectionView: View {
             // Convert feet and inches to cm
             let totalInches = Double(heightFeet * 12 + heightInches)
             coordinator.height = totalInches * 2.54
+            print("[HeightView] Saved height: \(coordinator.height) cm (\(heightFeet)' \(heightInches)\")")
         } else {
             // Direct cm value
             coordinator.height = Double(heightCm)
+            print("[HeightView] Saved height: \(coordinator.height) cm")
         }
     }
 }

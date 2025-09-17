@@ -115,6 +115,7 @@ struct WeightContentView: View {
             // Convert to kg if needed (coordinator expects kg)
             let weightInKg = selectedUnit == "lbs" ? weightValue * 0.453592 : weightValue
             coordinator.weight = weightInKg
+            print("[WeightView] Saved weight: \(weightInKg) kg (\(weightValue) \(selectedUnit))")
         }
     }
 }
