@@ -7,19 +7,37 @@
 
 import SwiftUI
 
+struct ExerciseGridIcon: View {
+    let filledSquares: Int
+    
+    var body: some View {
+        VStack(spacing: 2) {
+            ForEach(0..<3) { row in
+                HStack(spacing: 2) {
+                    ForEach(0..<3) { col in
+                        let index = row * 3 + col
+                        Rectangle()
+                            .fill(index < filledSquares ? Color.white : Color.white.opacity(0.2))
+                            .frame(width: 6, height: 6)
+                            .cornerRadius(1)
+                    }
+                }
+            }
+        }
+        .frame(width: 24, height: 24)
+    }
+}
+
 struct ExerciseFrequencyOption: View {
     let text: String
-    let icon: String
+    let filledSquares: Int
     let isSelected: Bool
     let action: () -> Void
     
     var body: some View {
         Button(action: action) {
             HStack(spacing: 16) {
-                Image(systemName: icon)
-                    .font(.system(size: 20))
-                    .foregroundColor(.white)
-                    .frame(width: 24)
+                ExerciseGridIcon(filledSquares: filledSquares)
                 
                 Text(text)
                     .font(.system(size: 18))
@@ -46,10 +64,10 @@ struct ExerciseFrequencyContentView: View {
     @State private var isInitialized = false
     
     let frequencies = [
-        ("0 sessions / week", "square.grid.3x3"),
-        ("1-3 sessions / week", "square.grid.3x3.topleft.filled"),
-        ("4-6 sessions / week", "square.grid.3x3.topmiddle.filled"),
-        ("7+ sessions / week", "square.grid.3x3.fill")
+        ("0 sessions / week", 0),
+        ("1-3 sessions / week", 3),
+        ("4-6 sessions / week", 6),
+        ("7+ sessions / week", 9)
     ]
     
     var body: some View {
@@ -73,10 +91,10 @@ struct ExerciseFrequencyContentView: View {
                 
                 // Exercise frequency options
                 VStack(spacing: 16) {
-                    ForEach(frequencies, id: \.0) { frequency, icon in
+                    ForEach(frequencies, id: \.0) { frequency, filledSquares in
                         ExerciseFrequencyOption(
                             text: frequency,
-                            icon: icon,
+                            filledSquares: filledSquares,
                             isSelected: selectedFrequency == frequency
                         ) {
                             selectedFrequency = frequency
