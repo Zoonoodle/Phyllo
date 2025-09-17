@@ -13,28 +13,29 @@ struct BirthDateView: View {
     @State private var isInitialized = false
     
     var body: some View {
-        VStack(spacing: 0) {
-            // Title
-            Text("When were you born?")
-                .font(.system(size: 32, weight: .bold))
-                .foregroundColor(.white)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 20)
-                .padding(.top, 60)
-                .padding(.bottom, 80)
-            
-            // Date Picker
-            DatePicker("", selection: $selectedDate, in: ...Date(), displayedComponents: .date)
-                .datePickerStyle(WheelDatePickerStyle())
-                .labelsHidden()
-                .colorScheme(.dark)
-                .scaleEffect(1.2)
-                .padding(.horizontal, 20)
-                .onChange(of: selectedDate) { _ in
-                    saveDataToCoordinator()
-                }
-            
-            Spacer()
+        ScrollView {
+            VStack(spacing: 0) {
+                // Title
+                Text("When were you born?")
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 80)
+                
+                // Date Picker
+                DatePicker("", selection: $selectedDate, in: ...Date(), displayedComponents: .date)
+                    .datePickerStyle(WheelDatePickerStyle())
+                    .labelsHidden()
+                    .colorScheme(.dark)
+                    .scaleEffect(1.2)
+                    .padding(.horizontal, 20)
+                    .onChange(of: selectedDate) { _ in
+                        saveDataToCoordinator()
+                    }
+                
+                Spacer(minLength: 80) // Space for navigation buttons
+            }
         }
         .onAppear {
             loadDataFromCoordinator()

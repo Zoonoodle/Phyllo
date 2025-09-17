@@ -20,18 +20,18 @@ struct HeightSelectionView: View {
     let cmRange = Array(100...250)
     
     var body: some View {
-        VStack(spacing: 0) {
-            // Title
-            Text("What is your height?")
-                .font(.system(size: 32, weight: .bold))
-                .foregroundColor(.white)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 20)
-                .padding(.top, 60)
-                .padding(.bottom, 40)
-            
-            // Unit Toggle
-            HStack(spacing: 0) {
+        ScrollView {
+            VStack(spacing: 0) {
+                // Title
+                Text("What is your height?")
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 40)
+                
+                // Unit Toggle
+                HStack(spacing: 0) {
                 Button {
                     withAnimation(.easeInOut(duration: 0.2)) {
                         selectedUnit = "ft/in"
@@ -59,57 +59,58 @@ struct HeightSelectionView: View {
                         .background(selectedUnit == "cm" ? Color.white : Color.clear)
                         .cornerRadius(8)
                 }
-            }
-            .padding(3)
-            .background(Color.white.opacity(0.1))
-            .cornerRadius(11)
-            .padding(.horizontal, 20)
-            .padding(.bottom, 60)
-            
-            // Height Picker
-            if selectedUnit == "ft/in" {
-                HStack(spacing: 10) {
-                    // Feet picker
-                    Picker("Feet", selection: $heightFeet) {
-                        ForEach(feetRange, id: \.self) { feet in
-                            Text("\(feet) ft")
+                }
+                .padding(3)
+                .background(Color.white.opacity(0.1))
+                .cornerRadius(11)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 60)
+                
+                // Height Picker
+                if selectedUnit == "ft/in" {
+                    HStack(spacing: 10) {
+                        // Feet picker
+                        Picker("Feet", selection: $heightFeet) {
+                            ForEach(feetRange, id: \.self) { feet in
+                                Text("\(feet) ft")
+                                    .foregroundColor(.white)
+                                    .tag(feet)
+                            }
+                        }
+                        .pickerStyle(WheelPickerStyle())
+                        .frame(width: 100)
+                        .clipped()
+                        
+                        // Inches picker
+                        Picker("Inches", selection: $heightInches) {
+                            ForEach(inchesRange, id: \.self) { inches in
+                                Text("\(inches) in")
+                                    .foregroundColor(.white)
+                                    .tag(inches)
+                            }
+                        }
+                        .pickerStyle(WheelPickerStyle())
+                        .frame(width: 100)
+                        .clipped()
+                    }
+                    .frame(height: 180)
+                    .onChange(of: heightFeet) { _ in saveDataToCoordinator() }
+                    .onChange(of: heightInches) { _ in saveDataToCoordinator() }
+                } else {
+                    Picker("Height", selection: $heightCm) {
+                        ForEach(cmRange, id: \.self) { cm in
+                            Text("\(cm) cm")
                                 .foregroundColor(.white)
-                                .tag(feet)
+                                .tag(cm)
                         }
                     }
                     .pickerStyle(WheelPickerStyle())
-                    .frame(width: 100)
-                    .clipped()
-                    
-                    // Inches picker
-                    Picker("Inches", selection: $heightInches) {
-                        ForEach(inchesRange, id: \.self) { inches in
-                            Text("\(inches) in")
-                                .foregroundColor(.white)
-                                .tag(inches)
-                        }
-                    }
-                    .pickerStyle(WheelPickerStyle())
-                    .frame(width: 100)
-                    .clipped()
+                    .frame(height: 180)
+                    .onChange(of: heightCm) { _ in saveDataToCoordinator() }
                 }
-                .frame(height: 180)
-                .onChange(of: heightFeet) { _ in saveDataToCoordinator() }
-                .onChange(of: heightInches) { _ in saveDataToCoordinator() }
-            } else {
-                Picker("Height", selection: $heightCm) {
-                    ForEach(cmRange, id: \.self) { cm in
-                        Text("\(cm) cm")
-                            .foregroundColor(.white)
-                            .tag(cm)
-                    }
-                }
-                .pickerStyle(WheelPickerStyle())
-                .frame(height: 180)
-                .onChange(of: heightCm) { _ in saveDataToCoordinator() }
+                
+                Spacer(minLength: 80) // Space for navigation buttons
             }
-            
-            Spacer()
         }
         .onAppear {
             loadDataFromCoordinator()
