@@ -46,10 +46,10 @@ struct ExerciseFrequencyContentView: View {
     @State private var isInitialized = false
     
     let frequencies = [
-        ("0 sessions / week", "calendar"),
-        ("1-3 sessions / week", "calendar"),
-        ("4-6 sessions / week", "calendar"),
-        ("7+ sessions / week", "calendar")
+        ("0 sessions / week", "square.grid.3x3"),
+        ("1-3 sessions / week", "square.grid.3x3.topleft.filled"),
+        ("4-6 sessions / week", "square.grid.3x3.topmiddle.filled"),
+        ("7+ sessions / week", "square.grid.3x3.fill")
     ]
     
     var body: some View {

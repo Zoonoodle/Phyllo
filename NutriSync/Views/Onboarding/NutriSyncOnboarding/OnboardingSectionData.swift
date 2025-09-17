@@ -55,7 +55,9 @@ enum NutriSyncOnboardingSection: String, CaseIterable {
 struct NutriSyncOnboardingFlow {
     static let sections: [NutriSyncOnboardingSection: [String]] = [
         .basics: [
-            "Basic Info",
+            "Sex Selection",
+            "Birth Date",
+            "Height",
             "Weight",
             "Exercise",
             "Activity",
