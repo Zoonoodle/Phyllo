@@ -337,6 +337,22 @@ struct ExpenditureContentView: View {
         .onChange(of: coordinator.dailyActivity) { _, _ in
             calculateTDEE()
         }
+        .onChange(of: coordinator.weight) { _, _ in
+            print("[ExpenditureView] Weight changed, recalculating TDEE...")
+            calculateTDEE()
+        }
+        .onChange(of: coordinator.height) { _, _ in
+            print("[ExpenditureView] Height changed, recalculating TDEE...")
+            calculateTDEE()
+        }
+        .onChange(of: coordinator.age) { _, _ in
+            print("[ExpenditureView] Age changed, recalculating TDEE...")
+            calculateTDEE()
+        }
+        .onChange(of: coordinator.gender) { _, _ in
+            print("[ExpenditureView] Gender changed, recalculating TDEE...")
+            calculateTDEE()
+        }
         .onDisappear {
             // Save final TDEE value
             coordinator.tdee = Double(expenditure)
