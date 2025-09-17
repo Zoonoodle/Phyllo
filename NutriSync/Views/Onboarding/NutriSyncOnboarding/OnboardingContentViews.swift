@@ -606,79 +606,909 @@ struct ExpenditureContentView: View {
     }
 }
 
-// MARK: - Notice Section Content Views (Placeholders)
+// MARK: - Notice Section Content Views
 
 struct HealthDisclaimerContentView: View {
     @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
+    @State private var acceptHealthDisclaimer = false
+    @State private var acceptPrivacyNotice = false
+    
     var body: some View {
-        Text("Health Disclaimer Content")
-            .foregroundColor(.white)
+        ScrollView {
+            VStack(spacing: 0) {
+                // Title
+                Text("Health Disclaimer")
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 12)
+                
+                // Subtitle
+                Text("Please review and accept our health terms")
+                    .font(.system(size: 17))
+                    .foregroundColor(.white.opacity(0.6))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 40)
+                
+                // Main content
+                VStack(alignment: .leading, spacing: 24) {
+                    Text("NutriSync optimizes your meal timing to align with your body's natural rhythms and goals. This is educational information, not medical advice or personalized counseling. Always consult a healthcare professional before making significant health decisions. Understand and accept the risks involved with dietary and lifestyle changes. You are responsible for your health decisions and should seek professional guidance when necessary.")
+                        .font(.system(size: 17))
+                        .foregroundColor(.white.opacity(0.7))
+                        .fixedSize(horizontal: false, vertical: true)
+                    
+                    // Checkboxes
+                    VStack(alignment: .leading, spacing: 20) {
+                        HStack(alignment: .top, spacing: 12) {
+                            // Custom checkbox
+                            Button(action: { acceptHealthDisclaimer.toggle() }) {
+                                ZStack {
+                                    Circle()
+                                        .stroke(Color.white.opacity(0.4), lineWidth: 2)
+                                        .frame(width: 24, height: 24)
+                                    
+                                    if acceptHealthDisclaimer {
+                                        Circle()
+                                            .fill(Color.white)
+                                            .frame(width: 16, height: 16)
+                                    }
+                                }
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                            
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("I Acknowledge and Accept the Terms of the")
+                                    .font(.system(size: 17))
+                                    .foregroundColor(.white)
+                                
+                                Text("Health Disclaimer")
+                                    .font(.system(size: 17))
+                                    .foregroundColor(.blue)
+                            }
+                            
+                            Spacer()
+                        }
+                        
+                        HStack(alignment: .top, spacing: 12) {
+                            // Custom checkbox
+                            Button(action: { acceptPrivacyNotice.toggle() }) {
+                                ZStack {
+                                    Circle()
+                                        .stroke(Color.white.opacity(0.4), lineWidth: 2)
+                                        .frame(width: 24, height: 24)
+                                    
+                                    if acceptPrivacyNotice {
+                                        Circle()
+                                            .fill(Color.white)
+                                            .frame(width: 16, height: 16)
+                                    }
+                                }
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                            
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("I Acknowledge and Accept the Terms of the")
+                                    .font(.system(size: 17))
+                                    .foregroundColor(.white)
+                                
+                                Text("Consumer Health Privacy Notice")
+                                    .font(.system(size: 17))
+                                    .foregroundColor(.blue)
+                            }
+                            
+                            Spacer()
+                        }
+                    }
+                    .padding(.top, 20)
+                    
+                    // Status text
+                    if !acceptHealthDisclaimer || !acceptPrivacyNotice {
+                        Text("Please accept both terms to continue")
+                            .font(.system(size: 15))
+                            .foregroundColor(.white.opacity(0.5))
+                            .padding(.top, 16)
+                    } else {
+                        Text("✓ All terms accepted")
+                            .font(.system(size: 15))
+                            .foregroundColor(.nutriSyncAccent)
+                            .padding(.top, 16)
+                    }
+                }
+                .padding(.horizontal, 20)
+                
+                Spacer(minLength: 80) // Space for navigation buttons
+            }
+        }
+        .onAppear {
+            // Load any existing acceptance state if needed
+        }
     }
 }
 
 struct NotToWorryContentView: View {
     @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
+    
     var body: some View {
-        Text("Not To Worry Content")
-            .foregroundColor(.white)
+        ScrollView {
+            VStack(spacing: 0) {
+                // Title
+                Text("Not to worry!")
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 12)
+                
+                // Subtitle
+                Text("NutriSync will adapt your eating windows based on your lifestyle and progress. This is just a starting point.")
+                    .font(.system(size: 17))
+                    .foregroundColor(.white.opacity(0.6))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 40)
+                
+                VStack(spacing: 24) {
+                    // Week 1
+                    HStack(alignment: .top, spacing: 16) {
+                        Circle()
+                            .fill(Color.white)
+                            .frame(width: 8, height: 8)
+                            .padding(.top, 8)
+                        
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Week 1")
+                                .font(.system(size: 20, weight: .semibold))
+                                .foregroundColor(.white)
+                            
+                            Text("NutriSync will create your initial eating windows optimized for your daily rhythm.")
+                                .font(.system(size: 17))
+                                .foregroundColor(.white.opacity(0.6))
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                    
+                    // Week 2
+                    HStack(alignment: .top, spacing: 16) {
+                        Circle()
+                            .fill(Color.white)
+                            .frame(width: 8, height: 8)
+                            .padding(.top, 8)
+                        
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Week 2")
+                                .font(.system(size: 20, weight: .semibold))
+                                .foregroundColor(.white)
+                            
+                            Text("After you log eight consecutive days of meals and check-ins, our algorithm will start optimizing your windows based on your energy patterns and progress.")
+                                .font(.system(size: 17))
+                                .foregroundColor(.white.opacity(0.6))
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                    
+                    // Week 3 and beyond
+                    HStack(alignment: .top, spacing: 16) {
+                        Circle()
+                            .fill(Color.white)
+                            .frame(width: 8, height: 8)
+                            .padding(.top, 8)
+                        
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Week 3 and beyond")
+                                .font(.system(size: 20, weight: .semibold))
+                                .foregroundColor(.white)
+                            
+                            Text("Our algorithm will optimize your meal timing without complex tracking. Your needs change over time, but NutriSync will continue to adapt your eating windows to keep you aligned with your goals.")
+                                .font(.system(size: 17))
+                                .foregroundColor(.white.opacity(0.6))
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                }
+                .padding(.horizontal, 20)
+                
+                Spacer(minLength: 80) // Space for navigation buttons
+            }
+        }
     }
 }
 
-// MARK: - Goal Setting Section Content Views (Placeholders)
+// MARK: - Goal Setting Section Content Views
 
 struct GoalSettingIntroContentView: View {
     @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
+    
     var body: some View {
-        Text("Goal Setting Intro Content")
-            .foregroundColor(.white)
+        ScrollView {
+            VStack(spacing: 0) {
+                // Title
+                Text("Let's set your goal")
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 12)
+                
+                // Subtitle
+                Text("NutriSync's personalized windows are designed to optimize your nutrition timing. Don't worry – you can update your goal any time.")
+                    .font(.system(size: 17))
+                    .foregroundColor(.white.opacity(0.6))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 40)
+                
+                // Visual element
+                Image(systemName: "target")
+                    .font(.system(size: 80))
+                    .foregroundColor(.white)
+                    .padding(.bottom, 40)
+                
+                // Information text
+                Text("Your goal will help us:")
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 20)
+                
+                VStack(alignment: .leading, spacing: 16) {
+                    HStack(alignment: .top, spacing: 12) {
+                        Text("•")
+                            .foregroundColor(.white)
+                        Text("Calculate your optimal calorie intake")
+                            .foregroundColor(.white.opacity(0.8))
+                    }
+                    HStack(alignment: .top, spacing: 12) {
+                        Text("•")
+                            .foregroundColor(.white)
+                        Text("Design your meal window schedule")
+                            .foregroundColor(.white.opacity(0.8))
+                    }
+                    HStack(alignment: .top, spacing: 12) {
+                        Text("•")
+                            .foregroundColor(.white)
+                        Text("Optimize your macro distribution")
+                            .foregroundColor(.white.opacity(0.8))
+                    }
+                }
+                .font(.system(size: 17))
+                .padding(.horizontal, 30)
+                
+                Spacer(minLength: 80) // Space for navigation buttons
+            }
+        }
     }
 }
 
 struct GoalSelectionContentView: View {
     @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
+    @State private var selectedGoal = ""
+    @State private var isInitialized = false
+    
+    let goals = [
+        ("Lose Weight", "arrow.down.circle.fill", "Reduce body weight sustainably", Color.red),
+        ("Maintain Weight", "equal.circle.fill", "Keep your current weight steady", Color.blue),
+        ("Gain Weight", "arrow.up.circle.fill", "Build muscle or increase weight", Color.green)
+    ]
+    
     var body: some View {
-        Text("Goal Selection Content")
-            .foregroundColor(.white)
+        ScrollView {
+            VStack(spacing: 0) {
+                // Title
+                Text("What is your goal?")
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 12)
+                
+                // Subtitle
+                Text("Select your current goal")
+                    .font(.system(size: 17))
+                    .foregroundColor(.white.opacity(0.6))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 40)
+                
+                // Goal options
+                VStack(spacing: 16) {
+                    ForEach(goals, id: \.0) { goal, icon, description, color in
+                        Button {
+                            selectedGoal = goal
+                            coordinator.goal = goal
+                        } label: {
+                            HStack(spacing: 16) {
+                                // Icon with gradient background
+                                ZStack {
+                                    Circle()
+                                        .fill(LinearGradient(
+                                            gradient: Gradient(colors: [color.opacity(0.3), color.opacity(0.1)]),
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        ))
+                                        .frame(width: 56, height: 56)
+                                    
+                                    Image(systemName: icon)
+                                        .font(.system(size: 28))
+                                        .foregroundColor(color)
+                                }
+                                
+                                VStack(alignment: .leading, spacing: 6) {
+                                    Text(goal)
+                                        .font(.system(size: 20, weight: .semibold))
+                                        .foregroundColor(.white)
+                                    
+                                    Text(description)
+                                        .font(.system(size: 15))
+                                        .foregroundColor(.white.opacity(0.6))
+                                }
+                                
+                                Spacer()
+                            }
+                            .padding(20)
+                            .background(Color.white.opacity(0.03))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .stroke(selectedGoal == goal ? color : Color.white.opacity(0.2), lineWidth: selectedGoal == goal ? 3 : 1)
+                            )
+                            .cornerRadius(16)
+                        }
+                    }
+                }
+                .padding(.horizontal, 20)
+                
+                Spacer(minLength: 80) // Space for navigation buttons
+            }
+        }
+        .onAppear {
+            loadDataFromCoordinator()
+        }
+    }
+    
+    private func loadDataFromCoordinator() {
+        guard !isInitialized else { return }
+        isInitialized = true
+        
+        if !coordinator.goal.isEmpty {
+            selectedGoal = coordinator.goal
+        } else {
+            selectedGoal = "Lose Weight" // Default
+            coordinator.goal = selectedGoal
+        }
     }
 }
 
 struct MaintenanceStrategyContentView: View {
     @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
+    @State private var selectedStrategy = ""
+    @State private var isInitialized = false
+    
+    let strategies = [
+        ("Energy stability", "bolt.circle.fill", "Maintain consistent energy throughout the day", Color.yellow),
+        ("Performance optimization", "figure.run.circle.fill", "Optimize nutrition for physical performance", Color.orange),
+        ("Better sleep quality", "moon.circle.fill", "Improve sleep through timed nutrition", Color.purple),
+        ("Overall health", "heart.circle.fill", "Focus on general health and wellbeing", Color.red)
+    ]
+    
     var body: some View {
-        Text("Maintenance Strategy Content")
-            .foregroundColor(.white)
+        ScrollView {
+            VStack(spacing: 0) {
+                // Title
+                Text("Maintenance Strategy")
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 12)
+                
+                // Subtitle
+                Text("Let's optimize your eating schedule to maintain your current weight")
+                    .font(.system(size: 17))
+                    .foregroundColor(.white.opacity(0.6))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 40)
+                
+                // Strategy options
+                VStack(spacing: 16) {
+                    ForEach(strategies, id: \.0) { strategy, icon, description, color in
+                        Button {
+                            selectedStrategy = strategy
+                            coordinator.maintenanceStrategy = strategy
+                        } label: {
+                            HStack(spacing: 16) {
+                                // Icon with gradient background
+                                ZStack {
+                                    Circle()
+                                        .fill(LinearGradient(
+                                            gradient: Gradient(colors: [color.opacity(0.3), color.opacity(0.1)]),
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        ))
+                                        .frame(width: 56, height: 56)
+                                    
+                                    Image(systemName: icon)
+                                        .font(.system(size: 28))
+                                        .foregroundColor(color)
+                                }
+                                
+                                VStack(alignment: .leading, spacing: 6) {
+                                    Text(strategy)
+                                        .font(.system(size: 20, weight: .semibold))
+                                        .foregroundColor(.white)
+                                    
+                                    Text(description)
+                                        .font(.system(size: 15))
+                                        .foregroundColor(.white.opacity(0.6))
+                                }
+                                
+                                Spacer()
+                            }
+                            .padding(20)
+                            .background(Color.white.opacity(0.03))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .stroke(selectedStrategy == strategy ? color : Color.white.opacity(0.2), lineWidth: selectedStrategy == strategy ? 3 : 1)
+                            )
+                            .cornerRadius(16)
+                        }
+                    }
+                }
+                .padding(.horizontal, 20)
+                
+                Spacer(minLength: 80) // Space for navigation buttons
+            }
+        }
+        .onAppear {
+            loadDataFromCoordinator()
+        }
+    }
+    
+    private func loadDataFromCoordinator() {
+        guard !isInitialized else { return }
+        isInitialized = true
+        
+        if !coordinator.maintenanceStrategy.isEmpty {
+            selectedStrategy = coordinator.maintenanceStrategy
+        } else {
+            selectedStrategy = "Energy stability" // Default
+            coordinator.maintenanceStrategy = selectedStrategy
+        }
     }
 }
 
 struct TargetWeightContentView: View {
     @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
+    @State private var targetWeight: Double = 70
+    @State private var isInitialized = false
+    
     var body: some View {
-        Text("Target Weight Content")
-            .foregroundColor(.white)
+        ScrollView {
+            VStack(spacing: 0) {
+                // Title
+                Text("Target Weight")
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 12)
+                
+                // Subtitle
+                Text("What weight would you like to achieve?")
+                    .font(.system(size: 17))
+                    .foregroundColor(.white.opacity(0.6))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 40)
+                
+                // Current weight display
+                VStack(spacing: 8) {
+                    Text("Current Weight")
+                        .font(.system(size: 15))
+                        .foregroundColor(.white.opacity(0.5))
+                    Text("\(Int(coordinator.weight * 2.20462)) lbs")
+                        .font(.system(size: 20, weight: .medium))
+                        .foregroundColor(.white.opacity(0.8))
+                }
+                .padding(.bottom, 30)
+                
+                // Target weight picker
+                VStack(spacing: 16) {
+                    Text("Target Weight")
+                        .font(.system(size: 18, weight: .medium))
+                        .foregroundColor(.white)
+                    
+                    HStack(spacing: 20) {
+                        Button {
+                            if targetWeight > 30 {
+                                targetWeight -= 1
+                            }
+                        } label: {
+                            Image(systemName: "minus.circle.fill")
+                                .font(.system(size: 44))
+                                .foregroundColor(.white.opacity(0.3))
+                        }
+                        
+                        Text("\(Int(targetWeight * 2.20462))")
+                            .font(.system(size: 48, weight: .bold))
+                            .foregroundColor(.white)
+                            .frame(minWidth: 100)
+                        
+                        Button {
+                            if targetWeight < 200 {
+                                targetWeight += 1
+                            }
+                        } label: {
+                            Image(systemName: "plus.circle.fill")
+                                .font(.system(size: 44))
+                                .foregroundColor(.white.opacity(0.3))
+                        }
+                    }
+                    
+                    Text("lbs")
+                        .font(.system(size: 20))
+                        .foregroundColor(.white.opacity(0.5))
+                }
+                .padding(.vertical, 30)
+                .padding(.horizontal, 40)
+                .background(Color.white.opacity(0.05))
+                .cornerRadius(20)
+                .padding(.horizontal, 20)
+                
+                // Difference display
+                if targetWeight != coordinator.weight {
+                    VStack(spacing: 8) {
+                        let difference = abs((targetWeight - coordinator.weight) * 2.20462)
+                        let isLoss = targetWeight < coordinator.weight
+                        
+                        Text(isLoss ? "Weight to lose" : "Weight to gain")
+                            .font(.system(size: 15))
+                            .foregroundColor(.white.opacity(0.5))
+                        
+                        HStack(spacing: 4) {
+                            Image(systemName: isLoss ? "arrow.down" : "arrow.up")
+                                .foregroundColor(isLoss ? .red : .green)
+                            Text("\(Int(difference)) lbs")
+                                .font(.system(size: 20, weight: .medium))
+                                .foregroundColor(isLoss ? .red : .green)
+                        }
+                    }
+                    .padding(.top, 30)
+                }
+                
+                Spacer(minLength: 80) // Space for navigation buttons
+            }
+        }
+        .onAppear {
+            loadDataFromCoordinator()
+        }
+        .onChange(of: targetWeight) { _ in
+            coordinator.targetWeight = targetWeight
+        }
+    }
+    
+    private func loadDataFromCoordinator() {
+        guard !isInitialized else { return }
+        isInitialized = true
+        
+        if let savedTarget = coordinator.targetWeight {
+            targetWeight = savedTarget
+        } else {
+            // Default to 10 lbs less than current weight for weight loss
+            if coordinator.goal.lowercased() == "lose weight" {
+                targetWeight = coordinator.weight - 4.5 // ~10 lbs
+            } else if coordinator.goal.lowercased() == "gain weight" {
+                targetWeight = coordinator.weight + 4.5 // ~10 lbs
+            } else {
+                targetWeight = coordinator.weight
+            }
+        }
+        coordinator.targetWeight = targetWeight
     }
 }
 
 struct WeightLossRateContentView: View {
     @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
+    @State private var selectedRate: Double = 1.0
+    @State private var isInitialized = false
+    
+    let rates = [
+        (0.5, "Gradual", "0.5 lbs per week", "Easier to maintain, minimal muscle loss"),
+        (1.0, "Moderate", "1 lb per week", "Good balance of speed and sustainability"),
+        (1.5, "Aggressive", "1.5 lbs per week", "Faster results, requires more discipline"),
+        (2.0, "Very Aggressive", "2 lbs per week", "Maximum safe rate, very challenging")
+    ]
+    
     var body: some View {
-        Text("Weight Loss Rate Content")
-            .foregroundColor(.white)
+        ScrollView {
+            VStack(spacing: 0) {
+                // Title
+                Text("Weight Loss Rate")
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 12)
+                
+                // Subtitle
+                Text("How quickly would you like to reach your goal?")
+                    .font(.system(size: 17))
+                    .foregroundColor(.white.opacity(0.6))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 40)
+                
+                // Rate options
+                VStack(spacing: 16) {
+                    ForEach(rates, id: \.0) { rate, title, subtitle, description in
+                        Button {
+                            selectedRate = rate
+                            coordinator.weightLossRate = rate
+                        } label: {
+                            VStack(alignment: .leading, spacing: 12) {
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 6) {
+                                        Text(title)
+                                            .font(.system(size: 20, weight: .semibold))
+                                            .foregroundColor(.white)
+                                        
+                                        Text(subtitle)
+                                            .font(.system(size: 16, weight: .medium))
+                                            .foregroundColor(rateColor(for: rate))
+                                    }
+                                    
+                                    Spacer()
+                                    
+                                    if selectedRate == rate {
+                                        Image(systemName: "checkmark.circle.fill")
+                                            .font(.system(size: 24))
+                                            .foregroundColor(.white)
+                                    }
+                                }
+                                
+                                Text(description)
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.white.opacity(0.6))
+                                    .multilineTextAlignment(.leading)
+                            }
+                            .padding(20)
+                            .background(Color.white.opacity(0.03))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .stroke(selectedRate == rate ? rateColor(for: rate) : Color.white.opacity(0.2), lineWidth: selectedRate == rate ? 3 : 1)
+                            )
+                            .cornerRadius(16)
+                        }
+                    }
+                }
+                .padding(.horizontal, 20)
+                
+                // Timeline estimate
+                if let targetWeight = coordinator.targetWeight {
+                    let weightDiff = abs(coordinator.weight - targetWeight) * 2.20462
+                    let weeks = Int(weightDiff / selectedRate)
+                    
+                    VStack(spacing: 8) {
+                        Text("Estimated Timeline")
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundColor(.white.opacity(0.8))
+                        
+                        Text("\(weeks) weeks")
+                            .font(.system(size: 24, weight: .bold))
+                            .foregroundColor(.nutriSyncAccent)
+                    }
+                    .padding(.top, 30)
+                }
+                
+                Spacer(minLength: 80) // Space for navigation buttons
+            }
+        }
+        .onAppear {
+            loadDataFromCoordinator()
+        }
+    }
+    
+    private func loadDataFromCoordinator() {
+        guard !isInitialized else { return }
+        isInitialized = true
+        
+        if let savedRate = coordinator.weightLossRate {
+            selectedRate = savedRate
+        } else {
+            selectedRate = 1.0 // Default to moderate
+            coordinator.weightLossRate = selectedRate
+        }
+    }
+    
+    private func rateColor(for rate: Double) -> Color {
+        switch rate {
+        case 0.5: return .green
+        case 1.0: return .blue
+        case 1.5: return .orange
+        case 2.0: return .red
+        default: return .white
+        }
     }
 }
 
 struct PreWorkoutNutritionContentView: View {
     @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
+    @State private var selectedTiming = ""
+    @State private var isInitialized = false
+    
+    let timings = [
+        ("30 minutes before", "Quick energy boost"),
+        ("1 hour before", "Optimal for most workouts"),
+        ("2 hours before", "For larger meals"),
+        ("No pre-workout meal", "I prefer fasted training")
+    ]
+    
     var body: some View {
-        Text("Pre-Workout Nutrition Content")
-            .foregroundColor(.white)
+        ScrollView {
+            VStack(spacing: 0) {
+                // Title
+                Text("Pre-Workout Nutrition")
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 12)
+                
+                // Subtitle
+                Text("When do you prefer to eat before exercising?")
+                    .font(.system(size: 17))
+                    .foregroundColor(.white.opacity(0.6))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 40)
+                
+                // Timing options
+                VStack(spacing: 16) {
+                    ForEach(timings, id: \.0) { timing, description in
+                        Button {
+                            selectedTiming = timing
+                            coordinator.preworkoutTiming = timing
+                        } label: {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 6) {
+                                    Text(timing)
+                                        .font(.system(size: 18, weight: .semibold))
+                                        .foregroundColor(.white)
+                                    
+                                    Text(description)
+                                        .font(.system(size: 14))
+                                        .foregroundColor(.white.opacity(0.6))
+                                }
+                                
+                                Spacer()
+                                
+                                if selectedTiming == timing {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .font(.system(size: 24))
+                                        .foregroundColor(.white)
+                                }
+                            }
+                            .padding(20)
+                            .background(Color.white.opacity(0.03))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .stroke(selectedTiming == timing ? Color.white : Color.white.opacity(0.2), lineWidth: selectedTiming == timing ? 3 : 1)
+                            )
+                            .cornerRadius(16)
+                        }
+                    }
+                }
+                .padding(.horizontal, 20)
+                
+                Spacer(minLength: 80) // Space for navigation buttons
+            }
+        }
+        .onAppear {
+            loadDataFromCoordinator()
+        }
+    }
+    
+    private func loadDataFromCoordinator() {
+        guard !isInitialized else { return }
+        isInitialized = true
+        
+        if !coordinator.preworkoutTiming.isEmpty {
+            selectedTiming = coordinator.preworkoutTiming
+        } else {
+            selectedTiming = "1 hour before" // Default
+            coordinator.preworkoutTiming = selectedTiming
+        }
     }
 }
 
 struct PostWorkoutNutritionContentView: View {
     @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
+    @State private var selectedTiming = ""
+    @State private var isInitialized = false
+    
+    let timings = [
+        ("Within 30 minutes", "Maximize recovery window"),
+        ("Within 1 hour", "Good for muscle recovery"),
+        ("Within 2 hours", "Flexible timing"),
+        ("No specific timing", "I eat when convenient")
+    ]
+    
     var body: some View {
-        Text("Post-Workout Nutrition Content")
-            .foregroundColor(.white)
+        ScrollView {
+            VStack(spacing: 0) {
+                // Title
+                Text("Post-Workout Nutrition")
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 12)
+                
+                // Subtitle
+                Text("When do you prefer to eat after exercising?")
+                    .font(.system(size: 17))
+                    .foregroundColor(.white.opacity(0.6))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 40)
+                
+                // Timing options
+                VStack(spacing: 16) {
+                    ForEach(timings, id: \.0) { timing, description in
+                        Button {
+                            selectedTiming = timing
+                            coordinator.postworkoutTiming = timing
+                        } label: {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 6) {
+                                    Text(timing)
+                                        .font(.system(size: 18, weight: .semibold))
+                                        .foregroundColor(.white)
+                                    
+                                    Text(description)
+                                        .font(.system(size: 14))
+                                        .foregroundColor(.white.opacity(0.6))
+                                }
+                                
+                                Spacer()
+                                
+                                if selectedTiming == timing {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .font(.system(size: 24))
+                                        .foregroundColor(.white)
+                                }
+                            }
+                            .padding(20)
+                            .background(Color.white.opacity(0.03))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .stroke(selectedTiming == timing ? Color.white : Color.white.opacity(0.2), lineWidth: selectedTiming == timing ? 3 : 1)
+                            )
+                            .cornerRadius(16)
+                        }
+                    }
+                }
+                .padding(.horizontal, 20)
+                
+                Spacer(minLength: 80) // Space for navigation buttons
+            }
+        }
+        .onAppear {
+            loadDataFromCoordinator()
+        }
+    }
+    
+    private func loadDataFromCoordinator() {
+        guard !isInitialized else { return }
+        isInitialized = true
+        
+        if !coordinator.postworkoutTiming.isEmpty {
+            selectedTiming = coordinator.postworkoutTiming
+        } else {
+            selectedTiming = "Within 1 hour" // Default
+            coordinator.postworkoutTiming = selectedTiming
+        }
     }
 }
 
