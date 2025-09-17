@@ -511,21 +511,20 @@ struct NutriSyncOnboardingCoordinator: View {
                             let isHealthDisclaimer = viewModel.currentScreen == "Health Disclaimer"
                             let termsAccepted = viewModel.acceptHealthDisclaimer && viewModel.acceptPrivacyNotice
                             let isDisabled = isHealthDisclaimer && !termsAccepted
+                            let isLastScreenInSection = viewModel.isLastScreenInSection
                             
                             HStack(spacing: 6) {
-                                Text(viewModel.currentScreen == "Expenditure" ? "Save" : "Next")
+                                Text(isLastScreenInSection ? "Save" : "Next")
                                     .font(.system(size: 17, weight: .semibold))
-                                if viewModel.currentScreen != "Expenditure" {
-                                    Image(systemName: "chevron.right")
-                                        .font(.system(size: 14, weight: .semibold))
-                                }
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 14, weight: .semibold))
                             }
                             .foregroundColor(isDisabled ? Color.white.opacity(0.3) : 
-                                           viewModel.currentScreen == "Expenditure" ? .black : Color.nutriSyncBackground)
+                                           isLastScreenInSection ? .black : Color.nutriSyncBackground)
                             .padding(.horizontal, 24)
                             .frame(height: 44)
                             .background(isDisabled ? Color.white.opacity(0.1) :
-                                      viewModel.currentScreen == "Expenditure" ? Color(hex: "C0FF73") : Color.white)
+                                      isLastScreenInSection ? Color(hex: "C0FF73") : Color.white)
                             .cornerRadius(22)
                         }
                         .disabled(viewModel.currentScreen == "Health Disclaimer" && 
