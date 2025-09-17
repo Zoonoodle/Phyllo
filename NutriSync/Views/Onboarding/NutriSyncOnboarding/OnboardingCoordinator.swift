@@ -505,15 +505,17 @@ struct NutriSyncOnboardingCoordinator: View {
                             handleNextAction()
                         } label: {
                             HStack(spacing: 6) {
-                                Text("Next")
+                                Text(viewModel.currentScreen == "Expenditure" ? "Save" : "Next")
                                     .font(.system(size: 17, weight: .semibold))
-                                Image(systemName: "chevron.right")
-                                    .font(.system(size: 14, weight: .semibold))
+                                if viewModel.currentScreen != "Expenditure" {
+                                    Image(systemName: "chevron.right")
+                                        .font(.system(size: 14, weight: .semibold))
+                                }
                             }
-                            .foregroundColor(Color.nutriSyncBackground)
+                            .foregroundColor(viewModel.currentScreen == "Expenditure" ? .black : Color.nutriSyncBackground)
                             .padding(.horizontal, 24)
                             .frame(height: 44)
-                            .background(Color.white)
+                            .background(viewModel.currentScreen == "Expenditure" ? Color(hex: "C0FF73") : Color.white)
                             .cornerRadius(22)
                         }
                     }

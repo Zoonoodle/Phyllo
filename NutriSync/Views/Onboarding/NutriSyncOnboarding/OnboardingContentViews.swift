@@ -390,23 +390,6 @@ struct ExpenditureContentView: View {
                             .background(Color.white.opacity(0.1))
                             .cornerRadius(25)
                         }
-                        
-                        Button {
-                            // User agrees with the estimate
-                            coordinator.tdee = Double(expenditure)
-                        } label: {
-                            HStack {
-                                Text("Looks good")
-                                    .font(.system(size: 18, weight: .semibold))
-                                Image(systemName: "checkmark.circle")
-                                    .font(.system(size: 16))
-                            }
-                            .foregroundColor(Color.nutriSyncBackground)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 50)
-                            .background(Color.white)
-                            .cornerRadius(25)
-                        }
                     } else {
                         // Back button
                         Button {
@@ -424,23 +407,6 @@ struct ExpenditureContentView: View {
                             .frame(maxWidth: .infinity)
                             .frame(height: 50)
                             .background(Color.white.opacity(0.1))
-                            .cornerRadius(25)
-                        }
-                        
-                        // Save adjusted value
-                        Button {
-                            coordinator.tdee = Double(expenditure)
-                        } label: {
-                            HStack {
-                                Text("Save adjusted value")
-                                    .font(.system(size: 18, weight: .semibold))
-                                Image(systemName: "checkmark.circle")
-                                    .font(.system(size: 16))
-                            }
-                            .foregroundColor(Color.nutriSyncBackground)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 50)
-                            .background(Color.white)
                             .cornerRadius(25)
                         }
                     }
@@ -468,6 +434,10 @@ struct ExpenditureContentView: View {
             print("[ExpenditureView] coordinator.activityLevel: '\(coordinator.activityLevel)'")
             // Calculate TDEE when view appears
             calculateTDEE()
+        }
+        .onChange(of: expenditure) { oldValue, newValue in
+            // Save the expenditure value whenever it changes
+            coordinator.tdee = Double(newValue)
         }
         .onChange(of: coordinator.exerciseFrequency) { oldValue, newValue in
             calculateTDEE()
