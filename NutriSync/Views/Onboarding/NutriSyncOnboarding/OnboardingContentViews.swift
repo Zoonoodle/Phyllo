@@ -297,16 +297,15 @@ struct ExpenditureContentView: View {
     @State private var showCalculationDetails = false
     
     var body: some View {
-        ZStack {
-            ScrollView {
-                VStack(spacing: 0) {
-                    // Title
-                    Text("Your Daily Calorie Expenditure")
-                        .font(.system(size: 28, weight: .bold))
-                        .foregroundColor(.white)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 20)
-                        .padding(.bottom, 40)
+        ScrollView {
+            VStack(spacing: 0) {
+                // Title
+                Text("Your Daily Calorie Expenditure")
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 40)
                     
                     // Calorie display
                     VStack(spacing: 8) {
@@ -450,28 +449,25 @@ struct ExpenditureContentView: View {
                 Spacer(minLength: 80) // Space for navigation buttons
             }
         }
-        
-        // Full-screen calculation details popup
-        if showCalculationDetails {
+        .fullScreenCover(isPresented: $showCalculationDetails) {
             TDEECalculationDetailsView(
                 isPresented: $showCalculationDetails,
                 coordinator: coordinator,
                 calculatedActivityLevel: calculatedActivityLevel
             )
         }
-    }
-    .onAppear {
-        print("[ExpenditureView] onAppear - Loading coordinator data...")
-        print("[ExpenditureView] coordinator.weight: \(coordinator.weight) kg (\(Int(coordinator.weight * 2.20462)) lbs)")
-        print("[ExpenditureView] coordinator.height: \(coordinator.height) cm (\(Int(coordinator.height / 2.54)) inches)")
-        print("[ExpenditureView] coordinator.age: \(coordinator.age) years")
-        print("[ExpenditureView] coordinator.gender: '\(coordinator.gender)'")
-        print("[ExpenditureView] coordinator.exerciseFrequency: '\(coordinator.exerciseFrequency)'")
-        print("[ExpenditureView] coordinator.dailyActivity: '\(coordinator.dailyActivity)'")
-        print("[ExpenditureView] coordinator.activityLevel: '\(coordinator.activityLevel)'")
-        // Calculate TDEE when view appears
-        calculateTDEE()
-    }
+        .onAppear {
+            print("[ExpenditureView] onAppear - Loading coordinator data...")
+            print("[ExpenditureView] coordinator.weight: \(coordinator.weight) kg (\(Int(coordinator.weight * 2.20462)) lbs)")
+            print("[ExpenditureView] coordinator.height: \(coordinator.height) cm (\(Int(coordinator.height / 2.54)) inches)")
+            print("[ExpenditureView] coordinator.age: \(coordinator.age) years")
+            print("[ExpenditureView] coordinator.gender: '\(coordinator.gender)'")
+            print("[ExpenditureView] coordinator.exerciseFrequency: '\(coordinator.exerciseFrequency)'")
+            print("[ExpenditureView] coordinator.dailyActivity: '\(coordinator.dailyActivity)'")
+            print("[ExpenditureView] coordinator.activityLevel: '\(coordinator.activityLevel)'")
+            // Calculate TDEE when view appears
+            calculateTDEE()
+        }
         .onChange(of: coordinator.exerciseFrequency) { oldValue, newValue in
             calculateTDEE()
         }
@@ -1183,8 +1179,8 @@ struct TargetWeightContentView: View {
         .onAppear {
             loadDataFromCoordinator()
         }
-        .onChange(of: targetWeight) { _ in
-            coordinator.targetWeight = targetWeight
+        .onChange(of: targetWeight) { oldValue, newValue in
+            coordinator.targetWeight = newValue
         }
     }
     
