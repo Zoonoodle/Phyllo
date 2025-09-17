@@ -335,31 +335,33 @@ struct ExpenditureContentView: View {
                     
                     if showAdjustment {
                         // Manual adjustment buttons
-                        HStack(spacing: 40) {
-                            Button {
-                                expenditure = max(1200, expenditure - 50)
-                            } label: {
-                                Image(systemName: "minus.circle.fill")
-                                    .font(.system(size: 44))
-                                    .foregroundColor(.white.opacity(0.6))
+                        VStack(spacing: 0) {
+                            HStack(spacing: 40) {
+                                Button {
+                                    expenditure = max(1200, expenditure - 50)
+                                } label: {
+                                    Image(systemName: "minus.circle.fill")
+                                        .font(.system(size: 44))
+                                        .foregroundColor(.white.opacity(0.6))
+                                }
+                                
+                                Button {
+                                    expenditure = min(5000, expenditure + 50)
+                                } label: {
+                                    Image(systemName: "plus.circle.fill")
+                                        .font(.system(size: 44))
+                                        .foregroundColor(.white.opacity(0.6))
+                                }
                             }
+                            .padding(.top, 20)
                             
-                            Button {
-                                expenditure = min(5000, expenditure + 50)
-                            } label: {
-                                Image(systemName: "plus.circle.fill")
-                                    .font(.system(size: 44))
-                                    .foregroundColor(.white.opacity(0.6))
-                            }
+                            Text("Adjust in increments of 50")
+                                .font(.system(size: 14))
+                                .foregroundColor(.white.opacity(0.5))
+                                .padding(.top, 8)
                         }
-                        .padding(.top, 20)
-                        
-                        Text("Adjust in increments of 50")
-                            .font(.system(size: 14))
-                            .foregroundColor(.white.opacity(0.5))
-                            .padding(.top, 8)
+                        .padding(.bottom, 30)
                     }
-                    .padding(.bottom, 30)
                 
                 // Description
                 Text("This is your Total Daily Energy Expenditure (TDEE) - the calories you burn each day to maintain your current weight.")
