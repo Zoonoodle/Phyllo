@@ -86,8 +86,8 @@ struct ActivityLevelContentView: View {
         .onAppear {
             loadDataFromCoordinator()
         }
-        .onChange(of: selectedActivity) { _ in
-            coordinator.dailyActivity = selectedActivity
+        .onChange(of: selectedActivity) { oldValue, newValue in
+            coordinator.dailyActivity = newValue
         }
     }
     
@@ -109,99 +109,230 @@ struct ActivityLevelContentView: View {
     }
 }
 
+// MARK: - TDEE Calculation Details Popup
+
+struct TDEECalculationDetailsView: View {
+    @Binding var isPresented: Bool
+    let coordinator: NutriSyncOnboardingViewModel
+    let calculatedActivityLevel: TDEECalculator.ActivityLevel
+    
+    var body: some View {
+        ZStack {
+            // Background
+            Color.black.opacity(0.95)
+                .ignoresSafeArea()
+                .onTapGesture {
+                    isPresented = false
+                }
+            
+            VStack(spacing: 0) {
+                // Header
+                HStack {
+                    Text("How was this calculated?")
+                        .font(.system(size: 24, weight: .bold))
+                        .foregroundColor(.white)
+                    
+                    Spacer()
+                    
+                    Button {
+                        isPresented = false
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 28))
+                            .foregroundColor(.white.opacity(0.3))
+                    }
+                }
+                .padding(.horizontal, 24)
+                .padding(.top, 60)
+                .padding(.bottom, 30)
+                
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 24) {
+                        // Your Profile section
+                        profileSection
+                        
+                        Divider()
+                            .background(Color.white.opacity(0.2))
+                        
+                        // Activity Levels section
+                        activityLevelsSection
+                        
+                        Divider()
+                            .background(Color.white.opacity(0.2))
+                        
+                        // Calculation Method section
+                        calculationMethodSection
+                        
+                        Spacer(minLength: 40)
+                    }
+                    .padding(.horizontal, 24)
+                }
+                
+                // Bottom close button
+                Button {
+                    isPresented = false
+                } label: {
+                    Text("Got it")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(Color.nutriSyncBackground)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 50)
+                        .background(Color.white)
+                        .cornerRadius(25)
+                }
+                .padding(.horizontal, 24)
+                .padding(.bottom, 50)
+            }
+        }
+        .transition(.opacity.combined(with: .scale(scale: 0.95)))
+        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isPresented)
+    }
+    
+    private var profileSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Your Profile")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundColor(.white)
+            
+            VStack(alignment: .leading, spacing: 12) {
+                profileRow(label: "Age:", value: "\(coordinator.age) years")
+                profileRow(label: "Weight:", value: "\(Int(coordinator.weight * 2.20462)) lbs")
+                heightRow
+                profileRow(label: "Gender:", value: coordinator.gender.capitalized)
+            }
+        }
+    }
+    
+    private var activityLevelsSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Activity Levels")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundColor(.white)
+            
+            VStack(alignment: .leading, spacing: 12) {
+                profileRow(label: "Exercise Frequency:", value: coordinator.exerciseFrequency)
+                profileRow(label: "Daily Activity:", value: coordinator.dailyActivity)
+                
+                HStack {
+                    Text("Calculated Activity Level:")
+                        .foregroundColor(.white.opacity(0.6))
+                    Text(calculatedActivityLevel.rawValue)
+                        .foregroundColor(.nutriSyncAccent)
+                        .fontWeight(.semibold)
+                    Spacer()
+                }
+                .font(.system(size: 16))
+                .padding(.top, 4)
+            }
+        }
+    }
+    
+    private var calculationMethodSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Calculation Method")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundColor(.white)
+            
+            Text("Your TDEE (Total Daily Energy Expenditure) is calculated using the Mifflin-St Jeor equation, which is considered one of the most accurate methods:")
+                .font(.system(size: 14))
+                .foregroundColor(.white.opacity(0.8))
+                .fixedSize(horizontal: false, vertical: true)
+            
+            VStack(alignment: .leading, spacing: 8) {
+                Text("1. Base Metabolic Rate (BMR) is calculated based on your age, weight, height, and gender")
+                Text("2. Your BMR is then multiplied by an activity factor based on your exercise frequency and daily activity level")
+                Text("3. The result is your TDEE - the total calories you burn per day")
+            }
+            .font(.system(size: 14))
+            .foregroundColor(.white.opacity(0.7))
+            
+            Text("Activity Level Multipliers:")
+                .font(.system(size: 15, weight: .medium))
+                .foregroundColor(.white)
+                .padding(.top, 8)
+            
+            VStack(alignment: .leading, spacing: 6) {
+                Text("• Sedentary: BMR × 1.2")
+                Text("• Lightly Active: BMR × 1.375")
+                Text("• Moderately Active: BMR × 1.55")
+                Text("• Very Active: BMR × 1.725")
+                Text("• Extremely Active: BMR × 1.9")
+            }
+            .font(.system(size: 13))
+            .foregroundColor(.white.opacity(0.6))
+        }
+    }
+    
+    private func profileRow(label: String, value: String) -> some View {
+        HStack {
+            Text(label)
+                .foregroundColor(.white.opacity(0.6))
+            Text(value)
+                .foregroundColor(.white)
+            Spacer()
+        }
+        .font(.system(size: 16))
+    }
+    
+    private var heightRow: some View {
+        HStack {
+            Text("Height:")
+                .foregroundColor(.white.opacity(0.6))
+            let feet = Int(coordinator.height / 30.48)
+            let inches = Int((coordinator.height.truncatingRemainder(dividingBy: 30.48)) / 2.54)
+            Text("\(feet)'\(inches)\"")
+                .foregroundColor(.white)
+            Spacer()
+        }
+        .font(.system(size: 16))
+    }
+}
+
 struct ExpenditureContentView: View {
     @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
     @State private var expenditure: Int = 0
     @State private var showAdjustment = false
     @State private var calculatedActivityLevel: TDEECalculator.ActivityLevel = .sedentary
     @State private var isInitialized = false
+    @State private var showCalculationDetails = false
     
     var body: some View {
-        ScrollView {
-            VStack(spacing: 0) {
-                // Title
-                Text("Your Daily Calorie Expenditure")
-                    .font(.system(size: 28, weight: .bold))
-                    .foregroundColor(.white)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 20)
-                
-                // Show calculation details
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Based on your profile:")
-                        .font(.system(size: 16, weight: .medium))
-                        .foregroundColor(.white.opacity(0.8))
-                    
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack {
-                            Text("Age:")
-                                .foregroundColor(.white.opacity(0.6))
-                            Text("\(coordinator.age) years")
-                                .foregroundColor(.white)
-                        }
-                        .font(.system(size: 14))
-                        
-                        HStack {
-                            Text("Weight:")
-                                .foregroundColor(.white.opacity(0.6))
-                            Text("\(Int(coordinator.weight * 2.20462)) lbs")
-                                .foregroundColor(.white)
-                        }
-                        .font(.system(size: 14))
-                        
-                        HStack {
-                            Text("Height:")
-                                .foregroundColor(.white.opacity(0.6))
-                            let feet = Int(coordinator.height / 30.48)
-                            let inches = Int((coordinator.height.truncatingRemainder(dividingBy: 30.48)) / 2.54)
-                            Text("\(feet)'\(inches)\"")
-                                .foregroundColor(.white)
-                        }
-                        .font(.system(size: 14))
-                        
-                        HStack {
-                            Text("Exercise:")
-                                .foregroundColor(.white.opacity(0.6))
-                            Text(coordinator.exerciseFrequency)
-                                .foregroundColor(.white)
-                        }
-                        .font(.system(size: 14))
-                        
-                        HStack {
-                            Text("Daily Activity:")
-                                .foregroundColor(.white.opacity(0.6))
-                            Text(coordinator.dailyActivity)
-                                .foregroundColor(.white)
-                        }
-                        .font(.system(size: 14))
-                        
-                        HStack {
-                            Text("Overall Activity Level:")
-                                .foregroundColor(.white.opacity(0.6))
-                            Text(calculatedActivityLevel.rawValue)
-                                .foregroundColor(.nutriSyncAccent)
-                                .fontWeight(.medium)
-                        }
-                        .font(.system(size: 14))
-                        .padding(.top, 4)
-                    }
-                }
-                .padding(20)
-                .background(Color.white.opacity(0.05))
-                .cornerRadius(16)
-                .padding(.horizontal, 20)
-                .padding(.bottom, 30)
-                
-                // Calorie display
-                VStack(spacing: 8) {
-                    Text("\(expenditure)")
-                        .font(.system(size: 72, weight: .light))
+        ZStack {
+            ScrollView {
+                VStack(spacing: 0) {
+                    // Title
+                    Text("Your Daily Calorie Expenditure")
+                        .font(.system(size: 28, weight: .bold))
                         .foregroundColor(.white)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 40)
                     
-                    Text("calories per day")
-                        .font(.system(size: 18))
-                        .foregroundColor(.white.opacity(0.6))
+                    // Calorie display
+                    VStack(spacing: 8) {
+                        Text("\(expenditure)")
+                            .font(.system(size: 72, weight: .light))
+                            .foregroundColor(.white)
+                        
+                        Text("calories per day")
+                            .font(.system(size: 18))
+                            .foregroundColor(.white.opacity(0.6))
+                    }
+                    .padding(.bottom, 20)
+                    
+                    // How was this calculated button
+                    Button {
+                        showCalculationDetails = true
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: "info.circle")
+                                .font(.system(size: 14))
+                            Text("How was this calculated?")
+                                .font(.system(size: 14, weight: .medium))
+                        }
+                        .foregroundColor(.white.opacity(0.7))
+                    }
+                    .padding(.bottom, 30)
                     
                     if showAdjustment {
                         // Manual adjustment buttons
@@ -229,8 +360,8 @@ struct ExpenditureContentView: View {
                             .foregroundColor(.white.opacity(0.5))
                             .padding(.top, 8)
                     }
-                }
-                .padding(.bottom, 30)
+                    
+                    .padding(.bottom, 30)
                 
                 // Description
                 Text("This is your Total Daily Energy Expenditure (TDEE) - the calories you burn each day to maintain your current weight.")
@@ -319,37 +450,47 @@ struct ExpenditureContentView: View {
                 Spacer(minLength: 80) // Space for navigation buttons
             }
         }
-        .onAppear {
-            print("[ExpenditureView] onAppear - Loading coordinator data...")
-            print("[ExpenditureView] coordinator.weight: \(coordinator.weight) kg (\(Int(coordinator.weight * 2.20462)) lbs)")
-            print("[ExpenditureView] coordinator.height: \(coordinator.height) cm (\(Int(coordinator.height / 2.54)) inches)")
-            print("[ExpenditureView] coordinator.age: \(coordinator.age) years")
-            print("[ExpenditureView] coordinator.gender: '\(coordinator.gender)'")
-            print("[ExpenditureView] coordinator.exerciseFrequency: '\(coordinator.exerciseFrequency)'")
-            print("[ExpenditureView] coordinator.dailyActivity: '\(coordinator.dailyActivity)'")
-            print("[ExpenditureView] coordinator.activityLevel: '\(coordinator.activityLevel)'")
-            // Calculate TDEE when view appears
+        
+        // Full-screen calculation details popup
+        if showCalculationDetails {
+            TDEECalculationDetailsView(
+                isPresented: $showCalculationDetails,
+                coordinator: coordinator,
+                calculatedActivityLevel: calculatedActivityLevel
+            )
+        }
+    }
+    .onAppear {
+        print("[ExpenditureView] onAppear - Loading coordinator data...")
+        print("[ExpenditureView] coordinator.weight: \(coordinator.weight) kg (\(Int(coordinator.weight * 2.20462)) lbs)")
+        print("[ExpenditureView] coordinator.height: \(coordinator.height) cm (\(Int(coordinator.height / 2.54)) inches)")
+        print("[ExpenditureView] coordinator.age: \(coordinator.age) years")
+        print("[ExpenditureView] coordinator.gender: '\(coordinator.gender)'")
+        print("[ExpenditureView] coordinator.exerciseFrequency: '\(coordinator.exerciseFrequency)'")
+        print("[ExpenditureView] coordinator.dailyActivity: '\(coordinator.dailyActivity)'")
+        print("[ExpenditureView] coordinator.activityLevel: '\(coordinator.activityLevel)'")
+        // Calculate TDEE when view appears
+        calculateTDEE()
+    }
+        .onChange(of: coordinator.exerciseFrequency) { oldValue, newValue in
             calculateTDEE()
         }
-        .onChange(of: coordinator.exerciseFrequency) { _, _ in
+        .onChange(of: coordinator.dailyActivity) { oldValue, newValue in
             calculateTDEE()
         }
-        .onChange(of: coordinator.dailyActivity) { _, _ in
-            calculateTDEE()
-        }
-        .onChange(of: coordinator.weight) { _, _ in
+        .onChange(of: coordinator.weight) { oldValue, newValue in
             print("[ExpenditureView] Weight changed, recalculating TDEE...")
             calculateTDEE()
         }
-        .onChange(of: coordinator.height) { _, _ in
+        .onChange(of: coordinator.height) { oldValue, newValue in
             print("[ExpenditureView] Height changed, recalculating TDEE...")
             calculateTDEE()
         }
-        .onChange(of: coordinator.age) { _, _ in
+        .onChange(of: coordinator.age) { oldValue, newValue in
             print("[ExpenditureView] Age changed, recalculating TDEE...")
             calculateTDEE()
         }
-        .onChange(of: coordinator.gender) { _, _ in
+        .onChange(of: coordinator.gender) { oldValue, newValue in
             print("[ExpenditureView] Gender changed, recalculating TDEE...")
             calculateTDEE()
         }
