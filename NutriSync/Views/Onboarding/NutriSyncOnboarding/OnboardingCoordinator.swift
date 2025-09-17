@@ -583,8 +583,12 @@ struct NutriSyncOnboardingCoordinator: View {
         
         switch screenName {
         // Basics Section
-        case "Basic Info":
-            BasicInfoContentView()
+        case "Sex Selection":
+            SexSelectionView()
+        case "Birth Date":
+            BirthDateView()
+        case "Height":
+            HeightSelectionView()
         case "Weight":
             WeightContentView()
         case "Body Fat":
