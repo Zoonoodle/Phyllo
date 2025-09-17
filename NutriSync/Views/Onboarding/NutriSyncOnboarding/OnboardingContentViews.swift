@@ -577,8 +577,6 @@ struct ExpenditureContentView: View {
 
 struct HealthDisclaimerContentView: View {
     @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
-    @State private var acceptHealthDisclaimer = false
-    @State private var acceptPrivacyNotice = false
     
     var body: some View {
         ScrollView {
@@ -610,13 +608,13 @@ struct HealthDisclaimerContentView: View {
                     VStack(alignment: .leading, spacing: 20) {
                         HStack(alignment: .top, spacing: 12) {
                             // Custom checkbox
-                            Button(action: { acceptHealthDisclaimer.toggle() }) {
+                            Button(action: { coordinator.acceptHealthDisclaimer.toggle() }) {
                                 ZStack {
                                     Circle()
                                         .stroke(Color.white.opacity(0.4), lineWidth: 2)
                                         .frame(width: 24, height: 24)
                                     
-                                    if acceptHealthDisclaimer {
+                                    if coordinator.acceptHealthDisclaimer {
                                         Circle()
                                             .fill(Color.white)
                                             .frame(width: 16, height: 16)
@@ -640,13 +638,13 @@ struct HealthDisclaimerContentView: View {
                         
                         HStack(alignment: .top, spacing: 12) {
                             // Custom checkbox
-                            Button(action: { acceptPrivacyNotice.toggle() }) {
+                            Button(action: { coordinator.acceptPrivacyNotice.toggle() }) {
                                 ZStack {
                                     Circle()
                                         .stroke(Color.white.opacity(0.4), lineWidth: 2)
                                         .frame(width: 24, height: 24)
                                     
-                                    if acceptPrivacyNotice {
+                                    if coordinator.acceptPrivacyNotice {
                                         Circle()
                                             .fill(Color.white)
                                             .frame(width: 16, height: 16)
@@ -671,7 +669,7 @@ struct HealthDisclaimerContentView: View {
                     .padding(.top, 20)
                     
                     // Status text
-                    if !acceptHealthDisclaimer || !acceptPrivacyNotice {
+                    if !coordinator.acceptHealthDisclaimer || !coordinator.acceptPrivacyNotice {
                         Text("Please accept both terms to continue")
                             .font(.system(size: 15))
                             .foregroundColor(.white.opacity(0.5))

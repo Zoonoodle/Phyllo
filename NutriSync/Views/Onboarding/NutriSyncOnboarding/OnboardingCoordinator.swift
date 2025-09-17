@@ -103,6 +103,10 @@ class NutriSyncOnboardingViewModel {
     var autoAdjustWindows: Bool = true
     var weekendDifferent: Bool = false
     
+    // Health disclaimer acceptance
+    var acceptHealthDisclaimer: Bool = false
+    var acceptPrivacyNotice: Bool = false
+    
     // Computed properties
     var currentSectionScreens: [String] {
         NutriSyncOnboardingFlow.screens(for: currentSection)
@@ -504,6 +508,10 @@ struct NutriSyncOnboardingCoordinator: View {
                         Button {
                             handleNextAction()
                         } label: {
+                            let isHealthDisclaimer = viewModel.currentScreen == "Health Disclaimer"
+                            let termsAccepted = viewModel.acceptHealthDisclaimer && viewModel.acceptPrivacyNotice
+                            let isDisabled = isHealthDisclaimer && !termsAccepted
+                            
                             HStack(spacing: 6) {
                                 Text(viewModel.currentScreen == "Expenditure" ? "Save" : "Next")
                                     .font(.system(size: 17, weight: .semibold))
@@ -512,12 +520,16 @@ struct NutriSyncOnboardingCoordinator: View {
                                         .font(.system(size: 14, weight: .semibold))
                                 }
                             }
-                            .foregroundColor(viewModel.currentScreen == "Expenditure" ? .black : Color.nutriSyncBackground)
+                            .foregroundColor(isDisabled ? Color.white.opacity(0.3) : 
+                                           viewModel.currentScreen == "Expenditure" ? .black : Color.nutriSyncBackground)
                             .padding(.horizontal, 24)
                             .frame(height: 44)
-                            .background(viewModel.currentScreen == "Expenditure" ? Color(hex: "C0FF73") : Color.white)
+                            .background(isDisabled ? Color.white.opacity(0.1) :
+                                      viewModel.currentScreen == "Expenditure" ? Color(hex: "C0FF73") : Color.white)
                             .cornerRadius(22)
                         }
+                        .disabled(viewModel.currentScreen == "Health Disclaimer" && 
+                                (!viewModel.acceptHealthDisclaimer || !viewModel.acceptPrivacyNotice))
                     }
                     .padding(.horizontal, 20)
                     .padding(.bottom, 34)
@@ -574,6 +586,13 @@ struct NutriSyncOnboardingCoordinator: View {
     
     // Handle next button action based on current screen
     private func handleNextAction() {
+        // Check if on Health Disclaimer screen and terms aren't accepted
+        if viewModel.currentScreen == "Health Disclaimer" && 
+           (!viewModel.acceptHealthDisclaimer || !viewModel.acceptPrivacyNotice) {
+            // Don't navigate - user must accept both terms
+            return
+        }
+        
         // Screen-specific data saving will be handled by the screen's onDisappear
         // Just navigate to next
         viewModel.nextScreen()
