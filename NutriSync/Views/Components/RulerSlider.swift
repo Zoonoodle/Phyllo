@@ -11,11 +11,10 @@ struct RulerSlider: View {
     let tickHeight: CGFloat = 20
     let majorTickHeight: CGFloat = 30
     
-    @State private var dragOffset: CGFloat = 0
+    @State private var scrollOffset: CGFloat = 0
     @State private var isDragging = false
-    @GestureState private var dragState = CGSize.zero
     @State private var lastHapticValue: Double = 0
-    @State private var initialDragValue: Double = 0
+    @State private var viewWidth: CGFloat = 0
     
     private let tickSpacing: CGFloat = 40
     private let impactFeedback = UIImpactFeedbackGenerator(style: .light)
@@ -38,82 +37,43 @@ struct RulerSlider: View {
             let centerX = width / 2
             
             ZStack {
-                ScrollViewReader { scrollProxy in
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 0) {
-                            ForEach(Int(range.lowerBound)...Int(range.upperBound), id: \.self) { val in
-                                let isValid = Double(val) >= validRange.lowerBound && Double(val) <= validRange.upperBound
-                                let isMajor = val % 5 == 0
-                                let isSelected = Int(value) == val
-                                
-                                VStack(spacing: 4) {
-                                    Rectangle()
-                                        .fill(isValid ? accentColor.opacity(isSelected ? 1.0 : 0.5) : Color.white.opacity(0.3))
-                                        .frame(width: 2, height: isMajor ? majorTickHeight : tickHeight)
-                                        .animation(.easeInOut(duration: 0.2), value: isSelected)
-                                    
-                                    if isMajor {
-                                        Text("\(val)")
-                                            .font(.system(size: 12))
-                                            .foregroundColor(isValid ? accentColor : Color.white.opacity(0.5))
-                                            .opacity(isDragging ? 0.7 : 1.0)
-                                    }
-                                }
-                                .frame(width: tickSpacing)
-                                .id(val)
+                // Custom draggable ruler
+                HStack(spacing: 0) {
+                    ForEach(Int(range.lowerBound)...Int(range.upperBound), id: \.self) { val in
+                        let isValid = Double(val) >= validRange.lowerBound && Double(val) <= validRange.upperBound
+                        let isMajor = val % 5 == 0
+                        let isSelected = Int(value) == val
+                        
+                        VStack(spacing: 4) {
+                            Rectangle()
+                                .fill(isValid ? accentColor.opacity(isSelected ? 1.0 : 0.5) : Color.white.opacity(0.3))
+                                .frame(width: 2, height: isMajor ? majorTickHeight : tickHeight)
+                                .animation(.easeInOut(duration: 0.2), value: isSelected)
+                            
+                            if isMajor {
+                                Text("\(val)")
+                                    .font(.system(size: 12))
+                                    .foregroundColor(isValid ? accentColor : Color.white.opacity(0.5))
+                                    .opacity(isDragging ? 0.7 : 1.0)
                             }
                         }
-                        .padding(.horizontal, centerX)
-                        .background(
-                            GeometryReader { geo in
-                                Color.clear.onAppear {
-                                    scrollToValue(scrollProxy: scrollProxy, animated: false)
-                                }
-                            }
-                        )
+                        .frame(width: tickSpacing)
                     }
-                    .onChange(of: value) { newValue in
-                        if !isDragging {
-                            withAnimation(.easeInOut(duration: 0.2)) {
-                                scrollToValue(scrollProxy: scrollProxy, animated: true)
-                            }
+                }
+                .offset(x: scrollOffset + centerX)
+                .onAppear {
+                    viewWidth = width
+                    scrollOffset = -((value - range.lowerBound) * tickSpacing)
+                }
+                .onChange(of: value) { oldValue, newValue in
+                    if !isDragging {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            scrollOffset = -((newValue - range.lowerBound) * tickSpacing)
                         }
                     }
-                    .gesture(
-                        DragGesture()
-                            .updating($dragState) { value, state, _ in
-                                state = value.translation
-                            }
-                            .onChanged { dragValue in
-                                if !isDragging {
-                                    isDragging = true
-                                    initialDragValue = value
-                                    impactFeedback.prepare()
-                                }
-                                
-                                let dragAmount = dragValue.translation.width
-                                let ticksChanged = Int(round(-dragAmount / tickSpacing))
-                                let newValue = max(validRange.lowerBound, min(validRange.upperBound, initialDragValue + Double(ticksChanged)))
-                                
-                                if newValue != value {
-                                    value = newValue
-                                    onChanged?(newValue)
-                                    
-                                    if abs(newValue - lastHapticValue) >= 1.0 {
-                                        impactFeedback.impactOccurred()
-                                        lastHapticValue = newValue
-                                    }
-                                }
-                            }
-                            .onEnded { _ in
-                                isDragging = false
-                                withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                                    scrollToValue(scrollProxy: scrollProxy, animated: true)
-                                }
-                            }
-                    )
                 }
                 
+                // Center indicator
                 VStack {
                     Rectangle()
                         .fill(accentColor)
@@ -127,21 +87,51 @@ struct RulerSlider: View {
                 }
                 .allowsHitTesting(false)
             }
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture()
+                    .onChanged { dragValue in
+                        if !isDragging {
+                            isDragging = true
+                            impactFeedback.prepare()
+                        }
+                        
+                        // Update scroll offset based on drag
+                        let newOffset = scrollOffset + dragValue.translation.width
+                        
+                        // Calculate value from offset
+                        let offsetValue = -(newOffset / tickSpacing) + range.lowerBound
+                        let clampedValue = max(validRange.lowerBound, min(validRange.upperBound, round(offsetValue)))
+                        
+                        // Update value if changed
+                        if clampedValue != value {
+                            // Haptic feedback for each pound change
+                            if abs(clampedValue - lastHapticValue) >= 1.0 {
+                                impactFeedback.impactOccurred()
+                                lastHapticValue = clampedValue
+                            }
+                            
+                            value = clampedValue
+                            onChanged?(clampedValue)
+                        }
+                        
+                        // Update visual offset
+                        scrollOffset = -((clampedValue - range.lowerBound) * tickSpacing)
+                    }
+                    .onEnded { _ in
+                        isDragging = false
+                        
+                        // Animate to snap to nearest value
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                            scrollOffset = -((value - range.lowerBound) * tickSpacing)
+                        }
+                    }
+            )
+            .clipped()
         }
         .onAppear {
             impactFeedback.prepare()
             lastHapticValue = value
-        }
-    }
-    
-    private func scrollToValue(scrollProxy: ScrollViewProxy, animated: Bool) {
-        let targetId = Int(value)
-        if animated {
-            withAnimation(.easeInOut(duration: 0.2)) {
-                scrollProxy.scrollTo(targetId, anchor: .center)
-            }
-        } else {
-            scrollProxy.scrollTo(targetId, anchor: .center)
         }
     }
 }
