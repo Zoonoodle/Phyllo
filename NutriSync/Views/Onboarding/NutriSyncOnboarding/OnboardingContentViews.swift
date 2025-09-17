@@ -852,9 +852,9 @@ struct GoalSelectionContentView: View {
     @State private var isInitialized = false
     
     let goals = [
-        ("Lose Weight", "flag.fill"),
-        ("Maintain Weight", "flag.fill"),
-        ("Gain Weight", "flag.fill")
+        ("Lose Weight", "minus"),
+        ("Maintain Weight", "equal"),
+        ("Gain Weight", "plus")
     ]
     
     var body: some View {
@@ -876,20 +876,15 @@ struct GoalSelectionContentView: View {
                             coordinator.goal = goal
                         } label: {
                             HStack(spacing: 16) {
-                                // Left icon - simple flag with number
+                                // Left icon - meaningful symbol for each goal
                                 ZStack {
-                                    Image(systemName: icon)
-                                        .font(.system(size: 20))
-                                        .foregroundColor(.white)
+                                    RoundedRectangle(cornerRadius: 6)
+                                        .fill(Color.white.opacity(0.1))
                                         .frame(width: 32, height: 32)
-                                        .background(Color.white.opacity(0.1))
-                                        .cornerRadius(6)
                                     
-                                    // Add small number indicator
-                                    Text(goal == "Lose Weight" ? "1" : goal == "Maintain Weight" ? "2" : "3")
-                                        .font(.system(size: 10, weight: .bold))
-                                        .foregroundColor(.black)
-                                        .offset(x: -1, y: -2)
+                                    Image(systemName: icon)
+                                        .font(.system(size: 18, weight: .bold))
+                                        .foregroundColor(.white)
                                 }
                                 
                                 // Goal text
