@@ -15,7 +15,7 @@ struct RulerSlider: View {
     @State private var lastHapticValue: Double = 0
     @State private var scrollPosition: Double = 0
     
-    private let tickSpacing: CGFloat = 10
+    private let tickSpacing: CGFloat = 40
     private let impactFeedback = UIImpactFeedbackGenerator(style: .light)
     
     init(value: Binding<Double>, 
@@ -59,6 +59,7 @@ struct RulerSlider: View {
                                         Text("\(val)")
                                             .font(.system(size: 12))
                                             .foregroundColor(isValid ? (isSelected ? accentColor : accentColor.opacity(0.7)) : Color.white.opacity(0.5))
+                                            .opacity(isDragging ? 0.6 : 1.0)
                                     }
                                 }
                                 .frame(width: tickSpacing)
@@ -129,13 +130,15 @@ struct RulerSlider: View {
                     // Arrow pointing down
                     Triangle()
                         .fill(accentColor)
-                        .frame(width: 14, height: 8)
+                        .frame(width: 16, height: 10)
+                        .offset(y: -2)
                     
                     // Vertical line
                     Rectangle()
                         .fill(accentColor)
-                        .frame(width: 3, height: majorTickHeight + 10)
+                        .frame(width: 3, height: majorTickHeight + 15)
                 }
+                .shadow(color: accentColor.opacity(0.3), radius: 4, x: 0, y: 0)
                 .allowsHitTesting(false)
             }
         }
