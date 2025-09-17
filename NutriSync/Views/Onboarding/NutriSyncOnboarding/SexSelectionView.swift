@@ -31,15 +31,9 @@ struct SexSelectionView: View {
                         coordinator.gender = selectedSex
                     } label: {
                         HStack(spacing: 20) {
-                            Image(systemName: "person.fill")
-                                .font(.system(size: 24))
+                            Text("♀")
+                                .font(.system(size: 28, weight: .medium))
                                 .foregroundColor(.white)
-                                .rotationEffect(.degrees(0))
-                                .overlay(
-                                    Text("♀")
-                                        .font(.system(size: 28, weight: .medium))
-                                        .foregroundColor(.white)
-                                )
                                 .frame(width: 40)
                             
                             Text("Female")
@@ -74,14 +68,9 @@ struct SexSelectionView: View {
                         coordinator.gender = selectedSex
                     } label: {
                         HStack(spacing: 20) {
-                            Image(systemName: "person.fill")
-                                .font(.system(size: 24))
+                            Text("♂")
+                                .font(.system(size: 28, weight: .medium))
                                 .foregroundColor(.white)
-                                .overlay(
-                                    Text("♂")
-                                        .font(.system(size: 28, weight: .medium))
-                                        .foregroundColor(.white)
-                                )
                                 .frame(width: 40)
                             
                             Text("Male")

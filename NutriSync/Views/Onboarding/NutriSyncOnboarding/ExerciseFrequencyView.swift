@@ -10,6 +10,25 @@ import SwiftUI
 struct ExerciseGridIcon: View {
     let filledSquares: Int
     
+    // Define scattered patterns for each frequency level
+    private var filledPositions: Set<Int> {
+        switch filledSquares {
+        case 0:
+            return []
+        case 3:
+            // Diagonal pattern for 1-3 sessions
+            return [0, 4, 8]
+        case 6:
+            // Scattered checkerboard for 4-6 sessions
+            return [0, 2, 3, 5, 6, 8]
+        case 9:
+            // All filled for 7+ sessions
+            return Set(0...8)
+        default:
+            return []
+        }
+    }
+    
     var body: some View {
         VStack(spacing: 2) {
             ForEach(0..<3) { row in
@@ -17,7 +36,7 @@ struct ExerciseGridIcon: View {
                     ForEach(0..<3) { col in
                         let index = row * 3 + col
                         Rectangle()
-                            .fill(index < filledSquares ? Color.white : Color.white.opacity(0.2))
+                            .fill(filledPositions.contains(index) ? Color.white : Color.white.opacity(0.2))
                             .frame(width: 6, height: 6)
                             .cornerRadius(1)
                     }
