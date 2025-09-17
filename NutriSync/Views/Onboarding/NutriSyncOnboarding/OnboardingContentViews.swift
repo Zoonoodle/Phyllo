@@ -1290,6 +1290,310 @@ struct WeightLossRateContentView: View {
     }
 }
 
+struct WeightGoalContentView: View {
+    @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
+    
+    // State
+    @State private var targetWeight: Double = 0
+    @State private var goalRate: Double = 0.75
+    @State private var isInitialized = false
+    
+    // Computed properties
+    var currentWeightLbs: Int {
+        Int(coordinator.weight * 2.20462)
+    }
+    
+    var targetWeightLbs: Int {
+        Int(targetWeight)
+    }
+    
+    var weightDifferenceLbs: Int {
+        targetWeightLbs - currentWeightLbs
+    }
+    
+    var dailyCalorieBudget: Int {
+        let tdee = calculateTDEE()
+        let weeklyGainLbs = goalRate
+        let dailySurplus = (weeklyGainLbs * 3500) / 7
+        
+        if coordinator.goal.lowercased() == "gain weight" {
+            return Int(tdee + dailySurplus)
+        } else {
+            return Int(tdee - dailySurplus)
+        }
+    }
+    
+    var projectedEndDate: Date {
+        let totalChangeLbs = abs(Double(weightDifferenceLbs))
+        let weeksToGoal = totalChangeLbs / goalRate
+        return Date().addingTimeInterval(weeksToGoal * 7 * 86400)
+    }
+    
+    var weightRange: ClosedRange<Double> {
+        66.0...440.0 // 30kg to 200kg in lbs
+    }
+    
+    var validWeightRange: ClosedRange<Double> {
+        if coordinator.goal.lowercased() == "gain weight" {
+            let maxGain = Double(currentWeightLbs + 75)
+            return Double(currentWeightLbs)...min(440.0, maxGain)
+        } else if coordinator.goal.lowercased() == "lose weight" {
+            let maxLoss = Double(currentWeightLbs - 100)
+            return max(66.0, maxLoss)...Double(currentWeightLbs)
+        }
+        return weightRange
+    }
+    
+    var rateRange: ClosedRange<Double> {
+        coordinator.goal.lowercased() == "gain weight" ? 0.5...1.0 : 0.5...2.0
+    }
+    
+    var rateStep: Double {
+        0.25
+    }
+    
+    var shouldShowWarning: Bool {
+        if coordinator.goal.lowercased() == "gain weight" {
+            return abs(weightDifferenceLbs) > 50 || goalRate >= 1.0
+        } else {
+            return abs(weightDifferenceLbs) > 50 || goalRate >= 2.0
+        }
+    }
+    
+    var warningMessage: String {
+        if abs(weightDifferenceLbs) > 50 {
+            return "This is an ambitious goal. Consider consulting a nutritionist."
+        } else if coordinator.goal.lowercased() == "gain weight" && goalRate >= 1.0 {
+            return "Maximum safe gain rate selected"
+        } else if coordinator.goal.lowercased() == "lose weight" && goalRate >= 2.0 {
+            return "Maximum safe loss rate selected"
+        }
+        return ""
+    }
+    
+    var rateLabel: String {
+        if goalRate <= 0.5 {
+            return "Gradual"
+        } else if goalRate <= 0.75 {
+            return "Standard (Recommended)"
+        } else if goalRate <= 1.0 {
+            return "Moderate"
+        } else if goalRate <= 1.5 {
+            return "Aggressive"
+        } else {
+            return "Very Aggressive"
+        }
+    }
+    
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 24) {
+                // Title
+                Text("Weight Goal")
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                
+                // Info cards
+                HStack(spacing: 12) {
+                    InfoCard(
+                        title: "initial daily budget",
+                        value: "\(dailyCalorieBudget) kcal"
+                    )
+                    
+                    InfoCard(
+                        title: "projected end date",
+                        value: formatDate(projectedEndDate)
+                    )
+                }
+                .padding(.horizontal, 20)
+                
+                // Target weight section
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("What is your target weight?")
+                        .font(.system(size: 20, weight: .semibold))
+                        .foregroundColor(.white)
+                    
+                    HStack {
+                        Spacer()
+                        Text("\(targetWeightLbs)")
+                            .font(.system(size: 48, weight: .bold))
+                            .foregroundColor(.white)
+                        Text("lbs")
+                            .font(.system(size: 20))
+                            .foregroundColor(.white.opacity(0.6))
+                            .padding(.leading, 4)
+                        Spacer()
+                    }
+                    
+                    RulerSlider(
+                        value: $targetWeight,
+                        range: weightRange,
+                        validRange: validWeightRange,
+                        step: 1.0,
+                        onChanged: { newValue in
+                            saveToCoordinator()
+                        }
+                    )
+                    .frame(height: 60)
+                }
+                .padding(.horizontal, 20)
+                
+                // Goal rate section
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("What is your target goal rate?")
+                        .font(.system(size: 20, weight: .semibold))
+                        .foregroundColor(.white)
+                    
+                    Text(rateLabel)
+                        .font(.system(size: 14))
+                        .foregroundColor(.white.opacity(0.6))
+                        .frame(maxWidth: .infinity)
+                    
+                    Slider(
+                        value: $goalRate,
+                        in: rateRange,
+                        step: rateStep
+                    )
+                    .accentColor(Color(hex: "C0FF73"))
+                    .onChange(of: goalRate) { _, _ in
+                        saveToCoordinator()
+                    }
+                    
+                    HStack {
+                        VStack(alignment: .leading) {
+                            Text("\(coordinator.goal.lowercased() == "gain weight" ? "+" : "-")\(String(format: "%.1f", goalRate)) lbs")
+                                .font(.system(size: 18, weight: .semibold))
+                                .foregroundColor(.white)
+                            Text("Per Week")
+                                .font(.system(size: 12))
+                                .foregroundColor(.white.opacity(0.6))
+                        }
+                        
+                        Spacer()
+                        
+                        VStack(alignment: .trailing) {
+                            Text("\(coordinator.goal.lowercased() == "gain weight" ? "+" : "-")\(String(format: "%.1f", goalRate * 4.33)) lbs")
+                                .font(.system(size: 18, weight: .semibold))
+                                .foregroundColor(.white)
+                            Text("Per Month")
+                                .font(.system(size: 12))
+                                .foregroundColor(.white.opacity(0.6))
+                        }
+                    }
+                }
+                .padding(.horizontal, 20)
+                
+                // Warning banner if needed
+                if shouldShowWarning && !warningMessage.isEmpty {
+                    HStack {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundColor(.yellow)
+                            .font(.system(size: 14))
+                        Text(warningMessage)
+                            .font(.system(size: 14))
+                            .foregroundColor(.white)
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(Color.yellow.opacity(0.1))
+                    .cornerRadius(8)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(Color.yellow.opacity(0.3), lineWidth: 1)
+                    )
+                    .padding(.horizontal, 20)
+                }
+                
+                Spacer(minLength: 80)
+            }
+        }
+        .onAppear {
+            loadDataFromCoordinator()
+        }
+    }
+    
+    private func loadDataFromCoordinator() {
+        guard !isInitialized else { return }
+        isInitialized = true
+        
+        // Initialize target weight
+        if let savedTarget = coordinator.targetWeight {
+            targetWeight = savedTarget * 2.20462 // Convert kg to lbs
+        } else {
+            // Set default based on goal
+            if coordinator.goal.lowercased() == "lose weight" {
+                targetWeight = Double(currentWeightLbs - 10)
+            } else if coordinator.goal.lowercased() == "gain weight" {
+                targetWeight = Double(currentWeightLbs + 10)
+            } else {
+                targetWeight = Double(currentWeightLbs)
+            }
+        }
+        
+        // Initialize goal rate
+        if let savedRate = coordinator.weightLossRate {
+            goalRate = savedRate
+        } else {
+            // Set default based on goal
+            if coordinator.goal.lowercased() == "gain weight" {
+                goalRate = 0.75 // Standard for gain
+            } else {
+                goalRate = 1.0 // Moderate for loss
+            }
+        }
+        
+        saveToCoordinator()
+    }
+    
+    private func saveToCoordinator() {
+        coordinator.targetWeight = targetWeight / 2.20462 // Convert lbs to kg
+        coordinator.weightLossRate = goalRate
+    }
+    
+    private func calculateTDEE() -> Double {
+        // Use existing TDEE if available
+        if let tdee = coordinator.tdee {
+            return tdee
+        }
+        
+        // Otherwise calculate based on current data
+        let activityLevel = determineActivityLevel()
+        let gender: TDEECalculator.Gender = coordinator.gender.lowercased() == "female" ? .female : .male
+        
+        return TDEECalculator.calculate(
+            weight: coordinator.weight,
+            height: coordinator.height,
+            age: coordinator.age,
+            gender: gender,
+            activityLevel: activityLevel
+        )
+    }
+    
+    private func determineActivityLevel() -> TDEECalculator.ActivityLevel {
+        // Simple mapping based on exercise frequency
+        switch coordinator.exerciseFrequency {
+        case "0 sessions / week":
+            return .sedentary
+        case "1-3 sessions / week":
+            return .lightlyActive
+        case "4-6 sessions / week":
+            return .moderatelyActive
+        case "7+ sessions / week":
+            return .veryActive
+        default:
+            return .sedentary
+        }
+    }
+    
+    private func formatDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM d, yyyy"
+        return formatter.string(from: date)
+    }
+}
+
 struct PreWorkoutNutritionContentView: View {
     @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
     @State private var selectedTiming = ""

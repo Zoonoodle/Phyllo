@@ -71,8 +71,7 @@ struct NutriSyncOnboardingFlow {
             "Goal Intro",
             "Goal Selection",
             "Maintenance Strategy",
-            "Target Weight",
-            "Weight Loss Rate",
+            "Weight Goal",
             "Pre-Workout Nutrition",
             "Post-Workout Nutrition"
         ],

@@ -139,12 +139,12 @@ class NutriSyncOnboardingViewModel {
                     // Skip to Maintenance Strategy screen (index 2)
                     currentScreenIndex = 2
                 } else {
-                    // Skip Maintenance Strategy for lose/gain weight (go to Target Weight at index 3)
+                    // Skip Maintenance Strategy for lose/gain weight (go to Weight Goal at index 3)
                     currentScreenIndex = 3
                 }
             } else if currentScreen == "Maintenance Strategy" {
-                // After Maintenance Strategy, skip Target Weight and Weight Loss Rate
-                currentScreenIndex = 5 // Jump to Pre-Workout Nutrition
+                // After Maintenance Strategy, skip Weight Goal
+                currentScreenIndex = 4 // Jump to Pre-Workout Nutrition
             } else {
                 currentScreenIndex += 1
             }
@@ -643,10 +643,8 @@ struct NutriSyncOnboardingCoordinator: View {
             GoalSelectionContentView()
         case "Maintenance Strategy":
             MaintenanceStrategyContentView()
-        case "Target Weight":
-            TargetWeightContentView()
-        case "Weight Loss Rate":
-            WeightLossRateContentView()
+        case "Weight Goal":
+            WeightGoalContentView()
         case "Workout Schedule":
             Text("Workout Schedule screen removed")
                 .foregroundColor(.white)
