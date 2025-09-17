@@ -427,7 +427,6 @@ struct NutriSyncOnboardingCoordinator: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var dataProvider: FirebaseDataProvider
     @EnvironmentObject private var firebaseConfig: FirebaseConfig
-    @State private var screenOffset: CGFloat = 0
     @State private var previousScreenIndex: Int = 0
     
     let existingProgress: OnboardingProgress?
@@ -471,25 +470,8 @@ struct NutriSyncOnboardingCoordinator: View {
                                     .frame(width: geometry.size.width, height: geometry.size.height)
                             }
                         }
-                        .offset(x: -CGFloat(viewModel.currentScreenIndex) * geometry.size.width + screenOffset)
+                        .offset(x: -CGFloat(viewModel.currentScreenIndex) * geometry.size.width)
                         .animation(.spring(response: 0.5, dampingFraction: 0.85, blendDuration: 0), value: viewModel.currentScreenIndex)
-                        .gesture(
-                            DragGesture()
-                                .onChanged { value in
-                                    screenOffset = value.translation.width
-                                }
-                                .onEnded { value in
-                                    let threshold = geometry.size.width * 0.2
-                                    withAnimation(.spring(response: 0.5, dampingFraction: 0.85)) {
-                                        if value.translation.width > threshold && viewModel.currentScreenIndex > 0 {
-                                            viewModel.previousScreen()
-                                        } else if value.translation.width < -threshold && !viewModel.isLastScreenInSection {
-                                            viewModel.nextScreen()
-                                        }
-                                        screenOffset = 0
-                                    }
-                                }
-                        )
                     }
                     
                     // Fixed navigation buttons at bottom

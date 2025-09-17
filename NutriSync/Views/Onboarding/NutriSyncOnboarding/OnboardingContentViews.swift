@@ -118,8 +118,8 @@ struct TDEECalculationDetailsView: View {
     
     var body: some View {
         ZStack {
-            // Background
-            Color.black.opacity(0.95)
+            // Background - match app theme
+            Color.nutriSyncBackground
                 .ignoresSafeArea()
                 .onTapGesture {
                     isPresented = false
@@ -152,13 +152,13 @@ struct TDEECalculationDetailsView: View {
                         profileSection
                         
                         Divider()
-                            .background(Color.white.opacity(0.2))
+                            .background(Color.white.opacity(0.1))
                         
                         // Activity Levels section
                         activityLevelsSection
                         
                         Divider()
-                            .background(Color.white.opacity(0.2))
+                            .background(Color.white.opacity(0.1))
                         
                         // Calculation Method section
                         calculationMethodSection
@@ -174,10 +174,10 @@ struct TDEECalculationDetailsView: View {
                 } label: {
                     Text("Got it")
                         .font(.system(size: 18, weight: .semibold))
-                        .foregroundColor(Color.nutriSyncBackground)
+                        .foregroundColor(.black)
                         .frame(maxWidth: .infinity)
                         .frame(height: 50)
-                        .background(Color.white)
+                        .background(Color.nutriSyncAccent)
                         .cornerRadius(25)
                 }
                 .padding(.horizontal, 24)
@@ -191,7 +191,7 @@ struct TDEECalculationDetailsView: View {
     private var profileSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Your Profile")
-                .font(.system(size: 18, weight: .semibold))
+                .font(.system(size: 20, weight: .semibold))
                 .foregroundColor(.white)
             
             VStack(alignment: .leading, spacing: 12) {
@@ -206,7 +206,7 @@ struct TDEECalculationDetailsView: View {
     private var activityLevelsSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Activity Levels")
-                .font(.system(size: 18, weight: .semibold))
+                .font(.system(size: 20, weight: .semibold))
                 .foregroundColor(.white)
             
             VStack(alignment: .leading, spacing: 12) {
@@ -230,36 +230,37 @@ struct TDEECalculationDetailsView: View {
     private var calculationMethodSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Calculation Method")
-                .font(.system(size: 18, weight: .semibold))
+                .font(.system(size: 20, weight: .semibold))
                 .foregroundColor(.white)
             
             Text("Your TDEE (Total Daily Energy Expenditure) is calculated using the Mifflin-St Jeor equation, which is considered one of the most accurate methods:")
-                .font(.system(size: 14))
-                .foregroundColor(.white.opacity(0.8))
+                .font(.system(size: 15))
+                .foregroundColor(.white.opacity(0.7))
                 .fixedSize(horizontal: false, vertical: true)
             
-            VStack(alignment: .leading, spacing: 8) {
-                Text("1. Base Metabolic Rate (BMR) is calculated based on your age, weight, height, and gender")
-                Text("2. Your BMR is then multiplied by an activity factor based on your exercise frequency and daily activity level")
-                Text("3. The result is your TDEE - the total calories you burn per day")
+            VStack(alignment: .leading, spacing: 12) {
+                calculationStep(number: "1", text: "Base Metabolic Rate (BMR) is calculated based on your age, weight, height, and gender")
+                calculationStep(number: "2", text: "Your BMR is then multiplied by an activity factor based on your exercise frequency and daily activity level")
+                calculationStep(number: "3", text: "The result is your TDEE - the total calories you burn per day")
             }
-            .font(.system(size: 14))
-            .foregroundColor(.white.opacity(0.7))
             
-            Text("Activity Level Multipliers:")
-                .font(.system(size: 15, weight: .medium))
-                .foregroundColor(.white)
-                .padding(.top, 8)
-            
-            VStack(alignment: .leading, spacing: 6) {
-                Text("• Sedentary: BMR × 1.2")
-                Text("• Lightly Active: BMR × 1.375")
-                Text("• Moderately Active: BMR × 1.55")
-                Text("• Very Active: BMR × 1.725")
-                Text("• Extremely Active: BMR × 1.9")
+            // Activity Level Multipliers Card
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Activity Level Multipliers")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(.white)
+                
+                VStack(alignment: .leading, spacing: 8) {
+                    multiplierRow(level: "Sedentary", value: "1.2")
+                    multiplierRow(level: "Lightly Active", value: "1.375")
+                    multiplierRow(level: "Moderately Active", value: "1.55", isHighlighted: calculatedActivityLevel == .moderatelyActive)
+                    multiplierRow(level: "Very Active", value: "1.725", isHighlighted: calculatedActivityLevel == .veryActive)
+                    multiplierRow(level: "Extremely Active", value: "1.9")
+                }
             }
-            .font(.system(size: 13))
-            .foregroundColor(.white.opacity(0.6))
+            .padding(16)
+            .background(Color.white.opacity(0.03))
+            .cornerRadius(12)
         }
     }
     
@@ -285,6 +286,41 @@ struct TDEECalculationDetailsView: View {
             Spacer()
         }
         .font(.system(size: 16))
+    }
+    
+    private func calculationStep(number: String, text: String) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Text(number)
+                .font(.system(size: 14, weight: .bold))
+                .foregroundColor(.nutriSyncAccent)
+                .frame(width: 20, height: 20)
+                .background(Color.nutriSyncAccent.opacity(0.2))
+                .clipShape(Circle())
+            
+            Text(text)
+                .font(.system(size: 14))
+                .foregroundColor(.white.opacity(0.7))
+            
+            Spacer()
+        }
+    }
+    
+    private func multiplierRow(level: String, value: String, isHighlighted: Bool = false) -> some View {
+        HStack {
+            Text(level)
+                .font(.system(size: 14))
+                .foregroundColor(isHighlighted ? .nutriSyncAccent : .white.opacity(0.7))
+            
+            Spacer()
+            
+            Text("BMR × \(value)")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(isHighlighted ? .nutriSyncAccent : .white.opacity(0.7))
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(isHighlighted ? Color.nutriSyncAccent.opacity(0.1) : Color.clear)
+        .cornerRadius(6)
     }
 }
 
