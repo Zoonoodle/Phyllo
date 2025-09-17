@@ -15,6 +15,7 @@ struct RulerSlider: View {
     @State private var isDragging = false
     @GestureState private var dragState = CGSize.zero
     @State private var lastHapticValue: Double = 0
+    @State private var initialDragValue: Double = 0
     
     private let tickSpacing: CGFloat = 40
     private let impactFeedback = UIImpactFeedbackGenerator(style: .light)
@@ -86,12 +87,13 @@ struct RulerSlider: View {
                             .onChanged { dragValue in
                                 if !isDragging {
                                     isDragging = true
+                                    initialDragValue = value
                                     impactFeedback.prepare()
                                 }
                                 
                                 let dragAmount = dragValue.translation.width
                                 let ticksChanged = Int(round(-dragAmount / tickSpacing))
-                                let newValue = max(validRange.lowerBound, min(validRange.upperBound, value + Double(ticksChanged)))
+                                let newValue = max(validRange.lowerBound, min(validRange.upperBound, initialDragValue + Double(ticksChanged)))
                                 
                                 if newValue != value {
                                     value = newValue

@@ -1455,9 +1455,11 @@ struct WeightGoalContentView: View {
                         value: $goalRate,
                         in: rateRange,
                         step: rateStep
-                    )
-                    .accentColor(Color(hex: "C0FF73"))
-                    .onChange(of: goalRate) { _, _ in
+                    ) { _ in
+                        // onEditingChanged - not needed
+                    }
+                    .tint(Color(hex: "C0FF73"))
+                    .onChange(of: goalRate) { oldValue, newValue in
                         saveToCoordinator()
                     }
                     
