@@ -323,8 +323,13 @@ struct ExpenditureContentView: View {
             print("[ExpenditureView] onAppear - coordinator.exerciseFrequency: '\(coordinator.exerciseFrequency)'")
             print("[ExpenditureView] onAppear - coordinator.dailyActivity: '\(coordinator.dailyActivity)'")
             print("[ExpenditureView] onAppear - coordinator.activityLevel: '\(coordinator.activityLevel)'")
-            // Always recalculate when view appears
-            isInitialized = false
+            // Calculate TDEE when view appears
+            calculateTDEE()
+        }
+        .onChange(of: coordinator.exerciseFrequency) { _, _ in
+            calculateTDEE()
+        }
+        .onChange(of: coordinator.dailyActivity) { _, _ in
             calculateTDEE()
         }
         .onDisappear {

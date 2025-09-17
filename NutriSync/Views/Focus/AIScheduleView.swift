@@ -341,7 +341,7 @@ class AIScheduleViewModel: ObservableObject {
     private var loadingTimeoutTimer: Timer?
     
     // Legacy view model for compatibility - use this as the source of truth
-    let legacyViewModel = ScheduleViewModel()
+    lazy var legacyViewModel = ScheduleViewModel()
     
     // Computed properties that delegate to legacyViewModel
     var mealWindows: [MealWindow] {
