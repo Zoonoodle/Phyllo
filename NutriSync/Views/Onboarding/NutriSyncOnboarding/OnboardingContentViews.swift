@@ -852,9 +852,9 @@ struct GoalSelectionContentView: View {
     @State private var isInitialized = false
     
     let goals = [
-        ("Lose Weight", "arrow.down.circle.fill", "Reduce body weight sustainably", Color.red),
-        ("Maintain Weight", "equal.circle.fill", "Keep your current weight steady", Color.blue),
-        ("Gain Weight", "arrow.up.circle.fill", "Build muscle or increase weight", Color.green)
+        ("Lose Weight", "flag.fill"),
+        ("Maintain Weight", "flag.fill"),
+        ("Gain Weight", "flag.fill")
     ]
     
     var body: some View {
@@ -866,58 +866,57 @@ struct GoalSelectionContentView: View {
                     .foregroundColor(.white)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 20)
-                    .padding(.bottom, 12)
-                
-                // Subtitle
-                Text("Select your current goal")
-                    .font(.system(size: 17))
-                    .foregroundColor(.white.opacity(0.6))
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 20)
                     .padding(.bottom, 40)
                 
                 // Goal options
                 VStack(spacing: 16) {
-                    ForEach(goals, id: \.0) { goal, icon, description, color in
+                    ForEach(goals, id: \.0) { goal, icon in
                         Button {
                             selectedGoal = goal
                             coordinator.goal = goal
                         } label: {
                             HStack(spacing: 16) {
-                                // Icon with gradient background
+                                // Left icon - simple flag with number
                                 ZStack {
-                                    Circle()
-                                        .fill(LinearGradient(
-                                            gradient: Gradient(colors: [color.opacity(0.3), color.opacity(0.1)]),
-                                            startPoint: .topLeading,
-                                            endPoint: .bottomTrailing
-                                        ))
-                                        .frame(width: 56, height: 56)
-                                    
                                     Image(systemName: icon)
-                                        .font(.system(size: 28))
-                                        .foregroundColor(color)
+                                        .font(.system(size: 20))
+                                        .foregroundColor(.white)
+                                        .frame(width: 32, height: 32)
+                                        .background(Color.white.opacity(0.1))
+                                        .cornerRadius(6)
+                                    
+                                    // Add small number indicator
+                                    Text(goal == "Lose Weight" ? "1" : goal == "Maintain Weight" ? "2" : "3")
+                                        .font(.system(size: 10, weight: .bold))
+                                        .foregroundColor(.black)
+                                        .offset(x: -1, y: -2)
                                 }
                                 
-                                VStack(alignment: .leading, spacing: 6) {
-                                    Text(goal)
-                                        .font(.system(size: 20, weight: .semibold))
-                                        .foregroundColor(.white)
-                                    
-                                    Text(description)
-                                        .font(.system(size: 15))
-                                        .foregroundColor(.white.opacity(0.6))
-                                }
+                                // Goal text
+                                Text(goal)
+                                    .font(.system(size: 18, weight: .medium))
+                                    .foregroundColor(.white)
                                 
                                 Spacer()
+                                
+                                // Radio button on the right
+                                Circle()
+                                    .stroke(Color.white.opacity(0.4), lineWidth: 2)
+                                    .frame(width: 24, height: 24)
+                                    .overlay(
+                                        Circle()
+                                            .fill(Color.white)
+                                            .frame(width: 14, height: 14)
+                                            .opacity(selectedGoal == goal ? 1 : 0)
+                                    )
                             }
-                            .padding(20)
-                            .background(Color.white.opacity(0.03))
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 24)
+                            .background(Color.clear)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 16)
-                                    .stroke(selectedGoal == goal ? color : Color.white.opacity(0.2), lineWidth: selectedGoal == goal ? 3 : 1)
+                                    .stroke(Color.white.opacity(0.2), lineWidth: 1)
                             )
-                            .cornerRadius(16)
                         }
                     }
                 }
@@ -935,12 +934,11 @@ struct GoalSelectionContentView: View {
         guard !isInitialized else { return }
         isInitialized = true
         
+        // Only load existing selection if there is one, don't set a default
         if !coordinator.goal.isEmpty {
             selectedGoal = coordinator.goal
-        } else {
-            selectedGoal = "Lose Weight" // Default
-            coordinator.goal = selectedGoal
         }
+        // Remove the default selection - user must explicitly pick one
     }
 }
 

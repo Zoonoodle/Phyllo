@@ -510,7 +510,9 @@ struct NutriSyncOnboardingCoordinator: View {
                         } label: {
                             let isHealthDisclaimer = viewModel.currentScreen == "Health Disclaimer"
                             let termsAccepted = viewModel.acceptHealthDisclaimer && viewModel.acceptPrivacyNotice
-                            let isDisabled = isHealthDisclaimer && !termsAccepted
+                            let isGoalSelection = viewModel.currentScreen == "Goal Selection"
+                            let goalSelected = !viewModel.goal.isEmpty
+                            let isDisabled = (isHealthDisclaimer && !termsAccepted) || (isGoalSelection && !goalSelected)
                             let isLastScreenInSection = viewModel.isLastScreenInSection
                             
                             HStack(spacing: 6) {
@@ -527,8 +529,9 @@ struct NutriSyncOnboardingCoordinator: View {
                                       isLastScreenInSection ? Color(hex: "C0FF73") : Color.white)
                             .cornerRadius(22)
                         }
-                        .disabled(viewModel.currentScreen == "Health Disclaimer" && 
-                                (!viewModel.acceptHealthDisclaimer || !viewModel.acceptPrivacyNotice))
+                        .disabled((viewModel.currentScreen == "Health Disclaimer" && 
+                                (!viewModel.acceptHealthDisclaimer || !viewModel.acceptPrivacyNotice)) ||
+                                (viewModel.currentScreen == "Goal Selection" && viewModel.goal.isEmpty))
                     }
                     .padding(.horizontal, 20)
                     .padding(.bottom, 34)
@@ -589,6 +592,12 @@ struct NutriSyncOnboardingCoordinator: View {
         if viewModel.currentScreen == "Health Disclaimer" && 
            (!viewModel.acceptHealthDisclaimer || !viewModel.acceptPrivacyNotice) {
             // Don't navigate - user must accept both terms
+            return
+        }
+        
+        // Check if on Goal Selection screen and no goal is selected
+        if viewModel.currentScreen == "Goal Selection" && viewModel.goal.isEmpty {
+            // Don't navigate - user must select a goal
             return
         }
         
