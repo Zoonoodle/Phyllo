@@ -359,7 +359,6 @@ struct ExpenditureContentView: View {
                             .foregroundColor(.white.opacity(0.5))
                             .padding(.top, 8)
                     }
-                    
                     .padding(.bottom, 30)
                 
                 // Description
