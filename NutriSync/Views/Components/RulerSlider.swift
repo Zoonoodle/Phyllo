@@ -150,11 +150,12 @@ struct RulerSlider: View {
                                 isDragging = false
                                 scrollPosition = value
                                 dragStartValue = value
+                                currentDisplayValue = value
                                 accumulatedDragOffset = 0
                                 hasHitBoundary = false
                                 
-                                // Final snap animation to ensure proper position
-                                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                // Snappier final positioning
+                                withAnimation(.interactiveSpring(response: 0.25, dampingFraction: 0.86, blendDuration: 0.25)) {
                                     proxy.scrollTo(Int(value), anchor: .center)
                                 }
                             }
@@ -162,13 +163,16 @@ struct RulerSlider: View {
                     .onAppear {
                         scrollPosition = value
                         dragStartValue = value
+                        currentDisplayValue = value
+                        selectionFeedback.prepare()
                         DispatchQueue.main.async {
                             proxy.scrollTo(Int(value), anchor: .center)
                         }
                     }
                     .onChange(of: value) { oldValue, newValue in
                         if !isDragging {
-                            withAnimation(.easeInOut(duration: 0.2)) {
+                            currentDisplayValue = newValue
+                            withAnimation(.interactiveSpring(response: 0.2, dampingFraction: 0.85)) {
                                 proxy.scrollTo(Int(newValue), anchor: .center)
                             }
                         }
@@ -194,7 +198,9 @@ struct RulerSlider: View {
         }
         .onAppear {
             impactFeedback.prepare()
+            selectionFeedback.prepare()
             lastHapticValue = value
+            currentDisplayValue = value
         }
     }
 }
