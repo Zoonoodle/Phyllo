@@ -1068,7 +1068,7 @@ struct TrendWeightContentView: View {
                     .padding(.vertical, 20)
                     .background(
                         RoundedRectangle(cornerRadius: 16)
-                            .fill(Color(red: 0.4, green: 0.3, blue: 0.6).opacity(0.6))
+                            .fill(Color(hex: "C0FF73").opacity(0.15))
                     )
                     .padding(.horizontal, 20)
                     .padding(.bottom, 40)
@@ -1254,7 +1254,7 @@ struct GoalSummaryContentView: View {
                 .padding(20)
                 .background(
                     RoundedRectangle(cornerRadius: 16)
-                        .fill(Color(red: 0.4, green: 0.3, blue: 0.6).opacity(0.6))
+                        .fill(Color(hex: "C0FF73").opacity(0.15))
                 )
                 .padding(.horizontal, 20)
                 .padding(.bottom, 24)
