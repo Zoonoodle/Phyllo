@@ -2565,7 +2565,7 @@ struct MealFrequencyContentView: View {
                                 .cornerRadius(12)
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 12)
-                                        .stroke(selectedMealCount == meals ? Color.nutriSyncAccent : Color.white.opacity(0.1), lineWidth: selectedMealCount == meals ? 2 : 1)
+                                        .stroke(selectedMealCount == meals ? Color.white.opacity(0.3) : Color.white.opacity(0.1), lineWidth: selectedMealCount == meals ? 2 : 1)
                                 )
                             }
                             .buttonStyle(PlainButtonStyle())
@@ -2644,7 +2644,7 @@ struct EatingWindowContentView: View {
                                     
                                     // Eating window (example: 12 PM to 8 PM)
                                     RoundedRectangle(cornerRadius: 6)
-                                        .fill(Color.nutriSyncAccent.opacity(0.6))
+                                        .fill(Color.white.opacity(0.4))
                                         .frame(width: geometry.size.width * 0.33)
                                         .offset(x: geometry.size.width * 0.5)
                                 }
@@ -2702,14 +2702,14 @@ struct EatingWindowContentView: View {
                                         Spacer()
                                         Image(systemName: selectedWindow == window ? "checkmark.circle.fill" : "circle")
                                             .font(.system(size: 20))
-                                            .foregroundColor(selectedWindow == window ? Color.nutriSyncAccent : .white.opacity(0.3))
+                                            .foregroundColor(selectedWindow == window ? .white : .white.opacity(0.3))
                                     }
                                     .padding(14)
                                     .background(Color.white.opacity(selectedWindow == window ? 0.08 : 0.05))
                                     .cornerRadius(10)
                                     .overlay(
                                         RoundedRectangle(cornerRadius: 10)
-                                            .stroke(selectedWindow == window ? Color.nutriSyncAccent : Color.clear, lineWidth: 1.5)
+                                            .stroke(selectedWindow == window ? Color.white.opacity(0.3) : Color.clear, lineWidth: 1.5)
                                     )
                                 }
                                 .buttonStyle(PlainButtonStyle())
@@ -2772,7 +2772,7 @@ struct DietaryRestrictionsContentView: View {
                                 HStack(spacing: 16) {
                                     Image(systemName: selectedRestrictions.contains(restriction) ? "checkmark.square.fill" : "square")
                                         .font(.system(size: 22))
-                                        .foregroundColor(selectedRestrictions.contains(restriction) ? Color.nutriSyncAccent : .white.opacity(0.3))
+                                        .foregroundColor(selectedRestrictions.contains(restriction) ? .white : .white.opacity(0.3))
                                     
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text(restriction)
@@ -2951,7 +2951,7 @@ struct WindowFlexibilityContentView: View {
                                             Spacer()
                                             Image(systemName: selectedFlexibility == level ? "checkmark.circle.fill" : "circle")
                                                 .font(.system(size: 20))
-                                                .foregroundColor(selectedFlexibility == level ? Color.nutriSyncAccent : .white.opacity(0.3))
+                                                .foregroundColor(selectedFlexibility == level ? .white : .white.opacity(0.3))
                                         }
                                         Text(description)
                                             .font(.system(size: 14))
@@ -2965,7 +2965,7 @@ struct WindowFlexibilityContentView: View {
                                     .cornerRadius(12)
                                     .overlay(
                                         RoundedRectangle(cornerRadius: 12)
-                                            .stroke(selectedFlexibility == level ? Color.nutriSyncAccent : Color.clear, lineWidth: 1.5)
+                                            .stroke(selectedFlexibility == level ? Color.white.opacity(0.3) : Color.clear, lineWidth: 1.5)
                                     )
                                 }
                                 .buttonStyle(PlainButtonStyle())
@@ -2992,7 +2992,7 @@ struct WindowFlexibilityContentView: View {
                                 // Toggle
                                 ZStack {
                                     Capsule()
-                                        .fill(specialOccasions ? Color.nutriSyncAccent : Color.white.opacity(0.1))
+                                        .fill(specialOccasions ? Color.white.opacity(0.3) : Color.white.opacity(0.1))
                                         .frame(width: 51, height: 31)
                                     Circle()
                                         .fill(Color.white)
