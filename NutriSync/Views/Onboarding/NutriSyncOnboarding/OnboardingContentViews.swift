@@ -2186,11 +2186,11 @@ struct DietPreferenceContentView: View {
                                     .foregroundColor(selectedDiet == diet ? .white : .white.opacity(0.3))
                             }
                             .padding(16)
-                            .background(Color.white.opacity(selectedDiet == diet ? 0.08 : 0.05))
+                            .background(Color.white.opacity(0.03))
                             .cornerRadius(12)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 12)
-                                    .stroke(selectedDiet == diet ? Color.white.opacity(0.3) : Color.clear, lineWidth: 1.5)
+                                    .stroke(selectedDiet == diet ? Color.white : Color.white.opacity(0.2), lineWidth: selectedDiet == diet ? 3 : 1)
                             )
                         }
                         .buttonStyle(PlainButtonStyle())
