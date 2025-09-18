@@ -1720,11 +1720,12 @@ struct WeightGoalContentView: View {
                 }
                 .padding(.horizontal, 20)
                 
-                // Goal rate section
+                // Goal rate section with increased spacing
                 VStack(alignment: .leading, spacing: 16) {
                     Text("What is your target goal rate?")
                         .font(.system(size: 20, weight: .semibold))
                         .foregroundColor(.white)
+                        .padding(.top, 30)
                     
                     Text(rateLabel)
                         .font(.system(size: 14))
@@ -2191,14 +2192,14 @@ struct DietPreferenceContentView: View {
                                 Spacer()
                                 Image(systemName: selectedDiet == diet ? "checkmark.circle.fill" : "circle")
                                     .font(.system(size: 22))
-                                    .foregroundColor(selectedDiet == diet ? Color.nutriSyncAccent : .white.opacity(0.3))
+                                    .foregroundColor(selectedDiet == diet ? .white : .white.opacity(0.3))
                             }
                             .padding(16)
                             .background(Color.white.opacity(selectedDiet == diet ? 0.08 : 0.05))
                             .cornerRadius(12)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 12)
-                                    .stroke(selectedDiet == diet ? Color.nutriSyncAccent : Color.clear, lineWidth: 1.5)
+                                    .stroke(selectedDiet == diet ? Color.white.opacity(0.3) : Color.clear, lineWidth: 1.5)
                             )
                         }
                         .buttonStyle(PlainButtonStyle())
@@ -2267,14 +2268,14 @@ struct TrainingPlanContentView: View {
                                         Spacer()
                                         Image(systemName: selectedFrequency == frequency ? "checkmark.circle.fill" : "circle")
                                             .font(.system(size: 20))
-                                            .foregroundColor(selectedFrequency == frequency ? Color.nutriSyncAccent : .white.opacity(0.3))
+                                            .foregroundColor(selectedFrequency == frequency ? .white : .white.opacity(0.3))
                                     }
                                     .padding(14)
                                     .background(Color.white.opacity(selectedFrequency == frequency ? 0.08 : 0.05))
                                     .cornerRadius(10)
                                     .overlay(
                                         RoundedRectangle(cornerRadius: 10)
-                                            .stroke(selectedFrequency == frequency ? Color.nutriSyncAccent : Color.clear, lineWidth: 1.5)
+                                            .stroke(selectedFrequency == frequency ? Color.white.opacity(0.3) : Color.clear, lineWidth: 1.5)
                                     )
                                 }
                                 .buttonStyle(PlainButtonStyle())
@@ -2295,10 +2296,10 @@ struct TrainingPlanContentView: View {
                                 }) {
                                     Text(time)
                                         .font(.system(size: 14, weight: .medium))
-                                        .foregroundColor(selectedTime == time ? .black : .white.opacity(0.7))
+                                        .foregroundColor(selectedTime == time ? .white : .white.opacity(0.7))
                                         .padding(.horizontal, 16)
                                         .padding(.vertical, 10)
-                                        .background(selectedTime == time ? Color.nutriSyncAccent : Color.white.opacity(0.08))
+                                        .background(Color.white.opacity(selectedTime == time ? 0.15 : 0.08))
                                         .cornerRadius(20)
                                 }
                                 .buttonStyle(PlainButtonStyle())
@@ -2373,12 +2374,12 @@ struct CalorieFloorContentView: View {
                                 
                                 // Fill
                                 RoundedRectangle(cornerRadius: 4)
-                                    .fill(Color.nutriSyncAccent)
+                                    .fill(Color.white.opacity(0.4))
                                     .frame(width: geometry.size.width * ((calorieFloor - 1200) / 1800), height: 8)
                                 
                                 // Thumb
                                 Circle()
-                                    .fill(Color.nutriSyncAccent)
+                                    .fill(Color.white)
                                     .frame(width: 24, height: 24)
                                     .offset(x: geometry.size.width * ((calorieFloor - 1200) / 1800) - 12)
                             }
@@ -2448,10 +2449,10 @@ struct SleepScheduleContentView: View {
                                     }) {
                                         Text(time)
                                             .font(.system(size: 14, weight: .medium))
-                                            .foregroundColor(selectedBedtime == time ? .black : .white.opacity(0.7))
+                                            .foregroundColor(selectedBedtime == time ? .white : .white.opacity(0.7))
                                             .padding(.horizontal, 16)
                                             .padding(.vertical, 10)
-                                            .background(selectedBedtime == time ? Color.nutriSyncAccent : Color.white.opacity(0.08))
+                                            .background(Color.white.opacity(selectedBedtime == time ? 0.15 : 0.08))
                                             .cornerRadius(20)
                                     }
                                     .buttonStyle(PlainButtonStyle())
@@ -2481,10 +2482,10 @@ struct SleepScheduleContentView: View {
                                     }) {
                                         Text(time)
                                             .font(.system(size: 14, weight: .medium))
-                                            .foregroundColor(selectedWakeTime == time ? .black : .white.opacity(0.7))
+                                            .foregroundColor(selectedWakeTime == time ? .white : .white.opacity(0.7))
                                             .padding(.horizontal, 16)
                                             .padding(.vertical, 10)
-                                            .background(selectedWakeTime == time ? Color.nutriSyncAccent : Color.white.opacity(0.08))
+                                            .background(Color.white.opacity(selectedWakeTime == time ? 0.15 : 0.08))
                                             .cornerRadius(20)
                                     }
                                     .buttonStyle(PlainButtonStyle())

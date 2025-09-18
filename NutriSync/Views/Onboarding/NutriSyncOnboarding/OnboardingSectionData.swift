@@ -70,9 +70,9 @@ struct NutriSyncOnboardingFlow {
         .goalSetting: [
             "Goal Intro",
             "Goal Selection",
-            "Trend Weight",
+            "Trend Weight",  // This will be dynamically shown/hidden
+            "Weight Goal",    // This will be dynamically shown/hidden
             "Goal Summary",
-            "Weight Goal",
             "Pre-Workout Nutrition",
             "Post-Workout Nutrition"
         ],
@@ -93,8 +93,21 @@ struct NutriSyncOnboardingFlow {
         ]
     ]
     
-    static func screens(for section: NutriSyncOnboardingSection) -> [String] {
-        sections[section] ?? []
+    static func screens(for section: NutriSyncOnboardingSection, goal: String? = nil) -> [String] {
+        var screens = sections[section] ?? []
+        
+        // Dynamically filter screens based on goal for goalSetting section
+        if section == .goalSetting, let goal = goal?.lowercased() {
+            if goal == "maintain weight" {
+                // Remove "Weight Goal" for maintenance
+                screens = screens.filter { $0 != "Weight Goal" }
+            } else if goal == "lose weight" || goal == "gain weight" {
+                // Remove "Trend Weight" for lose/gain
+                screens = screens.filter { $0 != "Trend Weight" }
+            }
+        }
+        
+        return screens
     }
     
     static func section(for screenName: String) -> NutriSyncOnboardingSection? {

@@ -109,7 +109,7 @@ class NutriSyncOnboardingViewModel {
     
     // Computed properties
     var currentSectionScreens: [String] {
-        NutriSyncOnboardingFlow.screens(for: currentSection)
+        NutriSyncOnboardingFlow.screens(for: currentSection, goal: goal)
     }
     
     var currentScreen: String? {
@@ -133,21 +133,7 @@ class NutriSyncOnboardingViewModel {
         } else if isLastScreenInSection {
             completeSection()
         } else {
-            // Conditional navigation based on goal selection
-            if currentScreen == "Goal Selection" {
-                if goal.lowercased() == "maintain weight" {
-                    // Skip to Maintenance Strategy screen (index 2)
-                    currentScreenIndex = 2
-                } else {
-                    // Skip Maintenance Strategy for lose/gain weight (go to Weight Goal at index 3)
-                    currentScreenIndex = 3
-                }
-            } else if currentScreen == "Maintenance Strategy" {
-                // After Maintenance Strategy, skip Weight Goal
-                currentScreenIndex = 4 // Jump to Pre-Workout Nutrition
-            } else {
-                currentScreenIndex += 1
-            }
+            currentScreenIndex += 1
         }
     }
     
