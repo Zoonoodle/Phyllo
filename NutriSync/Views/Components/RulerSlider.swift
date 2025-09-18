@@ -112,10 +112,9 @@ struct RulerSlider: View {
                                             lastHapticValue = targetValue
                                         }
                                         
-                                        // Faster, smoother animation
-                                        withAnimation(.interactiveSpring(response: 0.15, dampingFraction: 0.86, blendDuration: 0.25)) {
-                                            proxy.scrollTo(Int(targetValue), anchor: .center)
-                                        }
+                                        // Immediate scroll update during dragging (no animation)
+                                        // This prevents position lag during rapid dragging
+                                        proxy.scrollTo(Int(targetValue), anchor: .center)
                                     }
                                     
                                     // Update display value for smoother visual feedback
@@ -130,9 +129,8 @@ struct RulerSlider: View {
                                         value = boundaryValue
                                         onChanged?(boundaryValue)
                                         
-                                        withAnimation(.interactiveSpring(response: 0.2, dampingFraction: 0.9)) {
-                                            proxy.scrollTo(Int(boundaryValue), anchor: .center)
-                                        }
+                                        // Immediate scroll during drag for responsive feedback
+                                        proxy.scrollTo(Int(boundaryValue), anchor: .center)
                                     }
                                     
                                     // Provide feedback only once per boundary hit
