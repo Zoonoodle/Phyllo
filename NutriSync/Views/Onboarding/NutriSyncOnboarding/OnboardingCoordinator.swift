@@ -67,6 +67,8 @@ class NutriSyncOnboardingViewModel {
     var dietPreference: String = ""
     var calorieFloor: Int? = nil
     var trainingPlan: String = ""
+    var trainingFrequency: String? = nil
+    var trainingTime: String? = nil
     
     // Meal timing data
     var wakeTime: Date = {
@@ -480,7 +482,20 @@ struct NutriSyncOnboardingCoordinator: View {
                             let termsAccepted = viewModel.acceptHealthDisclaimer && viewModel.acceptPrivacyNotice
                             let isGoalSelection = viewModel.currentScreen == "Goal Selection"
                             let goalSelected = !viewModel.goal.isEmpty
-                            let isDisabled = (isHealthDisclaimer && !termsAccepted) || (isGoalSelection && !goalSelected)
+                            let isTrainingPlan = viewModel.currentScreen == "Training Plan"
+                            let trainingPlanSelected = viewModel.trainingFrequency != nil && viewModel.trainingTime != nil
+                            let isDietPreference = viewModel.currentScreen == "Diet Preference"
+                            let dietSelected = !viewModel.dietPreference.isEmpty
+                            let isMealFrequency = viewModel.currentScreen == "Meal Frequency"
+                            let mealFrequencySelected = !viewModel.mealFrequency.isEmpty
+                            let isSleepSchedule = viewModel.currentScreen == "Sleep Schedule"
+                            let sleepScheduleSet = true // Sleep schedule uses Date pickers, always valid
+                            
+                            let isDisabled = (isHealthDisclaimer && !termsAccepted) || 
+                                           (isGoalSelection && !goalSelected) ||
+                                           (isTrainingPlan && !trainingPlanSelected) ||
+                                           (isDietPreference && !dietSelected) ||
+                                           (isMealFrequency && !mealFrequencySelected)
                             let isLastScreenInSection = viewModel.isLastScreenInSection
                             
                             HStack(spacing: 6) {
@@ -495,9 +510,7 @@ struct NutriSyncOnboardingCoordinator: View {
                             .background(isDisabled ? Color.white.opacity(0.1) : Color.nutriSyncAccent)
                             .cornerRadius(22)
                         }
-                        .disabled((viewModel.currentScreen == "Health Disclaimer" && 
-                                (!viewModel.acceptHealthDisclaimer || !viewModel.acceptPrivacyNotice)) ||
-                                (viewModel.currentScreen == "Goal Selection" && viewModel.goal.isEmpty))
+                        .disabled(isDisabled)
                     }
                     .padding(.horizontal, 20)
                     .padding(.bottom, 34)

@@ -21,7 +21,7 @@ struct ActivityLevelOption: View {
             HStack(alignment: .top, spacing: 16) {
                 Image(systemName: icon)
                     .font(.system(size: 24))
-                    .foregroundColor(.white)
+                    .foregroundColor(.nutriSyncAccent) // Lime green accent
                     .frame(width: 30, alignment: .center)
                     .padding(.top, 4)
                 

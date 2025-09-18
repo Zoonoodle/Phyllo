@@ -167,12 +167,12 @@ struct MealFrequencyOption: View {
                 // Radio button
                 ZStack {
                     Circle()
-                        .stroke(isSelected ? Color.white : Color.white.opacity(0.3), lineWidth: 2)
+                        .stroke(isSelected ? Color.nutriSyncAccent : Color.white.opacity(0.3), lineWidth: 2)
                         .frame(width: 24, height: 24)
                     
                     if isSelected {
                         Circle()
-                            .fill(Color.white)
+                            .fill(Color.nutriSyncAccent) // Lime green accent when selected
                             .frame(width: 12, height: 12)
                     }
                 }
@@ -205,7 +205,7 @@ struct MealFrequencyOption: View {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 16)
-                    .stroke(isSelected ? Color.white.opacity(0.3) : Color.clear, lineWidth: 1)
+                    .stroke(isSelected ? Color.nutriSyncAccent.opacity(0.5) : Color.clear, lineWidth: 1.5)
             )
         }
         .buttonStyle(PlainButtonStyle())

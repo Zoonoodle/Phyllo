@@ -2079,6 +2079,7 @@ struct DietPreferenceContentView: View {
                     ], id: \.0) { diet, description, icon in
                         Button(action: {
                             selectedDiet = diet
+                            coordinator.dietPreference = diet
                         }) {
                             HStack(spacing: 16) {
                                 // Icon
@@ -2124,6 +2125,10 @@ struct TrainingPlanContentView: View {
     @State private var selectedFrequency: String? = nil
     @State private var selectedTime: String? = nil
     
+    var canProceed: Bool {
+        selectedFrequency != nil && selectedTime != nil
+    }
+    
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
@@ -2153,16 +2158,23 @@ struct TrainingPlanContentView: View {
                         
                         VStack(spacing: 12) {
                             ForEach([
-                                ("None", "No regular training"),
-                                ("1-2x/week", "Light activity"),
-                                ("3-4x/week", "Moderate training"),
-                                ("5-6x/week", "Frequent training"),
-                                ("Daily", "Training every day")
-                            ], id: \.0) { frequency, description in
+                                ("None", "No regular training", "figure.stand"),
+                                ("1-2x/week", "Light activity", "figure.walk"),
+                                ("3-4x/week", "Moderate training", "figure.run"),
+                                ("5-6x/week", "Frequent training", "flame.fill"),
+                                ("Daily", "Training every day", "bolt.fill")
+                            ], id: \.0) { frequency, description, icon in
                                 Button(action: {
                                     selectedFrequency = frequency
+                                    coordinator.trainingFrequency = frequency
                                 }) {
                                     HStack {
+                                        // Add lime green icon
+                                        Image(systemName: icon)
+                                            .font(.system(size: 20))
+                                            .foregroundColor(.nutriSyncAccent)
+                                            .frame(width: 30)
+                                        
                                         VStack(alignment: .leading, spacing: 2) {
                                             Text(frequency)
                                                 .font(.system(size: 16, weight: .medium))
@@ -2174,14 +2186,14 @@ struct TrainingPlanContentView: View {
                                         Spacer()
                                         Image(systemName: selectedFrequency == frequency ? "checkmark.circle.fill" : "circle")
                                             .font(.system(size: 20))
-                                            .foregroundColor(selectedFrequency == frequency ? .white : .white.opacity(0.3))
+                                            .foregroundColor(selectedFrequency == frequency ? .nutriSyncAccent : .white.opacity(0.3))
                                     }
                                     .padding(14)
                                     .background(Color.white.opacity(selectedFrequency == frequency ? 0.08 : 0.05))
                                     .cornerRadius(10)
                                     .overlay(
                                         RoundedRectangle(cornerRadius: 10)
-                                            .stroke(selectedFrequency == frequency ? Color.white.opacity(0.3) : Color.clear, lineWidth: 1.5)
+                                            .stroke(selectedFrequency == frequency ? Color.nutriSyncAccent.opacity(0.5) : Color.clear, lineWidth: 1.5)
                                     )
                                 }
                                 .buttonStyle(PlainButtonStyle())
@@ -2195,18 +2207,24 @@ struct TrainingPlanContentView: View {
                             .font(.system(size: 15, weight: .medium))
                             .foregroundColor(.white.opacity(0.8))
                         
-                        HStack(spacing: 10) {
+                        HStack(spacing: 8) {
                             ForEach(["Morning", "Afternoon", "Evening", "Varies"], id: \.self) { time in
                                 Button(action: {
                                     selectedTime = time
+                                    coordinator.trainingTime = time
                                 }) {
                                     Text(time)
                                         .font(.system(size: 14, weight: .medium))
-                                        .foregroundColor(selectedTime == time ? .white : .white.opacity(0.7))
-                                        .padding(.horizontal, 16)
+                                        .foregroundColor(selectedTime == time ? Color.nutriSyncBackground : .white.opacity(0.7))
+                                        .padding(.horizontal, 14)
                                         .padding(.vertical, 10)
-                                        .background(Color.white.opacity(selectedTime == time ? 0.15 : 0.08))
+                                        .background(selectedTime == time ? Color.nutriSyncAccent : Color.white.opacity(0.08))
                                         .cornerRadius(20)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 20)
+                                                .stroke(selectedTime == time ? Color.clear : Color.white.opacity(0.1), lineWidth: 1)
+                                        )
+                                        .fixedSize()
                                 }
                                 .buttonStyle(PlainButtonStyle())
                             }
@@ -2252,7 +2270,7 @@ struct SleepScheduleContentView: View {
                         HStack {
                             Image(systemName: "moon.fill")
                                 .font(.system(size: 20))
-                                .foregroundColor(.white.opacity(0.5))
+                                .foregroundColor(.nutriSyncAccent) // Lime green icon
                             Text("Usual Bedtime")
                                 .font(.system(size: 16, weight: .medium))
                                 .foregroundColor(.white.opacity(0.8))
@@ -2268,10 +2286,10 @@ struct SleepScheduleContentView: View {
                                     }) {
                                         Text(time)
                                             .font(.system(size: 14, weight: .medium))
-                                            .foregroundColor(selectedBedtime == time ? .white : .white.opacity(0.7))
+                                            .foregroundColor(selectedBedtime == time ? Color.nutriSyncBackground : .white.opacity(0.7))
                                             .padding(.horizontal, 16)
                                             .padding(.vertical, 10)
-                                            .background(Color.white.opacity(selectedBedtime == time ? 0.15 : 0.08))
+                                            .background(selectedBedtime == time ? Color.nutriSyncAccent : Color.white.opacity(0.08))
                                             .cornerRadius(20)
                                     }
                                     .buttonStyle(PlainButtonStyle())
@@ -2285,7 +2303,7 @@ struct SleepScheduleContentView: View {
                         HStack {
                             Image(systemName: "sun.max.fill")
                                 .font(.system(size: 20))
-                                .foregroundColor(.white.opacity(0.5))
+                                .foregroundColor(.nutriSyncAccent) // Lime green icon
                             Text("Wake Up Time")
                                 .font(.system(size: 16, weight: .medium))
                                 .foregroundColor(.white.opacity(0.8))
@@ -2301,10 +2319,10 @@ struct SleepScheduleContentView: View {
                                     }) {
                                         Text(time)
                                             .font(.system(size: 14, weight: .medium))
-                                            .foregroundColor(selectedWakeTime == time ? .white : .white.opacity(0.7))
+                                            .foregroundColor(selectedWakeTime == time ? Color.nutriSyncBackground : .white.opacity(0.7))
                                             .padding(.horizontal, 16)
                                             .padding(.vertical, 10)
-                                            .background(Color.white.opacity(selectedWakeTime == time ? 0.15 : 0.08))
+                                            .background(selectedWakeTime == time ? Color.nutriSyncAccent : Color.white.opacity(0.08))
                                             .cornerRadius(20)
                                     }
                                     .buttonStyle(PlainButtonStyle())
@@ -2317,7 +2335,7 @@ struct SleepScheduleContentView: View {
                     HStack(spacing: 8) {
                         Image(systemName: "bed.double.fill")
                             .font(.system(size: 16))
-                            .foregroundColor(.white.opacity(0.4))
+                            .foregroundColor(.nutriSyncAccent.opacity(0.7)) // Lime green icon
                         Text("About 8 hours of sleep")
                             .font(.system(size: 14))
                             .foregroundColor(.white.opacity(0.6))
@@ -2369,6 +2387,7 @@ struct MealFrequencyContentView: View {
                         ], id: \.0) { meals, style in
                             Button(action: {
                                 selectedMealCount = meals
+                                coordinator.mealFrequency = meals
                             }) {
                                 VStack(spacing: 8) {
                                     Text(meals)
@@ -2463,7 +2482,7 @@ struct EatingWindowContentView: View {
                                     
                                     // Eating window (example: 12 PM to 8 PM)
                                     RoundedRectangle(cornerRadius: 6)
-                                        .fill(Color.white.opacity(0.4))
+                                        .fill(Color.nutriSyncAccent.opacity(0.6)) // Lime green for eating window
                                         .frame(width: geometry.size.width * 0.33)
                                         .offset(x: geometry.size.width * 0.5)
                                 }
@@ -2521,14 +2540,14 @@ struct EatingWindowContentView: View {
                                         Spacer()
                                         Image(systemName: selectedWindow == window ? "checkmark.circle.fill" : "circle")
                                             .font(.system(size: 20))
-                                            .foregroundColor(selectedWindow == window ? .white : .white.opacity(0.3))
+                                            .foregroundColor(selectedWindow == window ? .nutriSyncAccent : .white.opacity(0.3))
                                     }
                                     .padding(14)
                                     .background(Color.white.opacity(selectedWindow == window ? 0.08 : 0.05))
                                     .cornerRadius(10)
                                     .overlay(
                                         RoundedRectangle(cornerRadius: 10)
-                                            .stroke(selectedWindow == window ? Color.white.opacity(0.3) : Color.clear, lineWidth: 1.5)
+                                            .stroke(selectedWindow == window ? Color.nutriSyncAccent.opacity(0.5) : Color.clear, lineWidth: 1.5)
                                     )
                                 }
                                 .buttonStyle(PlainButtonStyle())
@@ -2572,15 +2591,15 @@ struct DietaryRestrictionsContentView: View {
                     // Restrictions checklist
                     VStack(spacing: 12) {
                         ForEach([
-                            ("Dairy-Free", "lactose"),
-                            ("Gluten-Free", "wheat"),
-                            ("Nut-Free", "tree nuts"),
-                            ("Shellfish-Free", "seafood"),
-                            ("Soy-Free", "soy products"),
-                            ("Egg-Free", "eggs"),
-                            ("Low Sodium", "salt restricted"),
-                            ("Sugar-Free", "added sugars")
-                        ], id: \.0) { restriction, detail in
+                            ("Dairy-Free", "lactose", "allergens"),
+                            ("Gluten-Free", "wheat", "wheat.circle"),
+                            ("Nut-Free", "tree nuts", "allergens.fill"),
+                            ("Shellfish-Free", "seafood", "fish"),
+                            ("Soy-Free", "soy products", "leaf"),
+                            ("Egg-Free", "eggs", "oval"),
+                            ("Low Sodium", "salt restricted", "drop.triangle"),
+                            ("Sugar-Free", "added sugars", "cube.fill")
+                        ], id: \.0) { restriction, detail, icon in
                             Button(action: {
                                 if selectedRestrictions.contains(restriction) {
                                     selectedRestrictions.remove(restriction)
@@ -2589,9 +2608,11 @@ struct DietaryRestrictionsContentView: View {
                                 }
                             }) {
                                 HStack(spacing: 16) {
-                                    Image(systemName: selectedRestrictions.contains(restriction) ? "checkmark.square.fill" : "square")
-                                        .font(.system(size: 22))
-                                        .foregroundColor(selectedRestrictions.contains(restriction) ? .white : .white.opacity(0.3))
+                                    // Add lime green icon
+                                    Image(systemName: icon)
+                                        .font(.system(size: 20))
+                                        .foregroundColor(.nutriSyncAccent)
+                                        .frame(width: 30)
                                     
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text(restriction)
@@ -2603,6 +2624,10 @@ struct DietaryRestrictionsContentView: View {
                                     }
                                     
                                     Spacer()
+                                    
+                                    Image(systemName: selectedRestrictions.contains(restriction) ? "checkmark.square.fill" : "square")
+                                        .font(.system(size: 22))
+                                        .foregroundColor(selectedRestrictions.contains(restriction) ? .nutriSyncAccent : .white.opacity(0.3))
                                 }
                                 .padding(.vertical, 8)
                             }

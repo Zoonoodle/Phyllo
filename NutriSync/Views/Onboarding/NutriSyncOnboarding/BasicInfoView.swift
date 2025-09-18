@@ -143,7 +143,7 @@ struct BasicInfoContentView: View {
                                         .padding(.vertical, 12)
                                         .background(
                                             selectedGender == gender ?
-                                            Color.white :
+                                            Color.nutriSyncAccent :  // Lime green accent when selected
                                             Color.white.opacity(0.1)
                                         )
                                         .cornerRadius(12)

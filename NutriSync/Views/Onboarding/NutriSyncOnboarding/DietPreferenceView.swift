@@ -111,7 +111,7 @@ struct DietOption: View {
                 // Icon
                 Image(systemName: icon)
                     .font(.system(size: 24))
-                    .foregroundColor(.white)
+                    .foregroundColor(.nutriSyncAccent) // Lime green accent
                     .frame(width: 30, height: 30)
                     .padding(.top, 20)
                 
