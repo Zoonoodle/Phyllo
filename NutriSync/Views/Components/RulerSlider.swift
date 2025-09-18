@@ -15,6 +15,8 @@ struct RulerSlider: View {
     @State private var lastHapticValue: Double = 0
     @State private var scrollPosition: Double = 0
     @State private var dragStartValue: Double = 0
+    @State private var accumulatedDragOffset: CGFloat = 0
+    @State private var hasHitBoundary = false
     
     private let tickSpacing: CGFloat = 40
     private let impactFeedback = UIImpactFeedbackGenerator(style: .light)
@@ -72,59 +74,77 @@ struct RulerSlider: View {
                                 .frame(width: centerX)
                         }
                     }
+                    .scrollDisabled(true) // Disable native scrolling - only allow controlled drag
                     .simultaneousGesture(
                         DragGesture()
                             .onChanged { dragValue in
                                 if !isDragging {
                                     isDragging = true
                                     dragStartValue = value
+                                    accumulatedDragOffset = 0
+                                    hasHitBoundary = false
                                     impactFeedback.prepare()
                                 }
                                 
-                                // Calculate target value based on drag
-                                let dragOffset = -dragValue.translation.width
-                                let ticksMoved = round(dragOffset / tickSpacing)
-                                let targetValue = dragStartValue + ticksMoved
+                                // Calculate the raw drag offset
+                                let currentDragOffset = -dragValue.translation.width
                                 
-                                // Clamp to valid range - hard stop at boundaries
-                                let clampedValue = max(validRange.lowerBound, min(validRange.upperBound, targetValue))
+                                // Calculate target value based on total drag from start
+                                let ticksFromStart = round(currentDragOffset / tickSpacing)
+                                let targetValue = dragStartValue + ticksFromStart
                                 
-                                // Only scroll and update if within valid range
-                                if clampedValue != value && clampedValue == targetValue {
-                                    // This means targetValue is within valid range
-                                    value = clampedValue
-                                    onChanged?(clampedValue)
-                                    
-                                    // Haptic feedback for each change
-                                    if abs(clampedValue - lastHapticValue) >= 1.0 {
-                                        impactFeedback.impactOccurred()
-                                        lastHapticValue = clampedValue
-                                    }
-                                    
-                                    // Scroll to the new position
-                                    withAnimation(.easeOut(duration: 0.1)) {
-                                        proxy.scrollTo(Int(clampedValue), anchor: .center)
-                                    }
-                                } else if clampedValue != targetValue {
-                                    // Trying to drag beyond valid range - provide boundary feedback
-                                    if value != clampedValue {
-                                        // Snap to the boundary
-                                        value = clampedValue
-                                        onChanged?(clampedValue)
-                                        impactFeedback.impactOccurred(intensity: 1.0) // Strong feedback at boundary
+                                // Check if target is within valid range
+                                if targetValue >= validRange.lowerBound && targetValue <= validRange.upperBound {
+                                    // Valid move - allow it
+                                    if targetValue != value {
+                                        value = targetValue
+                                        onChanged?(targetValue)
+                                        hasHitBoundary = false
                                         
+                                        // Haptic feedback for each change
+                                        if abs(targetValue - lastHapticValue) >= 1.0 {
+                                            impactFeedback.impactOccurred()
+                                            lastHapticValue = targetValue
+                                        }
+                                        
+                                        // Scroll to the new position
                                         withAnimation(.easeOut(duration: 0.1)) {
-                                            proxy.scrollTo(Int(clampedValue), anchor: .center)
+                                            proxy.scrollTo(Int(targetValue), anchor: .center)
                                         }
                                     }
+                                    accumulatedDragOffset = currentDragOffset
+                                } else {
+                                    // Hit boundary - don't allow scroll past it
+                                    let boundaryValue = targetValue < validRange.lowerBound ? validRange.lowerBound : validRange.upperBound
+                                    
+                                    if value != boundaryValue {
+                                        // Move to boundary if not already there
+                                        value = boundaryValue
+                                        onChanged?(boundaryValue)
+                                        
+                                        withAnimation(.easeOut(duration: 0.1)) {
+                                            proxy.scrollTo(Int(boundaryValue), anchor: .center)
+                                        }
+                                    }
+                                    
+                                    // Provide feedback only once per boundary hit
+                                    if !hasHitBoundary {
+                                        impactFeedback.impactOccurred(intensity: 1.0)
+                                        hasHitBoundary = true
+                                    }
+                                    
+                                    // Don't accumulate offset beyond boundary
+                                    accumulatedDragOffset = (boundaryValue - dragStartValue) * tickSpacing
                                 }
                             }
                             .onEnded { _ in
                                 isDragging = false
                                 scrollPosition = value
                                 dragStartValue = value
+                                accumulatedDragOffset = 0
+                                hasHitBoundary = false
                                 
-                                // Final snap animation
+                                // Final snap animation to ensure proper position
                                 withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                                     proxy.scrollTo(Int(value), anchor: .center)
                                 }
