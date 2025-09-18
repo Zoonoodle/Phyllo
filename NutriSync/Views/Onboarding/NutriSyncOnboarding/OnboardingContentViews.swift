@@ -1489,8 +1489,7 @@ struct WeightGoalContentView: View {
                     
                     Slider(
                         value: $goalRate,
-                        in: rateRange,
-                        step: rateStep
+                        in: rateRange
                     ) { _ in
                         // onEditingChanged - not needed
                     }
@@ -1501,7 +1500,7 @@ struct WeightGoalContentView: View {
                     
                     HStack {
                         VStack(alignment: .leading) {
-                            Text("\(coordinator.goal.lowercased() == "gain weight" ? "+" : "-")\(String(format: "%.1f", goalRate)) lbs")
+                            Text("\(coordinator.goal.lowercased() == "gain weight" ? "+" : "-")\(String(format: "%.2f", goalRate)) lbs")
                                 .font(.system(size: 18, weight: .semibold))
                                 .foregroundColor(.white)
                             Text("Per Week")
