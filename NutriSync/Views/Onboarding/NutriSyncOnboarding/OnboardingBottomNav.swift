@@ -54,10 +54,10 @@ struct OnboardingBottomNav: View {
                     Image(systemName: "chevron.right")
                         .font(.system(size: 14, weight: .semibold))
                 }
-                .foregroundColor(canGoNext ? Color.nutriSyncBackground : .white.opacity(0.5))
+                .foregroundColor(canGoNext ? .black : .white.opacity(0.5))
                 .frame(height: 44)
                 .padding(.horizontal, 24)
-                .background(canGoNext ? Color.white : Color.white.opacity(0.1))
+                .background(canGoNext ? Color.nutriSyncAccent : Color.white.opacity(0.1))
                 .cornerRadius(22)
             }
             .disabled(!canGoNext)

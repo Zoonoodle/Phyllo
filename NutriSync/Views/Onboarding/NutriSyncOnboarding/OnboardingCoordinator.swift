@@ -503,12 +503,10 @@ struct NutriSyncOnboardingCoordinator: View {
                                 Image(systemName: "chevron.right")
                                     .font(.system(size: 14, weight: .semibold))
                             }
-                            .foregroundColor(isDisabled ? Color.white.opacity(0.3) : 
-                                           isLastScreenInSection ? .black : Color.nutriSyncBackground)
+                            .foregroundColor(isDisabled ? Color.white.opacity(0.3) : .black)
                             .padding(.horizontal, 24)
                             .frame(height: 44)
-                            .background(isDisabled ? Color.white.opacity(0.1) :
-                                      isLastScreenInSection ? Color(hex: "C0FF73") : Color.white)
+                            .background(isDisabled ? Color.white.opacity(0.1) : Color.nutriSyncAccent)
                             .cornerRadius(22)
                         }
                         .disabled((viewModel.currentScreen == "Health Disclaimer" && 
