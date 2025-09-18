@@ -17,9 +17,12 @@ struct RulerSlider: View {
     @State private var dragStartValue: Double = 0
     @State private var accumulatedDragOffset: CGFloat = 0
     @State private var hasHitBoundary = false
+    @State private var currentDisplayValue: Double = 0
     
     private let tickSpacing: CGFloat = 40
+    private let dragSensitivity: CGFloat = 1.5 // Higher = more sensitive
     private let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+    private let selectionFeedback = UISelectionFeedbackGenerator()
     
     init(value: Binding<Double>, 
          range: ClosedRange<Double>,
@@ -81,17 +84,19 @@ struct RulerSlider: View {
                                 if !isDragging {
                                     isDragging = true
                                     dragStartValue = value
+                                    currentDisplayValue = value
                                     accumulatedDragOffset = 0
                                     hasHitBoundary = false
-                                    impactFeedback.prepare()
+                                    selectionFeedback.prepare()
                                 }
                                 
-                                // Calculate the raw drag offset
-                                let currentDragOffset = -dragValue.translation.width
+                                // Calculate the raw drag offset with sensitivity adjustment
+                                let currentDragOffset = -dragValue.translation.width * dragSensitivity
                                 
-                                // Calculate target value based on total drag from start
-                                let ticksFromStart = round(currentDragOffset / tickSpacing)
-                                let targetValue = dragStartValue + ticksFromStart
+                                // More fluid calculation with fractional support
+                                let effectiveTickSpacing = tickSpacing / dragSensitivity
+                                let continuousValue = dragStartValue + (currentDragOffset / effectiveTickSpacing)
+                                let targetValue = round(continuousValue)
                                 
                                 // Check if target is within valid range
                                 if targetValue >= validRange.lowerBound && targetValue <= validRange.upperBound {
@@ -101,17 +106,20 @@ struct RulerSlider: View {
                                         onChanged?(targetValue)
                                         hasHitBoundary = false
                                         
-                                        // Haptic feedback for each change
+                                        // Lighter haptic feedback for smoother feel
                                         if abs(targetValue - lastHapticValue) >= 1.0 {
-                                            impactFeedback.impactOccurred()
+                                            selectionFeedback.selectionChanged()
                                             lastHapticValue = targetValue
                                         }
                                         
-                                        // Scroll to the new position
-                                        withAnimation(.easeOut(duration: 0.1)) {
+                                        // Faster, smoother animation
+                                        withAnimation(.interactiveSpring(response: 0.15, dampingFraction: 0.86, blendDuration: 0.25)) {
                                             proxy.scrollTo(Int(targetValue), anchor: .center)
                                         }
                                     }
+                                    
+                                    // Update display value for smoother visual feedback
+                                    currentDisplayValue = continuousValue
                                     accumulatedDragOffset = currentDragOffset
                                 } else {
                                     // Hit boundary - don't allow scroll past it
@@ -122,19 +130,20 @@ struct RulerSlider: View {
                                         value = boundaryValue
                                         onChanged?(boundaryValue)
                                         
-                                        withAnimation(.easeOut(duration: 0.1)) {
+                                        withAnimation(.interactiveSpring(response: 0.2, dampingFraction: 0.9)) {
                                             proxy.scrollTo(Int(boundaryValue), anchor: .center)
                                         }
                                     }
                                     
                                     // Provide feedback only once per boundary hit
                                     if !hasHitBoundary {
-                                        impactFeedback.impactOccurred(intensity: 1.0)
+                                        impactFeedback.impactOccurred(intensity: 0.8)
                                         hasHitBoundary = true
                                     }
                                     
+                                    currentDisplayValue = boundaryValue
                                     // Don't accumulate offset beyond boundary
-                                    accumulatedDragOffset = (boundaryValue - dragStartValue) * tickSpacing
+                                    accumulatedDragOffset = (boundaryValue - dragStartValue) * effectiveTickSpacing
                                 }
                             }
                             .onEnded { _ in

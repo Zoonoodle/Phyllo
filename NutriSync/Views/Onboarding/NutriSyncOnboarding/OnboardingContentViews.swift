@@ -1837,12 +1837,59 @@ struct AlmostThereContentView: View {
                     .padding(.bottom, 40)
                 
                 // Main content
-                VStack(spacing: 24) {
-                    Text("We'll create your custom meal windows based on your lifestyle and goals.")
-                        .font(.system(size: 15))
-                        .foregroundColor(.white.opacity(0.8))
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 40)
+                VStack(spacing: 32) {
+                    // Progress indicators
+                    VStack(spacing: 24) {
+                        // Icon or illustration placeholder
+                        Image(systemName: "chart.line.uptrend.xyaxis")
+                            .font(.system(size: 60))
+                            .foregroundColor(.white.opacity(0.3))
+                            .padding(.bottom, 20)
+                        
+                        Text("We'll create your custom meal windows based on your lifestyle and goals.")
+                            .font(.system(size: 15))
+                            .foregroundColor(.white.opacity(0.8))
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 20)
+                        
+                        // Key features
+                        VStack(spacing: 16) {
+                            HStack(spacing: 12) {
+                                Image(systemName: "clock.fill")
+                                    .font(.system(size: 20))
+                                    .foregroundColor(.white.opacity(0.5))
+                                    .frame(width: 24)
+                                Text("Optimized meal timing")
+                                    .font(.system(size: 15))
+                                    .foregroundColor(.white.opacity(0.7))
+                                Spacer()
+                            }
+                            
+                            HStack(spacing: 12) {
+                                Image(systemName: "chart.bar.fill")
+                                    .font(.system(size: 20))
+                                    .foregroundColor(.white.opacity(0.5))
+                                    .frame(width: 24)
+                                Text("Personalized macro distribution")
+                                    .font(.system(size: 15))
+                                    .foregroundColor(.white.opacity(0.7))
+                                Spacer()
+                            }
+                            
+                            HStack(spacing: 12) {
+                                Image(systemName: "target")
+                                    .font(.system(size: 20))
+                                    .foregroundColor(.white.opacity(0.5))
+                                    .frame(width: 24)
+                                Text("Goal-focused approach")
+                                    .font(.system(size: 15))
+                                    .foregroundColor(.white.opacity(0.7))
+                                Spacer()
+                            }
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.top, 20)
+                    }
                 }
                 .padding(.horizontal, 20)
                 
@@ -1874,12 +1921,40 @@ struct DietPreferenceContentView: View {
                     .padding(.horizontal, 20)
                     .padding(.bottom, 40)
                 
-                // Main content - Diet options will go here
-                VStack(spacing: 16) {
-                    // Placeholder for diet preference options
-                    Text("Diet preference options coming soon")
-                        .font(.system(size: 15))
-                        .foregroundColor(.white.opacity(0.5))
+                // Main content - Diet options
+                VStack(spacing: 12) {
+                    // Diet option cards
+                    ForEach([
+                        ("Balanced", "Flexible approach with all food groups"),
+                        ("Keto", "High fat, low carb for ketosis"),
+                        ("Paleo", "Whole foods, no processed items"),
+                        ("Mediterranean", "Heart-healthy fats and lean proteins"),
+                        ("Plant-Based", "Vegetarian or vegan focused"),
+                        ("Custom", "Create your own approach")
+                    ], id: \.0) { diet, description in
+                        Button(action: {
+                            // Action will be implemented
+                        }) {
+                            HStack(spacing: 16) {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(diet)
+                                        .font(.system(size: 17, weight: .semibold))
+                                        .foregroundColor(.white)
+                                    Text(description)
+                                        .font(.system(size: 14))
+                                        .foregroundColor(.white.opacity(0.6))
+                                }
+                                Spacer()
+                                Image(systemName: "circle")
+                                    .font(.system(size: 22))
+                                    .foregroundColor(.white.opacity(0.3))
+                            }
+                            .padding(16)
+                            .background(Color.white.opacity(0.05))
+                            .cornerRadius(12)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                    }
                 }
                 .padding(.horizontal, 20)
                 
@@ -1911,12 +1986,71 @@ struct TrainingPlanContentView: View {
                     .padding(.horizontal, 20)
                     .padding(.bottom, 40)
                 
-                // Main content - Training plan options will go here
-                VStack(spacing: 16) {
-                    // Placeholder for training plan options
-                    Text("Training plan options coming soon")
-                        .font(.system(size: 15))
-                        .foregroundColor(.white.opacity(0.5))
+                // Main content - Training plan options
+                VStack(spacing: 20) {
+                    // Training frequency selector
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("How often do you train?")
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundColor(.white.opacity(0.8))
+                        
+                        VStack(spacing: 12) {
+                            ForEach([
+                                ("None", "No regular training"),
+                                ("1-2x/week", "Light activity"),
+                                ("3-4x/week", "Moderate training"),
+                                ("5-6x/week", "Frequent training"),
+                                ("Daily", "Training every day")
+                            ], id: \.0) { frequency, description in
+                                Button(action: {
+                                    // Action will be implemented
+                                }) {
+                                    HStack {
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text(frequency)
+                                                .font(.system(size: 16, weight: .medium))
+                                                .foregroundColor(.white)
+                                            Text(description)
+                                                .font(.system(size: 13))
+                                                .foregroundColor(.white.opacity(0.5))
+                                        }
+                                        Spacer()
+                                        Image(systemName: "circle")
+                                            .font(.system(size: 20))
+                                            .foregroundColor(.white.opacity(0.3))
+                                    }
+                                    .padding(14)
+                                    .background(Color.white.opacity(0.05))
+                                    .cornerRadius(10)
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                            }
+                        }
+                    }
+                    
+                    // Training time preference
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Preferred training time")
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundColor(.white.opacity(0.8))
+                        
+                        HStack(spacing: 10) {
+                            ForEach(["Morning", "Afternoon", "Evening", "Varies"], id: \.self) { time in
+                                Button(action: {
+                                    // Action will be implemented
+                                }) {
+                                    Text(time)
+                                        .font(.system(size: 14, weight: .medium))
+                                        .foregroundColor(.white.opacity(0.7))
+                                        .padding(.horizontal, 16)
+                                        .padding(.vertical, 10)
+                                        .background(Color.white.opacity(0.08))
+                                        .cornerRadius(20)
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                            }
+                        }
+                    }
                 }
                 .padding(.horizontal, 20)
                 
@@ -1948,12 +2082,61 @@ struct CalorieFloorContentView: View {
                     .padding(.horizontal, 20)
                     .padding(.bottom, 40)
                 
-                // Main content - Calorie floor settings will go here
-                VStack(spacing: 16) {
-                    // Placeholder for calorie floor input
-                    Text("Calorie floor settings coming soon")
-                        .font(.system(size: 15))
+                // Main content - Calorie floor settings
+                VStack(spacing: 32) {
+                    // Current calorie range display
+                    VStack(spacing: 12) {
+                        Text("1,500")
+                            .font(.system(size: 48, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
+                        Text("calories minimum")
+                            .font(.system(size: 15))
+                            .foregroundColor(.white.opacity(0.6))
+                    }
+                    .padding(.vertical, 20)
+                    
+                    // Slider for adjustment
+                    VStack(spacing: 20) {
+                        // Slider placeholder (actual Slider would go here)
+                        HStack {
+                            Text("1,200")
+                                .font(.system(size: 13))
+                                .foregroundColor(.white.opacity(0.5))
+                            Spacer()
+                            Text("3,000")
+                                .font(.system(size: 13))
+                                .foregroundColor(.white.opacity(0.5))
+                        }
+                        
+                        // Visual slider representation
+                        GeometryReader { geometry in
+                            ZStack(alignment: .leading) {
+                                // Track
+                                RoundedRectangle(cornerRadius: 4)
+                                    .fill(Color.white.opacity(0.1))
+                                    .frame(height: 8)
+                                
+                                // Fill
+                                RoundedRectangle(cornerRadius: 4)
+                                    .fill(Color.white.opacity(0.3))
+                                    .frame(width: geometry.size.width * 0.3, height: 8)
+                                
+                                // Thumb
+                                Circle()
+                                    .fill(Color.white)
+                                    .frame(width: 24, height: 24)
+                                    .offset(x: geometry.size.width * 0.3 - 12)
+                            }
+                        }
+                        .frame(height: 24)
+                    }
+                    
+                    // Info text
+                    Text("This ensures you're eating enough to support your metabolism and goals")
+                        .font(.system(size: 14))
                         .foregroundColor(.white.opacity(0.5))
+                        .multilineTextAlignment(.center)
+                        .padding(.top, 20)
                 }
                 .padding(.horizontal, 20)
                 
@@ -1985,12 +2168,80 @@ struct SleepScheduleContentView: View {
                     .padding(.horizontal, 20)
                     .padding(.bottom, 40)
                 
-                // Main content - Sleep schedule input will go here
-                VStack(spacing: 16) {
-                    // Placeholder for sleep schedule settings
-                    Text("Sleep schedule settings coming soon")
-                        .font(.system(size: 15))
-                        .foregroundColor(.white.opacity(0.5))
+                // Main content - Sleep schedule input
+                VStack(spacing: 24) {
+                    // Bedtime selector
+                    VStack(spacing: 16) {
+                        HStack {
+                            Image(systemName: "moon.fill")
+                                .font(.system(size: 20))
+                                .foregroundColor(.white.opacity(0.5))
+                            Text("Usual Bedtime")
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundColor(.white.opacity(0.8))
+                            Spacer()
+                        }
+                        
+                        // Time selector buttons
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 10) {
+                                ForEach(["9:00 PM", "9:30 PM", "10:00 PM", "10:30 PM", "11:00 PM", "11:30 PM", "12:00 AM"], id: \.self) { time in
+                                    Button(action: {}) {
+                                        Text(time)
+                                            .font(.system(size: 14, weight: .medium))
+                                            .foregroundColor(.white.opacity(0.7))
+                                            .padding(.horizontal, 16)
+                                            .padding(.vertical, 10)
+                                            .background(Color.white.opacity(0.08))
+                                            .cornerRadius(20)
+                                    }
+                                    .buttonStyle(PlainButtonStyle())
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Wake time selector
+                    VStack(spacing: 16) {
+                        HStack {
+                            Image(systemName: "sun.max.fill")
+                                .font(.system(size: 20))
+                                .foregroundColor(.white.opacity(0.5))
+                            Text("Wake Up Time")
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundColor(.white.opacity(0.8))
+                            Spacer()
+                        }
+                        
+                        // Time selector buttons
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 10) {
+                                ForEach(["5:00 AM", "5:30 AM", "6:00 AM", "6:30 AM", "7:00 AM", "7:30 AM", "8:00 AM"], id: \.self) { time in
+                                    Button(action: {}) {
+                                        Text(time)
+                                            .font(.system(size: 14, weight: .medium))
+                                            .foregroundColor(.white.opacity(0.7))
+                                            .padding(.horizontal, 16)
+                                            .padding(.vertical, 10)
+                                            .background(Color.white.opacity(0.08))
+                                            .cornerRadius(20)
+                                    }
+                                    .buttonStyle(PlainButtonStyle())
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Sleep duration display
+                    HStack(spacing: 8) {
+                        Image(systemName: "bed.double.fill")
+                            .font(.system(size: 16))
+                            .foregroundColor(.white.opacity(0.4))
+                        Text("About 8 hours of sleep")
+                            .font(.system(size: 14))
+                            .foregroundColor(.white.opacity(0.6))
+                    }
+                    .padding(.top, 12)
                 }
                 .padding(.horizontal, 20)
                 
@@ -2022,12 +2273,51 @@ struct MealFrequencyContentView: View {
                     .padding(.horizontal, 20)
                     .padding(.bottom, 40)
                 
-                // Main content - Meal frequency options will go here
-                VStack(spacing: 16) {
-                    // Placeholder for meal frequency selection
-                    Text("Meal frequency options coming soon")
-                        .font(.system(size: 15))
-                        .foregroundColor(.white.opacity(0.5))
+                // Main content - Meal frequency options
+                VStack(spacing: 20) {
+                    // Meal frequency grid
+                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                        ForEach([
+                            ("2 Meals", "Intermittent fasting"),
+                            ("3 Meals", "Traditional approach"),
+                            ("4 Meals", "Balanced frequency"),
+                            ("5 Meals", "Frequent feeding"),
+                            ("6 Meals", "Bodybuilder style"),
+                            ("Flexible", "Varies by day")
+                        ], id: \.0) { meals, style in
+                            Button(action: {}) {
+                                VStack(spacing: 8) {
+                                    Text(meals)
+                                        .font(.system(size: 18, weight: .semibold))
+                                        .foregroundColor(.white)
+                                    Text(style)
+                                        .font(.system(size: 12))
+                                        .foregroundColor(.white.opacity(0.5))
+                                }
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 80)
+                                .background(Color.white.opacity(0.05))
+                                .cornerRadius(12)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                                )
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                        }
+                    }
+                    
+                    // Info section
+                    VStack(spacing: 12) {
+                        Text("Consider your schedule")
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundColor(.white.opacity(0.8))
+                        Text("We'll optimize your meal windows based on your daily routine and training schedule")
+                            .font(.system(size: 13))
+                            .foregroundColor(.white.opacity(0.5))
+                            .multilineTextAlignment(.center)
+                    }
+                    .padding(.top, 20)
                 }
                 .padding(.horizontal, 20)
                 
@@ -2059,12 +2349,101 @@ struct EatingWindowContentView: View {
                     .padding(.horizontal, 20)
                     .padding(.bottom, 40)
                 
-                // Main content - Eating window configuration will go here
-                VStack(spacing: 16) {
-                    // Placeholder for eating window settings
-                    Text("Eating window settings coming soon")
-                        .font(.system(size: 15))
-                        .foregroundColor(.white.opacity(0.5))
+                // Main content - Eating window configuration
+                VStack(spacing: 28) {
+                    // Visual window display
+                    VStack(spacing: 16) {
+                        // 24-hour timeline visualization
+                        VStack(spacing: 12) {
+                            HStack {
+                                Text("12 AM")
+                                    .font(.system(size: 11))
+                                    .foregroundColor(.white.opacity(0.4))
+                                Spacer()
+                                Text("12 PM")
+                                    .font(.system(size: 11))
+                                    .foregroundColor(.white.opacity(0.4))
+                                Spacer()
+                                Text("11 PM")
+                                    .font(.system(size: 11))
+                                    .foregroundColor(.white.opacity(0.4))
+                            }
+                            
+                            // Timeline bar
+                            GeometryReader { geometry in
+                                ZStack(alignment: .leading) {
+                                    // Full day track
+                                    RoundedRectangle(cornerRadius: 6)
+                                        .fill(Color.white.opacity(0.1))
+                                    
+                                    // Eating window (example: 12 PM to 8 PM)
+                                    RoundedRectangle(cornerRadius: 6)
+                                        .fill(Color.green.opacity(0.4))
+                                        .frame(width: geometry.size.width * 0.33)
+                                        .offset(x: geometry.size.width * 0.5)
+                                }
+                            }
+                            .frame(height: 40)
+                        }
+                        
+                        // Window stats
+                        HStack(spacing: 40) {
+                            VStack(spacing: 4) {
+                                Text("16")
+                                    .font(.system(size: 32, weight: .bold, design: .rounded))
+                                    .foregroundColor(.white)
+                                Text("hours fasting")
+                                    .font(.system(size: 12))
+                                    .foregroundColor(.white.opacity(0.5))
+                            }
+                            
+                            VStack(spacing: 4) {
+                                Text("8")
+                                    .font(.system(size: 32, weight: .bold, design: .rounded))
+                                    .foregroundColor(.white)
+                                Text("hours eating")
+                                    .font(.system(size: 12))
+                                    .foregroundColor(.white.opacity(0.5))
+                            }
+                        }
+                        .padding(.vertical, 20)
+                    }
+                    
+                    // Preset options
+                    VStack(spacing: 12) {
+                        Text("Popular Windows")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.white.opacity(0.7))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        
+                        VStack(spacing: 10) {
+                            ForEach([
+                                ("16:8", "Fast 16 hrs, eat 8 hrs"),
+                                ("18:6", "Fast 18 hrs, eat 6 hrs"),
+                                ("14:10", "Fast 14 hrs, eat 10 hrs"),
+                                ("Custom", "Set your own window")
+                            ], id: \.0) { window, description in
+                                Button(action: {}) {
+                                    HStack {
+                                        Text(window)
+                                            .font(.system(size: 16, weight: .semibold))
+                                            .foregroundColor(.white)
+                                        Text(description)
+                                            .font(.system(size: 14))
+                                            .foregroundColor(.white.opacity(0.5))
+                                        Spacer()
+                                        Image(systemName: "circle")
+                                            .font(.system(size: 20))
+                                            .foregroundColor(.white.opacity(0.3))
+                                    }
+                                    .padding(14)
+                                    .background(Color.white.opacity(0.05))
+                                    .cornerRadius(10)
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                            }
+                        }
+                    }
                 }
                 .padding(.horizontal, 20)
                 
@@ -2096,12 +2475,51 @@ struct DietaryRestrictionsContentView: View {
                     .padding(.horizontal, 20)
                     .padding(.bottom, 40)
                 
-                // Main content - Dietary restrictions list will go here
-                VStack(spacing: 16) {
-                    // Placeholder for dietary restrictions
-                    Text("Dietary restrictions options coming soon")
-                        .font(.system(size: 15))
-                        .foregroundColor(.white.opacity(0.5))
+                // Main content - Dietary restrictions list
+                VStack(spacing: 20) {
+                    // Restrictions checklist
+                    VStack(spacing: 12) {
+                        ForEach([
+                            ("Dairy-Free", "lactose"),
+                            ("Gluten-Free", "wheat"),
+                            ("Nut-Free", "tree nuts"),
+                            ("Shellfish-Free", "seafood"),
+                            ("Soy-Free", "soy products"),
+                            ("Egg-Free", "eggs"),
+                            ("Low Sodium", "salt restricted"),
+                            ("Sugar-Free", "added sugars")
+                        ], id: \.0) { restriction, detail in
+                            Button(action: {}) {
+                                HStack(spacing: 16) {
+                                    Image(systemName: "square")
+                                        .font(.system(size: 22))
+                                        .foregroundColor(.white.opacity(0.3))
+                                    
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(restriction)
+                                            .font(.system(size: 16, weight: .medium))
+                                            .foregroundColor(.white)
+                                        Text("Avoid \(detail)")
+                                            .font(.system(size: 13))
+                                            .foregroundColor(.white.opacity(0.5))
+                                    }
+                                    
+                                    Spacer()
+                                }
+                                .padding(.vertical, 8)
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                        }
+                    }
+                    
+                    // Skip option
+                    Button(action: {}) {
+                        Text("No restrictions")
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundColor(.white.opacity(0.5))
+                            .padding(.vertical, 12)
+                    }
+                    .buttonStyle(PlainButtonStyle())
                 }
                 .padding(.horizontal, 20)
                 
@@ -2133,12 +2551,62 @@ struct MealTimingPreferenceContentView: View {
                     .padding(.horizontal, 20)
                     .padding(.bottom, 40)
                 
-                // Main content - Meal timing preferences will go here
-                VStack(spacing: 16) {
-                    // Placeholder for meal timing settings
-                    Text("Meal timing preferences coming soon")
-                        .font(.system(size: 15))
+                // Main content - Meal timing preferences
+                VStack(spacing: 24) {
+                    // Meal slots
+                    VStack(spacing: 16) {
+                        ForEach([
+                            ("Breakfast", "morning", "6:00 - 10:00 AM"),
+                            ("Lunch", "midday", "11:00 AM - 2:00 PM"),
+                            ("Dinner", "evening", "5:00 - 8:00 PM"),
+                            ("Snacks", "between", "Flexible timing")
+                        ], id: \.0) { meal, period, timeRange in
+                            VStack(spacing: 12) {
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(meal)
+                                            .font(.system(size: 16, weight: .semibold))
+                                            .foregroundColor(.white)
+                                        Text(timeRange)
+                                            .font(.system(size: 13))
+                                            .foregroundColor(.white.opacity(0.5))
+                                    }
+                                    Spacer()
+                                    
+                                    // Time adjustment buttons
+                                    HStack(spacing: 8) {
+                                        Button(action: {}) {
+                                            Image(systemName: "minus.circle")
+                                                .font(.system(size: 20))
+                                                .foregroundColor(.white.opacity(0.3))
+                                        }
+                                        .buttonStyle(PlainButtonStyle())
+                                        
+                                        Text("7:30 AM")
+                                            .font(.system(size: 14, weight: .medium))
+                                            .foregroundColor(.white.opacity(0.7))
+                                            .frame(width: 70)
+                                        
+                                        Button(action: {}) {
+                                            Image(systemName: "plus.circle")
+                                                .font(.system(size: 20))
+                                                .foregroundColor(.white.opacity(0.3))
+                                        }
+                                        .buttonStyle(PlainButtonStyle())
+                                    }
+                                }
+                                .padding(12)
+                                .background(Color.white.opacity(0.05))
+                                .cornerRadius(10)
+                            }
+                        }
+                    }
+                    
+                    // Flexibility note
+                    Text("Times can be adjusted daily based on your schedule")
+                        .font(.system(size: 13))
                         .foregroundColor(.white.opacity(0.5))
+                        .multilineTextAlignment(.center)
                 }
                 .padding(.horizontal, 20)
                 
@@ -2170,12 +2638,76 @@ struct WindowFlexibilityContentView: View {
                     .padding(.horizontal, 20)
                     .padding(.bottom, 40)
                 
-                // Main content - Window flexibility settings will go here
-                VStack(spacing: 16) {
-                    // Placeholder for flexibility options
-                    Text("Window flexibility options coming soon")
-                        .font(.system(size: 15))
-                        .foregroundColor(.white.opacity(0.5))
+                // Main content - Window flexibility settings
+                VStack(spacing: 24) {
+                    // Flexibility level selector
+                    VStack(spacing: 20) {
+                        Text("Choose your flexibility level")
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundColor(.white.opacity(0.8))
+                        
+                        VStack(spacing: 12) {
+                            ForEach([
+                                ("Strict", "Same window every day", "Best for rapid results"),
+                                ("Moderate", "1-2 hour flexibility", "Good balance"),
+                                ("Flexible", "Adjust as needed", "Lifestyle friendly"),
+                                ("Weekend Mode", "Relaxed on weekends", "Social flexibility")
+                            ], id: \.0) { level, description, benefit in
+                                Button(action: {}) {
+                                    VStack(alignment: .leading, spacing: 8) {
+                                        HStack {
+                                            Text(level)
+                                                .font(.system(size: 17, weight: .semibold))
+                                                .foregroundColor(.white)
+                                            Spacer()
+                                            Image(systemName: "circle")
+                                                .font(.system(size: 20))
+                                                .foregroundColor(.white.opacity(0.3))
+                                        }
+                                        Text(description)
+                                            .font(.system(size: 14))
+                                            .foregroundColor(.white.opacity(0.6))
+                                        Text(benefit)
+                                            .font(.system(size: 12))
+                                            .foregroundColor(.white.opacity(0.4))
+                                    }
+                                    .padding(16)
+                                    .background(Color.white.opacity(0.05))
+                                    .cornerRadius(12)
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                            }
+                        }
+                    }
+                    
+                    // Special occasions toggle
+                    VStack(spacing: 12) {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Special Occasions")
+                                    .font(.system(size: 15, weight: .medium))
+                                    .foregroundColor(.white.opacity(0.8))
+                                Text("Allow extra flexibility for events")
+                                    .font(.system(size: 13))
+                                    .foregroundColor(.white.opacity(0.5))
+                            }
+                            Spacer()
+                            
+                            // Toggle placeholder
+                            ZStack {
+                                Capsule()
+                                    .fill(Color.white.opacity(0.1))
+                                    .frame(width: 51, height: 31)
+                                Circle()
+                                    .fill(Color.white.opacity(0.3))
+                                    .frame(width: 27, height: 27)
+                                    .offset(x: -10)
+                            }
+                        }
+                        .padding(16)
+                        .background(Color.white.opacity(0.03))
+                        .cornerRadius(12)
+                    }
                 }
                 .padding(.horizontal, 20)
                 
