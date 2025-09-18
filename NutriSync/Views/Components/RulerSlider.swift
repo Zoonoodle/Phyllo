@@ -14,6 +14,7 @@ struct RulerSlider: View {
     @State private var isDragging = false
     @State private var lastHapticValue: Double = 0
     @State private var scrollPosition: Double = 0
+    @State private var dragStartValue: Double = 0
     
     private let tickSpacing: CGFloat = 40
     private let impactFeedback = UIImpactFeedbackGenerator(style: .light)
@@ -76,33 +77,52 @@ struct RulerSlider: View {
                             .onChanged { dragValue in
                                 if !isDragging {
                                     isDragging = true
+                                    dragStartValue = value
                                     impactFeedback.prepare()
                                 }
                                 
-                                // Calculate which value is under the center based on drag offset
+                                // Calculate target value based on drag
                                 let dragOffset = -dragValue.translation.width
                                 let ticksMoved = round(dragOffset / tickSpacing)
-                                let newValue = max(validRange.lowerBound, min(validRange.upperBound, scrollPosition + ticksMoved))
+                                let targetValue = dragStartValue + ticksMoved
                                 
-                                if newValue != value {
-                                    value = newValue
-                                    onChanged?(newValue)
+                                // Clamp to valid range - hard stop at boundaries
+                                let clampedValue = max(validRange.lowerBound, min(validRange.upperBound, targetValue))
+                                
+                                // Only scroll and update if within valid range
+                                if clampedValue != value && clampedValue == targetValue {
+                                    // This means targetValue is within valid range
+                                    value = clampedValue
+                                    onChanged?(clampedValue)
                                     
-                                    // Haptic feedback for each pound change
-                                    if abs(newValue - lastHapticValue) >= 1.0 {
+                                    // Haptic feedback for each change
+                                    if abs(clampedValue - lastHapticValue) >= 1.0 {
                                         impactFeedback.impactOccurred()
-                                        lastHapticValue = newValue
+                                        lastHapticValue = clampedValue
                                     }
                                     
-                                    // Scroll to show the new value
+                                    // Scroll to the new position
                                     withAnimation(.easeOut(duration: 0.1)) {
-                                        proxy.scrollTo(Int(newValue), anchor: .center)
+                                        proxy.scrollTo(Int(clampedValue), anchor: .center)
+                                    }
+                                } else if clampedValue != targetValue {
+                                    // Trying to drag beyond valid range - provide boundary feedback
+                                    if value != clampedValue {
+                                        // Snap to the boundary
+                                        value = clampedValue
+                                        onChanged?(clampedValue)
+                                        impactFeedback.impactOccurred(intensity: 1.0) // Strong feedback at boundary
+                                        
+                                        withAnimation(.easeOut(duration: 0.1)) {
+                                            proxy.scrollTo(Int(clampedValue), anchor: .center)
+                                        }
                                     }
                                 }
                             }
                             .onEnded { _ in
                                 isDragging = false
                                 scrollPosition = value
+                                dragStartValue = value
                                 
                                 // Final snap animation
                                 withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
@@ -112,6 +132,7 @@ struct RulerSlider: View {
                     )
                     .onAppear {
                         scrollPosition = value
+                        dragStartValue = value
                         DispatchQueue.main.async {
                             proxy.scrollTo(Int(value), anchor: .center)
                         }
