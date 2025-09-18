@@ -621,8 +621,10 @@ struct NutriSyncOnboardingCoordinator: View {
             GoalSettingIntroContentView()
         case "Goal Selection":
             GoalSelectionContentView()
-        case "Maintenance Strategy":
-            MaintenanceStrategyContentView()
+        case "Trend Weight":
+            TrendWeightContentView()
+        case "Goal Summary":
+            GoalSummaryContentView()
         case "Weight Goal":
             WeightGoalContentView()
         case "Workout Schedule":

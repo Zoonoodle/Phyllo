@@ -973,85 +973,163 @@ struct GoalSelectionContentView: View {
     }
 }
 
-struct MaintenanceStrategyContentView: View {
+struct TrendWeightContentView: View {
     @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
-    @State private var selectedStrategy = ""
+    @State private var targetTrendWeight: Double = 0
     @State private var isInitialized = false
     
-    let strategies = [
-        ("Energy stability", "bolt.circle.fill", "Maintain consistent energy throughout the day", Color.yellow),
-        ("Performance optimization", "figure.run.circle.fill", "Optimize nutrition for physical performance", Color.orange),
-        ("Better sleep quality", "moon.circle.fill", "Improve sleep through timed nutrition", Color.purple),
-        ("Overall health", "heart.circle.fill", "Focus on general health and wellbeing", Color.red)
-    ]
+    private var currentWeightLbs: Int {
+        Int(coordinator.weight * 2.20462)
+    }
+    
+    private var weightRange: ClosedRange<Double> {
+        Double(currentWeightLbs - 10)...Double(currentWeightLbs + 10)
+    }
+    
+    private var validRange: ClosedRange<Double> {
+        // For all goal types, allow full range
+        weightRange
+    }
+    
+    private var calorieRange: String {
+        // Calculate TDEE
+        let tdee = calculateTDEE()
+        
+        // For dynamic maintenance, show a range
+        let lower = Int(tdee - 125)
+        let upper = Int(tdee + 150)
+        
+        return "\(lower) - \(upper) kcal"
+    }
+    
+    private func calculateTDEE() -> Double {
+        // BMR calculation (Mifflin-St Jeor)
+        let weightKg = coordinator.weight
+        let heightCm = coordinator.height
+        let age = coordinator.age
+        
+        var bmr: Double
+        if coordinator.gender == "Male" {
+            bmr = (10 * weightKg) + (6.25 * heightCm) - (5 * Double(age)) + 5
+        } else {
+            bmr = (10 * weightKg) + (6.25 * heightCm) - (5 * Double(age)) - 161
+        }
+        
+        // Activity multiplier
+        let activityMultiplier: Double = {
+            switch coordinator.activityLevel {
+            case "Mostly Sedentary": return 1.2
+            case "Lightly Active": return 1.375
+            case "Moderately Active": return 1.55
+            case "Very Active": return 1.725
+            case "Extremely Active": return 1.9
+            default: return 1.2
+            }
+        }()
+        
+        return bmr * activityMultiplier
+    }
+    
+    private var explanationText: String {
+        switch coordinator.goal.lowercased() {
+        case "maintain weight":
+            return "Dynamic maintenance will continuously adjust your targets to keep your trend weight within the target range."
+        case "lose weight":
+            return "We'll create a sustainable calorie deficit to help you reach your target weight safely."
+        case "gain weight":
+            return "We'll create a controlled calorie surplus to help you reach your target weight effectively."
+        default:
+            return "We'll adjust your nutrition plan to help you reach your target weight."
+        }
+    }
     
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
                 // Title
-                Text("Maintenance Strategy")
+                Text("Set New Goal")
                     .font(.system(size: 28, weight: .bold))
                     .foregroundColor(.white)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 20)
-                    .padding(.bottom, 12)
-                
-                // Subtitle
-                Text("Let's optimize your eating schedule to maintain your current weight")
-                    .font(.system(size: 17))
-                    .foregroundColor(.white.opacity(0.6))
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 20)
                     .padding(.bottom, 40)
                 
-                // Strategy options
-                VStack(spacing: 16) {
-                    ForEach(strategies, id: \.0) { strategy, icon, description, color in
-                        Button {
-                            selectedStrategy = strategy
-                            coordinator.maintenanceStrategy = strategy
-                        } label: {
-                            HStack(spacing: 16) {
-                                // Icon with gradient background
-                                ZStack {
-                                    Circle()
-                                        .fill(LinearGradient(
-                                            gradient: Gradient(colors: [color.opacity(0.3), color.opacity(0.1)]),
-                                            startPoint: .topLeading,
-                                            endPoint: .bottomTrailing
-                                        ))
-                                        .frame(width: 56, height: 56)
-                                    
-                                    Image(systemName: icon)
-                                        .font(.system(size: 28))
-                                        .foregroundColor(color)
-                                }
-                                
-                                VStack(alignment: .leading, spacing: 6) {
-                                    Text(strategy)
-                                        .font(.system(size: 20, weight: .semibold))
-                                        .foregroundColor(.white)
-                                    
-                                    Text(description)
-                                        .font(.system(size: 15))
-                                        .foregroundColor(.white.opacity(0.6))
-                                }
-                                
-                                Spacer()
-                            }
-                            .padding(20)
-                            .background(Color.white.opacity(0.03))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 16)
-                                    .stroke(selectedStrategy == strategy ? color : Color.white.opacity(0.2), lineWidth: selectedStrategy == strategy ? 3 : 1)
-                            )
-                            .cornerRadius(16)
-                        }
+                // Calorie range card (for maintenance)
+                if coordinator.goal.lowercased() == "maintain weight" {
+                    VStack(spacing: 8) {
+                        Text(calorieRange)
+                            .font(.system(size: 24, weight: .bold))
+                            .foregroundColor(.white)
+                        Text("initial dynamic calorie range")
+                            .font(.system(size: 14))
+                            .foregroundColor(.white.opacity(0.8))
                     }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 20)
+                    .background(
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(Color(red: 0.4, green: 0.3, blue: 0.6).opacity(0.6))
+                    )
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 40)
+                }
+                
+                // Explanation section
+                VStack(alignment: .leading, spacing: 20) {
+                    Text("What is dynamic \(coordinator.goal.lowercased() == "maintain weight" ? "maintenance" : "adjustment")?")
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundColor(.white)
+                    
+                    Text("NutriSync's \(coordinator.goal.lowercased() == "maintain weight" ? "maintenance mode" : "goal mode") is dynamic. It will monitor your weight and metabolism and make small adjustments to your weekly macro plan to move your trend weight to the chosen target. That means that NutriSync may recommend a slight surplus or deficit even during \(coordinator.goal.lowercased() == "maintain weight" ? "maintenance" : "your journey").")
+                        .font(.system(size: 16))
+                        .foregroundColor(.white.opacity(0.8))
+                        .lineSpacing(4)
                 }
                 .padding(.horizontal, 20)
+                .padding(.bottom, 40)
                 
-                Spacer(minLength: 80) // Space for navigation buttons
+                // Target trend weight section
+                VStack(alignment: .leading, spacing: 20) {
+                    Text("What is your target trend weight?")
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 20)
+                    
+                    // Display selected weight
+                    Text("\(Int(targetTrendWeight)) lbs")
+                        .font(.system(size: 32, weight: .semibold))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.bottom, 20)
+                    
+                    // Ruler Slider
+                    ZStack {
+                        RulerSlider(
+                            value: $targetTrendWeight,
+                            range: weightRange,
+                            validRange: validRange,
+                            step: 1.0
+                        ) { newValue in
+                            coordinator.targetWeight = newValue / 2.20462 // Convert to kg for storage
+                        }
+                        .frame(height: 60)
+                        
+                        // Purple highlight for target range (±1.5 lbs)
+                        GeometryReader { geometry in
+                            let rangeWidth = geometry.size.width / 20 * 3 // 3 lbs out of 20 lbs range
+                            let centerX = geometry.size.width / 2
+                            
+                            Rectangle()
+                                .fill(Color(red: 0.4, green: 0.3, blue: 0.6).opacity(0.3))
+                                .frame(width: rangeWidth, height: 45)
+                                .position(x: centerX, y: 30)
+                                .allowsHitTesting(false)
+                        }
+                    }
+                    .frame(height: 60)
+                }
+                
+                Spacer(minLength: 100)
             }
         }
         .onAppear {
@@ -1063,11 +1141,177 @@ struct MaintenanceStrategyContentView: View {
         guard !isInitialized else { return }
         isInitialized = true
         
-        if !coordinator.maintenanceStrategy.isEmpty {
-            selectedStrategy = coordinator.maintenanceStrategy
+        if let savedTarget = coordinator.targetWeight {
+            targetTrendWeight = savedTarget * 2.20462 // Convert from kg to lbs
         } else {
-            selectedStrategy = "Energy stability" // Default
-            coordinator.maintenanceStrategy = selectedStrategy
+            targetTrendWeight = Double(currentWeightLbs)
+            coordinator.targetWeight = coordinator.weight // Set to current weight by default
+        }
+    }
+}
+
+struct GoalSummaryContentView: View {
+    @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
+    
+    private var currentWeightLbs: Int {
+        Int(coordinator.weight * 2.20462)
+    }
+    
+    private var targetWeightLbs: Int {
+        Int((coordinator.targetWeight ?? coordinator.weight) * 2.20462)
+    }
+    
+    private var targetRange: String {
+        let target = Double(targetWeightLbs)
+        let lower = target - 1.5
+        let upper = target + 1.5
+        return "\(String(format: "%.1f", lower)) - \(String(format: "%.1f", upper)) lbs"
+    }
+    
+    private var goalTypeText: String {
+        switch coordinator.goal.lowercased() {
+        case "maintain weight":
+            return "Maintenance"
+        case "lose weight":
+            return "Weight Loss"
+        case "gain weight":
+            return "Weight Gain"
+        default:
+            return coordinator.goal
+        }
+    }
+    
+    private var initialApproachTitle: String {
+        let difference = currentWeightLbs - targetWeightLbs
+        
+        if abs(difference) <= 2 {
+            return "Maintenance"
+        } else if difference > 0 {
+            return "Slow Weight Loss"
+        } else {
+            return "Slow Weight Gain"
+        }
+    }
+    
+    private var initialApproachDescription: String {
+        let difference = currentWeightLbs - targetWeightLbs
+        
+        if abs(difference) <= 2 {
+            return "Your trend weight is currently at \(currentWeightLbs) lbs, which is within your target range. We will maintain your current weight with dynamic adjustments to keep you within \(targetRange)."
+        } else if difference > 0 {
+            // Need to lose weight
+            return "Your trend weight is currently \(currentWeightLbs) lbs, but you chose to maintain your weight at \(targetWeightLbs). We will set up your program to slowly lose weight at the rate of 0.15% of your body weight per week until you are within your target maintenance range. Then, we will update your plan weekly to keep you there."
+        } else {
+            // Need to gain weight
+            return "Your trend weight is currently \(currentWeightLbs) lbs, but you chose to maintain your weight at \(targetWeightLbs). We will set up your program to slowly gain weight at the rate of 0.15% of your body weight per week until you are within your target maintenance range. Then, we will update your plan weekly to keep you there."
+        }
+    }
+    
+    private var mainExplanation: String {
+        switch coordinator.goal.lowercased() {
+        case "maintain weight":
+            return "The maintenance mode is dynamic, and will continuously adjust your targets to keep your trend weight within the target range. Once your trend weight deviates from the target range, NutriSync will automatically suggest calories that correspond with a slow rate of weight gain or weight loss to move your trend weight back into the range."
+        case "lose weight":
+            return "The weight loss mode is dynamic, and will continuously adjust your targets to help you lose weight sustainably. NutriSync will monitor your progress and metabolism to ensure you're losing weight at a healthy rate while maintaining your energy levels and performance."
+        case "gain weight":
+            return "The weight gain mode is dynamic, and will continuously adjust your targets to help you gain weight effectively. NutriSync will monitor your progress to ensure you're gaining weight at a controlled rate while optimizing muscle growth and minimizing fat gain."
+        default:
+            return "NutriSync will dynamically adjust your nutrition plan based on your progress and goals."
+        }
+    }
+    
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 0) {
+                // Title
+                Text("Set New Goal")
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 40)
+                
+                // Goal Summary title
+                HStack {
+                    Text("Goal summary")
+                        .font(.system(size: 24, weight: .bold))
+                        .foregroundColor(.white)
+                    Spacer()
+                }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 24)
+                
+                // Goal type and target weight card
+                HStack {
+                    Text(goalTypeText)
+                        .font(.system(size: 20, weight: .semibold))
+                        .foregroundColor(.white)
+                    Spacer()
+                    Text("\(targetWeightLbs) lbs")
+                        .font(.system(size: 20, weight: .semibold))
+                        .foregroundColor(.white)
+                }
+                .padding(20)
+                .background(
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(Color(red: 0.4, green: 0.3, blue: 0.6).opacity(0.6))
+                )
+                .padding(.horizontal, 20)
+                .padding(.bottom, 24)
+                
+                // Target Range section
+                VStack(spacing: 20) {
+                    HStack {
+                        Text("Target Range")
+                            .font(.system(size: 20, weight: .semibold))
+                            .foregroundColor(.white)
+                        Spacer()
+                        Text(targetRange)
+                            .font(.system(size: 18))
+                            .foregroundColor(.white.opacity(0.8))
+                    }
+                    .padding(20)
+                    .background(
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(Color.white.opacity(0.05))
+                    )
+                    
+                    Text(mainExplanation)
+                        .font(.system(size: 15))
+                        .foregroundColor(.white.opacity(0.8))
+                        .lineSpacing(4)
+                        .padding(.horizontal, 4)
+                }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 24)
+                
+                // Initial Approach section
+                VStack(spacing: 20) {
+                    HStack {
+                        Text("Initial Approach")
+                            .font(.system(size: 20, weight: .semibold))
+                            .foregroundColor(.white)
+                        Spacer()
+                        Text(initialApproachTitle)
+                            .font(.system(size: 18))
+                            .foregroundColor(.white.opacity(0.8))
+                    }
+                    .padding(20)
+                    .background(
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(Color.white.opacity(0.05))
+                    )
+                    
+                    Text(initialApproachDescription)
+                        .font(.system(size: 15))
+                        .foregroundColor(.white.opacity(0.8))
+                        .lineSpacing(4)
+                        .padding(.horizontal, 4)
+                }
+                .padding(.horizontal, 20)
+                
+                Spacer(minLength: 100)
+            }
         }
     }
 }

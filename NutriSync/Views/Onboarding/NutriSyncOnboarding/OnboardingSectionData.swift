@@ -70,7 +70,8 @@ struct NutriSyncOnboardingFlow {
         .goalSetting: [
             "Goal Intro",
             "Goal Selection",
-            "Maintenance Strategy",
+            "Trend Weight",
+            "Goal Summary",
             "Weight Goal",
             "Pre-Workout Nutrition",
             "Post-Workout Nutrition"
