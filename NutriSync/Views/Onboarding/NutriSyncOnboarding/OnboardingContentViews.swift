@@ -1900,6 +1900,7 @@ struct AlmostThereContentView: View {
 
 struct DietPreferenceContentView: View {
     @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
+    @State private var selectedDiet: String? = nil
     
     var body: some View {
         ScrollView {
@@ -1932,7 +1933,7 @@ struct DietPreferenceContentView: View {
                         ("Custom", "Create your own approach")
                     ], id: \.0) { diet, description in
                         Button(action: {
-                            // Action will be implemented
+                            selectedDiet = diet
                         }) {
                             HStack(spacing: 16) {
                                 VStack(alignment: .leading, spacing: 4) {
@@ -1944,13 +1945,17 @@ struct DietPreferenceContentView: View {
                                         .foregroundColor(.white.opacity(0.6))
                                 }
                                 Spacer()
-                                Image(systemName: "circle")
+                                Image(systemName: selectedDiet == diet ? "checkmark.circle.fill" : "circle")
                                     .font(.system(size: 22))
-                                    .foregroundColor(.white.opacity(0.3))
+                                    .foregroundColor(selectedDiet == diet ? Color.nutriSyncAccent : .white.opacity(0.3))
                             }
                             .padding(16)
-                            .background(Color.white.opacity(0.05))
+                            .background(Color.white.opacity(selectedDiet == diet ? 0.08 : 0.05))
                             .cornerRadius(12)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(selectedDiet == diet ? Color.nutriSyncAccent : Color.clear, lineWidth: 1.5)
+                            )
                         }
                         .buttonStyle(PlainButtonStyle())
                     }
@@ -1965,6 +1970,8 @@ struct DietPreferenceContentView: View {
 
 struct TrainingPlanContentView: View {
     @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
+    @State private var selectedFrequency: String? = nil
+    @State private var selectedTime: String? = nil
     
     var body: some View {
         ScrollView {
@@ -2002,7 +2009,7 @@ struct TrainingPlanContentView: View {
                                 ("Daily", "Training every day")
                             ], id: \.0) { frequency, description in
                                 Button(action: {
-                                    // Action will be implemented
+                                    selectedFrequency = frequency
                                 }) {
                                     HStack {
                                         VStack(alignment: .leading, spacing: 2) {
@@ -2014,13 +2021,17 @@ struct TrainingPlanContentView: View {
                                                 .foregroundColor(.white.opacity(0.5))
                                         }
                                         Spacer()
-                                        Image(systemName: "circle")
+                                        Image(systemName: selectedFrequency == frequency ? "checkmark.circle.fill" : "circle")
                                             .font(.system(size: 20))
-                                            .foregroundColor(.white.opacity(0.3))
+                                            .foregroundColor(selectedFrequency == frequency ? Color.nutriSyncAccent : .white.opacity(0.3))
                                     }
                                     .padding(14)
-                                    .background(Color.white.opacity(0.05))
+                                    .background(Color.white.opacity(selectedFrequency == frequency ? 0.08 : 0.05))
                                     .cornerRadius(10)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 10)
+                                            .stroke(selectedFrequency == frequency ? Color.nutriSyncAccent : Color.clear, lineWidth: 1.5)
+                                    )
                                 }
                                 .buttonStyle(PlainButtonStyle())
                             }
@@ -2036,14 +2047,14 @@ struct TrainingPlanContentView: View {
                         HStack(spacing: 10) {
                             ForEach(["Morning", "Afternoon", "Evening", "Varies"], id: \.self) { time in
                                 Button(action: {
-                                    // Action will be implemented
+                                    selectedTime = time
                                 }) {
                                     Text(time)
                                         .font(.system(size: 14, weight: .medium))
-                                        .foregroundColor(.white.opacity(0.7))
+                                        .foregroundColor(selectedTime == time ? .black : .white.opacity(0.7))
                                         .padding(.horizontal, 16)
                                         .padding(.vertical, 10)
-                                        .background(Color.white.opacity(0.08))
+                                        .background(selectedTime == time ? Color.nutriSyncAccent : Color.white.opacity(0.08))
                                         .cornerRadius(20)
                                 }
                                 .buttonStyle(PlainButtonStyle())
@@ -2061,6 +2072,7 @@ struct TrainingPlanContentView: View {
 
 struct CalorieFloorContentView: View {
     @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
+    @State private var calorieFloor: Double = 1500
     
     var body: some View {
         ScrollView {
@@ -2085,7 +2097,7 @@ struct CalorieFloorContentView: View {
                 VStack(spacing: 32) {
                     // Current calorie range display
                     VStack(spacing: 12) {
-                        Text("1,500")
+                        Text("\(Int(calorieFloor))")
                             .font(.system(size: 48, weight: .bold, design: .rounded))
                             .foregroundColor(.white)
                         Text("calories minimum")
@@ -2117,14 +2129,14 @@ struct CalorieFloorContentView: View {
                                 
                                 // Fill
                                 RoundedRectangle(cornerRadius: 4)
-                                    .fill(Color.white.opacity(0.3))
-                                    .frame(width: geometry.size.width * 0.3, height: 8)
+                                    .fill(Color.nutriSyncAccent)
+                                    .frame(width: geometry.size.width * ((calorieFloor - 1200) / 1800), height: 8)
                                 
                                 // Thumb
                                 Circle()
-                                    .fill(Color.white)
+                                    .fill(Color.nutriSyncAccent)
                                     .frame(width: 24, height: 24)
-                                    .offset(x: geometry.size.width * 0.3 - 12)
+                                    .offset(x: geometry.size.width * ((calorieFloor - 1200) / 1800) - 12)
                             }
                         }
                         .frame(height: 24)
@@ -2147,6 +2159,8 @@ struct CalorieFloorContentView: View {
 
 struct SleepScheduleContentView: View {
     @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
+    @State private var selectedBedtime: String? = nil
+    @State private var selectedWakeTime: String? = nil
     
     var body: some View {
         ScrollView {
@@ -2185,13 +2199,15 @@ struct SleepScheduleContentView: View {
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 10) {
                                 ForEach(["9:00 PM", "9:30 PM", "10:00 PM", "10:30 PM", "11:00 PM", "11:30 PM", "12:00 AM"], id: \.self) { time in
-                                    Button(action: {}) {
+                                    Button(action: {
+                                        selectedBedtime = time
+                                    }) {
                                         Text(time)
                                             .font(.system(size: 14, weight: .medium))
-                                            .foregroundColor(.white.opacity(0.7))
+                                            .foregroundColor(selectedBedtime == time ? .black : .white.opacity(0.7))
                                             .padding(.horizontal, 16)
                                             .padding(.vertical, 10)
-                                            .background(Color.white.opacity(0.08))
+                                            .background(selectedBedtime == time ? Color.nutriSyncAccent : Color.white.opacity(0.08))
                                             .cornerRadius(20)
                                     }
                                     .buttonStyle(PlainButtonStyle())
@@ -2216,13 +2232,15 @@ struct SleepScheduleContentView: View {
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 10) {
                                 ForEach(["5:00 AM", "5:30 AM", "6:00 AM", "6:30 AM", "7:00 AM", "7:30 AM", "8:00 AM"], id: \.self) { time in
-                                    Button(action: {}) {
+                                    Button(action: {
+                                        selectedWakeTime = time
+                                    }) {
                                         Text(time)
                                             .font(.system(size: 14, weight: .medium))
-                                            .foregroundColor(.white.opacity(0.7))
+                                            .foregroundColor(selectedWakeTime == time ? .black : .white.opacity(0.7))
                                             .padding(.horizontal, 16)
                                             .padding(.vertical, 10)
-                                            .background(Color.white.opacity(0.08))
+                                            .background(selectedWakeTime == time ? Color.nutriSyncAccent : Color.white.opacity(0.08))
                                             .cornerRadius(20)
                                     }
                                     .buttonStyle(PlainButtonStyle())
@@ -2252,6 +2270,7 @@ struct SleepScheduleContentView: View {
 
 struct MealFrequencyContentView: View {
     @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
+    @State private var selectedMealCount: String? = nil
     
     var body: some View {
         ScrollView {
@@ -2284,7 +2303,9 @@ struct MealFrequencyContentView: View {
                             ("6 Meals", "Bodybuilder style"),
                             ("Flexible", "Varies by day")
                         ], id: \.0) { meals, style in
-                            Button(action: {}) {
+                            Button(action: {
+                                selectedMealCount = meals
+                            }) {
                                 VStack(spacing: 8) {
                                     Text(meals)
                                         .font(.system(size: 18, weight: .semibold))
@@ -2295,11 +2316,11 @@ struct MealFrequencyContentView: View {
                                 }
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 80)
-                                .background(Color.white.opacity(0.05))
+                                .background(Color.white.opacity(selectedMealCount == meals ? 0.08 : 0.05))
                                 .cornerRadius(12)
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 12)
-                                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                                        .stroke(selectedMealCount == meals ? Color.nutriSyncAccent : Color.white.opacity(0.1), lineWidth: selectedMealCount == meals ? 2 : 1)
                                 )
                             }
                             .buttonStyle(PlainButtonStyle())
@@ -2328,6 +2349,7 @@ struct MealFrequencyContentView: View {
 
 struct EatingWindowContentView: View {
     @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
+    @State private var selectedWindow: String? = nil
     
     var body: some View {
         ScrollView {
@@ -2377,7 +2399,7 @@ struct EatingWindowContentView: View {
                                     
                                     // Eating window (example: 12 PM to 8 PM)
                                     RoundedRectangle(cornerRadius: 6)
-                                        .fill(Color.green.opacity(0.4))
+                                        .fill(Color.nutriSyncAccent.opacity(0.6))
                                         .frame(width: geometry.size.width * 0.33)
                                         .offset(x: geometry.size.width * 0.5)
                                 }
@@ -2422,7 +2444,9 @@ struct EatingWindowContentView: View {
                                 ("14:10", "Fast 14 hrs, eat 10 hrs"),
                                 ("Custom", "Set your own window")
                             ], id: \.0) { window, description in
-                                Button(action: {}) {
+                                Button(action: {
+                                    selectedWindow = window
+                                }) {
                                     HStack {
                                         Text(window)
                                             .font(.system(size: 16, weight: .semibold))
@@ -2431,13 +2455,17 @@ struct EatingWindowContentView: View {
                                             .font(.system(size: 14))
                                             .foregroundColor(.white.opacity(0.5))
                                         Spacer()
-                                        Image(systemName: "circle")
+                                        Image(systemName: selectedWindow == window ? "checkmark.circle.fill" : "circle")
                                             .font(.system(size: 20))
-                                            .foregroundColor(.white.opacity(0.3))
+                                            .foregroundColor(selectedWindow == window ? Color.nutriSyncAccent : .white.opacity(0.3))
                                     }
                                     .padding(14)
-                                    .background(Color.white.opacity(0.05))
+                                    .background(Color.white.opacity(selectedWindow == window ? 0.08 : 0.05))
                                     .cornerRadius(10)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 10)
+                                            .stroke(selectedWindow == window ? Color.nutriSyncAccent : Color.clear, lineWidth: 1.5)
+                                    )
                                 }
                                 .buttonStyle(PlainButtonStyle())
                             }
@@ -2454,6 +2482,7 @@ struct EatingWindowContentView: View {
 
 struct DietaryRestrictionsContentView: View {
     @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
+    @State private var selectedRestrictions: Set<String> = []
     
     var body: some View {
         ScrollView {
@@ -2488,11 +2517,17 @@ struct DietaryRestrictionsContentView: View {
                             ("Low Sodium", "salt restricted"),
                             ("Sugar-Free", "added sugars")
                         ], id: \.0) { restriction, detail in
-                            Button(action: {}) {
+                            Button(action: {
+                                if selectedRestrictions.contains(restriction) {
+                                    selectedRestrictions.remove(restriction)
+                                } else {
+                                    selectedRestrictions.insert(restriction)
+                                }
+                            }) {
                                 HStack(spacing: 16) {
-                                    Image(systemName: "square")
+                                    Image(systemName: selectedRestrictions.contains(restriction) ? "checkmark.square.fill" : "square")
                                         .font(.system(size: 22))
-                                        .foregroundColor(.white.opacity(0.3))
+                                        .foregroundColor(selectedRestrictions.contains(restriction) ? Color.nutriSyncAccent : .white.opacity(0.3))
                                     
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text(restriction)
@@ -2530,6 +2565,12 @@ struct DietaryRestrictionsContentView: View {
 
 struct MealTimingPreferenceContentView: View {
     @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
+    @State private var mealTimes: [String: String] = [
+        "Breakfast": "7:30 AM",
+        "Lunch": "12:30 PM",
+        "Dinner": "6:30 PM",
+        "Snacks": "Flexible"
+    ]
     
     var body: some View {
         ScrollView {
@@ -2617,6 +2658,8 @@ struct MealTimingPreferenceContentView: View {
 
 struct WindowFlexibilityContentView: View {
     @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
+    @State private var selectedFlexibility: String? = nil
+    @State private var specialOccasions: Bool = false
     
     var body: some View {
         ScrollView {
@@ -2652,16 +2695,18 @@ struct WindowFlexibilityContentView: View {
                                 ("Flexible", "Adjust as needed", "Lifestyle friendly"),
                                 ("Weekend Mode", "Relaxed on weekends", "Social flexibility")
                             ], id: \.0) { level, description, benefit in
-                                Button(action: {}) {
+                                Button(action: {
+                                    selectedFlexibility = level
+                                }) {
                                     VStack(alignment: .leading, spacing: 8) {
                                         HStack {
                                             Text(level)
                                                 .font(.system(size: 17, weight: .semibold))
                                                 .foregroundColor(.white)
                                             Spacer()
-                                            Image(systemName: "circle")
+                                            Image(systemName: selectedFlexibility == level ? "checkmark.circle.fill" : "circle")
                                                 .font(.system(size: 20))
-                                                .foregroundColor(.white.opacity(0.3))
+                                                .foregroundColor(selectedFlexibility == level ? Color.nutriSyncAccent : .white.opacity(0.3))
                                         }
                                         Text(description)
                                             .font(.system(size: 14))
@@ -2671,8 +2716,12 @@ struct WindowFlexibilityContentView: View {
                                             .foregroundColor(.white.opacity(0.4))
                                     }
                                     .padding(16)
-                                    .background(Color.white.opacity(0.05))
+                                    .background(Color.white.opacity(selectedFlexibility == level ? 0.08 : 0.05))
                                     .cornerRadius(12)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .stroke(selectedFlexibility == level ? Color.nutriSyncAccent : Color.clear, lineWidth: 1.5)
+                                    )
                                 }
                                 .buttonStyle(PlainButtonStyle())
                             }
@@ -2681,31 +2730,36 @@ struct WindowFlexibilityContentView: View {
                     
                     // Special occasions toggle
                     VStack(spacing: 12) {
-                        HStack {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Special Occasions")
-                                    .font(.system(size: 15, weight: .medium))
-                                    .foregroundColor(.white.opacity(0.8))
-                                Text("Allow extra flexibility for events")
-                                    .font(.system(size: 13))
-                                    .foregroundColor(.white.opacity(0.5))
+                        Button(action: {
+                            specialOccasions.toggle()
+                        }) {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("Special Occasions")
+                                        .font(.system(size: 15, weight: .medium))
+                                        .foregroundColor(.white.opacity(0.8))
+                                    Text("Allow extra flexibility for events")
+                                        .font(.system(size: 13))
+                                        .foregroundColor(.white.opacity(0.5))
+                                }
+                                Spacer()
+                                
+                                // Toggle
+                                ZStack {
+                                    Capsule()
+                                        .fill(specialOccasions ? Color.nutriSyncAccent : Color.white.opacity(0.1))
+                                        .frame(width: 51, height: 31)
+                                    Circle()
+                                        .fill(Color.white)
+                                        .frame(width: 27, height: 27)
+                                        .offset(x: specialOccasions ? 10 : -10)
+                                }
                             }
-                            Spacer()
-                            
-                            // Toggle placeholder
-                            ZStack {
-                                Capsule()
-                                    .fill(Color.white.opacity(0.1))
-                                    .frame(width: 51, height: 31)
-                                Circle()
-                                    .fill(Color.white.opacity(0.3))
-                                    .frame(width: 27, height: 27)
-                                    .offset(x: -10)
-                            }
+                            .padding(16)
+                            .background(Color.white.opacity(0.03))
+                            .cornerRadius(12)
                         }
-                        .padding(16)
-                        .background(Color.white.opacity(0.03))
-                        .cornerRadius(12)
+                        .buttonStyle(PlainButtonStyle())
                     }
                 }
                 .padding(.horizontal, 20)
