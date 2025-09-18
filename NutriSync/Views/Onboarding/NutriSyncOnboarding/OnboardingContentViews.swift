@@ -1068,7 +1068,7 @@ struct TrendWeightContentView: View {
                     .padding(.vertical, 20)
                     .background(
                         RoundedRectangle(cornerRadius: 16)
-                            .fill(Color(hex: "C0FF73").opacity(0.15))
+                            .fill(Color.white.opacity(0.08))
                     )
                     .padding(.horizontal, 20)
                     .padding(.bottom, 40)
@@ -1103,28 +1103,13 @@ struct TrendWeightContentView: View {
                         .padding(.bottom, 20)
                     
                     // Ruler Slider
-                    ZStack {
-                        RulerSlider(
-                            value: $targetTrendWeight,
-                            range: weightRange,
-                            validRange: validRange,
-                            step: 1.0
-                        ) { newValue in
-                            coordinator.targetWeight = newValue / 2.20462 // Convert to kg for storage
-                        }
-                        .frame(height: 60)
-                        
-                        // Purple highlight for target range (±1.5 lbs)
-                        GeometryReader { geometry in
-                            let rangeWidth = geometry.size.width / 20 * 3 // 3 lbs out of 20 lbs range
-                            let centerX = geometry.size.width / 2
-                            
-                            Rectangle()
-                                .fill(Color(red: 0.4, green: 0.3, blue: 0.6).opacity(0.3))
-                                .frame(width: rangeWidth, height: 45)
-                                .position(x: centerX, y: 30)
-                                .allowsHitTesting(false)
-                        }
+                    RulerSlider(
+                        value: $targetTrendWeight,
+                        range: weightRange,
+                        validRange: validRange,
+                        step: 1.0
+                    ) { newValue in
+                        coordinator.targetWeight = newValue / 2.20462 // Convert to kg for storage
                     }
                     .frame(height: 60)
                 }
@@ -1254,7 +1239,7 @@ struct GoalSummaryContentView: View {
                 .padding(20)
                 .background(
                     RoundedRectangle(cornerRadius: 16)
-                        .fill(Color(hex: "C0FF73").opacity(0.15))
+                        .fill(Color.white.opacity(0.08))
                 )
                 .padding(.horizontal, 20)
                 .padding(.bottom, 24)
