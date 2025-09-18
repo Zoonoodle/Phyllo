@@ -1816,81 +1816,372 @@ struct PostWorkoutNutritionContentView: View {
 
 struct AlmostThereContentView: View {
     @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
+    
     var body: some View {
-        Text("Almost There Content")
-            .foregroundColor(.white)
+        ScrollView {
+            VStack(spacing: 0) {
+                // Title
+                Text("Almost There!")
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 12)
+                
+                // Subtitle
+                Text("Let's personalize your nutrition plan")
+                    .font(.system(size: 17))
+                    .foregroundColor(.white.opacity(0.6))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 40)
+                
+                // Main content
+                VStack(spacing: 24) {
+                    Text("We'll create your custom meal windows based on your lifestyle and goals.")
+                        .font(.system(size: 15))
+                        .foregroundColor(.white.opacity(0.8))
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 40)
+                }
+                .padding(.horizontal, 20)
+                
+                Spacer(minLength: 80) // Space for navigation buttons
+            }
+        }
     }
 }
 
 struct DietPreferenceContentView: View {
     @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
+    
     var body: some View {
-        Text("Diet Preference Content")
-            .foregroundColor(.white)
+        ScrollView {
+            VStack(spacing: 0) {
+                // Title
+                Text("What's Your Diet Style?")
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 12)
+                
+                // Subtitle
+                Text("Select the approach that fits your lifestyle")
+                    .font(.system(size: 17))
+                    .foregroundColor(.white.opacity(0.6))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 40)
+                
+                // Main content - Diet options will go here
+                VStack(spacing: 16) {
+                    // Placeholder for diet preference options
+                    Text("Diet preference options coming soon")
+                        .font(.system(size: 15))
+                        .foregroundColor(.white.opacity(0.5))
+                }
+                .padding(.horizontal, 20)
+                
+                Spacer(minLength: 80) // Space for navigation buttons
+            }
+        }
     }
 }
 
 struct TrainingPlanContentView: View {
     @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
+    
     var body: some View {
-        Text("Training Plan Content")
-            .foregroundColor(.white)
+        ScrollView {
+            VStack(spacing: 0) {
+                // Title
+                Text("Your Training Schedule")
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 12)
+                
+                // Subtitle
+                Text("Help us optimize your meal timing around workouts")
+                    .font(.system(size: 17))
+                    .foregroundColor(.white.opacity(0.6))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 40)
+                
+                // Main content - Training plan options will go here
+                VStack(spacing: 16) {
+                    // Placeholder for training plan options
+                    Text("Training plan options coming soon")
+                        .font(.system(size: 15))
+                        .foregroundColor(.white.opacity(0.5))
+                }
+                .padding(.horizontal, 20)
+                
+                Spacer(minLength: 80) // Space for navigation buttons
+            }
+        }
     }
 }
 
 struct CalorieFloorContentView: View {
     @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
+    
     var body: some View {
-        Text("Calorie Floor Content")
-            .foregroundColor(.white)
+        ScrollView {
+            VStack(spacing: 0) {
+                // Title
+                Text("Set Your Calorie Range")
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 12)
+                
+                // Subtitle
+                Text("Define your minimum daily intake for sustainable progress")
+                    .font(.system(size: 17))
+                    .foregroundColor(.white.opacity(0.6))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 40)
+                
+                // Main content - Calorie floor settings will go here
+                VStack(spacing: 16) {
+                    // Placeholder for calorie floor input
+                    Text("Calorie floor settings coming soon")
+                        .font(.system(size: 15))
+                        .foregroundColor(.white.opacity(0.5))
+                }
+                .padding(.horizontal, 20)
+                
+                Spacer(minLength: 80) // Space for navigation buttons
+            }
+        }
     }
 }
 
 struct SleepScheduleContentView: View {
     @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
+    
     var body: some View {
-        Text("Sleep Schedule Content")
-            .foregroundColor(.white)
+        ScrollView {
+            VStack(spacing: 0) {
+                // Title
+                Text("Your Sleep Schedule")
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 12)
+                
+                // Subtitle
+                Text("Optimize meal timing for better sleep and recovery")
+                    .font(.system(size: 17))
+                    .foregroundColor(.white.opacity(0.6))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 40)
+                
+                // Main content - Sleep schedule input will go here
+                VStack(spacing: 16) {
+                    // Placeholder for sleep schedule settings
+                    Text("Sleep schedule settings coming soon")
+                        .font(.system(size: 15))
+                        .foregroundColor(.white.opacity(0.5))
+                }
+                .padding(.horizontal, 20)
+                
+                Spacer(minLength: 80) // Space for navigation buttons
+            }
+        }
     }
 }
 
 struct MealFrequencyContentView: View {
     @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
+    
     var body: some View {
-        Text("Meal Frequency Content")
-            .foregroundColor(.white)
+        ScrollView {
+            VStack(spacing: 0) {
+                // Title
+                Text("How Often Do You Eat?")
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 12)
+                
+                // Subtitle
+                Text("Choose your ideal number of daily meals")
+                    .font(.system(size: 17))
+                    .foregroundColor(.white.opacity(0.6))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 40)
+                
+                // Main content - Meal frequency options will go here
+                VStack(spacing: 16) {
+                    // Placeholder for meal frequency selection
+                    Text("Meal frequency options coming soon")
+                        .font(.system(size: 15))
+                        .foregroundColor(.white.opacity(0.5))
+                }
+                .padding(.horizontal, 20)
+                
+                Spacer(minLength: 80) // Space for navigation buttons
+            }
+        }
     }
 }
 
 struct EatingWindowContentView: View {
     @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
+    
     var body: some View {
-        Text("Eating Window Content")
-            .foregroundColor(.white)
+        ScrollView {
+            VStack(spacing: 0) {
+                // Title
+                Text("Define Your Eating Window")
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 12)
+                
+                // Subtitle
+                Text("Set your daily fasting and eating periods")
+                    .font(.system(size: 17))
+                    .foregroundColor(.white.opacity(0.6))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 40)
+                
+                // Main content - Eating window configuration will go here
+                VStack(spacing: 16) {
+                    // Placeholder for eating window settings
+                    Text("Eating window settings coming soon")
+                        .font(.system(size: 15))
+                        .foregroundColor(.white.opacity(0.5))
+                }
+                .padding(.horizontal, 20)
+                
+                Spacer(minLength: 80) // Space for navigation buttons
+            }
+        }
     }
 }
 
 struct DietaryRestrictionsContentView: View {
     @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
+    
     var body: some View {
-        Text("Dietary Restrictions Content")
-            .foregroundColor(.white)
+        ScrollView {
+            VStack(spacing: 0) {
+                // Title
+                Text("Dietary Restrictions")
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 12)
+                
+                // Subtitle
+                Text("Tell us what foods to avoid in your meal plans")
+                    .font(.system(size: 17))
+                    .foregroundColor(.white.opacity(0.6))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 40)
+                
+                // Main content - Dietary restrictions list will go here
+                VStack(spacing: 16) {
+                    // Placeholder for dietary restrictions
+                    Text("Dietary restrictions options coming soon")
+                        .font(.system(size: 15))
+                        .foregroundColor(.white.opacity(0.5))
+                }
+                .padding(.horizontal, 20)
+                
+                Spacer(minLength: 80) // Space for navigation buttons
+            }
+        }
     }
 }
 
 struct MealTimingPreferenceContentView: View {
     @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
+    
     var body: some View {
-        Text("Meal Timing Preference Content")
-            .foregroundColor(.white)
+        ScrollView {
+            VStack(spacing: 0) {
+                // Title
+                Text("Meal Timing Preferences")
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 12)
+                
+                // Subtitle
+                Text("When do you prefer to have your meals?")
+                    .font(.system(size: 17))
+                    .foregroundColor(.white.opacity(0.6))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 40)
+                
+                // Main content - Meal timing preferences will go here
+                VStack(spacing: 16) {
+                    // Placeholder for meal timing settings
+                    Text("Meal timing preferences coming soon")
+                        .font(.system(size: 15))
+                        .foregroundColor(.white.opacity(0.5))
+                }
+                .padding(.horizontal, 20)
+                
+                Spacer(minLength: 80) // Space for navigation buttons
+            }
+        }
     }
 }
 
 struct WindowFlexibilityContentView: View {
     @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
+    
     var body: some View {
-        Text("Window Flexibility Content")
-            .foregroundColor(.white)
+        ScrollView {
+            VStack(spacing: 0) {
+                // Title
+                Text("How Flexible Are Your Windows?")
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 12)
+                
+                // Subtitle
+                Text("Set your schedule flexibility for weekends and special occasions")
+                    .font(.system(size: 17))
+                    .foregroundColor(.white.opacity(0.6))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 40)
+                
+                // Main content - Window flexibility settings will go here
+                VStack(spacing: 16) {
+                    // Placeholder for flexibility options
+                    Text("Window flexibility options coming soon")
+                        .font(.system(size: 15))
+                        .foregroundColor(.white.opacity(0.5))
+                }
+                .padding(.horizontal, 20)
+                
+                Spacer(minLength: 80) // Space for navigation buttons
+            }
+        }
     }
 }
 
