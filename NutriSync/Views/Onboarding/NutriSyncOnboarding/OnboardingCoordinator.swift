@@ -475,29 +475,29 @@ struct NutriSyncOnboardingCoordinator: View {
                         
                         Spacer()
                         
+                        let isHealthDisclaimer = viewModel.currentScreen == "Health Disclaimer"
+                        let termsAccepted = viewModel.acceptHealthDisclaimer && viewModel.acceptPrivacyNotice
+                        let isGoalSelection = viewModel.currentScreen == "Goal Selection"
+                        let goalSelected = !viewModel.goal.isEmpty
+                        let isTrainingPlan = viewModel.currentScreen == "Training Plan"
+                        let trainingPlanSelected = viewModel.trainingFrequency != nil && viewModel.trainingTime != nil
+                        let isDietPreference = viewModel.currentScreen == "Diet Preference"
+                        let dietSelected = !viewModel.dietPreference.isEmpty
+                        let isMealFrequency = viewModel.currentScreen == "Meal Frequency"
+                        let mealFrequencySelected = !viewModel.mealFrequency.isEmpty
+                        let isSleepSchedule = viewModel.currentScreen == "Sleep Schedule"
+                        let sleepScheduleSet = true // Sleep schedule uses Date pickers, always valid
+                        
+                        let isDisabled = (isHealthDisclaimer && !termsAccepted) || 
+                                       (isGoalSelection && !goalSelected) ||
+                                       (isTrainingPlan && !trainingPlanSelected) ||
+                                       (isDietPreference && !dietSelected) ||
+                                       (isMealFrequency && !mealFrequencySelected)
+                        let isLastScreenInSection = viewModel.isLastScreenInSection
+                        
                         Button {
                             handleNextAction()
                         } label: {
-                            let isHealthDisclaimer = viewModel.currentScreen == "Health Disclaimer"
-                            let termsAccepted = viewModel.acceptHealthDisclaimer && viewModel.acceptPrivacyNotice
-                            let isGoalSelection = viewModel.currentScreen == "Goal Selection"
-                            let goalSelected = !viewModel.goal.isEmpty
-                            let isTrainingPlan = viewModel.currentScreen == "Training Plan"
-                            let trainingPlanSelected = viewModel.trainingFrequency != nil && viewModel.trainingTime != nil
-                            let isDietPreference = viewModel.currentScreen == "Diet Preference"
-                            let dietSelected = !viewModel.dietPreference.isEmpty
-                            let isMealFrequency = viewModel.currentScreen == "Meal Frequency"
-                            let mealFrequencySelected = !viewModel.mealFrequency.isEmpty
-                            let isSleepSchedule = viewModel.currentScreen == "Sleep Schedule"
-                            let sleepScheduleSet = true // Sleep schedule uses Date pickers, always valid
-                            
-                            let isDisabled = (isHealthDisclaimer && !termsAccepted) || 
-                                           (isGoalSelection && !goalSelected) ||
-                                           (isTrainingPlan && !trainingPlanSelected) ||
-                                           (isDietPreference && !dietSelected) ||
-                                           (isMealFrequency && !mealFrequencySelected)
-                            let isLastScreenInSection = viewModel.isLastScreenInSection
-                            
                             HStack(spacing: 6) {
                                 Text(isLastScreenInSection ? "Save" : "Next")
                                     .font(.system(size: 17, weight: .semibold))
