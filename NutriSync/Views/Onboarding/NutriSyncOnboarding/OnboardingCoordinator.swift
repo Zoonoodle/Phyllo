@@ -622,14 +622,10 @@ struct NutriSyncOnboardingCoordinator: View {
             PostWorkoutNutritionContentView()
             
         // Program Section
-        case "Almost There":
-            AlmostThereContentView()
         case "Diet Preference":
             DietPreferenceContentView()
         case "Training Plan":
             TrainingPlanContentView()
-        case "Calorie Floor":
-            CalorieFloorContentView()
         case "Calorie Distribution":
             Text("Calorie Distribution screen removed")
                 .foregroundColor(.white)
@@ -655,10 +651,6 @@ struct NutriSyncOnboardingCoordinator: View {
         case "Energy Patterns":
             Text("Energy Patterns screen removed")
                 .foregroundColor(.white)
-        case "Meal Timing":
-            MealTimingPreferenceContentView()
-        case "Window Flexibility":
-            WindowFlexibilityContentView()
         case "Notification Preferences":
             Text("Notification Preferences screen removed")
                 .foregroundColor(.white)

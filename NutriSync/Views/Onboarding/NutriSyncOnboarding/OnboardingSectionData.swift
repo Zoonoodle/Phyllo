@@ -77,16 +77,12 @@ struct NutriSyncOnboardingFlow {
             "Post-Workout Nutrition"
         ],
         .program: [
-            "Almost There",
             "Diet Preference",
             "Training Plan",
-            "Calorie Floor",
             "Sleep Schedule",
             "Meal Frequency",
             "Eating Window",
-            "Dietary Restrictions",
-            "Meal Timing",
-            "Window Flexibility"
+            "Dietary Restrictions"
         ],
         .finish: [
             "Review Program"
