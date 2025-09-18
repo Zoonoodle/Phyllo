@@ -2155,17 +2155,23 @@ struct DietPreferenceContentView: View {
                 VStack(spacing: 12) {
                     // Diet option cards
                     ForEach([
-                        ("Balanced", "Flexible approach with all food groups"),
-                        ("Keto", "High fat, low carb for ketosis"),
-                        ("Paleo", "Whole foods, no processed items"),
-                        ("Mediterranean", "Heart-healthy fats and lean proteins"),
-                        ("Plant-Based", "Vegetarian or vegan focused"),
-                        ("Custom", "Create your own approach")
-                    ], id: \.0) { diet, description in
+                        ("Balanced", "Flexible approach with all food groups", "scale.3d"),
+                        ("Keto", "High fat, low carb for ketosis", "flame"),
+                        ("Paleo", "Whole foods, no processed items", "leaf"),
+                        ("Mediterranean", "Heart-healthy fats and lean proteins", "heart"),
+                        ("Plant-Based", "Vegetarian or vegan focused", "carrot"),
+                        ("Custom", "Create your own approach", "slider.horizontal.3")
+                    ], id: \.0) { diet, description, icon in
                         Button(action: {
                             selectedDiet = diet
                         }) {
                             HStack(spacing: 16) {
+                                // Icon
+                                Image(systemName: icon)
+                                    .font(.system(size: 20))
+                                    .foregroundColor(Color(hex: "C0FF73"))
+                                    .frame(width: 24, height: 24)
+                                
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(diet)
                                         .font(.system(size: 17, weight: .semibold))
