@@ -12,8 +12,8 @@ extension Color {
     static let nutriSyncBackground = Color(hex: "1A1A1A") // Softer dark background
     static let nutriSyncElevated = Color(hex: "252525") // Softer elevated surface
     static let nutriSyncSurface = Color(hex: "303030") // Softer higher elevation
-    static let nutriSyncAccent = Color(hex: "4ADE80") // Softer green
-    static let nutriSyncGreen = Color(hex: "4ADE80") // Alias for accent color
+    static let nutriSyncAccent = Color(hex: "C0FF73") // Signature lime green
+    static let nutriSyncGreen = Color(hex: "C0FF73") // Alias for accent color
     
     // Secondary colors
     static let nutriSyncSecondaryBackground = Color(hex: "1F1F1F") // Between background and elevated
@@ -35,7 +35,7 @@ extension Color {
     // Phyllo aliases for compatibility
     static let phylloBackground = nutriSyncBackground
     static let phylloCard = Color.white.opacity(0.03)
-    static let phylloAccent = nutriSyncAccent
+    static let phylloAccent = nutriSyncAccent // Uses #C0FF73
     
     // Window state colors
     static let phylloFasted = Color.gray.opacity(0.6)  // Neutral gray for fasted

@@ -315,7 +315,7 @@ extension MealAnalysisPrompt {
 extension Color {
     static let phylloBackground = Color(hex: "0a0a0a")      // Near black
     static let phylloCard = Color.white.opacity(0.03)       // Subtle cards
-    static let phylloAccent = Color(hex: "10b981")          // Green (use sparingly 10-20%)
+    static let phylloAccent = Color(hex: "C0FF73")          // SIGNATURE LIME GREEN (use for all selections/highlights)
     static let phylloText = Color.white                     // Primary text
     static let phylloTextSecondary = Color.white.opacity(0.7)
     static let phylloTextTertiary = Color.white.opacity(0.5)
@@ -545,6 +545,14 @@ rg "FirebaseDataProvider" --type swift .
 - **Vertex AI Console**: https://console.cloud.google.com/vertex-ai
 - **Apple Developer**: https://developer.apple.com/account
 - **SwiftUI Docs**: https://developer.apple.com/xcode/swiftui/
+
+---
+
+## 🎨 SIGNATURE COLOR: #C0FF73
+**Our signature lime green is #C0FF73 - Use this for ALL selections and active states**
+- Defined as `Color.nutriSyncAccent` or `Color.phylloAccent`
+- Apply to: checkmarks, borders, toggles, selected buttons, sliders
+- This is our brand color for all interactive highlights
 
 ---
 
