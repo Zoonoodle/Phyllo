@@ -20,43 +20,32 @@ struct ProcessingView: View {
             VStack(spacing: 40) {
                 Spacer()
                 
-                // Circular progress indicator with NutriSync lime green
+                // Large circular progress indicator - clean outline only
                 ZStack {
-                    // Background circle
+                    // Background circle (subtle)
                     Circle()
-                        .stroke(Color.white.opacity(0.1), lineWidth: 4)
-                        .frame(width: 120, height: 120)
+                        .stroke(Color.white.opacity(0.05), lineWidth: 3)
+                        .frame(width: 220, height: 220)
                     
-                    // Animated gradient circle (inspired by MacroFactor)
+                    // Animated gradient circle outline
                     Circle()
-                        .trim(from: 0, to: 0.7)
+                        .trim(from: 0, to: 0.75)
                         .stroke(
                             LinearGradient(
                                 colors: [
                                     Color.nutriSyncAccent,
-                                    Color.nutriSyncAccent.opacity(0.6)
+                                    Color.nutriSyncAccent.opacity(0.7)
                                 ],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             ),
-                            style: StrokeStyle(lineWidth: 4, lineCap: .round)
+                            style: StrokeStyle(lineWidth: 3, lineCap: .round)
                         )
-                        .frame(width: 120, height: 120)
+                        .frame(width: 220, height: 220)
                         .rotationEffect(Angle(degrees: isAnimating ? 360 : 0))
                         .animation(
-                            Animation.linear(duration: 2)
+                            Animation.linear(duration: 5)
                                 .repeatForever(autoreverses: false),
-                            value: isAnimating
-                        )
-                    
-                    // Inner pulse effect
-                    Circle()
-                        .fill(Color.nutriSyncAccent.opacity(0.2))
-                        .frame(width: 60, height: 60)
-                        .scaleEffect(isAnimating ? 1.2 : 0.9)
-                        .animation(
-                            Animation.easeInOut(duration: 1.5)
-                                .repeatForever(autoreverses: true),
                             value: isAnimating
                         )
                 }
