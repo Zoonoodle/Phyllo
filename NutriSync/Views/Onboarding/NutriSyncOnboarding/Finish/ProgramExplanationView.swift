@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct ProgramExplanationView: View {
-    @ObservedObject var viewModel: OnboardingCompletionViewModel
+    let viewModel: OnboardingCompletionViewModel
     @Environment(NutriSyncOnboardingViewModel.self) var coordinator
     
     var body: some View {

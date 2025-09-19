@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct ProgramVisualizationView: View {
-    @ObservedObject var viewModel: OnboardingCompletionViewModel
+    let viewModel: OnboardingCompletionViewModel
     @State private var selectedDay = 0
     
     var body: some View {
@@ -204,7 +204,7 @@ struct WeeklyTimelineView: View {
 
 // MARK: - Macro Target Grid
 struct MacroTargetGrid: View {
-    let macros: MacroTargets
+    let macros: OnboardingMacroTargets
     
     var body: some View {
         HStack(spacing: 16) {

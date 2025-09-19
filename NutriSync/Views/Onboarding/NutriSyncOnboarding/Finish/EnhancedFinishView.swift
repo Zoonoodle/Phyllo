@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct EnhancedFinishView: View {
-    @StateObject private var viewModel = OnboardingCompletionViewModel()
+    @State private var viewModel = OnboardingCompletionViewModel()
     @Environment(NutriSyncOnboardingViewModel.self) var coordinator
     @EnvironmentObject var dataProvider: FirebaseDataProvider
     @State private var navigateToApp = false

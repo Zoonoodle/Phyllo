@@ -35,7 +35,7 @@ struct DayWindows {
     let sleepEnd: Date
 }
 
-struct MacroTargets {
+struct OnboardingMacroTargets {
     let calories: Int
     let protein: Int
     let carbs: Int
@@ -65,7 +65,7 @@ class OnboardingCompletionViewModel {
     // Calculated data
     var program: PersonalizedProgram?
     var weeklyWindows: [DayWindows] = []
-    var macroTargets: MacroTargets?
+    var macroTargets: OnboardingMacroTargets?
     var insights: [String] = []
     
     // Message rotation
@@ -201,7 +201,7 @@ class OnboardingCompletionViewModel {
         }
     }
     
-    private func calculateMacros(_ coordinator: NutriSyncOnboardingViewModel) async -> MacroTargets {
+    private func calculateMacros(_ coordinator: NutriSyncOnboardingViewModel) async -> OnboardingMacroTargets {
         let calories = calculateDailyCalories(coordinator)
         
         // Calculate protein based on goal and weight
@@ -225,7 +225,7 @@ class OnboardingCompletionViewModel {
         let remainingCalories = calories - proteinCalories - fatCalories
         let carbs = remainingCalories / 4
         
-        return MacroTargets(
+        return OnboardingMacroTargets(
             calories: calories,
             protein: protein,
             carbs: carbs,
