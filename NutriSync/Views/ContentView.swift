@@ -53,7 +53,12 @@ struct ContentView: View {
                     LoadingView(message: "Loading your profile...")
                 } else if !hasProfile {
                     NavigationStack {
-                        if !hasSeenGetStarted {
+                        // Show GetStartedView if:
+                        // 1. User hasn't seen GetStarted yet, OR
+                        // 2. User is still on Basics section (section 1) in their onboarding progress
+                        let isStillOnBasics = existingProgress?.currentSection == 1 && !(existingProgress?.completedSections.contains(1) ?? false)
+                        
+                        if !hasSeenGetStarted || isStillOnBasics {
                             GetStartedView()
                                 .environmentObject(firebaseConfig)
                                 .environmentObject(dataProvider)
