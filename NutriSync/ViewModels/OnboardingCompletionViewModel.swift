@@ -191,7 +191,7 @@ class OnboardingCompletionViewModel {
                 targetFat: 15,
                 purpose: windowPurpose,
                 flexibility: .flexible,
-                type: .meal
+                type: .regular
             )
             
             windows.append(window)
