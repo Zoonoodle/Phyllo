@@ -97,7 +97,13 @@ struct EnhancedFinishView: View {
         .alert("Setup Error", isPresented: $showError) {
             Button("Retry") {
                 Task {
-                    await coordinator.completeOnboarding()
+                    do {
+                        try await coordinator.completeOnboarding()
+                        navigateToApp = true
+                    } catch {
+                        errorMessage = "Failed to complete onboarding: \(error.localizedDescription)"
+                        showError = true
+                    }
                 }
             }
             Button("Cancel", role: .cancel) {}
