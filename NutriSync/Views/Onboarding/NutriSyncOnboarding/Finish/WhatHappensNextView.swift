@@ -100,7 +100,11 @@ struct WhatHappensNextView: View {
                 VStack(spacing: 12) {
                     Button(action: { 
                         Task {
-                            await coordinator.completeOnboarding()
+                            do {
+                                try await coordinator.completeOnboarding()
+                            } catch {
+                                print("[WhatHappensNextView] Failed to complete onboarding: \(error)")
+                            }
                         }
                     }) {
                         ZStack {
