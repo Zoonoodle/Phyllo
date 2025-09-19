@@ -44,13 +44,13 @@ extension MealWindow.WindowPurpose {
     
     var color: Color {
         switch self {
-        case .preWorkout: return .orange
-        case .postWorkout: return .blue
+        case .preWorkout: return .nutriSyncAccent
+        case .postWorkout: return .nutriSyncAccent
         case .sustainedEnergy: return .nutriSyncAccent
-        case .recovery: return .purple
-        case .metabolicBoost: return .red
-        case .sleepOptimization: return .indigo
-        case .focusBoost: return .cyan
+        case .recovery: return .nutriSyncAccent
+        case .metabolicBoost: return .nutriSyncAccent
+        case .sleepOptimization: return .nutriSyncAccent
+        case .focusBoost: return .nutriSyncAccent
         }
     }
 }
