@@ -271,20 +271,20 @@ struct HealthImpactPetalView: View {
     var showPurposeText: Bool = true
     var shouldBurst: Bool = false
     
-    // Calculate opacity based on score - muted shadcn approach
+    // Calculate opacity based on score - vibrant approach for visibility
     private var fillOpacity: Double {
-        // Muted palette: starts at 0.1, max 0.5 for shadcn theme
-        let minOpacity = 0.1
-        let maxOpacity = 0.5
+        // Vibrant palette: starts at 0.2, max 0.7 for better visibility
+        let minOpacity = 0.2
+        let maxOpacity = 0.7
         return minOpacity + (maxOpacity - minOpacity) * score
     }
     
     private var strokeOpacity: Double {
-        // Muted stroke: max 0.7 opacity for shadcn consistency
+        // Vibrant stroke: max 0.9 opacity for better definition
         if score < 0.5 {
-            return score * 1.4 // 0-0.5 maps to 0-0.7 opacity
+            return score * 1.8 // 0-0.5 maps to 0-0.9 opacity
         } else {
-            return 0.7
+            return 0.9
         }
     }
     
