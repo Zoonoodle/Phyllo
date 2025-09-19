@@ -12,9 +12,8 @@ struct GetStartedView: View {
     @State private var timer: Timer?
     @State private var dragAmount = CGSize.zero
     @State private var showLogin = false
-    @State private var startOnboarding = false
-    @State private var onboardingViewModel = NutriSyncOnboardingViewModel()
     @EnvironmentObject private var firebaseConfig: FirebaseConfig
+    @Environment(\.dismiss) private var dismiss
     
     let screenshots = [
         "Image 1",
@@ -136,7 +135,7 @@ struct GetStartedView: View {
                     
                     // Get Started button
                     Button {
-                        startOnboarding = true
+                        dismiss()
                     } label: {
                         Text("Get Started")
                             .font(.system(size: 18, weight: .semibold))
@@ -175,11 +174,6 @@ struct GetStartedView: View {
         }
         .onDisappear {
             timer?.invalidate()
-        }
-        .fullScreenCover(isPresented: $startOnboarding) {
-            NutriSyncOnboardingCoordinator(viewModel: onboardingViewModel)
-                .environmentObject(firebaseConfig)
-                .environmentObject(FirebaseDataProvider.shared)
         }
         .sheet(isPresented: $showLogin) {
             LoginView()

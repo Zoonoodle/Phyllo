@@ -20,6 +20,7 @@ struct ContentView: View {
     @State private var existingProgress: OnboardingProgress?
     @State private var showGetStarted = true
     @State private var onboardingViewModel = NutriSyncOnboardingViewModel()
+    @State private var showingGetStarted = false
     @AppStorage("hasSeenGetStarted") private var hasSeenGetStarted = false
     
     // Notification onboarding
@@ -53,23 +54,24 @@ struct ContentView: View {
                     LoadingView(message: "Loading your profile...")
                 } else if !hasProfile {
                     NavigationStack {
+                        NutriSyncOnboardingCoordinator(viewModel: onboardingViewModel, existingProgress: existingProgress, skipSectionIntro: showingGetStarted)
+                            .environmentObject(firebaseConfig)
+                            .environmentObject(dataProvider)
+                    }
+                    .fullScreenCover(isPresented: $showingGetStarted) {
+                        GetStartedView()
+                            .environmentObject(firebaseConfig)
+                            .environmentObject(dataProvider)
+                            .onDisappear {
+                                hasSeenGetStarted = true
+                            }
+                    }
+                    .onAppear {
                         // Show GetStartedView if:
                         // 1. User hasn't seen GetStarted yet, OR
-                        // 2. User is still on Basics section (section 1) in their onboarding progress
-                        let isStillOnBasics = existingProgress?.currentSection == 1 && !(existingProgress?.completedSections.contains(1) ?? false)
-                        
-                        if !hasSeenGetStarted || isStillOnBasics {
-                            GetStartedView()
-                                .environmentObject(firebaseConfig)
-                                .environmentObject(dataProvider)
-                                .onDisappear {
-                                    hasSeenGetStarted = true
-                                }
-                        } else {
-                            NutriSyncOnboardingCoordinator(viewModel: onboardingViewModel, existingProgress: existingProgress)
-                                .environmentObject(firebaseConfig)
-                                .environmentObject(dataProvider)
-                        }
+                        // 2. User is still on Basics section (section 0) in their onboarding progress
+                        let isStillOnBasics = existingProgress?.currentSection == 0 && !(existingProgress?.completedSections.contains(0) ?? false)
+                        showingGetStarted = !hasSeenGetStarted || isStillOnBasics
                     }
                 } else {
                     MainTabView()

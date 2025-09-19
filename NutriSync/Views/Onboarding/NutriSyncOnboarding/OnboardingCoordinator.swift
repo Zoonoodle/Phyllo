@@ -418,10 +418,12 @@ struct NutriSyncOnboardingCoordinator: View {
     @State private var previousScreenIndex: Int = 0
     
     let existingProgress: OnboardingProgress?
+    let skipSectionIntro: Bool
     
-    init(viewModel: NutriSyncOnboardingViewModel, existingProgress: OnboardingProgress? = nil) {
+    init(viewModel: NutriSyncOnboardingViewModel, existingProgress: OnboardingProgress? = nil, skipSectionIntro: Bool = false) {
         self._viewModel = State(initialValue: viewModel)
         self.existingProgress = existingProgress
+        self.skipSectionIntro = skipSectionIntro
     }
     
     var body: some View {
@@ -523,6 +525,10 @@ struct NutriSyncOnboardingCoordinator: View {
             // Load existing progress if available
             if let progress = existingProgress {
                 viewModel.loadExistingProgress(progress)
+            }
+            // Skip section intro if requested (e.g., when coming from GetStartedView for users on Basics)
+            if skipSectionIntro {
+                viewModel.showingSectionIntro = false
             }
         }
         .alert("Save Error", isPresented: $viewModel.showSaveError) {
