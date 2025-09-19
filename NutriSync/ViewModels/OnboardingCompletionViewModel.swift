@@ -171,23 +171,44 @@ class OnboardingCompletionViewModel {
                 }
             }()
             
+            let windowPurpose: MealWindow.WindowPurpose = {
+                switch purpose {
+                case "metabolicBoost": return .metabolicBoost
+                case "recovery": return .recovery
+                case "sustainedEnergy": return .sustainedEnergy
+                default: return .sustainedEnergy
+                }
+            }()
+            
             let window = MealWindow(
-                id: UUID().uuidString,
+                id: UUID(),
+                name: getMealName(for: i, total: mealCount),
                 startTime: startTime,
                 endTime: endTime,
-                purpose: purpose,
                 targetCalories: calculateDailyCalories(coordinator) / mealCount,
                 targetProtein: 25,
                 targetCarbs: 40,
                 targetFat: 15,
-                notes: getMealNotes(for: i, total: mealCount),
-                actualMeal: nil
+                purpose: windowPurpose,
+                flexibility: .flexible,
+                type: .meal
             )
             
             windows.append(window)
         }
         
         return windows
+    }
+    
+    private func getMealName(for index: Int, total: Int) -> String {
+        switch index {
+        case 0:
+            return "Breakfast"
+        case total - 1:
+            return "Dinner"
+        default:
+            return "Meal \(index + 1)"
+        }
     }
     
     private func getMealNotes(for index: Int, total: Int) -> String {
@@ -238,7 +259,7 @@ class OnboardingCompletionViewModel {
         let weight = coordinator.weight
         let height = coordinator.height
         let age = coordinator.age
-        let isMale = coordinator.sex == "Male"
+        let isMale = coordinator.gender == "Male"
         
         // BMR calculation
         let bmr: Double
@@ -322,7 +343,7 @@ class OnboardingCompletionViewModel {
         let weight = coordinator.weight
         let height = coordinator.height
         let age = coordinator.age
-        let isMale = coordinator.sex == "Male"
+        let isMale = coordinator.gender == "Male"
         
         let bmr: Double
         if isMale {
@@ -349,7 +370,4 @@ class OnboardingCompletionViewModel {
         return Int(bmr * activityFactor)
     }
     
-    deinit {
-        stopMessageRotation()
-    }
 }
