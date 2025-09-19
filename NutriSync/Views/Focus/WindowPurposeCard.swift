@@ -130,7 +130,7 @@ struct WindowPurposeCard: View {
                                 HStack(alignment: .top, spacing: 8) {
                                     Image(systemName: "checkmark.circle.fill")
                                         .font(.system(size: 14))
-                                        .foregroundColor(.nutriSyncAccent)
+                                        .foregroundColor(window.purpose.color)
                                     
                                     Text(food)
                                         .font(.system(size: 14))
