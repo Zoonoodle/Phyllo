@@ -839,7 +839,7 @@ struct ExpandableWindowBanner: View {
     private var completedIndicator: some View {
         Image(systemName: "checkmark")
             .font(.system(size: 16, weight: .semibold))
-            .foregroundColor(.green)
+            .foregroundColor(.nutriSyncAccent)
             .frame(width: 50, height: 50)
     }
     
@@ -1310,7 +1310,7 @@ struct ExpandableWindowBanner: View {
         } else if percentage > 1.2 {
             return .orange // Over-consumed
         } else {
-            return .green // Within range
+            return .nutriSyncAccent // Within range
         }
     }
     

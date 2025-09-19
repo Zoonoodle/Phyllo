@@ -270,19 +270,19 @@ struct CurrentTimeIndicatorDynamic: View {
         if hourLayouts.contains(where: { $0.hour == currentHour }) {
             HStack(spacing: 8) {
                 Circle()
-                    .fill(Color.green)
+                    .fill(Color.nutriSyncAccent)
                     .frame(width: 8, height: 8)
-                    .shadow(color: Color.green.opacity(0.5), radius: 3)
+                    .shadow(color: Color.nutriSyncAccent.opacity(0.5), radius: 3)
                 
                 // Only show the line and time label if there's no active window
                 if !hasActiveWindow {
                     Rectangle()
-                        .fill(Color.green.opacity(0.6))
+                        .fill(Color.nutriSyncAccent.opacity(0.6))
                         .frame(height: 1)
                     
                     Text(formatCurrentTime())
                         .font(.system(size: 10, weight: .medium))
-                        .foregroundColor(.green)
+                        .foregroundColor(.nutriSyncAccent)
                         .padding(.horizontal, 6)
                         .background(
                             Capsule()
@@ -325,9 +325,9 @@ struct CurrentTimeIndicator: View {
         if hours.contains(Calendar.current.component(.hour, from: currentTime)) {
             HStack(spacing: 8) {
                 Circle()
-                    .fill(Color.green)
+                    .fill(Color.nutriSyncAccent)
                     .frame(width: 8, height: 8)
-                    .shadow(color: Color.green.opacity(0.5), radius: 3)
+                    .shadow(color: Color.nutriSyncAccent.opacity(0.5), radius: 3)
                 
                 Rectangle()
                     .fill(Color.green.opacity(0.6))
