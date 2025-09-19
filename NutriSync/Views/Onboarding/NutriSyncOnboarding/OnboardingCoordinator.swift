@@ -670,7 +670,7 @@ struct NutriSyncOnboardingCoordinator: View {
             
         // Finish Section
         case "Review Program":
-            ReviewProgramContentView()
+            EnhancedFinishView()
             
         default:
             Text("Screen not found: \(screenName)")
