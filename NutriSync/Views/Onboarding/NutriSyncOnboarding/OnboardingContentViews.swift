@@ -1167,28 +1167,46 @@ struct GoalSummaryContentView: View {
     }
     
     private var initialApproachTitle: String {
-        let difference = currentWeightLbs - targetWeightLbs
-        
-        if abs(difference) <= 2 {
-            return "Maintenance"
-        } else if difference > 0 {
-            return "Slow Weight Loss"
-        } else {
-            return "Slow Weight Gain"
+        switch coordinator.goal.lowercased() {
+        case "maintain weight":
+            let difference = currentWeightLbs - targetWeightLbs
+            if abs(difference) <= 2 {
+                return "Maintenance"
+            } else if difference > 0 {
+                return "Slow Weight Loss"
+            } else {
+                return "Slow Weight Gain"
+            }
+        case "lose weight":
+            return "Sustainable Weight Loss"
+        case "gain weight":
+            return "Controlled Weight Gain"
+        default:
+            return "Personalized Approach"
         }
     }
     
     private var initialApproachDescription: String {
         let difference = currentWeightLbs - targetWeightLbs
         
-        if abs(difference) <= 2 {
-            return "Your trend weight is currently at \(currentWeightLbs) lbs, which is within your target range. We will maintain your current weight with dynamic adjustments to keep you within \(targetRange)."
-        } else if difference > 0 {
-            // Need to lose weight
-            return "Your trend weight is currently \(currentWeightLbs) lbs, but you chose to maintain your weight at \(targetWeightLbs). We will set up your program to slowly lose weight at the rate of 0.15% of your body weight per week until you are within your target maintenance range. Then, we will update your plan weekly to keep you there."
-        } else {
-            // Need to gain weight
-            return "Your trend weight is currently \(currentWeightLbs) lbs, but you chose to maintain your weight at \(targetWeightLbs). We will set up your program to slowly gain weight at the rate of 0.15% of your body weight per week until you are within your target maintenance range. Then, we will update your plan weekly to keep you there."
+        switch coordinator.goal.lowercased() {
+        case "maintain weight":
+            if abs(difference) <= 2 {
+                return "Your trend weight is currently at \(currentWeightLbs) lbs, which is within your target range. We will maintain your current weight with dynamic adjustments to keep you within \(targetRange)."
+            } else if difference > 0 {
+                return "Your trend weight is currently \(currentWeightLbs) lbs, but you chose to maintain your weight at \(targetWeightLbs). We will set up your program to slowly lose weight at the rate of 0.15% of your body weight per week until you are within your target maintenance range. Then, we will update your plan weekly to keep you there."
+            } else {
+                return "Your trend weight is currently \(currentWeightLbs) lbs, but you chose to maintain your weight at \(targetWeightLbs). We will set up your program to slowly gain weight at the rate of 0.15% of your body weight per week until you are within your target maintenance range. Then, we will update your plan weekly to keep you there."
+            }
+            
+        case "lose weight":
+            return "Your current weight is \(currentWeightLbs) lbs, and your target weight is \(targetWeightLbs) lbs. We will set up your program to help you lose weight sustainably at a rate of 0.5-1% of your body weight per week. NutriSync will monitor your progress and adjust your calories dynamically to ensure steady, healthy weight loss while maintaining your energy and muscle mass."
+            
+        case "gain weight":
+            return "Your current weight is \(currentWeightLbs) lbs, and your target weight is \(targetWeightLbs) lbs. We will set up your program to help you gain weight effectively at a rate of 0.25-0.5% of your body weight per week. NutriSync will monitor your progress and adjust your calories dynamically to promote lean muscle growth while minimizing excess fat gain."
+            
+        default:
+            return "We will set up your program to help you reach your goals with dynamic adjustments based on your progress."
         }
     }
     
