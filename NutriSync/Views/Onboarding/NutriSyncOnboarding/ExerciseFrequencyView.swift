@@ -16,11 +16,11 @@ struct ExerciseGridIcon: View {
         case 0:
             return []
         case 3:
-            // Diagonal pattern for 1-3 sessions
-            return [0, 4, 8]
-        case 6:
-            // Scattered checkerboard for 4-6 sessions
-            return [0, 2, 3, 5, 6, 8]
+            // Pattern for 1-3 sessions: [(x,x,0), (x,0,0), (0,0,0)]
+            return [0, 1, 3]
+        case 5:
+            // Pattern for 4-6 sessions: [(x,x,x), (x,x,0), (x,0,0)]
+            return [0, 1, 2, 3, 4]
         case 9:
             // All filled for 7+ sessions
             return Set(0...8)
@@ -85,7 +85,7 @@ struct ExerciseFrequencyContentView: View {
     let frequencies = [
         ("0 sessions / week", 0),
         ("1-3 sessions / week", 3),
-        ("4-6 sessions / week", 6),
+        ("4-6 sessions / week", 5),
         ("7+ sessions / week", 9)
     ]
     
