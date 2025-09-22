@@ -156,24 +156,66 @@ class OnboardingCompletionViewModel {
     private func createDayMealWindows(_ coordinator: NutriSyncOnboardingViewModel, for day: String) -> [MealWindow] {
         var windows: [MealWindow] = []
         
-        // Parse eating window (e.g., "10 hours")
-        let windowHours = Int(coordinator.eatingWindow.components(separatedBy: " ").first ?? "10") ?? 10
+        // Parse eating window - it's stored as "earlyBird", "balanced", or "nightOwl"
+        let windowHours: Int = {
+            switch coordinator.eatingWindow {
+            case "earlyBird":
+                return 8  // 1-9 hours after waking
+            case "balanced":
+                return 8  // 3-11 hours after waking
+            case "nightOwl":
+                return 8  // 5-13 hours after waking
+            default:
+                // Try to parse as "X hours" format for backward compatibility
+                if let hours = Int(coordinator.eatingWindow.components(separatedBy: " ").first ?? "") {
+                    return hours
+                }
+                return 8  // Default to 8-hour window
+            }
+        }()
         
-        // Parse meal frequency
-        let mealCount = coordinator.mealFrequency == "2 meals" ? 2 : 
-                       coordinator.mealFrequency == "3 meals" ? 3 : 
-                       coordinator.mealFrequency == "4 meals" ? 4 : 3
+        // Parse meal frequency from string format (e.g., "3 meals")
+        let mealCountString = coordinator.mealFrequency.components(separatedBy: " ").first ?? "3"
+        let mealCount = Int(mealCountString) ?? 3
         
-        // Calculate window distribution
+        // Calculate proper meal timing based on sleep schedule
         let calendar = Calendar.current
         let wakeTime = coordinator.wakeTime
+        let bedTime = coordinator.bedTime
+        
+        // Debug logging
+        print("[MealWindows] Creating windows for \(day)")
+        print("[MealWindows] Wake: \(formatTime(wakeTime)), Bed: \(formatTime(bedTime))")
+        print("[MealWindows] Eating window: \(coordinator.eatingWindow) → \(windowHours) hours")
+        print("[MealWindows] Meal frequency: \(coordinator.mealFrequency) → \(mealCount) meals")
+        
+        // First meal: 1 hour after wake
         let firstMealTime = calendar.date(byAdding: .hour, value: 1, to: wakeTime) ?? wakeTime
         
-        let mealInterval = TimeInterval(windowHours * 3600) / TimeInterval(mealCount)
+        // Last meal should END 3-4 hours before bed for optimal sleep
+        let hoursBeforeBed = 3.5
+        let lastMealEndTime = calendar.date(byAdding: .hour, value: -Int(hoursBeforeBed), to: bedTime) ?? bedTime
+        
+        // Calculate the actual eating window based on these constraints
+        let actualWindowDuration = lastMealEndTime.timeIntervalSince(firstMealTime)
+        
+        // If we have more than 1 meal, distribute them evenly
+        let mealSpacing = mealCount > 1 ? actualWindowDuration / Double(mealCount - 1) : 0
         
         for i in 0..<mealCount {
-            let startTime = Date(timeInterval: mealInterval * Double(i), since: firstMealTime)
-            let endTime = Date(timeInterval: 3600, since: startTime) // 1 hour window
+            let startTime: Date
+            if i == 0 {
+                // First meal
+                startTime = firstMealTime
+            } else if i == mealCount - 1 {
+                // Last meal - work backwards from desired end time
+                startTime = calendar.date(byAdding: .hour, value: -1, to: lastMealEndTime) ?? lastMealEndTime
+            } else {
+                // Middle meals - evenly spaced
+                startTime = Date(timeInterval: mealSpacing * Double(i), since: firstMealTime)
+            }
+            
+            let endTime = calendar.date(byAdding: .hour, value: 1, to: startTime) ?? startTime // 1 hour window
             
             let purpose: String = {
                 switch i {
@@ -207,9 +249,25 @@ class OnboardingCompletionViewModel {
             )
             
             windows.append(window)
+            
+            // Debug: Log the created window
+            print("[MealWindows] \(window.name): \(formatTime(startTime)) - \(formatTime(endTime))")
+        }
+        
+        // Log summary
+        if let first = windows.first, let last = windows.last {
+            print("[MealWindows] Eating window: \(formatTime(first.startTime)) - \(formatTime(last.endTime))")
+            let hoursBeforeBed = bedTime.timeIntervalSince(last.endTime) / 3600
+            print("[MealWindows] Hours before bed: \(String(format: "%.1f", hoursBeforeBed))")
         }
         
         return windows
+    }
+    
+    private func formatTime(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "h:mm a"
+        return formatter.string(from: date)
     }
     
     private func getMealName(for index: Int, total: Int) -> String {
