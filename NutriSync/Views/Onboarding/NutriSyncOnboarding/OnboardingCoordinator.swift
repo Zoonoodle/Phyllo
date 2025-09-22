@@ -90,7 +90,31 @@ class NutriSyncOnboardingViewModel {
         return Calendar.current.date(from: components) ?? Date().addingTimeInterval(-Date().timeIntervalSinceStartOfDay + 23 * 3600)
     }()
     var mealFrequency: String = ""
-    var eatingWindow: String = ""
+    // Auto-set based on goals rather than user selection
+    private var _eatingWindow: String = ""
+    var eatingWindow: String {
+        get {
+            // If manually set (for backward compatibility), use that
+            if !_eatingWindow.isEmpty {
+                return _eatingWindow
+            }
+            
+            // Otherwise determine window based on goal
+            switch goal.lowercased() {
+            case "lose weight":
+                return "8 hours" // 16:8 intermittent fasting
+            case "build muscle", "gain weight":
+                return "12 hours" // More frequent feeding opportunities
+            case "maintain weight":
+                return "10 hours" // Moderate approach
+            default:
+                return "10 hours" // Default moderate window
+            }
+        }
+        set {
+            _eatingWindow = newValue
+        }
+    }
     
     // Workout data
     var preworkoutTiming: String = ""

@@ -81,7 +81,6 @@ struct NutriSyncOnboardingFlow {
             "Training Plan",
             "Sleep Schedule",
             "Meal Frequency",
-            "Eating Window",
             "Dietary Restrictions"
         ],
         .finish: [
