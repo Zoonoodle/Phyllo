@@ -7,6 +7,33 @@
 
 import SwiftUI
 
+// MARK: - Color Extension
+extension Color {
+    init(hex: String) {
+        let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+        var int: UInt64 = 0
+        Scanner(string: hex).scanHexInt64(&int)
+        let a, r, g, b: UInt64
+        switch hex.count {
+        case 3: // RGB (12-bit)
+            (a, r, g, b) = (255, (int >> 8) * 17, (int >> 4 & 0xF) * 17, (int & 0xF) * 17)
+        case 6: // RGB (24-bit)
+            (a, r, g, b) = (255, int >> 16, int >> 8 & 0xFF, int & 0xFF)
+        case 8: // ARGB (32-bit)
+            (a, r, g, b) = (int >> 24, int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF)
+        default:
+            (a, r, g, b) = (255, 0, 0, 0)
+        }
+        self.init(
+            .sRGB,
+            red: Double(r) / 255,
+            green: Double(g) / 255,
+            blue: Double(b) / 255,
+            opacity: Double(a) / 255
+        )
+    }
+}
+
 struct WeeklyTargetsView: View {
     let baseCalories: Int
     let baseMacros: OnboardingMacroTargets
@@ -87,9 +114,9 @@ struct WeeklyTargetsView: View {
             
             // Legend
             HStack(spacing: 20) {
-                MacroLegendItem(color: .orange, label: "Protein")
-                MacroLegendItem(color: .blue, label: "Carbs")
-                MacroLegendItem(color: .yellow, label: "Fat")
+                MacroLegendItem(color: Color(hex: "FF9580"), label: "Protein")
+                MacroLegendItem(color: Color(hex: "71C5C5"), label: "Carbs")
+                MacroLegendItem(color: Color(hex: "F5D5A8"), label: "Fat")
             }
             .padding(.top, 8)
             
@@ -129,11 +156,11 @@ struct DayTargetRow: View {
     
     private var deviationColor: Color {
         if calorieDeviation > 100 {
-            return .nutriSyncAccent
+            return Color(hex: "71C5C5").opacity(0.8)  // Higher days in soft teal
         } else if calorieDeviation < -100 {
-            return .red.opacity(0.8)
+            return Color(hex: "FF9580").opacity(0.6)  // Lower days in soft coral
         } else {
-            return .white.opacity(0.6)
+            return .white.opacity(0.4)
         }
     }
     
@@ -149,19 +176,19 @@ struct DayTargetRow: View {
                 // Calorie bar with macro breakdown
                 GeometryReader { geometry in
                     HStack(spacing: 0) {
-                        // Protein section
+                        // Protein section - soft coral
                         Rectangle()
-                            .fill(Color.orange.opacity(0.7))
+                            .fill(Color(hex: "FF9580").opacity(0.6))
                             .frame(width: geometry.size.width * macroRatio(dayData.protein * 4))
                         
-                        // Carbs section
+                        // Carbs section - muted teal
                         Rectangle()
-                            .fill(Color.blue.opacity(0.7))
+                            .fill(Color(hex: "71C5C5").opacity(0.6))
                             .frame(width: geometry.size.width * macroRatio(dayData.carbs * 4))
                         
-                        // Fat section
+                        // Fat section - warm cream
                         Rectangle()
-                            .fill(Color.yellow.opacity(0.7))
+                            .fill(Color(hex: "F5D5A8").opacity(0.5))
                             .frame(width: geometry.size.width * macroRatio(dayData.fat * 9))
                         
                         Spacer()
@@ -203,9 +230,9 @@ struct DayTargetRow: View {
             // Expanded macro detail
             if isSelected {
                 HStack(spacing: 16) {
-                    MacroDetailItem(value: "\(dayData.protein)g", label: "Protein", color: .orange)
-                    MacroDetailItem(value: "\(dayData.carbs)g", label: "Carbs", color: .blue)
-                    MacroDetailItem(value: "\(dayData.fat)g", label: "Fat", color: .yellow)
+                    MacroDetailItem(value: "\(dayData.protein)g", label: "Protein", color: Color(hex: "FF9580"))
+                    MacroDetailItem(value: "\(dayData.carbs)g", label: "Carbs", color: Color(hex: "71C5C5"))
+                    MacroDetailItem(value: "\(dayData.fat)g", label: "Fat", color: Color(hex: "F5D5A8"))
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
@@ -230,7 +257,7 @@ struct MacroLegendItem: View {
     var body: some View {
         HStack(spacing: 4) {
             Circle()
-                .fill(color.opacity(0.7))
+                .fill(color.opacity(0.8))
                 .frame(width: 8, height: 8)
             Text(label)
                 .font(.system(size: 11))
