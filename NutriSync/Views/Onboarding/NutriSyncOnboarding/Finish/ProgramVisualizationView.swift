@@ -24,63 +24,70 @@ struct ProgramVisualizationView: View {
                             .font(.system(size: 28, weight: .bold))
                             .foregroundColor(.white)
                         
-                        Text("Weekly meal timing optimized for your goals")
+                        Text("Daily targets optimized for your goals")
                             .font(.system(size: 16))
                             .foregroundColor(.white.opacity(0.7))
                     }
                     .padding(.top, 40)
                     .padding(.horizontal, 24)
                     
-                    // Weekly Timeline Visualization
-                    VStack(spacing: 20) {
-                        Text("7-Day Meal Window Schedule")
-                            .font(.system(size: 18, weight: .semibold))
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, 24)
-                        
-                        WeeklyTimelineView(windows: viewModel.weeklyWindows)
-                            .frame(height: 300)
-                            .padding(.horizontal, 16)
+                    // Weekly Targets with Daily Variations
+                    if let macros = viewModel.macroTargets {
+                        WeeklyTargetsView(
+                            baseCalories: macros.calories,
+                            baseMacros: macros,
+                            goal: viewModel.userGoal ?? "maintain"
+                        )
+                        .padding(.horizontal, 20)
                     }
                     
-                    // Daily Macro Targets
-                    VStack(spacing: 20) {
-                        Text("Daily Targets")
-                            .font(.system(size: 18, weight: .semibold))
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, 24)
-                        
-                        if let macros = viewModel.macroTargets {
+                    // Average Daily Targets Summary
+                    if let macros = viewModel.macroTargets {
+                        VStack(spacing: 16) {
+                            Text("Average Daily Targets")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            
                             MacroTargetGrid(macros: macros)
-                                .padding(.horizontal, 24)
                         }
+                        .padding(.horizontal, 24)
                     }
                     
-                    // Eating Window Summary
+                    // Simplified Eating Window
                     if let firstDay = viewModel.weeklyWindows.first,
                        let firstWindow = firstDay.windows.first,
                        let lastWindow = firstDay.windows.last {
                         
-                        VStack(spacing: 12) {
+                        VStack(spacing: 16) {
                             HStack {
                                 Image(systemName: "clock.fill")
                                     .foregroundColor(.nutriSyncAccent)
-                                Text("Eating Window")
+                                    .font(.system(size: 20))
+                                Text("Daily Eating Schedule")
                                     .font(.system(size: 16, weight: .semibold))
                                     .foregroundColor(.white)
                                 Spacer()
                             }
                             
-                            HStack {
+                            VStack(alignment: .leading, spacing: 8) {
                                 Text("\(formatTime(firstWindow.startTime)) - \(formatTime(lastWindow.endTime))")
-                                    .font(.system(size: 20, weight: .bold))
+                                    .font(.system(size: 24, weight: .bold))
                                     .foregroundColor(.nutriSyncAccent)
-                                Spacer()
-                                Text("\(firstDay.windows.count) meals across \(calculateWindowHours(from: firstWindow.startTime, to: lastWindow.endTime)) hours")
+                                
+                                Text("\(firstDay.windows.count) meals within a \(calculateWindowHours(from: firstWindow.startTime, to: lastWindow.endTime))-hour window")
                                     .font(.system(size: 14))
-                                    .foregroundColor(.white.opacity(0.6))
+                                    .foregroundColor(.white.opacity(0.7))
+                                
+                                // Meal timing dots
+                                HStack(spacing: 4) {
+                                    ForEach(0..<firstDay.windows.count, id: \.self) { index in
+                                        Circle()
+                                            .fill(Color.nutriSyncAccent)
+                                            .frame(width: 8, height: 8)
+                                    }
+                                }
+                                .padding(.top, 4)
                             }
                         }
                         .padding(20)

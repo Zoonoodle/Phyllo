@@ -45,6 +45,14 @@ Last Updated: 2025-09-02
   - Complexity: Medium
 
 ### Priority 2: Core Features
+- [ ] **Dynamic Daily Targets** - Different calorie/macro targets for each day
+  - Status: Not Started
+  - Sessions Required: 3-4
+  - Complexity: Medium
+  - Note: Like MacroFactor's cycling approach for weight loss/gain
+  - Benefits: More effective metabolic adaptation, better adherence
+  - Implementation: AI calculates daily variations based on activity, goals, metabolism
+  
 - [ ] **Voice Context Onboarding** - Reduce onboarding screens via intelligent voice input
   - Status: Not Started
   - Sessions Required: 4-5

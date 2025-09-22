@@ -68,6 +68,18 @@ class OnboardingCompletionViewModel {
     var macroTargets: OnboardingMacroTargets?
     var insights: [String] = []
     
+    var userGoal: String? {
+        // Convert goal to simple format for WeeklyTargetsView
+        guard let goal = program?.goal else { return "maintain" }
+        if goal.lowercased().contains("lose") {
+            return "lose"
+        } else if goal.lowercased().contains("build") || goal.lowercased().contains("muscle") {
+            return "gain"
+        } else {
+            return "maintain"
+        }
+    }
+    
     // Message rotation
     private let messages = [
         "Creating your personalized schedule...",
