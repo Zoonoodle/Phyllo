@@ -269,7 +269,7 @@ struct AIScheduleView: View {
                 // Only show check-in button if no windows exist
                 Image(systemName: "calendar.badge.plus")
                     .font(.system(size: 60))
-                    .foregroundColor(.green)
+                    .foregroundColor(.nutriSyncAccent)
                 
                 Text("No meal plan for today")
                     .font(.title2)
