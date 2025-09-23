@@ -35,7 +35,7 @@ class FirstDayWindowService: FirstDayWindowGenerating {
     // MARK: - Public Methods
     
     /// Determine if first-day windows should be generated for this profile
-    func shouldGenerateFirstDayWindows(profile: UserProfile) -> Bool {
+    nonisolated func shouldGenerateFirstDayWindows(profile: UserProfile) -> Bool {
         // Generate first-day windows if:
         // 1. User has completed onboarding (onboardingCompletedAt is set)
         // 2. First day has not been completed yet
@@ -126,7 +126,7 @@ class FirstDayWindowService: FirstDayWindowGenerating {
     }
     
     /// Calculate pro-rated calories based on remaining time in day
-    func calculateProRatedCalories(
+    nonisolated func calculateProRatedCalories(
         dailyCalories: Int,
         remainingHours: Double,
         totalWakingHours: Double

@@ -276,7 +276,7 @@ class FirebaseDataProvider: @preconcurrency DataProvider, ObservableObject {
         guard let userRef = userRef else {
             throw DataProviderError.notAuthenticated
         }
-        let windowRef = userRef.collection("windows").document(window.id.uuidString)
+        let windowRef = userRef.collection("windows").document(window.id)
         let firestoreData = window.toFirestore()
         
         // Debug logging to track date saving
@@ -369,7 +369,7 @@ class FirebaseDataProvider: @preconcurrency DataProvider, ObservableObject {
         guard let userRef = userRef else {
             throw DataProviderError.notAuthenticated
         }
-        let windowRef = userRef.collection("windows").document(window.id.uuidString)
+        let windowRef = userRef.collection("windows").document(window.id)
         try await windowRef.updateData(window.toFirestore())
     }
     
@@ -1258,7 +1258,7 @@ class FirebaseDataProvider: @preconcurrency DataProvider, ObservableObject {
         
         // Update windows with adjusted values
         for adjustment in result.adjustedWindows {
-            if let window = windows.first(where: { $0.id.uuidString == adjustment.windowId }) {
+            if let window = windows.first(where: { $0.id == adjustment.windowId }) {
                 // Create updated window with adjusted values
                 var updatedWindow = window
                 updatedWindow.adjustedCalories = adjustment.adjustedMacros.totalCalories
