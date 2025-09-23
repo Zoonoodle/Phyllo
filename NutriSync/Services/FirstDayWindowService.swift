@@ -115,8 +115,9 @@ class FirstDayWindowService: FirstDayWindowGenerating {
                 targetProtein: macros.protein,
                 targetCarbs: macros.carbs,
                 targetFat: macros.fat,
-                isFirstDay: true,
-                date: completionTime
+                purpose: purpose,
+                flexibility: .moderate,
+                type: .standard
             )
             
             windows.append(window)
@@ -281,8 +282,9 @@ extension FirstDayWindowService {
                 targetProtein: calories / 10, // Rough estimate
                 targetCarbs: calories / 8,
                 targetFat: calories / 20,
-                isFirstDay: true,
-                date: time
+                purpose: .sustainedEnergy,
+                flexibility: .moderate,
+                type: .standard
             ))
         }
         

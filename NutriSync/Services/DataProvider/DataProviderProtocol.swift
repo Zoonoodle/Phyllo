@@ -161,7 +161,7 @@ extension LoggedMeal {
     /// Convert to Firestore-compatible dictionary
     func toFirestore() -> [String: Any] {
         var data: [String: Any] = [
-            "id": id.uuidString,
+            "id": id,
             "name": name,
             "calories": calories,
             "protein": protein,
@@ -283,7 +283,7 @@ extension MealWindow {
         let startOfDayDate = calendar.startOfDay(for: dayDate)
         
         var data: [String: Any] = [
-            "id": id.uuidString,
+            "id": id,
             "startTime": startTime,
             "endTime": endTime,
             "targetCalories": targetCalories,
