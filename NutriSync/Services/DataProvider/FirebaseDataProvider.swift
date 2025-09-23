@@ -1397,7 +1397,8 @@ extension FirebaseDataProvider {
         }
         
         // Get current user profile
-        guard let profile = userProfile else {
+        let profile = try await getUserProfile()
+        guard let profile = profile else {
             throw NSError(domain: "WindowGeneration", code: 1002, 
                          userInfo: [NSLocalizedDescriptionKey: "User profile not found"])
         }
@@ -1417,7 +1418,7 @@ extension FirebaseDataProvider {
             
             if !firstDayWindows.isEmpty {
                 // Save windows to Firebase
-                let dateKey = DateFormatter.dateKey.string(from: now)
+                let dateKey = ISO8601DateFormatter.yyyyMMdd.string(from: now)
                 let windowsRef = db.collection("users").document(userId)
                     .collection("windows").document(dateKey)
                 
@@ -1427,12 +1428,10 @@ extension FirebaseDataProvider {
                 // Update profile to mark first day as completed
                 var updatedProfile = profile
                 updatedProfile.firstDayCompleted = true
-                try await updateUserProfile(updatedProfile)
+                try await setUserProfile(updatedProfile)
                 
-                // Update local windows
-                await MainActor.run {
-                    self.todayWindows = firstDayWindows
-                }
+                // Fetch and update local windows
+                let _ = try await getWindowsForToday()
                 
                 print("Generated \(firstDayWindows.count) first-day windows")
             } else {
@@ -1442,17 +1441,17 @@ extension FirebaseDataProvider {
                 // Still mark first day as completed
                 var updatedProfile = profile
                 updatedProfile.firstDayCompleted = true
-                try await updateUserProfile(updatedProfile)
+                try await setUserProfile(updatedProfile)
             }
         } else {
             // Regular window generation using AI service
             print("Generating regular windows using AI service")
             
             // Get morning check-in data if available
-            let checkInData = await getMorningCheckIn(for: now)
+            let checkInData = try? await getMorningCheckIn(for: now)
             
             // Generate windows using AI service
-            let aiService = AIWindowGenerationService()
+            let aiService = AIWindowGenerationService.shared
             let (windows, dayPurpose) = try await aiService.generateWindows(
                 for: profile,
                 checkIn: checkInData,
@@ -1461,7 +1460,7 @@ extension FirebaseDataProvider {
             
             if !windows.isEmpty {
                 // Save windows to Firebase
-                let dateKey = DateFormatter.dateKey.string(from: now)
+                let dateKey = ISO8601DateFormatter.yyyyMMdd.string(from: now)
                 let windowsRef = db.collection("users").document(userId)
                     .collection("windows").document(dateKey)
                 
@@ -1472,42 +1471,11 @@ extension FirebaseDataProvider {
                     "generatedAt": Timestamp(date: now)
                 ])
                 
-                // Update local windows
-                await MainActor.run {
-                    self.todayWindows = windows
-                }
+                // Fetch and update local windows
+                let _ = try await getWindowsForToday()
                 
                 print("Generated \(windows.count) AI-powered windows")
             }
-        }
-    }
-    
-    /// Get morning check-in data for a specific date
-    private func getMorningCheckIn(for date: Date) async -> MorningCheckInData? {
-        guard let userId = Auth.auth().currentUser?.uid else { return nil }
-        
-        let dateKey = DateFormatter.dateKey.string(from: date)
-        let checkInRef = db.collection("users").document(userId)
-            .collection("checkIns").document(dateKey)
-        
-        do {
-            let document = try await checkInRef.getDocument()
-            guard let data = document.data(),
-                  let checkInData = data["morning"] as? [String: Any] else {
-                return nil
-            }
-            
-            // Parse morning check-in data
-            return MorningCheckInData(
-                sleepQuality: checkInData["sleepQuality"] as? Int ?? 7,
-                energyLevel: checkInData["energyLevel"] as? Int ?? 7,
-                hungerLevel: checkInData["hungerLevel"] as? Int ?? 5,
-                plannedActivities: checkInData["plannedActivities"] as? [String] ?? [],
-                wakeTime: (checkInData["wakeTime"] as? Timestamp)?.dateValue() ?? date
-            )
-        } catch {
-            print("Error fetching morning check-in: \(error)")
-            return nil
         }
     }
 }
