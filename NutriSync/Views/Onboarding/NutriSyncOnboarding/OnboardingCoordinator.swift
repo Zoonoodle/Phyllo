@@ -439,11 +439,11 @@ class NutriSyncOnboardingViewModel {
     private func calculateCarbs(calories: Int, goal: NutritionGoal) -> Int {
         let carbCalorieRatio: Double
         switch goal {
-        case .loseWeight:
+        case .weightLoss:
             carbCalorieRatio = 0.35 // 35% from carbs for weight loss
-        case .buildMuscle:
+        case .muscleGain:
             carbCalorieRatio = 0.45 // 45% from carbs for muscle building
-        case .improvePerformance:
+        case .athleticPerformance, .performanceFocus:
             carbCalorieRatio = 0.50 // 50% from carbs for performance
         case .betterSleep:
             carbCalorieRatio = 0.40 // 40% from carbs for sleep optimization
@@ -459,11 +459,11 @@ class NutriSyncOnboardingViewModel {
     private func calculateFat(calories: Int, goal: NutritionGoal) -> Int {
         let fatCalorieRatio: Double
         switch goal {
-        case .loseWeight:
+        case .weightLoss:
             fatCalorieRatio = 0.30 // 30% from fat for weight loss
-        case .buildMuscle:
+        case .muscleGain:
             fatCalorieRatio = 0.25 // 25% from fat for muscle building
-        case .improvePerformance:
+        case .athleticPerformance, .performanceFocus:
             fatCalorieRatio = 0.25 // 25% from fat for performance
         case .betterSleep:
             fatCalorieRatio = 0.35 // 35% from fat for sleep optimization
@@ -564,8 +564,8 @@ struct NutriSyncOnboardingCoordinator: View {
                         let dietSelected = !viewModel.dietPreference.isEmpty
                         let isMealFrequency = viewModel.currentScreen == "Meal Frequency"
                         let mealFrequencySelected = !viewModel.mealFrequency.isEmpty
-                        let isSleepSchedule = viewModel.currentScreen == "Sleep Schedule"
-                        let sleepScheduleSet = true // Sleep schedule uses Date pickers, always valid
+                        _ = viewModel.currentScreen == "Sleep Schedule"
+                        _ = true // Sleep schedule uses Date pickers, always valid
                         
                         let isDisabled = (isHealthDisclaimer && !termsAccepted) || 
                                        (isGoalSelection && !goalSelected) ||
