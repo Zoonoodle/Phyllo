@@ -1448,7 +1448,7 @@ extension FirebaseDataProvider {
             print("Generating regular windows using AI service")
             
             // Get morning check-in data if available
-            let checkInData = try? await getMorningCheckIn(for: now)
+            _ = try? await getMorningCheckIn(for: now)
             
             // TODO: Implement AIWindowGenerationService
             // For now, use simple fallback window generation
@@ -1494,10 +1494,10 @@ private extension FirebaseDataProvider {
         ]
         
         // Use profile's daily targets or defaults
-        let totalCalories = profile.dailyCalories ?? 2000
-        let totalProtein = profile.dailyProtein ?? 150
-        let totalCarbs = profile.dailyCarbs ?? 250
-        let totalFat = profile.dailyFat ?? 67
+        let totalCalories = profile.dailyCalorieTarget
+        let totalProtein = profile.dailyProteinTarget
+        let totalCarbs = profile.dailyCarbTarget
+        let totalFat = profile.dailyFatTarget
         
         // Distribute macros across meals (40%, 30%, 10%, 20%)
         let distributions = [0.4, 0.3, 0.1, 0.2]
@@ -1511,25 +1511,27 @@ private extension FirebaseDataProvider {
                let endTime = calendar.date(byAdding: .hour, value: 2, to: startTime) {
                 
                 let distribution = distributions[index]
+                let macros = MacroTargets(
+                    protein: Int(Double(totalProtein) * distribution),
+                    carbs: Int(Double(totalCarbs) * distribution),
+                    fat: Int(Double(totalFat) * distribution)
+                )
+                
                 let window = MealWindow(
                     id: UUID(),
                     startTime: startTime,
                     endTime: endTime,
-                    title: title,
-                    purpose: purpose,
                     targetCalories: Int(Double(totalCalories) * distribution),
-                    targetProtein: Int(Double(totalProtein) * distribution),
-                    targetCarbs: Int(Double(totalCarbs) * distribution),
-                    targetFat: Int(Double(totalFat) * distribution),
-                    isFlexible: index == 2, // Snack is flexible
-                    allowedFoods: [],
-                    status: .upcoming,
-                    consumedCalories: 0,
-                    consumedProtein: 0,
-                    consumedCarbs: 0,
-                    consumedFat: 0,
-                    loggedMeals: [],
-                    isExpanded: false
+                    targetMacros: macros,
+                    purpose: purpose,
+                    flexibility: index == 2 ? .flexible : .moderate,
+                    dayDate: date,
+                    name: title,
+                    rationale: nil,
+                    foodSuggestions: nil,
+                    micronutrientFocus: nil,
+                    tips: nil,
+                    type: nil
                 )
                 windows.append(window)
             }
