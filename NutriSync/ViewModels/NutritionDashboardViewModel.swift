@@ -178,7 +178,7 @@ class NutritionDashboardViewModel: ObservableObject {
     func mealsInWindow(_ window: MealWindow) -> [LoggedMeal] {
         todaysMeals.filter { meal in
             if let windowId = meal.windowId {
-                return windowId == window.id
+                return windowId.uuidString == window.id
             }
             // Fallback to time-based check
             return meal.timestamp >= window.startTime && meal.timestamp <= window.endTime

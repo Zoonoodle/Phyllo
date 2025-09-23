@@ -287,7 +287,7 @@ class ProximityBasedEngine: RedistributionEngine {
             // Apply window purpose modifier
             let purposeModifier = getPurposeModifier(for: window.purpose)
             
-            weights[window.id.uuidString] = max(0.1, proximityWeight * purposeModifier)
+            weights[window.id] = max(0.1, proximityWeight * purposeModifier)
         }
         
         // Normalize weights to sum to 1.0
@@ -325,7 +325,7 @@ class ProximityBasedEngine: RedistributionEngine {
         var adjustedWindows: [AdjustedWindow] = []
         
         for window in windows {
-            guard let weight = weights[window.id.uuidString] else { continue }
+            guard let weight = weights[window.id] else { continue }
             
             let originalMacros = MacroTargets(
                 protein: window.effectiveProtein,
@@ -360,7 +360,7 @@ class ProximityBasedEngine: RedistributionEngine {
             let adjustmentRatio = Double(constrainedMacros.totalCalories) / Double(originalMacros.totalCalories)
             
             adjustedWindows.append(AdjustedWindow(
-                windowId: window.id.uuidString,
+                windowId: window.id,
                 originalMacros: originalMacros,
                 adjustedMacros: constrainedMacros,
                 adjustmentRatio: adjustmentRatio,

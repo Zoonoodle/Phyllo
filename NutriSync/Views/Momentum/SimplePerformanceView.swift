@@ -573,7 +573,7 @@ struct SimplePerformanceView: View {
             var windowScore: Double = 0
             
             // Check if any meal was logged for this specific window
-            if let meal = viewModel.todaysMeals.first(where: { $0.windowId == window.id }) {
+            if let meal = viewModel.todaysMeals.first(where: { $0.windowId?.uuidString == window.id }) {
                 // Calculate how close the meal was to the window timing
                 let mealTime = meal.timestamp
                 
@@ -884,7 +884,7 @@ struct SimplePerformanceView: View {
         let isNextWindow = viewModel.mealWindows.first(where: { $0.startTime > TimeProvider.shared.currentTime })?.id == window.id
         
         if viewModel.todaysMeals.contains(where: { meal in
-            meal.windowId == window.id
+            meal.windowId?.uuidString == window.id
         }) {
             return .nutriSyncAccent // Completed - green
         } else if window.endTime < TimeProvider.shared.currentTime {

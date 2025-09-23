@@ -104,7 +104,7 @@ class InsightsEngine: ObservableObject {
             var windowScore: Double = 0
             
             // Check if any meal was logged for this window
-            if let meal = meals.first(where: { $0.windowId == window.id }) {
+            if let meal = meals.first(where: { $0.windowId?.uuidString == window.id }) {
                 // Calculate how close the meal was to the window timing
                 let mealTime = meal.timestamp
                 
@@ -157,7 +157,7 @@ class InsightsEngine: ObservableObject {
         // Calculate average score across all relevant windows (past and with meals)
         let relevantWindows = windows.filter { window in
             // Count windows that are either past or have meals logged
-            window.endTime < Date() || meals.contains { $0.windowId == window.id }
+            window.endTime < Date() || meals.contains { $0.windowId?.uuidString == window.id }
         }
         
         if relevantWindows.isEmpty {
@@ -274,7 +274,7 @@ class InsightsEngine: ObservableObject {
         // Points for hitting meal windows (max 5)
         let activeWindows = windows.filter { window in
             todayMeals.contains { meal in
-                meal.windowId == window.id
+                meal.windowId?.uuidString == window.id
             }
         }
         let windowHitRate = Double(activeWindows.count) / Double(max(1, windows.count))

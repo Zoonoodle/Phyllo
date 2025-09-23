@@ -165,7 +165,7 @@ class TimelineLayoutManager: ObservableObject {
         for window in windows {
             // Count meals in this window
             let mealCount = viewModel.mealsInWindow(window).count
-            let analyzingCount = viewModel.analyzingMeals.filter { $0.windowId == window.id }.count
+            let analyzingCount = viewModel.analyzingMeals.filter { $0.windowId?.uuidString == window.id }.count
             let totalMealCards = mealCount + analyzingCount
             
             // If window has meals, calculate space needed
@@ -215,7 +215,7 @@ class TimelineLayoutManager: ObservableObject {
         viewModel: ScheduleViewModel
     ) -> CGFloat {
         
-        let analyzingMeals = viewModel.analyzingMeals.filter { $0.windowId == window.id }
+        let analyzingMeals = viewModel.analyzingMeals.filter { $0.windowId?.uuidString == window.id }
         let mealCount = viewModel.mealsInWindow(window).count
         let analyzingCount = analyzingMeals.count
         let totalCards = mealCount + analyzingCount
@@ -281,7 +281,7 @@ class TimelineLayoutManager: ObservableObject {
         if window.id == windowLayouts.first?.window.id {
             Task { @MainActor in
                 DebugLogger.shared.error("🔍 WINDOW POSITION DEBUG")
-                DebugLogger.shared.error("  Window: \(window.name ?? "Window")")
+                DebugLogger.shared.error("  Window: \(window.name)")
                 DebugLogger.shared.error("  Start time: \(window.startTime)")
                 DebugLogger.shared.error("  Extracted hour: \(startHour), minute: \(startMinute)")
                 DebugLogger.shared.error("  Hour layout found at index: \(hourLayouts.firstIndex(where: { $0.hour == startHour }) ?? -1)")

@@ -208,7 +208,7 @@ struct WindowNameValidator {
                     "windowName": window.name,
                     "reason": reason,
                     "timestamp": Date(),
-                    "windowId": window.id.uuidString,
+                    "windowId": window.id,
                     "startTime": window.startTime,
                     "windowType": window.purpose.rawValue
                 ]
@@ -1242,9 +1242,69 @@ extension AIWindowGenerationService {
                 targetProtein: window.targetProtein,
                 targetCarbs: window.targetCarbs,
                 targetFat: window.targetFat,
-                isFirstDay: true,
-                date: startTime
+                purpose: MealWindow.WindowPurpose(rawValue: window.purpose) ?? .sustainedEnergy,
+                flexibility: MealWindow.Flexibility(rawValue: window.flexibility) ?? .moderate,
+                type: MealWindow.WindowType(rawValue: window.type) ?? .regular,
+                foodSuggestions: window.foodSuggestions,
+                micronutrientFocus: window.micronutrientFocus,
+                rationale: window.rationale,
+                activityLinked: window.activityLinked
             )
         }
     }
+    
+    // MARK: - Helper Functions
+    
+    private func cleanJSON(_ text: String) -> String {
+        // Remove any markdown code blocks
+        var cleaned = text
+        
+        // Remove ```json and ``` markers
+        cleaned = cleaned.replacingOccurrences(of: "```json", with: "")
+        cleaned = cleaned.replacingOccurrences(of: "```", with: "")
+        
+        // Remove any leading/trailing whitespace
+        cleaned = cleaned.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        // Find JSON content (starts with { or [)
+        if let jsonStart = cleaned.firstIndex(where: { $0 == "{" || $0 == "[" }),
+           let jsonEnd = cleaned.lastIndex(where: { $0 == "}" || $0 == "]" }) {
+            let range = jsonStart...jsonEnd
+            cleaned = String(cleaned[range])
+        }
+        
+        return cleaned
+    }
+}
+
+// MARK: - Error Types
+
+enum WindowGenerationError: Error {
+    case noResponse
+    case invalidJSON
+    case decodingError
+    case invalidConfiguration
+}
+
+// MARK: - Response Types
+
+struct WindowGenerationResponse: Decodable {
+    let windows: [GeneratedWindow]
+}
+
+struct GeneratedWindow: Decodable {
+    let name: String
+    let startTime: Date
+    let endTime: Date
+    let targetCalories: Int
+    let targetProtein: Int
+    let targetCarbs: Int
+    let targetFat: Int
+    let purpose: String
+    let flexibility: String
+    let type: String
+    let foodSuggestions: [String]
+    let micronutrientFocus: [String]
+    let rationale: String?
+    let activityLinked: String?
 }

@@ -282,7 +282,7 @@ struct MealWindow: Identifiable, Codable {
         activityLinked: String? = nil,
         consumed: ConsumedMacros = ConsumedMacros()
     ) {
-        self.id = id
+        self.id = id.uuidString
         self.name = name
         self.startTime = startTime
         self.endTime = endTime
@@ -353,7 +353,7 @@ struct MealWindow: Identifiable, Codable {
         redistributionReason: WindowRedistributionManager.RedistributionReason? = nil,
         isMarkedAsFasted: Bool = false
     ) {
-        self.id = id
+        self.id = id.uuidString
         self.name = name ?? purpose.legacyDisplayName
         self.startTime = startTime
         self.endTime = endTime
