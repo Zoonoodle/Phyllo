@@ -282,12 +282,12 @@ struct AIScheduleView: View {
                     .multilineTextAlignment(.center)
                 
                 Button(action: { showMorningCheckIn = true }) {
-                    Label("Start Morning Check-In", systemImage: "sun.max.fill")
+                    Text("Start Morning Check-In")
                         .font(.headline)
                         .foregroundColor(.black)
                         .padding(.horizontal, 24)
                         .padding(.vertical, 12)
-                        .background(Color.green)
+                        .background(Color.nutriSyncAccent)
                         .cornerRadius(12)
                 }
             }
