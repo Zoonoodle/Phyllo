@@ -73,6 +73,16 @@ struct ContentView: View {
                                 hasSeenGetStarted = true
                             }
                     }
+                    .onChange(of: onboardingViewModel.shouldReturnToGetStarted) { _, newValue in
+                        if newValue {
+                            // Reset the flag first
+                            onboardingViewModel.shouldReturnToGetStarted = false
+                            // Reset hasSeenGetStarted so the user can go back
+                            hasSeenGetStarted = false
+                            // Show the GetStartedView again
+                            showingGetStarted = true
+                        }
+                    }
                     .onAppear {
                         // Only initialize once to avoid state changes during view updates
                         guard !hasInitializedGetStarted else { return }

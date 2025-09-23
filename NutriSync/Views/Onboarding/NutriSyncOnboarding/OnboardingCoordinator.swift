@@ -26,6 +26,7 @@ class NutriSyncOnboardingViewModel {
     var completedSections: Set<NutriSyncOnboardingSection> = []
     var showingSectionIntro: Bool = true
     var navigationDirection: NavigationDirection = .forward
+    var shouldReturnToGetStarted: Bool = false
     
     init() {
         print("[NutriSyncOnboardingViewModel] INIT - Creating new coordinator instance")
@@ -185,14 +186,19 @@ class NutriSyncOnboardingViewModel {
     
     func goToPreviousSection() {
         navigationDirection = .backward
-        // Navigate to the last screen of the previous section
-        if let currentIndex = NutriSyncOnboardingSection.allCases.firstIndex(of: currentSection),
-           currentIndex > 0 {
-            let previousSection = NutriSyncOnboardingSection.allCases[currentIndex - 1]
-            currentSection = previousSection
-            let screens = NutriSyncOnboardingFlow.screens(for: previousSection)
-            currentScreenIndex = screens.count - 1
-            showingSectionIntro = false
+        // If we're at the first section (Basics), signal to return to GetStartedView
+        if currentSection == .basics {
+            shouldReturnToGetStarted = true
+        } else {
+            // Navigate to the last screen of the previous section
+            if let currentIndex = NutriSyncOnboardingSection.allCases.firstIndex(of: currentSection),
+               currentIndex > 0 {
+                let previousSection = NutriSyncOnboardingSection.allCases[currentIndex - 1]
+                currentSection = previousSection
+                let screens = NutriSyncOnboardingFlow.screens(for: previousSection)
+                currentScreenIndex = screens.count - 1
+                showingSectionIntro = false
+            }
         }
     }
     
@@ -531,17 +537,19 @@ struct NutriSyncOnboardingCoordinator: View {
                     }
                     
                     // Fixed navigation buttons at bottom
-                    HStack {
-                        Button {
-                            viewModel.previousScreen()
-                        } label: {
-                            Image(systemName: "chevron.left")
-                                .font(.system(size: 20, weight: .medium))
-                                .foregroundColor(.white)
-                                .frame(width: 44, height: 44)
-                        }
-                        
-                        Spacer()
+                    // Hide navigation bar when on the Finish section (Review Program)
+                    if viewModel.currentSection != .finish {
+                        HStack {
+                            Button {
+                                viewModel.previousScreen()
+                            } label: {
+                                Image(systemName: "chevron.left")
+                                    .font(.system(size: 20, weight: .medium))
+                                    .foregroundColor(.white)
+                                    .frame(width: 44, height: 44)
+                            }
+                            
+                            Spacer()
                         
                         let isHealthDisclaimer = viewModel.currentScreen == "Health Disclaimer"
                         let termsAccepted = viewModel.acceptHealthDisclaimer && viewModel.acceptPrivacyNotice
@@ -578,8 +586,9 @@ struct NutriSyncOnboardingCoordinator: View {
                         }
                         .disabled(isDisabled)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 34)
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 34)
+                    } // End of navigation bar visibility check
                 }
                 .environment(viewModel)
             }

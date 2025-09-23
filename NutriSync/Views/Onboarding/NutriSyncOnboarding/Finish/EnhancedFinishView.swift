@@ -48,26 +48,27 @@ struct EnhancedFinishView: View {
                 }
             }
             
-            // Navigation controls with page indicators (only show after processing)
+            // Bottom navigation controls with page indicators (only show after processing)
             if viewModel.currentScreen != .processing {
                 VStack {
-                    // Top navigation bar with back button and dots
+                    Spacer()
+                    
+                    // Bottom navigation bar with dots and arrows
                     HStack {
-                        // Back button (only show on pages after first)
-                        if currentPage > 0 {
-                            Button(action: {
-                                withAnimation {
+                        // Back button (always show, but change based on page)
+                        Button(action: {
+                            withAnimation {
+                                if currentPage > 0 {
                                     currentPage = max(0, currentPage - 1)
+                                } else {
+                                    // On first page, go back to previous onboarding section
+                                    coordinator.previousScreen()
                                 }
-                            }) {
-                                Image(systemName: "chevron.left")
-                                    .font(.system(size: 20, weight: .medium))
-                                    .foregroundColor(.white)
-                                    .frame(width: 44, height: 44)
                             }
-                        } else {
-                            // Empty spacer to maintain layout
-                            Color.clear
+                        }) {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 20, weight: .medium))
+                                .foregroundColor(.white)
                                 .frame(width: 44, height: 44)
                         }
                         
@@ -81,8 +82,9 @@ struct EnhancedFinishView: View {
                         
                         Spacer()
                         
-                        // Forward button or empty space for balance
+                        // Right side button (changes based on page)
                         if currentPage < 2 {
+                            // Forward button on first two pages
                             Button(action: {
                                 withAnimation {
                                     currentPage = min(2, currentPage + 1)
@@ -94,15 +96,34 @@ struct EnhancedFinishView: View {
                                     .frame(width: 44, height: 44)
                             }
                         } else {
-                            // Empty spacer to maintain layout
-                            Color.clear
-                                .frame(width: 44, height: 44)
+                            // Save button on last page
+                            Button(action: {
+                                Task {
+                                    do {
+                                        try await coordinator.completeOnboarding()
+                                        navigateToApp = true
+                                    } catch {
+                                        errorMessage = "Failed to complete setup: \(error.localizedDescription)"
+                                        showError = true
+                                    }
+                                }
+                            }) {
+                                HStack(spacing: 6) {
+                                    Text("Save")
+                                        .font(.system(size: 17, weight: .semibold))
+                                    Image(systemName: "chevron.right")
+                                        .font(.system(size: 14, weight: .semibold))
+                                }
+                                .foregroundColor(.black)
+                                .padding(.horizontal, 24)
+                                .frame(height: 44)
+                                .background(Color.nutriSyncAccent)
+                                .cornerRadius(22)
+                            }
                         }
                     }
-                    .padding(.top, 60)
-                    .padding(.horizontal, 8)
-                    
-                    Spacer()
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 34)
                 }
             }
         }

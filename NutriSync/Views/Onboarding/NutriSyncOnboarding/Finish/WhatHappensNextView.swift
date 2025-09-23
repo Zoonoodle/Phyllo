@@ -96,34 +96,12 @@ struct WhatHappensNextView: View {
                     }
                 }
                 
-                // Bottom CTA
-                VStack(spacing: 12) {
-                    Button(action: { 
-                        Task {
-                            do {
-                                try await coordinator.completeOnboarding()
-                            } catch {
-                                print("[WhatHappensNextView] Failed to complete onboarding: \(error)")
-                            }
-                        }
-                    }) {
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 16)
-                                .fill(Color.nutriSyncAccent)
-                                .frame(height: 56)
-                            
-                            Text("Start Day 1")
-                                .font(.system(size: 18, weight: .semibold))
-                                .foregroundColor(.black)
-                        }
-                    }
-                    
-                    Text("Ready to begin your journey")
-                        .font(.system(size: 15))
-                        .foregroundColor(.white.opacity(0.4))
-                }
-                .padding(.horizontal, 24)
-                .padding(.bottom, 40)
+                // Bottom spacing to account for navigation bar
+                Text("Ready to begin your journey")
+                    .font(.system(size: 15))
+                    .foregroundColor(.white.opacity(0.4))
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, 120) // Extra padding for navigation bar
                 .background(
                     LinearGradient(
                         colors: [
