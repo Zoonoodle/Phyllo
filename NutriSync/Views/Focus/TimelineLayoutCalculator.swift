@@ -76,14 +76,15 @@ class TimelineLayoutCalculator: ObservableObject {
             
             for window in windowsInThisHour {
                 // Count logged meals
-                if let windowMeals = meals[window.id] {
+                if let windowId = UUID(uuidString: window.id),
+                   let windowMeals = meals[windowId] {
                     totalMealsInHour += windowMeals.count
                 }
                 
                 // Count analyzing meals
                 let analyzingInWindow = analyzingMeals.filter { meal in
                     // Check if meal is assigned to this window or falls within it
-                    meal.windowId == window.id || 
+                    meal.windowId?.uuidString == window.id || 
                     (meal.timestamp >= window.startTime && meal.timestamp <= window.endTime)
                 }
                 totalAnalyzingInHour += analyzingInWindow.count

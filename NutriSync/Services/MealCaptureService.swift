@@ -149,13 +149,13 @@ class MealCaptureService: ObservableObject {
         
         let analyzingMeal = AnalyzingMeal(
             timestamp: now,
-            windowId: bestWindow?.id,
+            windowId: bestWindow.map { UUID(uuidString: $0.id) } ?? nil,
             imageData: previewData,
             voiceDescription: voiceTranscript
         )
         
         Task { @MainActor in
-            DebugLogger.shared.mealAnalysis("Created AnalyzingMeal with ID: \(analyzingMeal.id), Window ID: \(bestWindow?.id.uuidString ?? "nil")")
+            DebugLogger.shared.mealAnalysis("Created AnalyzingMeal with ID: \(analyzingMeal.id), Window ID: \(bestWindow?.id ?? "nil")")
         }
         
         // Start analyzing in data provider
