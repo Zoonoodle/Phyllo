@@ -507,7 +507,7 @@ struct NutriSyncOnboardingCoordinator: View {
                         HStack(spacing: 8) {
                             ForEach(0..<3, id: \.self) { index in
                                 Circle()
-                                    .fill(index == viewModel.currentSectionIndex ? Color.nutriSyncAccent : Color.white.opacity(0.3))
+                                    .fill(index == NutriSyncOnboardingSection.allCases.firstIndex(of: viewModel.currentSection) ? Color.nutriSyncAccent : Color.white.opacity(0.3))
                                     .frame(width: 8, height: 8)
                             }
                         }

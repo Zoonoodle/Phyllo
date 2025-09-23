@@ -65,7 +65,7 @@ class RetrospectiveMealParser {
                 image: nil, // No image for retrospective
                 voiceTranscript: parsedMeal.name, // Use the meal description
                 userContext: context,
-                mealWindow: parsedMeal.windowId != nil ? missedWindows.first(where: { $0.id == parsedMeal.windowId }) : nil
+                mealWindow: parsedMeal.windowId != nil ? missedWindows.first(where: { $0.id == parsedMeal.windowId?.uuidString }) : nil
             )
             
             do {
@@ -208,7 +208,7 @@ class RetrospectiveMealParser {
         let parsedMeals = try decoder.decode([SimpleParsedMeal].self, from: data)
         
         // Convert to LoggedMeal with basic nutrition (will be updated by AI agent)
-        return parsedMeals.compactMap { parsed in
+        return parsedMeals.compactMap { parsed -> LoggedMeal? in
             let windowIndex = parsed.windowIndex ?? 0
             guard windowIndex < missedWindows.count else { return nil }
             
@@ -239,7 +239,7 @@ class RetrospectiveMealParser {
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
         
-        return mealDescriptions.enumerated().compactMap { index, desc in
+        return mealDescriptions.enumerated().compactMap { (index, desc) -> LoggedMeal? in
             guard index < missedWindows.count else { return nil }
             
             let window = missedWindows[index]
