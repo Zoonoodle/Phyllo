@@ -2416,16 +2416,11 @@ struct SleepScheduleContentView: View {
         }
         .onAppear {
             // Load saved times if available
-            if let bedtime = coordinator.bedTime {
-                let calendar = Calendar.current
-                bedtimeHour = calendar.component(.hour, from: bedtime)
-                bedtimeMinute = calendar.component(.minute, from: bedtime)
-            }
-            if let wakeTime = coordinator.wakeTime {
-                let calendar = Calendar.current
-                wakeTimeHour = calendar.component(.hour, from: wakeTime)
-                wakeTimeMinute = calendar.component(.minute, from: wakeTime)
-            }
+            let calendar = Calendar.current
+            bedtimeHour = calendar.component(.hour, from: coordinator.bedTime)
+            bedtimeMinute = calendar.component(.minute, from: coordinator.bedTime)
+            wakeTimeHour = calendar.component(.hour, from: coordinator.wakeTime)
+            wakeTimeMinute = calendar.component(.minute, from: coordinator.wakeTime)
         }
         .onDisappear {
             // Save selected times when leaving the screen
