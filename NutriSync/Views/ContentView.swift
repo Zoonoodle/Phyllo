@@ -20,8 +20,10 @@ struct ContentView: View {
     @State private var existingProgress: OnboardingProgress?
     @State private var showGetStarted = true
     @State private var onboardingViewModel = NutriSyncOnboardingViewModel()
-    @State private var showingGetStarted = false
+    @State private var showingGetStarted = false  // Will be set in onAppear
     @AppStorage("hasSeenGetStarted") private var hasSeenGetStarted = false
+    @State private var hasInitializedGetStarted = false  // Track if we've set initial state
+    @AppStorage("onboardingResetFlag") private var onboardingResetFlag = 0  // For testing/reset
     
     // First day window generation
     @State private var isGeneratingFirstDayWindows = false
@@ -72,11 +74,34 @@ struct ContentView: View {
                             }
                     }
                     .onAppear {
-                        // Show GetStartedView if:
-                        // 1. User hasn't seen GetStarted yet, OR
-                        // 2. User is still on Basics section (section 0) in their onboarding progress
-                        let isStillOnBasics = existingProgress?.currentSection == 0 && !(existingProgress?.completedSections.contains(0) ?? false)
-                        showingGetStarted = !hasSeenGetStarted || isStillOnBasics
+                        // Only initialize once to avoid state changes during view updates
+                        guard !hasInitializedGetStarted else { return }
+                        hasInitializedGetStarted = true
+                        
+                        // Debug: Reset flag if needed (increment onboardingResetFlag to trigger)
+                        #if DEBUG
+                        if onboardingResetFlag > 0 && hasSeenGetStarted {
+                            hasSeenGetStarted = false
+                            print("🔄 Reset GetStartedView flag for debugging")
+                        }
+                        #endif
+                        
+                        // Show GetStartedView for new users who haven't seen it yet
+                        // If they have onboarding progress beyond basics, skip GetStarted
+                        let hasProgressBeyondBasics = (existingProgress?.currentSection ?? 0) > 0 || 
+                                                      (existingProgress?.completedSections.contains(0) ?? false)
+                        
+                        // Show GetStarted if user hasn't seen it AND doesn't have progress beyond basics
+                        // For completely new users (no progress at all), always show GetStarted
+                        if existingProgress == nil && !hasSeenGetStarted {
+                            // Brand new user - always show GetStarted
+                            showingGetStarted = true
+                            print("📱 Showing GetStartedView for new user")
+                        } else {
+                            // User with some progress - check conditions
+                            showingGetStarted = !hasSeenGetStarted && !hasProgressBeyondBasics
+                            print("📱 GetStarted decision: hasSeenGetStarted=\(hasSeenGetStarted), hasProgressBeyondBasics=\(hasProgressBeyondBasics), showing=\(showingGetStarted)")
+                        }
                     }
                 } else {
                     ZStack {

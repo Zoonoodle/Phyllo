@@ -135,6 +135,7 @@ struct GetStartedView: View {
                     
                     // Get Started button
                     Button {
+                        // Dismiss the GetStartedView to reveal onboarding
                         dismiss()
                     } label: {
                         Text("Get Started")
