@@ -44,7 +44,7 @@ class NotificationManager: NSObject, ObservableObject {
             }
             
             if granted {
-                await UIApplication.shared.registerForRemoteNotifications()
+                UIApplication.shared.registerForRemoteNotifications()
             }
             
             return granted
@@ -114,7 +114,7 @@ class NotificationManager: NSObject, ObservableObject {
                         body: "Your \(window.purpose.rawValue) window starts in 15 minutes • \(window.targetCalories) cal",
                         date: notificationTime,
                         category: .windowReminder,
-                        userInfo: ["windowId": window.id.uuidString, "type": "windowStart"]
+                        userInfo: ["windowId": window.id, "type": "windowStart"]
                     )
                 }
             }
@@ -129,7 +129,7 @@ class NotificationManager: NSObject, ObservableObject {
                         body: "\(window.timeRemaining ?? 0) minutes remaining • Time to fuel up!",
                         date: reminderTime,
                         category: .windowReminder,
-                        userInfo: ["windowId": window.id.uuidString, "type": "windowActive"]
+                        userInfo: ["windowId": window.id, "type": "windowActive"]
                     )
                 }
             }
@@ -143,7 +143,7 @@ class NotificationManager: NSObject, ObservableObject {
                     body: "15 minutes left to log your meal",
                     date: endingTime,
                     category: .windowReminder,
-                    userInfo: ["windowId": window.id.uuidString, "type": "windowEnding"]
+                    userInfo: ["windowId": window.id, "type": "windowEnding"]
                 )
             }
         }
@@ -207,7 +207,7 @@ class NotificationManager: NSObject, ObservableObject {
               notificationPreferences.missedWindowAlerts else { return }
         
         // Check if app is in foreground - let NudgeManager handle it
-        if await UIApplication.shared.applicationState == .active {
+        if UIApplication.shared.applicationState == .active {
             return
         }
         
@@ -216,7 +216,7 @@ class NotificationManager: NSObject, ObservableObject {
         content.body = "You can still log a meal for tracking"
         content.sound = .default
         content.categoryIdentifier = NotificationCategory.missedWindow.rawValue
-        content.userInfo = ["windowId": window.id.uuidString, "type": "missedWindow"]
+        content.userInfo = ["windowId": window.id, "type": "missedWindow"]
         
         let request = UNNotificationRequest(
             identifier: "missed-window-\(window.id)",
@@ -376,7 +376,7 @@ class NotificationManager: NSObject, ObservableObject {
             content.categoryIdentifier = "WINDOW_REMINDER"
             content.userInfo = [
                 "type": "windowStartingSoon",
-                "windowId": window.id.uuidString
+                "windowId": window.id
             ]
             
         case .activeWindowReminder(let window, let timeRemaining):
@@ -385,7 +385,7 @@ class NotificationManager: NSObject, ObservableObject {
             content.categoryIdentifier = "WINDOW_REMINDER"
             content.userInfo = [
                 "type": "activeWindowReminder",
-                "windowId": window.id.uuidString
+                "windowId": window.id
             ]
             
         case .windowEndingAlert(let window):
@@ -394,7 +394,7 @@ class NotificationManager: NSObject, ObservableObject {
             content.categoryIdentifier = "WINDOW_REMINDER"
             content.userInfo = [
                 "type": "windowEndingAlert",
-                "windowId": window.id.uuidString
+                "windowId": window.id
             ]
             
         case .missedWindow(let window):
@@ -403,7 +403,7 @@ class NotificationManager: NSObject, ObservableObject {
             content.categoryIdentifier = "MISSED_WINDOW"
             content.userInfo = [
                 "type": "missedWindow",
-                "windowId": window.id.uuidString
+                "windowId": window.id
             ]
             
         case .morningCheckIn:
