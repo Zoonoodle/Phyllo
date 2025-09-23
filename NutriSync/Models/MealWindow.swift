@@ -298,7 +298,10 @@ struct MealWindow: Identifiable, Codable {
         self.rationale = rationale
         self.activityLinked = activityLinked
         self.consumed = consumed
+        self.date = Calendar.current.startOfDay(for: startTime)
         self.dayDate = Calendar.current.startOfDay(for: startTime)
+        self.mealType = .snack // Default meal type, can be determined based on time
+        self.isFirstDay = false // Default to false, caller can override
         self.tips = nil
         self.adjustedCalories = nil
         self.adjustedProtein = nil
@@ -393,6 +396,11 @@ struct MealWindow: Identifiable, Codable {
         
         self.redistributionReason = redistributionReason
         self.isMarkedAsFasted = isMarkedAsFasted
+        
+        // Initialize missing properties
+        self.date = dayDate
+        self.mealType = .snack // Default meal type
+        self.isFirstDay = false // Default to false
     }
 }
 
@@ -471,7 +479,7 @@ extension MealWindow {
         let lastMealTime = calendar.date(byAdding: .hour, value: -3, to: sleepTime)!
         
         // Check if user has workouts scheduled
-        let todayWorkouts: [Any] = [] // Removed exerciseSchedule as it's not in new UserProfile
+        let _ = [] as [Any] // Placeholder for future workout data
         
         switch goal {
         case .weightLoss:
