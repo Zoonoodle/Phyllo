@@ -28,20 +28,6 @@ struct ReviewProgramView: View {
                 .ignoresSafeArea()
             
             VStack(spacing: 0) {
-                // Header
-                HStack {
-                    Spacer()
-                    Button {
-                        // Handle close
-                    } label: {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 20, weight: .medium))
-                            .foregroundColor(.white.opacity(0.5))
-                            .frame(width: 44, height: 44)
-                    }
-                }
-                .padding(.horizontal, 8)
-                
                 ScrollView {
                     VStack(alignment: .leading, spacing: 24) {
                         // Title
