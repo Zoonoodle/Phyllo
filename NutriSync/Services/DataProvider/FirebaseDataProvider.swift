@@ -1451,12 +1451,8 @@ extension FirebaseDataProvider {
             let checkInData = try? await getMorningCheckIn(for: now)
             
             // TODO: Implement AIWindowGenerationService
-            // For now, use the fallback window generation
-            let windows = WindowGenerationService.shared.generateFallbackWindows(
-                for: profile,
-                goals: UserGoals(), // Use default goals for now
-                date: now
-            )
+            // For now, use simple fallback window generation
+            let windows = generateSimpleFallbackWindows(for: profile, date: now)
             let dayPurpose: String? = nil // Placeholder until AI service is ready
             
             if !windows.isEmpty {
@@ -1484,6 +1480,64 @@ extension FirebaseDataProvider {
 // MARK: - Helper Methods
 
 private extension FirebaseDataProvider {
+    /// Generate simple fallback windows when AI service is unavailable
+    func generateSimpleFallbackWindows(for profile: UserProfile, date: Date) -> [MealWindow] {
+        var windows: [MealWindow] = []
+        let calendar = Calendar.current
+        
+        // Default meal times based on typical patterns
+        let mealTimes: [(hour: Int, minute: Int, title: String, purpose: MealWindow.WindowPurpose)] = [
+            (8, 0, "Breakfast", .metabolicBoost),
+            (12, 30, "Lunch", .sustainedEnergy),
+            (16, 0, "Afternoon Snack", .sustainedEnergy),
+            (19, 0, "Dinner", .recovery)
+        ]
+        
+        // Use profile's daily targets or defaults
+        let totalCalories = profile.dailyCalories ?? 2000
+        let totalProtein = profile.dailyProtein ?? 150
+        let totalCarbs = profile.dailyCarbs ?? 250
+        let totalFat = profile.dailyFat ?? 67
+        
+        // Distribute macros across meals (40%, 30%, 10%, 20%)
+        let distributions = [0.4, 0.3, 0.1, 0.2]
+        
+        for (index, (hour, minute, title, purpose)) in mealTimes.enumerated() {
+            var components = calendar.dateComponents([.year, .month, .day], from: date)
+            components.hour = hour
+            components.minute = minute
+            
+            if let startTime = calendar.date(from: components),
+               let endTime = calendar.date(byAdding: .hour, value: 2, to: startTime) {
+                
+                let distribution = distributions[index]
+                let window = MealWindow(
+                    id: UUID(),
+                    startTime: startTime,
+                    endTime: endTime,
+                    title: title,
+                    purpose: purpose,
+                    targetCalories: Int(Double(totalCalories) * distribution),
+                    targetProtein: Int(Double(totalProtein) * distribution),
+                    targetCarbs: Int(Double(totalCarbs) * distribution),
+                    targetFat: Int(Double(totalFat) * distribution),
+                    isFlexible: index == 2, // Snack is flexible
+                    allowedFoods: [],
+                    status: .upcoming,
+                    consumedCalories: 0,
+                    consumedProtein: 0,
+                    consumedCarbs: 0,
+                    consumedFat: 0,
+                    loggedMeals: [],
+                    isExpanded: false
+                )
+                windows.append(window)
+            }
+        }
+        
+        return windows
+    }
+    
     /// Clean up meal names by removing non-food text that may have been incorrectly included
     func cleanMealName(_ name: String) -> String {
         var cleanedName = name
