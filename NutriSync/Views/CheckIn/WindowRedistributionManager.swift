@@ -108,7 +108,7 @@ class WindowRedistributionManager {
         var redistributedWindows: [RedistributedWindow] = []
         
         for window in allWindows {
-            if let adjustment = result.adjustedWindows.first(where: { $0.windowId == window.id.uuidString }) {
+            if let adjustment = result.adjustedWindows.first(where: { $0.windowId == window.id }) {
                 // Apply adjustment from engine
                 let reason = mapTriggerToReason(trigger: result.trigger)
                 redistributedWindows.append(
