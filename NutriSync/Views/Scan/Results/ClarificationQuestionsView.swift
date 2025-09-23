@@ -538,7 +538,7 @@ struct ClarificationQuestionsView: View {
             carbs: 45,
             fat: 18,
             timestamp: Date(),
-            windowId: activeWindow?.id
+            windowId: activeWindow.flatMap { UUID(uuidString: $0.id) }
         )
         meal.micronutrients = micronutrients
         meal.ingredients = ingredients
