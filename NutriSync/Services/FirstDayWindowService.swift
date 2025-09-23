@@ -106,6 +106,9 @@ class FirstDayWindowService: FirstDayWindowGenerating {
                 purpose: purpose
             )
             
+            // Convert FirstDayConfiguration.WindowPurpose to MealWindow.WindowPurpose
+            let mealWindowPurpose = convertPurpose(purpose)
+            
             let window = MealWindow(
                 id: windowId,
                 name: name,
@@ -115,9 +118,9 @@ class FirstDayWindowService: FirstDayWindowGenerating {
                 targetProtein: macros.protein,
                 targetCarbs: macros.carbs,
                 targetFat: macros.fat,
-                purpose: purpose,
+                purpose: mealWindowPurpose,
                 flexibility: .moderate,
-                type: .standard
+                type: .regular
             )
             
             windows.append(window)
@@ -163,6 +166,24 @@ class FirstDayWindowService: FirstDayWindowGenerating {
         let fat = Int(fatCalories / 9)
         
         return (protein, carbs, fat)
+    }
+    
+    /// Convert FirstDayConfiguration.WindowPurpose to MealWindow.WindowPurpose
+    private func convertPurpose(_ purpose: FirstDayConfiguration.WindowPurpose) -> MealWindow.WindowPurpose {
+        switch purpose {
+        case .preWorkout:
+            return .preWorkout
+        case .postWorkout:
+            return .postWorkout
+        case .sustainedEnergy:
+            return .sustainedEnergy
+        case .recovery:
+            return .recovery
+        case .metabolicBoost:
+            return .metabolicBoost
+        case .sleepOptimized:
+            return .sleepOptimization  // Note: different name in MealWindow
+        }
     }
     
     /// Generate appropriate window name based on time and purpose
@@ -284,7 +305,7 @@ extension FirstDayWindowService {
                 targetFat: calories / 20,
                 purpose: .sustainedEnergy,
                 flexibility: .moderate,
-                type: .standard
+                type: .regular
             ))
         }
         
