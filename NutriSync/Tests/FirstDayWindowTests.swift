@@ -12,38 +12,29 @@ struct FirstDayWindowTests {
     
     /// Create a test user profile
     static func createTestProfile() -> UserProfile {
-        var profile = UserProfile(
-            id: "test-user",
-            firebaseAuthID: "test-auth",
-            firstName: "Test",
-            lastName: "User",
-            email: "test@example.com",
-            createdAt: Date()
-        )
-        
         // Set typical wake and sleep times (7am - 11pm)
         let calendar = Calendar.current
         let today = Date()
-        let wakeComponents = calendar.dateComponents([.year, .month, .day], from: today)
         
-        profile.typicalWakeTime = calendar.date(bySettingHour: 7, minute: 0, second: 0, of: today)
-        profile.typicalSleepTime = calendar.date(bySettingHour: 23, minute: 0, second: 0, of: today)
-        
-        // Set nutrition goals
-        profile.dailyCalorieTarget = 2000
-        profile.dailyProteinTarget = 150
-        profile.dailyCarbTarget = 200
-        profile.dailyFatTarget = 67
-        
-        // Goals
-        profile.primaryGoal = .loseWeight
-        profile.weeklyTargets = UserProfile.WeeklyTargets(
-            targetWeight: 75.0,
-            targetBodyFat: 18.0,
-            targetWaistCircumference: 32.0,
-            targetSteps: 10000,
-            targetWaterIntake: 2500,
-            targetSleepHours: 8.0
+        let profile = UserProfile(
+            id: UUID(),
+            name: "Test User",
+            age: 30,
+            gender: .male,
+            height: 70.0, // 5'10"
+            weight: 180.0,
+            activityLevel: .moderatelyActive,
+            primaryGoal: .weightLoss(targetPounds: 10, timeline: 12),
+            dietaryPreferences: [],
+            dietaryRestrictions: [],
+            dailyCalorieTarget: 2000,
+            dailyProteinTarget: 150,
+            dailyCarbTarget: 200,
+            dailyFatTarget: 67,
+            preferredMealTimes: ["8:00 AM", "12:00 PM", "6:00 PM"],
+            micronutrientPriorities: [],
+            typicalWakeTime: calendar.date(bySettingHour: 7, minute: 0, second: 0, of: today),
+            typicalSleepTime: calendar.date(bySettingHour: 23, minute: 0, second: 0, of: today)
         )
         
         return profile

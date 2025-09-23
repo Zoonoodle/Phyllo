@@ -298,7 +298,7 @@ struct ContentView: View {
                 // Save windows to Firebase
                 if !windows.isEmpty {
                     for window in windows {
-                        try await dataProvider.saveWindow(window, for: Date())
+                        try await dataProvider.saveWindow(window)
                     }
                     
                     // Update profile to mark first day as completed
