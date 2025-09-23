@@ -2259,8 +2259,10 @@ struct TrainingPlanContentView: View {
 
 struct SleepScheduleContentView: View {
     @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
-    @State private var selectedBedtime: String? = nil
-    @State private var selectedWakeTime: String? = nil
+    @State private var bedtimeHour: Int = 23  // 11 PM default
+    @State private var bedtimeMinute: Int = 0
+    @State private var wakeTimeHour: Int = 7  // 7 AM default
+    @State private var wakeTimeMinute: Int = 0
     
     var body: some View {
         ScrollView {
@@ -2282,88 +2284,193 @@ struct SleepScheduleContentView: View {
                     .padding(.bottom, 40)
                 
                 // Main content - Sleep schedule input
-                VStack(spacing: 24) {
+                VStack(spacing: 32) {
                     // Bedtime selector
-                    VStack(spacing: 16) {
+                    VStack(spacing: 20) {
                         HStack {
                             Image(systemName: "moon.fill")
                                 .font(.system(size: 20))
-                                .foregroundColor(.nutriSyncAccent) // Lime green icon
+                                .foregroundColor(.nutriSyncAccent)
                             Text("Usual Bedtime")
-                                .font(.system(size: 16, weight: .medium))
-                                .foregroundColor(.white.opacity(0.8))
+                                .font(.system(size: 18, weight: .semibold))
+                                .foregroundColor(.white)
                             Spacer()
                         }
                         
-                        // Time selector buttons
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 10) {
-                                ForEach(["9:00 PM", "9:30 PM", "10:00 PM", "10:30 PM", "11:00 PM", "11:30 PM", "12:00 AM"], id: \.self) { time in
-                                    Button(action: {
-                                        selectedBedtime = time
-                                    }) {
-                                        Text(time)
-                                            .font(.system(size: 14, weight: .medium))
-                                            .foregroundColor(selectedBedtime == time ? Color.nutriSyncBackground : .white.opacity(0.7))
-                                            .padding(.horizontal, 16)
-                                            .padding(.vertical, 10)
-                                            .background(selectedBedtime == time ? Color.nutriSyncAccent : Color.white.opacity(0.08))
-                                            .cornerRadius(20)
-                                    }
-                                    .buttonStyle(PlainButtonStyle())
+                        // Custom time picker
+                        HStack(spacing: 0) {
+                            // Hour picker
+                            Picker("", selection: $bedtimeHour) {
+                                ForEach(0..<24) { hour in
+                                    Text(String(format: "%02d", hour))
+                                        .tag(hour)
+                                        .foregroundColor(.white)
                                 }
                             }
+                            .pickerStyle(WheelPickerStyle())
+                            .frame(width: 60, height: 120)
+                            .clipped()
+                            
+                            Text(":")
+                                .font(.system(size: 24, weight: .medium))
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 8)
+                            
+                            // Minute picker (15-min intervals)
+                            Picker("", selection: $bedtimeMinute) {
+                                ForEach([0, 15, 30, 45], id: \.self) { minute in
+                                    Text(String(format: "%02d", minute))
+                                        .tag(minute)
+                                        .foregroundColor(.white)
+                                }
+                            }
+                            .pickerStyle(WheelPickerStyle())
+                            .frame(width: 60, height: 120)
+                            .clipped()
+                            
+                            // AM/PM indicator
+                            Text(bedtimeHour < 12 ? "AM" : "PM")
+                                .font(.system(size: 18, weight: .medium))
+                                .foregroundColor(.white.opacity(0.7))
+                                .padding(.leading, 12)
                         }
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 10)
+                        .background(Color.white.opacity(0.05))
+                        .cornerRadius(16)
                     }
                     
                     // Wake time selector
-                    VStack(spacing: 16) {
+                    VStack(spacing: 20) {
                         HStack {
                             Image(systemName: "sun.max.fill")
                                 .font(.system(size: 20))
-                                .foregroundColor(.nutriSyncAccent) // Lime green icon
+                                .foregroundColor(.nutriSyncAccent)
                             Text("Wake Up Time")
-                                .font(.system(size: 16, weight: .medium))
-                                .foregroundColor(.white.opacity(0.8))
+                                .font(.system(size: 18, weight: .semibold))
+                                .foregroundColor(.white)
                             Spacer()
                         }
                         
-                        // Time selector buttons
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 10) {
-                                ForEach(["5:00 AM", "5:30 AM", "6:00 AM", "6:30 AM", "7:00 AM", "7:30 AM", "8:00 AM"], id: \.self) { time in
-                                    Button(action: {
-                                        selectedWakeTime = time
-                                    }) {
-                                        Text(time)
-                                            .font(.system(size: 14, weight: .medium))
-                                            .foregroundColor(selectedWakeTime == time ? Color.nutriSyncBackground : .white.opacity(0.7))
-                                            .padding(.horizontal, 16)
-                                            .padding(.vertical, 10)
-                                            .background(selectedWakeTime == time ? Color.nutriSyncAccent : Color.white.opacity(0.08))
-                                            .cornerRadius(20)
-                                    }
-                                    .buttonStyle(PlainButtonStyle())
+                        // Custom time picker
+                        HStack(spacing: 0) {
+                            // Hour picker
+                            Picker("", selection: $wakeTimeHour) {
+                                ForEach(0..<24) { hour in
+                                    Text(String(format: "%02d", hour))
+                                        .tag(hour)
+                                        .foregroundColor(.white)
                                 }
                             }
+                            .pickerStyle(WheelPickerStyle())
+                            .frame(width: 60, height: 120)
+                            .clipped()
+                            
+                            Text(":")
+                                .font(.system(size: 24, weight: .medium))
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 8)
+                            
+                            // Minute picker (15-min intervals)
+                            Picker("", selection: $wakeTimeMinute) {
+                                ForEach([0, 15, 30, 45], id: \.self) { minute in
+                                    Text(String(format: "%02d", minute))
+                                        .tag(minute)
+                                        .foregroundColor(.white)
+                                }
+                            }
+                            .pickerStyle(WheelPickerStyle())
+                            .frame(width: 60, height: 120)
+                            .clipped()
+                            
+                            // AM/PM indicator
+                            Text(wakeTimeHour < 12 ? "AM" : "PM")
+                                .font(.system(size: 18, weight: .medium))
+                                .foregroundColor(.white.opacity(0.7))
+                                .padding(.leading, 12)
                         }
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 10)
+                        .background(Color.white.opacity(0.05))
+                        .cornerRadius(16)
                     }
                     
-                    // Sleep duration display
-                    HStack(spacing: 8) {
-                        Image(systemName: "bed.double.fill")
-                            .font(.system(size: 16))
-                            .foregroundColor(.nutriSyncAccent.opacity(0.7)) // Lime green icon
-                        Text("About 8 hours of sleep")
-                            .font(.system(size: 14))
-                            .foregroundColor(.white.opacity(0.6))
+                    // Sleep duration indicator
+                    VStack(spacing: 8) {
+                        HStack {
+                            Image(systemName: "bed.double.fill")
+                                .font(.system(size: 16))
+                                .foregroundColor(.nutriSyncAccent.opacity(0.6))
+                            Text("About \(calculateSleepDuration()) of sleep")
+                                .font(.system(size: 15, weight: .medium))
+                                .foregroundColor(.white.opacity(0.5))
+                            Spacer()
+                        }
                     }
-                    .padding(.top, 12)
+                    .padding(.top, 16)
                 }
                 .padding(.horizontal, 20)
                 
                 Spacer(minLength: 80) // Space for navigation buttons
             }
+        }
+        .onAppear {
+            // Load saved times if available
+            if let bedtime = coordinator.bedTime {
+                let calendar = Calendar.current
+                bedtimeHour = calendar.component(.hour, from: bedtime)
+                bedtimeMinute = calendar.component(.minute, from: bedtime)
+            }
+            if let wakeTime = coordinator.wakeTime {
+                let calendar = Calendar.current
+                wakeTimeHour = calendar.component(.hour, from: wakeTime)
+                wakeTimeMinute = calendar.component(.minute, from: wakeTime)
+            }
+        }
+        .onDisappear {
+            // Save selected times when leaving the screen
+            var calendar = Calendar.current
+            calendar.timeZone = TimeZone.current
+            
+            let bedtimeComponents = DateComponents(hour: bedtimeHour, minute: bedtimeMinute)
+            if let bedtime = calendar.date(from: bedtimeComponents) {
+                coordinator.bedTime = bedtime
+            }
+            
+            let wakeTimeComponents = DateComponents(hour: wakeTimeHour, minute: wakeTimeMinute)
+            if let wakeTime = calendar.date(from: wakeTimeComponents) {
+                coordinator.wakeTime = wakeTime
+            }
+        }
+    }
+    
+    private func calculateSleepDuration() -> String {
+        var sleepMinutes: Int
+        
+        // Calculate total minutes, accounting for crossing midnight
+        if bedtimeHour < wakeTimeHour || (bedtimeHour == wakeTimeHour && bedtimeMinute < wakeTimeMinute) {
+            // Normal case: bedtime is after midnight or wake time is after bedtime same day
+            let bedtimeTotal = bedtimeHour * 60 + bedtimeMinute
+            let wakeTimeTotal = wakeTimeHour * 60 + wakeTimeMinute
+            sleepMinutes = wakeTimeTotal - bedtimeTotal
+        } else {
+            // Crossing midnight case
+            let minutesUntilMidnight = (24 * 60) - (bedtimeHour * 60 + bedtimeMinute)
+            let minutesAfterMidnight = wakeTimeHour * 60 + wakeTimeMinute
+            sleepMinutes = minutesUntilMidnight + minutesAfterMidnight
+        }
+        
+        let hours = sleepMinutes / 60
+        let minutes = sleepMinutes % 60
+        
+        if minutes == 0 {
+            return "\(hours) hours"
+        } else if minutes == 15 {
+            return "\(hours)¼ hours"
+        } else if minutes == 30 {
+            return "\(hours)½ hours"
+        } else {
+            return "\(hours)¾ hours"
         }
     }
 }
