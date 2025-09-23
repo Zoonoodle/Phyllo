@@ -23,6 +23,11 @@ struct ContentView: View {
     @State private var showingGetStarted = false
     @AppStorage("hasSeenGetStarted") private var hasSeenGetStarted = false
     
+    // First day window generation
+    @State private var isGeneratingFirstDayWindows = false
+    @State private var showWelcomeBanner = false
+    @State private var userProfile: UserProfile?
+    
     // Notification onboarding
     @State private var showNotificationOnboarding = false
     @AppStorage("hasSeenNotificationOnboarding") private var hasSeenNotificationOnboarding = false
@@ -74,24 +79,61 @@ struct ContentView: View {
                         showingGetStarted = !hasSeenGetStarted || isStillOnBasics
                     }
                 } else {
-                    MainTabView()
-                        .withNudges()
-                        .fullScreenCover(isPresented: $showNotificationOnboarding) {
-                            NotificationOnboardingView(isPresented: $showNotificationOnboarding)
-                                .environmentObject(notificationManager)
+                    ZStack {
+                        MainTabView()
+                            .withNudges()
+                            .fullScreenCover(isPresented: $showNotificationOnboarding) {
+                                NotificationOnboardingView(isPresented: $showNotificationOnboarding)
+                                    .environmentObject(notificationManager)
+                            }
+                            .task {
+                                await checkNotificationOnboarding()
+                                await checkFirstDayWindows()
+                            }
+                            .onChange(of: scenePhase) { oldPhase, newPhase in
+                                handleScenePhaseChange(from: oldPhase, to: newPhase)
+                            }
+                            .task(id: shouldRefreshData) {
+                                if shouldRefreshData {
+                                    await refreshAppData()
+                                    shouldRefreshData = false
+                                }
+                            }
+                        
+                        // Show welcome banner for first-time users
+                        if showWelcomeBanner {
+                            VStack {
+                                WelcomeBanner {
+                                    showWelcomeBanner = false
+                                }
+                                .padding(.top, 50)
+                                
+                                Spacer()
+                            }
+                            .transition(.move(edge: .top).combined(with: .opacity))
                         }
-                        .task {
-                            await checkNotificationOnboarding()
-                        }
-                        .onChange(of: scenePhase) { oldPhase, newPhase in
-                            handleScenePhaseChange(from: oldPhase, to: newPhase)
-                        }
-                        .task(id: shouldRefreshData) {
-                            if shouldRefreshData {
-                                await refreshAppData()
-                                shouldRefreshData = false
+                        
+                        // Loading overlay for first day window generation
+                        if isGeneratingFirstDayWindows {
+                            Color.black.opacity(0.5)
+                                .ignoresSafeArea()
+                            
+                            VStack(spacing: 16) {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .nutriSyncAccent))
+                                    .scaleEffect(1.5)
+                                
+                                Text("Preparing your first day...")
+                                    .font(.headline)
+                                    .foregroundStyle(.white)
+                            }
+                            .padding(32)
+                            .background {
+                                RoundedRectangle(cornerRadius: 16)
+                                    .fill(Color.white.opacity(0.1))
                             }
                         }
+                    }
                 }
             }
         }
@@ -223,6 +265,67 @@ struct ContentView: View {
             print("✅ App data refresh completed")
         } catch {
             print("❌ Failed to refresh app data: \(error)")
+        }
+    }
+    
+    // MARK: - First Day Window Generation
+    
+    private func checkFirstDayWindows() async {
+        // Only check for first-day windows if we have a profile
+        guard hasProfile else { return }
+        
+        do {
+            // Get user profile
+            guard let profile = try await dataProvider.getUserProfile() else { return }
+            self.userProfile = profile
+            
+            // Check if first-day windows should be generated
+            let firstDayService = FirstDayWindowService()
+            
+            if firstDayService.shouldGenerateFirstDayWindows(profile: profile) {
+                // Show loading state
+                await MainActor.run {
+                    isGeneratingFirstDayWindows = true
+                }
+                
+                // Generate windows for the remainder of today
+                let completionTime = profile.onboardingCompletedAt ?? Date()
+                let windows = try await firstDayService.generateFirstDayWindows(
+                    for: profile,
+                    completionTime: completionTime
+                )
+                
+                // Save windows to Firebase
+                if !windows.isEmpty {
+                    for window in windows {
+                        try await dataProvider.saveWindow(window, for: Date())
+                    }
+                    
+                    // Update profile to mark first day as completed
+                    var updatedProfile = profile
+                    updatedProfile.firstDayCompleted = true
+                    try await dataProvider.saveUserProfile(updatedProfile)
+                    
+                    // Show welcome banner
+                    await MainActor.run {
+                        isGeneratingFirstDayWindows = false
+                        showWelcomeBanner = true
+                    }
+                } else {
+                    // No windows generated (too late in the day)
+                    // The FirstDayWindowService will handle showing tomorrow's plan
+                    await MainActor.run {
+                        isGeneratingFirstDayWindows = false
+                    }
+                }
+            }
+        } catch {
+            print("❌ Failed to generate first-day windows: \(error)")
+            await MainActor.run {
+                isGeneratingFirstDayWindows = false
+                errorMessage = "Failed to set up your first day: \(error.localizedDescription)"
+                showError = true
+            }
         }
     }
 }

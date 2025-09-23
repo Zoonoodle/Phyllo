@@ -1092,4 +1092,159 @@ extension AIWindowGenerationService {
             return .moderate
         }
     }
+    
+    // MARK: - First Day Support
+    
+    /// Generate partial day windows for post-onboarding users
+    /// This method generates windows for the remainder of the first day after onboarding
+    func generatePartialDayWindows(
+        profile: UserProfile,
+        startTime: Date,
+        endTime: Date,
+        targetCalories: Int
+    ) async throws -> [MealWindow] {
+        
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        
+        let simpleTimeFormatter = DateFormatter()
+        simpleTimeFormatter.dateFormat = "h:mm a"
+        simpleTimeFormatter.timeZone = TimeZone.current
+        
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+        dateFormatter.timeZone = TimeZone.current
+        
+        let calendar = Calendar.current
+        let todayString = dateFormatter.string(from: startTime)
+        
+        // Calculate hours available
+        let hoursAvailable = endTime.timeIntervalSince(startTime) / 3600.0
+        
+        // Determine number of windows based on available time
+        let windowCount: Int
+        if hoursAvailable >= 6 {
+            windowCount = 3
+        } else if hoursAvailable >= 4 {
+            windowCount = 2
+        } else if hoursAvailable >= 2 {
+            windowCount = 1
+        } else {
+            // Not enough time, return empty array
+            return []
+        }
+        
+        let prompt = """
+        Generate EXACTLY \(windowCount) meal windows for a partial day (first day after onboarding).
+        
+        User completed onboarding at: \(simpleTimeFormatter.string(from: Date()))
+        First window starts at: \(simpleTimeFormatter.string(from: startTime))
+        Day must end by: \(simpleTimeFormatter.string(from: endTime))
+        
+        Total calories to distribute: \(targetCalories)
+        Target protein: \(profile.dailyProteinTarget)g (pro-rated for partial day)
+        Target carbs: \(profile.dailyCarbTarget)g (pro-rated for partial day)
+        Target fat: \(profile.dailyFatTarget)g (pro-rated for partial day)
+        
+        User's goal: \(profile.primaryGoal)
+        
+        ## CRITICAL Requirements:
+        - Generate EXACTLY \(windowCount) windows
+        - ALL windows must be on date: \(todayString)
+        - First window must start at: \(formatter.string(from: startTime))
+        - Last window must end before: \(formatter.string(from: endTime))
+        - Distribute the \(targetCalories) calories across all windows
+        - Windows should be spaced at least 2 hours apart
+        - Use appropriate names for partial day (e.g., "Late Start", "Afternoon Energy", "Evening Wind-Down")
+        
+        ## Window Distribution Guidelines:
+        """
+        
+        let distributionGuidelines: String
+        switch windowCount {
+        case 1:
+            distributionGuidelines = """
+        - Single substantial meal with 100% of calories (\(targetCalories) cal)
+        - Name it based on time: "Lunch & Dinner" or "Dinner" or "Evening Meal"
+        """
+        case 2:
+            distributionGuidelines = """
+        - First window: 55% of calories (~\(Int(Double(targetCalories) * 0.55)) cal)
+        - Second window: 45% of calories (~\(Int(Double(targetCalories) * 0.45)) cal)
+        - Names: Consider "Late Lunch" + "Dinner" or "Afternoon Meal" + "Evening Meal"
+        """
+        case 3:
+            distributionGuidelines = """
+        - First window: 35% of calories (~\(Int(Double(targetCalories) * 0.35)) cal)
+        - Second window: 35% of calories (~\(Int(Double(targetCalories) * 0.35)) cal)
+        - Third window: 30% of calories (~\(Int(Double(targetCalories) * 0.30)) cal)
+        - Names: Based on actual times (e.g., "Late Breakfast", "Lunch", "Dinner")
+        """
+        default:
+            distributionGuidelines = "Distribute evenly across windows"
+        }
+        
+        let fullPrompt = prompt + distributionGuidelines + """
+        
+        ## First Day Context:
+        - This is the user's first day using the app
+        - They just completed onboarding and are eager to start
+        - Windows should be welcoming and not overwhelming
+        - Focus on sustainable, achievable targets
+        
+        Return ONLY a JSON array of windows:
+        {
+            "windows": [
+                {
+                    "name": "Window Name",
+                    "startTime": "ISO8601 timestamp",
+                    "endTime": "ISO8601 timestamp",
+                    "targetCalories": number,
+                    "targetProtein": number,
+                    "targetCarbs": number,
+                    "targetFat": number,
+                    "purpose": "sustainedEnergy",
+                    "flexibility": "flexible",
+                    "type": "regular",
+                    "rationale": "Why this window at this time",
+                    "foodSuggestions": ["suggestion1", "suggestion2"],
+                    "micronutrientFocus": ["nutrient1", "nutrient2"]
+                }
+            ]
+        }
+        """
+        
+        let response = try await model.generateContent(fullPrompt)
+        
+        guard let text = response.text else {
+            throw WindowGenerationError.noResponse
+        }
+        
+        // Clean and parse response
+        let cleanedText = cleanJSON(text)
+        guard let data = cleanedText.data(using: .utf8) else {
+            throw WindowGenerationError.invalidJSON
+        }
+        
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        
+        let windowResponse = try decoder.decode(WindowGenerationResponse.self, from: data)
+        
+        // Convert to MealWindow objects
+        return windowResponse.windows.map { window in
+            MealWindow(
+                id: UUID(),
+                name: window.name,
+                startTime: window.startTime,
+                endTime: window.endTime,
+                targetCalories: window.targetCalories,
+                targetProtein: window.targetProtein,
+                targetCarbs: window.targetCarbs,
+                targetFat: window.targetFat,
+                isFirstDay: true,
+                date: startTime
+            )
+        }
+    }
 }

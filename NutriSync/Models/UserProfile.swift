@@ -117,6 +117,10 @@ struct UserProfile: Codable, Identifiable {
     var fastingProtocol: FastingProtocol = .none
     var lastBulkLogDate: Date?      // Track when we last prompted for missed meals
     
+    // Post-onboarding tracking
+    var firstDayCompleted: Bool = false     // Track if first day windows have been generated
+    var onboardingCompletedAt: Date?        // Timestamp when onboarding was completed
+    
     // MARK: - Initializer
     init(
         id: UUID = UUID(),
@@ -141,7 +145,9 @@ struct UserProfile: Codable, Identifiable {
         typicalWakeTime: Date? = nil,
         typicalSleepTime: Date? = nil,
         fastingProtocol: FastingProtocol = .none,
-        lastBulkLogDate: Date? = nil
+        lastBulkLogDate: Date? = nil,
+        firstDayCompleted: Bool = false,
+        onboardingCompletedAt: Date? = nil
     ) {
         self.id = id
         self.name = name
@@ -166,6 +172,8 @@ struct UserProfile: Codable, Identifiable {
         self.typicalSleepTime = typicalSleepTime
         self.fastingProtocol = fastingProtocol
         self.lastBulkLogDate = lastBulkLogDate
+        self.firstDayCompleted = firstDayCompleted
+        self.onboardingCompletedAt = onboardingCompletedAt
     }
     
     // MARK: - Firestore Conversion
@@ -207,7 +215,8 @@ struct UserProfile: Codable, Identifiable {
             "preferredMealTimes": preferredMealTimes,
             "micronutrientPriorities": micronutrientPriorities,
             "workSchedule": workSchedule.rawValue,
-            "fastingProtocol": fastingProtocol.rawValue
+            "fastingProtocol": fastingProtocol.rawValue,
+            "firstDayCompleted": firstDayCompleted
         ]
         
         // Only add optional values if they're not nil
@@ -231,6 +240,10 @@ struct UserProfile: Codable, Identifiable {
         if let lastBulkLogDate = lastBulkLogDate,
            lastBulkLogDate.timeIntervalSince1970 > -62135596800 {
             data["lastBulkLogDate"] = Timestamp(date: lastBulkLogDate)
+        }
+        if let onboardingCompletedAt = onboardingCompletedAt,
+           onboardingCompletedAt.timeIntervalSince1970 > -62135596800 {
+            data["onboardingCompletedAt"] = Timestamp(date: onboardingCompletedAt)
         }
         
         return data
@@ -271,6 +284,8 @@ struct UserProfile: Codable, Identifiable {
         let typicalWakeTime = (data["typicalWakeTime"] as? FirebaseFirestore.Timestamp)?.dateValue() ?? (data["typicalWakeTime"] as? Date)
         let typicalSleepTime = (data["typicalSleepTime"] as? FirebaseFirestore.Timestamp)?.dateValue() ?? (data["typicalSleepTime"] as? Date)
         let lastBulkLogDate = (data["lastBulkLogDate"] as? FirebaseFirestore.Timestamp)?.dateValue() ?? (data["lastBulkLogDate"] as? Date)
+        let onboardingCompletedAt = (data["onboardingCompletedAt"] as? FirebaseFirestore.Timestamp)?.dateValue() ?? (data["onboardingCompletedAt"] as? Date)
+        let firstDayCompleted = data["firstDayCompleted"] as? Bool ?? false
         
         var profile = UserProfile(
             id: id,
@@ -299,6 +314,8 @@ struct UserProfile: Codable, Identifiable {
         profile.typicalSleepTime = typicalSleepTime
         profile.fastingProtocol = fastingProtocol
         profile.lastBulkLogDate = lastBulkLogDate
+        profile.firstDayCompleted = firstDayCompleted
+        profile.onboardingCompletedAt = onboardingCompletedAt
         
         return profile
     }

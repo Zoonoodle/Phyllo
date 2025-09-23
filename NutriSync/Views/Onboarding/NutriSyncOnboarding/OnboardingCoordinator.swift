@@ -396,7 +396,9 @@ class NutriSyncOnboardingViewModel {
             typicalWakeTime: wakeTime,
             typicalSleepTime: bedTime,
             fastingProtocol: eatingWindow.contains("16") ? .sixteen8 : .none,
-            lastBulkLogDate: nil
+            lastBulkLogDate: nil,
+            firstDayCompleted: false, // Will be set to true after first day windows are generated
+            onboardingCompletedAt: Date() // Set the current time as onboarding completion
         )
     }
     

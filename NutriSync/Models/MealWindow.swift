@@ -83,19 +83,22 @@ struct MacroTargets {
     }
 }
 
-struct MealWindow: Identifiable {
-    let id: UUID
+struct MealWindow: Identifiable, Codable {
+    let id: String
     var name: String
+    let date: Date // The day this window belongs to
     let startTime: Date
     let endTime: Date
     var targetCalories: Int
     var targetProtein: Int
     var targetCarbs: Int
     var targetFat: Int
+    let mealType: MealType
     let purpose: WindowPurpose
     let flexibility: WindowFlexibility
     let type: WindowType
     let dayDate: Date // The day this window belongs to
+    let isFirstDay: Bool
     
     // AI-generated fields
     var rationale: String?
@@ -123,6 +126,13 @@ struct MealWindow: Identifiable {
         case snack = "snack"
         case shake = "shake"
         case light = "light"
+    }
+    
+    enum MealType: String, CaseIterable, Codable {
+        case breakfast = "Breakfast"
+        case lunch = "Lunch"
+        case dinner = "Dinner"
+        case snack = "Snack"
     }
     
     enum WindowPurpose: String, CaseIterable, Codable {
