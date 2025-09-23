@@ -283,7 +283,7 @@ extension MealWindow {
         let startOfDayDate = calendar.startOfDay(for: dayDate)
         
         var data: [String: Any] = [
-            "id": id.uuidString,
+            "id": id,
             "startTime": startTime,
             "endTime": endTime,
             "targetCalories": targetCalories,
