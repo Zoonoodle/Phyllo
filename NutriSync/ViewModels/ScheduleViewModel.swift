@@ -325,7 +325,7 @@ class ScheduleViewModel: ObservableObject {
                         adjustedWindows = adjustedWindows.map { window in
                             // Create new window with adjusted times since they are let constants
                             MealWindow(
-                                id: window.id,
+                                id: UUID(uuidString: window.id) ?? UUID(),
                                 startTime: window.startTime.addingTimeInterval(-24 * 3600),
                                 endTime: window.endTime.addingTimeInterval(-24 * 3600),
                                 targetCalories: window.targetCalories,
@@ -413,7 +413,7 @@ class ScheduleViewModel: ObservableObject {
                     loadedWindows = loadedWindows.map { window in
                         // Create new window with adjusted times since they are let constants
                         MealWindow(
-                            id: window.id,
+                            id: UUID(uuidString: window.id) ?? UUID(),
                             startTime: window.startTime.addingTimeInterval(-24 * 3600),
                             endTime: window.endTime.addingTimeInterval(-24 * 3600),
                             targetCalories: window.targetCalories,
@@ -507,7 +507,7 @@ class ScheduleViewModel: ObservableObject {
     func mealsInWindow(_ window: MealWindow) -> [LoggedMeal] {
         todaysMeals.filter { meal in
             if let windowId = meal.windowId {
-                return windowId == window.id
+                return windowId.uuidString == window.id
             }
             // Fallback to time-based check
             return meal.timestamp >= window.startTime && meal.timestamp <= window.endTime
@@ -517,7 +517,7 @@ class ScheduleViewModel: ObservableObject {
     /// Get analyzing meals for a specific window
     func analyzingMealsInWindow(_ window: MealWindow) -> [AnalyzingMeal] {
         analyzingMeals.filter { meal in
-            meal.windowId == window.id
+            meal.windowId?.uuidString == window.id
         }
     }
     
@@ -699,7 +699,7 @@ extension ScheduleViewModel {
     /// Check if a meal is assigned to its window properly
     func isMealInCorrectWindow(_ meal: LoggedMeal) -> Bool {
         guard let windowId = meal.windowId,
-              let window = mealWindows.first(where: { $0.id == windowId }) else {
+              let window = mealWindows.first(where: { $0.id == windowId.uuidString }) else {
             return false
         }
         
@@ -786,7 +786,7 @@ extension ScheduleViewModel {
     
     /// Mark a single window as fasted
     func markWindowAsFasted(windowId: UUID) async {
-        guard let windowIndex = mealWindows.firstIndex(where: { $0.id == windowId }) else {
+        guard let windowIndex = mealWindows.firstIndex(where: { $0.id == windowId.uuidString }) else {
             DebugLogger.shared.error("Window not found with id: \(windowId)")
             return
         }
@@ -1014,7 +1014,7 @@ extension ScheduleViewModel {
         let completedWindows = mealWindows.filter { window in
             todaysMeals.contains { meal in
                 if let windowId = meal.windowId {
-                    return windowId == window.id
+                    return windowId.uuidString == window.id
                 } else {
                     return meal.timestamp >= window.startTime && meal.timestamp <= window.endTime
                 }
@@ -1133,7 +1133,7 @@ extension ScheduleViewModel {
             // Find which window this meal belongs to
             let window = mealWindows.first { window in
                 if let windowId = meal.windowId {
-                    return windowId == window.id
+                    return windowId.uuidString == window.id
                 } else {
                     return meal.timestamp >= window.startTime && meal.timestamp <= window.endTime
                 }
