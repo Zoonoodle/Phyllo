@@ -87,9 +87,9 @@ struct WeeklyTargetsView: View {
             
             // Legend
             HStack(spacing: 20) {
-                MacroLegendItem(color: Color(hex: "FF9580"), label: "Protein")
-                MacroLegendItem(color: Color(hex: "71C5C5"), label: "Carbs")
-                MacroLegendItem(color: Color(hex: "F5D5A8"), label: "Fat")
+                MacroLegendItem(color: .orange, label: "Protein")
+                MacroLegendItem(color: .blue, label: "Carbs")
+                MacroLegendItem(color: .yellow, label: "Fat")
             }
             .padding(.top, 8)
             
@@ -149,19 +149,19 @@ struct DayTargetRow: View {
                 // Calorie bar with macro breakdown
                 GeometryReader { geometry in
                     HStack(spacing: 0) {
-                        // Protein section - soft coral
+                        // Protein section - orange
                         Rectangle()
-                            .fill(Color(hex: "FF9580").opacity(0.6))
+                            .fill(Color.orange.opacity(0.7))
                             .frame(width: geometry.size.width * macroRatio(dayData.protein * 4))
                         
-                        // Carbs section - muted teal
+                        // Carbs section - blue
                         Rectangle()
-                            .fill(Color(hex: "71C5C5").opacity(0.6))
+                            .fill(Color.blue.opacity(0.7))
                             .frame(width: geometry.size.width * macroRatio(dayData.carbs * 4))
                         
-                        // Fat section - warm cream
+                        // Fat section - yellow
                         Rectangle()
-                            .fill(Color(hex: "F5D5A8").opacity(0.5))
+                            .fill(Color.yellow.opacity(0.7))
                             .frame(width: geometry.size.width * macroRatio(dayData.fat * 9))
                         
                         Spacer()
@@ -203,9 +203,9 @@ struct DayTargetRow: View {
             // Expanded macro detail
             if isSelected {
                 HStack(spacing: 16) {
-                    MacroDetailItem(value: "\(dayData.protein)g", label: "Protein", color: Color(hex: "FF9580"))
-                    MacroDetailItem(value: "\(dayData.carbs)g", label: "Carbs", color: Color(hex: "71C5C5"))
-                    MacroDetailItem(value: "\(dayData.fat)g", label: "Fat", color: Color(hex: "F5D5A8"))
+                    MacroDetailItem(value: "\(dayData.protein)g", label: "Protein", color: .orange)
+                    MacroDetailItem(value: "\(dayData.carbs)g", label: "Carbs", color: .blue)
+                    MacroDetailItem(value: "\(dayData.fat)g", label: "Fat", color: .yellow)
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
