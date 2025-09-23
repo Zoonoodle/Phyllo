@@ -70,7 +70,7 @@ class RetrospectiveMealParser {
             
             do {
                 // Use the advanced AI agent for accurate analysis
-                let (analysisResult, metadata) = try await mealAnalysisAgent.analyzeMealWithTools(request)
+                let (analysisResult, _) = try await mealAnalysisAgent.analyzeMealWithTools(request)
                 
                 // Create LoggedMeal from analysis result
                 var meal = LoggedMeal(
@@ -223,7 +223,7 @@ class RetrospectiveMealParser {
                 fat: 15,       // Placeholder
                 timestamp: window.startTime.addingTimeInterval(1800) // 30 min into window
             )
-            meal.windowId = window.id
+            meal.windowId = UUID(uuidString: window.id)
             
             return meal
         }
@@ -253,7 +253,7 @@ class RetrospectiveMealParser {
                 fat: meal.fat,
                 timestamp: window.startTime.addingTimeInterval(1800)
             )
-            loggedMeal.windowId = window.id
+            loggedMeal.windowId = UUID(uuidString: window.id)
             
             return loggedMeal
         }
