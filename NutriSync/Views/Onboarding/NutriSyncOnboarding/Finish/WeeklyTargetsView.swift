@@ -64,7 +64,7 @@ struct WeeklyTargetsView: View {
                     .foregroundColor(.white)
                 
                 Text("Your targets vary daily to optimize \(goalDescription)")
-                    .font(.system(size: 14))
+                    .font(.system(size: 15))
                     .foregroundColor(.white.opacity(0.6))
             }
             
@@ -96,10 +96,10 @@ struct WeeklyTargetsView: View {
             // Average note
             VStack(spacing: 4) {
                 Text("Weekly Average")
-                    .font(.system(size: 12))
+                    .font(.system(size: 14))
                     .foregroundColor(.white.opacity(0.4))
                 Text("\(baseCalories) calories")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(.white.opacity(0.7))
             }
         }
@@ -142,7 +142,7 @@ struct DayTargetRow: View {
             HStack(spacing: 12) {
                 // Day label
                 Text(dayData.day)
-                    .font(.system(size: 14, weight: .medium))
+                    .font(.system(size: 15, weight: .medium))
                     .foregroundColor(.white.opacity(0.8))
                     .frame(width: 35, alignment: .leading)
                 
@@ -170,7 +170,7 @@ struct DayTargetRow: View {
                     .overlay(
                         // Calorie value overlay
                         Text("\(dayData.calories)")
-                            .font(.system(size: 12, weight: .semibold))
+                            .font(.system(size: 14, weight: .semibold))
                             .foregroundColor(.white)
                             .padding(.horizontal, 8)
                             .background(Color.black.opacity(0.3))
@@ -184,9 +184,9 @@ struct DayTargetRow: View {
                 // Deviation indicator
                 HStack(spacing: 4) {
                     Image(systemName: calorieDeviation > 0 ? "arrow.up" : calorieDeviation < 0 ? "arrow.down" : "minus")
-                        .font(.system(size: 10))
+                        .font(.system(size: 12))
                     Text("\(abs(calorieDeviation))")
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.system(size: 14, weight: .medium))
                 }
                 .foregroundColor(deviationColor)
                 .frame(width: 50, alignment: .trailing)
@@ -233,7 +233,7 @@ struct MacroLegendItem: View {
                 .fill(color.opacity(0.8))
                 .frame(width: 8, height: 8)
             Text(label)
-                .font(.system(size: 11))
+                .font(.system(size: 13))
                 .foregroundColor(.white.opacity(0.5))
         }
     }
@@ -250,7 +250,7 @@ struct MacroDetailItem: View {
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundColor(color.opacity(0.9))
             Text(label)
-                .font(.system(size: 10))
+                .font(.system(size: 12))
                 .foregroundColor(.white.opacity(0.4))
         }
         .frame(maxWidth: .infinity)

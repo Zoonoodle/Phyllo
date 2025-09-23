@@ -76,7 +76,7 @@ struct ProgramVisualizationView: View {
                                     .foregroundColor(.nutriSyncAccent)
                                 
                                 Text("\(firstDay.windows.count) meals within a \(calculateWindowHours(from: firstWindow.startTime, to: lastWindow.endTime))-hour window")
-                                    .font(.system(size: 14))
+                                    .font(.system(size: 15))
                                     .foregroundColor(.white.opacity(0.7))
                                 
                                 // Meal timing dots
@@ -98,7 +98,7 @@ struct ProgramVisualizationView: View {
                     
                     // Swipe hint
                     Text("Swipe to continue")
-                        .font(.system(size: 14))
+                        .font(.system(size: 15))
                         .foregroundColor(.white.opacity(0.4))
                         .padding(.top, 20)
                         .padding(.bottom, 40)
@@ -254,7 +254,7 @@ struct MacroTargetGrid: View {
                         Text("C: \(macros.carbPercentage)%")
                         Text("F: \(macros.fatPercentage)%")
                     }
-                    .font(.system(size: 11))
+                    .font(.system(size: 14))
                     .foregroundColor(.white.opacity(0.6))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(Color.white.opacity(0.03))
@@ -279,7 +279,7 @@ struct MacroCard: View {
                 .foregroundColor(.white)
             
             Text(label)
-                .font(.system(size: 12))
+                .font(.system(size: 14))
                 .foregroundColor(.white.opacity(0.6))
                 .textCase(.lowercase)
         }

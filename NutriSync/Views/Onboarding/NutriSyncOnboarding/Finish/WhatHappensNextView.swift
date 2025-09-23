@@ -90,7 +90,7 @@ struct WhatHappensNextView: View {
                         
                         // Motivational message
                         Text("You can adjust your schedule anytime")
-                            .font(.system(size: 14))
+                            .font(.system(size: 15))
                             .foregroundColor(.white.opacity(0.5))
                             .padding(.bottom, 100)
                     }
@@ -119,7 +119,7 @@ struct WhatHappensNextView: View {
                     }
                     
                     Text("Ready to begin your journey")
-                        .font(.system(size: 14))
+                        .font(.system(size: 15))
                         .foregroundColor(.white.opacity(0.4))
                 }
                 .padding(.horizontal, 24)
@@ -168,7 +168,7 @@ struct NextStepSection: View {
                             .foregroundColor(.nutriSyncAccent)
                         
                         Text(item)
-                            .font(.system(size: 14))
+                            .font(.system(size: 16))
                             .foregroundColor(.white.opacity(0.8))
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
@@ -204,7 +204,7 @@ struct FeatureHighlight: View {
                     .foregroundColor(.white)
                 
                 Text(description)
-                    .font(.system(size: 13))
+                    .font(.system(size: 15))
                     .foregroundColor(.white.opacity(0.7))
                     .lineLimit(2)
             }

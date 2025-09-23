@@ -102,7 +102,7 @@ struct ProgramExplanationView: View {
                     
                     // Swipe hint
                     Text("Swipe to continue")
-                        .font(.system(size: 14))
+                        .font(.system(size: 15))
                         .foregroundColor(.white.opacity(0.4))
                         .padding(.top, 20)
                         .padding(.bottom, 40)
@@ -141,13 +141,13 @@ struct DataSection: View {
                 ForEach(rows, id: \.label) { row in
                     HStack {
                         Text(row.label)
-                            .font(.system(size: 14))
+                            .font(.system(size: 16))
                             .foregroundColor(.white.opacity(0.6))
                         
                         Spacer()
                         
                         Text(row.value)
-                            .font(.system(size: 14, weight: row.highlight ? .semibold : .regular))
+                            .font(.system(size: 16, weight: row.highlight ? .semibold : .regular))
                             .foregroundColor(row.highlight ? Color.nutriSyncAccent : .white)
                             .monospacedDigit() // For better number alignment
                     }
