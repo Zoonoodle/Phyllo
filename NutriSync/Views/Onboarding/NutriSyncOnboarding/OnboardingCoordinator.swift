@@ -543,17 +543,6 @@ struct NutriSyncOnboardingCoordinator: View {
                         
                         Spacer()
                         
-                        // Navigation dots indicator - inline with back/save buttons
-                        HStack(spacing: 8) {
-                            ForEach(0..<3, id: \.self) { index in
-                                Circle()
-                                    .fill(index == NutriSyncOnboardingSection.allCases.firstIndex(of: viewModel.currentSection) ? Color.nutriSyncAccent : Color.white.opacity(0.3))
-                                    .frame(width: 8, height: 8)
-                            }
-                        }
-                        
-                        Spacer()
-                        
                         let isHealthDisclaimer = viewModel.currentScreen == "Health Disclaimer"
                         let termsAccepted = viewModel.acceptHealthDisclaimer && viewModel.acceptPrivacyNotice
                         let isGoalSelection = viewModel.currentScreen == "Goal Selection"

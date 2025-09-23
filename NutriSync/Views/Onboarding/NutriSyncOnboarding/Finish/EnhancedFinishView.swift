@@ -48,40 +48,56 @@ struct EnhancedFinishView: View {
                 }
             }
             
-            // Custom page indicators (only show after processing)
+            // Navigation controls with page indicators (only show after processing)
             if viewModel.currentScreen != .processing {
                 VStack {
-                    Spacer()
-                    
-                    PageIndicators(
-                        numberOfPages: 3,
-                        currentPage: $currentPage
-                    )
-                    .padding(.bottom, 100)
-                }
-            }
-            
-            // Navigation controls (back button)
-            if viewModel.currentScreen != .processing && currentPage > 0 {
-                VStack {
+                    // Top navigation bar with back button and dots
                     HStack {
-                        Button(action: {
-                            withAnimation {
-                                currentPage = max(0, currentPage - 1)
-                            }
-                        }) {
-                            HStack(spacing: 8) {
+                        // Back button (only show on pages after first)
+                        if currentPage > 0 {
+                            Button(action: {
+                                withAnimation {
+                                    currentPage = max(0, currentPage - 1)
+                                }
+                            }) {
                                 Image(systemName: "chevron.left")
-                                    .font(.system(size: 16, weight: .medium))
-                                Text("Back")
-                                    .font(.system(size: 16))
+                                    .font(.system(size: 20, weight: .medium))
+                                    .foregroundColor(.white)
+                                    .frame(width: 44, height: 44)
                             }
-                            .foregroundColor(.white.opacity(0.7))
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 8)
+                        } else {
+                            // Empty spacer to maintain layout
+                            Color.clear
+                                .frame(width: 44, height: 44)
                         }
                         
                         Spacer()
+                        
+                        // Page indicators centered
+                        PageIndicators(
+                            numberOfPages: 3,
+                            currentPage: $currentPage
+                        )
+                        
+                        Spacer()
+                        
+                        // Forward button or empty space for balance
+                        if currentPage < 2 {
+                            Button(action: {
+                                withAnimation {
+                                    currentPage = min(2, currentPage + 1)
+                                }
+                            }) {
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 20, weight: .medium))
+                                    .foregroundColor(.white.opacity(0.6))
+                                    .frame(width: 44, height: 44)
+                            }
+                        } else {
+                            // Empty spacer to maintain layout
+                            Color.clear
+                                .frame(width: 44, height: 44)
+                        }
                     }
                     .padding(.top, 60)
                     .padding(.horizontal, 8)
