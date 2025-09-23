@@ -166,7 +166,7 @@ struct ExpandableWindowBanner: View {
     private var analyzingMealsInWindow: [AnalyzingMeal] {
         viewModel.analyzingMeals.filter { meal in
             // Prefer assigned window
-            if meal.windowId == window.id { return true }
+            if meal.windowId?.uuidString == window.id { return true }
             // Fallback: if within flexibility buffer before start or during window, show it
             let beforeStart = meal.timestamp >= window.startTime.addingTimeInterval(-window.flexibility.timeBuffer) && meal.timestamp < window.startTime
             let during = meal.timestamp >= window.startTime && meal.timestamp <= window.endTime
@@ -1034,7 +1034,9 @@ struct ExpandableWindowBanner: View {
                 Button(action: {
                     Task {
                         isProcessingFasting = true
-                        await viewModel.markWindowAsFasted(windowId: window.id)
+                        if let windowId = UUID(uuidString: window.id) {
+                            await viewModel.markWindowAsFasted(windowId: windowId)
+                        }
                         isProcessingFasting = false
                         showInlineMissedActions = false
                     }
