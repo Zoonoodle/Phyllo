@@ -385,9 +385,9 @@ class NutriSyncOnboardingViewModel {
             dietaryPreferences: Array(dietaryRestrictions), // Using restrictions as preferences for now
             dietaryRestrictions: Array(dietaryRestrictions),
             dailyCalorieTarget: Int(tdee ?? 2000),
-            dailyProteinTarget: Int((weight * 2.2) * 0.8), // 0.8g per lb
-            dailyCarbTarget: 200,
-            dailyFatTarget: 65,
+            dailyProteinTarget: Int(weightInPounds * 0.8), // 0.8g per lb (weight already in pounds)
+            dailyCarbTarget: calculateCarbs(calories: Int(tdee ?? 2000), goal: nutritionGoal),
+            dailyFatTarget: calculateFat(calories: Int(tdee ?? 2000), goal: nutritionGoal),
             preferredMealTimes: [],
             micronutrientPriorities: [],
             earliestMealHour: Calendar.current.component(.hour, from: wakeTime),
@@ -433,6 +433,46 @@ class NutriSyncOnboardingViewModel {
             targetWeight: targetWeight.map { $0 * 2.20462 }, // Convert to pounds safely
             timeline: 12 // Default 12 weeks
         )
+    }
+    
+    /// Calculate carbs based on calories and goal
+    private func calculateCarbs(calories: Int, goal: NutritionGoal) -> Int {
+        let carbCalorieRatio: Double
+        switch goal {
+        case .loseWeight:
+            carbCalorieRatio = 0.35 // 35% from carbs for weight loss
+        case .buildMuscle:
+            carbCalorieRatio = 0.45 // 45% from carbs for muscle building
+        case .improvePerformance:
+            carbCalorieRatio = 0.50 // 50% from carbs for performance
+        case .betterSleep:
+            carbCalorieRatio = 0.40 // 40% from carbs for sleep optimization
+        default:
+            carbCalorieRatio = 0.40 // 40% default
+        }
+        
+        let carbCalories = Double(calories) * carbCalorieRatio
+        return Int(carbCalories / 4) // 4 calories per gram of carbs
+    }
+    
+    /// Calculate fat based on calories and goal
+    private func calculateFat(calories: Int, goal: NutritionGoal) -> Int {
+        let fatCalorieRatio: Double
+        switch goal {
+        case .loseWeight:
+            fatCalorieRatio = 0.30 // 30% from fat for weight loss
+        case .buildMuscle:
+            fatCalorieRatio = 0.25 // 25% from fat for muscle building
+        case .improvePerformance:
+            fatCalorieRatio = 0.25 // 25% from fat for performance
+        case .betterSleep:
+            fatCalorieRatio = 0.35 // 35% from fat for sleep optimization
+        default:
+            fatCalorieRatio = 0.30 // 30% default
+        }
+        
+        let fatCalories = Double(calories) * fatCalorieRatio
+        return Int(fatCalories / 9) // 9 calories per gram of fat
     }
 }
 

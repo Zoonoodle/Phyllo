@@ -98,13 +98,8 @@ class NudgeManager: ObservableObject {
     
     private func checkMorningCheckInStatus() async {
         do {
-            // Check if it's the user's first day - skip morning check-in if so
-            if let userProfile = try? await DataSourceProvider.shared.provider.getUserProfile() {
-                // Skip morning check-in on first day (when firstDayCompleted is false)
-                if !userProfile.firstDayCompleted {
-                    return
-                }
-            }
+            // Morning check-in is important for all users, including first-day users
+            // First-day users need check-in data to generate better windows
             
             let today = Calendar.current.startOfDay(for: TimeProvider.shared.currentTime)
             let checkIn = try await DataSourceProvider.shared.provider.getMorningCheckIn(for: today)

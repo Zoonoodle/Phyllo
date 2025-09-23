@@ -1391,9 +1391,124 @@ extension FirebaseDataProvider {
     }
     
     func generateInitialWindows() async throws {
-        // This will be implemented in Phase 2
-        // For now, just mark completion
-        print("Initial windows generation would happen here")
+        guard let userId = Auth.auth().currentUser?.uid else {
+            throw NSError(domain: "WindowGeneration", code: 1001, 
+                         userInfo: [NSLocalizedDescriptionKey: "No authenticated user"])
+        }
+        
+        // Get current user profile
+        guard let profile = userProfile else {
+            throw NSError(domain: "WindowGeneration", code: 1002, 
+                         userInfo: [NSLocalizedDescriptionKey: "User profile not found"])
+        }
+        
+        let now = Date()
+        
+        // Check if this is a first-day user who needs partial day windows
+        let firstDayService = FirstDayWindowService()
+        if firstDayService.shouldGenerateFirstDayWindows(profile: profile) {
+            print("Generating first-day windows for new user")
+            
+            // Generate partial-day windows using FirstDayWindowService
+            let firstDayWindows = try await firstDayService.generateFirstDayWindows(
+                for: profile,
+                completionTime: now
+            )
+            
+            if !firstDayWindows.isEmpty {
+                // Save windows to Firebase
+                let dateKey = DateFormatter.dateKey.string(from: now)
+                let windowsRef = db.collection("users").document(userId)
+                    .collection("windows").document(dateKey)
+                
+                let windowsData = firstDayWindows.map { $0.toFirestore() }
+                try await windowsRef.setData(["windows": windowsData])
+                
+                // Update profile to mark first day as completed
+                var updatedProfile = profile
+                updatedProfile.firstDayCompleted = true
+                try await updateUserProfile(updatedProfile)
+                
+                // Update local windows
+                await MainActor.run {
+                    self.todayWindows = firstDayWindows
+                }
+                
+                print("Generated \(firstDayWindows.count) first-day windows")
+            } else {
+                // Too late in the day, show tomorrow's plan
+                print("Too late for first-day windows, user will see tomorrow's plan")
+                
+                // Still mark first day as completed
+                var updatedProfile = profile
+                updatedProfile.firstDayCompleted = true
+                try await updateUserProfile(updatedProfile)
+            }
+        } else {
+            // Regular window generation using AI service
+            print("Generating regular windows using AI service")
+            
+            // Get morning check-in data if available
+            let checkInData = await getMorningCheckIn(for: now)
+            
+            // Generate windows using AI service
+            let aiService = AIWindowGenerationService()
+            let (windows, dayPurpose) = try await aiService.generateWindows(
+                for: profile,
+                checkIn: checkInData,
+                date: now
+            )
+            
+            if !windows.isEmpty {
+                // Save windows to Firebase
+                let dateKey = DateFormatter.dateKey.string(from: now)
+                let windowsRef = db.collection("users").document(userId)
+                    .collection("windows").document(dateKey)
+                
+                let windowsData = windows.map { $0.toFirestore() }
+                try await windowsRef.setData([
+                    "windows": windowsData,
+                    "dayPurpose": dayPurpose?.rawValue ?? "",
+                    "generatedAt": Timestamp(date: now)
+                ])
+                
+                // Update local windows
+                await MainActor.run {
+                    self.todayWindows = windows
+                }
+                
+                print("Generated \(windows.count) AI-powered windows")
+            }
+        }
+    }
+    
+    /// Get morning check-in data for a specific date
+    private func getMorningCheckIn(for date: Date) async -> MorningCheckInData? {
+        guard let userId = Auth.auth().currentUser?.uid else { return nil }
+        
+        let dateKey = DateFormatter.dateKey.string(from: date)
+        let checkInRef = db.collection("users").document(userId)
+            .collection("checkIns").document(dateKey)
+        
+        do {
+            let document = try await checkInRef.getDocument()
+            guard let data = document.data(),
+                  let checkInData = data["morning"] as? [String: Any] else {
+                return nil
+            }
+            
+            // Parse morning check-in data
+            return MorningCheckInData(
+                sleepQuality: checkInData["sleepQuality"] as? Int ?? 7,
+                energyLevel: checkInData["energyLevel"] as? Int ?? 7,
+                hungerLevel: checkInData["hungerLevel"] as? Int ?? 5,
+                plannedActivities: checkInData["plannedActivities"] as? [String] ?? [],
+                wakeTime: (checkInData["wakeTime"] as? Timestamp)?.dateValue() ?? date
+            )
+        } catch {
+            print("Error fetching morning check-in: \(error)")
+            return nil
+        }
     }
 }
 
