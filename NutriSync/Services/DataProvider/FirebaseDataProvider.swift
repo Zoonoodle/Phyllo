@@ -1428,10 +1428,10 @@ extension FirebaseDataProvider {
                 // Update profile to mark first day as completed
                 var updatedProfile = profile
                 updatedProfile.firstDayCompleted = true
-                try await setUserProfile(updatedProfile)
+                try await saveUserProfile(updatedProfile)
                 
                 // Fetch and update local windows
-                let _ = try await getWindowsForToday()
+                let _ = try await getWindows(for: now)
                 
                 print("Generated \(firstDayWindows.count) first-day windows")
             } else {
@@ -1441,7 +1441,7 @@ extension FirebaseDataProvider {
                 // Still mark first day as completed
                 var updatedProfile = profile
                 updatedProfile.firstDayCompleted = true
-                try await setUserProfile(updatedProfile)
+                try await saveUserProfile(updatedProfile)
             }
         } else {
             // Regular window generation using AI service
@@ -1450,13 +1450,14 @@ extension FirebaseDataProvider {
             // Get morning check-in data if available
             let checkInData = try? await getMorningCheckIn(for: now)
             
-            // Generate windows using AI service
-            let aiService = AIWindowGenerationService.shared
-            let (windows, dayPurpose) = try await aiService.generateWindows(
+            // TODO: Implement AIWindowGenerationService
+            // For now, use the fallback window generation
+            let windows = WindowGenerationService.shared.generateFallbackWindows(
                 for: profile,
-                checkIn: checkInData,
+                goals: UserGoals(), // Use default goals for now
                 date: now
             )
+            let dayPurpose: String? = nil // Placeholder until AI service is ready
             
             if !windows.isEmpty {
                 // Save windows to Firebase
@@ -1467,12 +1468,12 @@ extension FirebaseDataProvider {
                 let windowsData = windows.map { $0.toFirestore() }
                 try await windowsRef.setData([
                     "windows": windowsData,
-                    "dayPurpose": dayPurpose?.rawValue ?? "",
+                    "dayPurpose": dayPurpose ?? "",
                     "generatedAt": Timestamp(date: now)
                 ])
                 
                 // Fetch and update local windows
-                let _ = try await getWindowsForToday()
+                let _ = try await getWindows(for: now)
                 
                 print("Generated \(windows.count) AI-powered windows")
             }
