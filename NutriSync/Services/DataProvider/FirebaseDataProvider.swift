@@ -1588,18 +1588,39 @@ extension FirebaseDataProvider {
         // Delete all user data from Firestore
         let userDocRef = db.collection("users").document(userId)
         
-        // Delete subcollections
-        let subcollections = ["profile", "goals", "meals", "windows", "checkIns", "onboarding", "insights", "dayPurposes"]
+        // Delete ALL subcollections - including analytics and any nested collections
+        let subcollections = [
+            "profile", 
+            "goals", 
+            "meals", 
+            "windows", 
+            "checkIns", 
+            "onboarding", 
+            "insights", 
+            "dayPurposes",
+            "analytics"  // Added analytics collection
+        ]
         
         for subcollection in subcollections {
             let documents = try await userDocRef.collection(subcollection).getDocuments()
             for document in documents.documents {
+                // For analytics, also delete nested collections
+                if subcollection == "analytics" {
+                    // Delete the daily analytics nested collection if it exists
+                    let dailyDocs = try await document.reference.collection("data").getDocuments()
+                    for dailyDoc in dailyDocs.documents {
+                        try await dailyDoc.reference.delete()
+                    }
+                }
                 try await document.reference.delete()
             }
         }
         
         // Delete the main user document
         try await userDocRef.delete()
+        
+        // Clear any cached instance data
+        self.userRef = nil
         
         print("[FirebaseDataProvider] Deleted all data for user: \(userId)")
     }

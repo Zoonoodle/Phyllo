@@ -148,9 +148,8 @@ struct AccountSettingsView: View {
             // Then delete the auth account
             try await Auth.auth().currentUser?.delete()
             
-            // Clear local storage
-            UserDefaults.standard.removeObject(forKey: "skippedAccountCreation")
-            UserDefaults.standard.removeObject(forKey: "hasCompletedOnboarding")
+            // Clear ALL UserDefaults to ensure complete reset
+            clearAllUserDefaults()
             
             // The auth state listener will handle navigation back to onboarding
             
@@ -162,13 +161,43 @@ struct AccountSettingsView: View {
         isDeleting = false
     }
     
+    private func clearAllUserDefaults() {
+        // Clear all known keys
+        let keysToRemove = [
+            "skippedAccountCreation",
+            "hasCompletedOnboarding",
+            "notificationPreferences",
+            "hasShownVoiceInputTips",
+            "lastMorningNudgeDate"
+        ]
+        
+        for key in keysToRemove {
+            UserDefaults.standard.removeObject(forKey: key)
+        }
+        
+        // Also clear any date-specific keys for missed meals
+        let defaults = UserDefaults.standard
+        let dictionary = defaults.dictionaryRepresentation()
+        
+        // Remove any keys that match our patterns
+        for key in dictionary.keys {
+            if key.starts(with: "hasShownMissedMeals_") || 
+               key.starts(with: "nudgeShown_") {
+                defaults.removeObject(forKey: key)
+            }
+        }
+        
+        // Force synchronize to persist changes immediately
+        UserDefaults.standard.synchronize()
+    }
+    
     @MainActor
     private func signOut() async {
         do {
             try Auth.auth().signOut()
             
-            // Clear local storage
-            UserDefaults.standard.removeObject(forKey: "skippedAccountCreation")
+            // Clear all user-specific local storage
+            clearAllUserDefaults()
             
             // The auth state listener will handle navigation
             
