@@ -564,8 +564,6 @@ struct NutriSyncOnboardingCoordinator: View {
                         let dietSelected = !viewModel.dietPreference.isEmpty
                         let isMealFrequency = viewModel.currentScreen == "Meal Frequency"
                         let mealFrequencySelected = !viewModel.mealFrequency.isEmpty
-                        _ = viewModel.currentScreen == "Sleep Schedule"
-                        _ = true // Sleep schedule uses Date pickers, always valid
                         
                         let isDisabled = (isHealthDisclaimer && !termsAccepted) || 
                                        (isGoalSelection && !goalSelected) ||
