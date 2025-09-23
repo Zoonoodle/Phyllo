@@ -1619,9 +1619,6 @@ extension FirebaseDataProvider {
         // Delete the main user document
         try await userDocRef.delete()
         
-        // Clear any cached instance data
-        self.userRef = nil
-        
         print("[FirebaseDataProvider] Deleted all data for user: \(userId)")
     }
 }
