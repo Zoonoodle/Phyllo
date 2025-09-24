@@ -2,7 +2,7 @@
 //  DailySyncCoordinator.swift
 //  NutriSync
 //
-//  Simplified daily sync flow replacing morning check-in
+//  Simplified daily sync flow with onboarding-style navigation
 //
 
 import SwiftUI
@@ -23,36 +23,29 @@ struct DailySyncCoordinator: View {
             Color.nutriSyncBackground.ignoresSafeArea()
             
             VStack(spacing: 0) {
-                // Header with close button (if not mandatory)
-                if !isMandatory {
-                    HStack {
-                        Spacer()
-                        Button(action: { dismiss() }) {
-                            Image(systemName: "xmark")
-                                .font(.system(size: 16, weight: .medium))
-                                .foregroundColor(.white.opacity(0.6))
-                                .frame(width: 36, height: 36)
-                                .background(Color.white.opacity(0.1))
-                                .clipShape(Circle())
-                        }
-                        .padding(.trailing, 20)
-                        .padding(.top, 10)
-                    }
+                // Progress dots at top (matching onboarding)
+                if viewModel.currentScreen != .greeting {
+                    DailySyncProgressDots(
+                        totalSteps: viewModel.screenFlow.count - 2, // Exclude greeting and complete
+                        currentStep: viewModel.currentIndex
+                    )
+                    .padding(.top, 60)
+                    .padding(.bottom, 40)
                 }
                 
-                // Dynamic screen based on step
+                // Dynamic screen content
                 Group {
                     switch viewModel.currentScreen {
                     case .greeting:
                         GreetingView(viewModel: viewModel)
                     case .alreadyEaten:
-                        AlreadyEatenView(viewModel: viewModel)
+                        AlreadyEatenViewStyled(viewModel: viewModel)
                     case .schedule:
-                        ScheduleView(viewModel: viewModel)
+                        ScheduleViewStyled(viewModel: viewModel)
                     case .energy:
-                        EnergyView(viewModel: viewModel)
+                        EnergyViewStyled(viewModel: viewModel)
                     case .complete:
-                        CompleteView(viewModel: viewModel, dismiss: dismiss)
+                        CompleteViewStyled(viewModel: viewModel, dismiss: dismiss)
                     }
                 }
                 .transition(.asymmetric(
@@ -79,8 +72,8 @@ class DailySyncViewModel: ObservableObject {
     @Published var workoutTime: Date?
     @Published var energyLevel: SimpleEnergyLevel = .good
     
-    private var screenFlow: [DailySyncScreen] = []
-    private var currentIndex = 0
+    var screenFlow: [DailySyncScreen] = []
+    var currentIndex = 0
     
     // Setup dynamic flow based on context
     func setupFlow() {
@@ -140,7 +133,6 @@ class DailySyncViewModel: ObservableObject {
         )
         
         // Save to Firebase
-        // TODO: Implement Firebase save
         DailySyncManager.shared.saveDailySync(syncData)
     }
 }
@@ -154,111 +146,234 @@ enum DailySyncScreen {
     case complete
 }
 
-// MARK: - Greeting View
+// MARK: - Greeting View (Onboarding Style)
 struct GreetingView: View {
     @ObservedObject var viewModel: DailySyncViewModel
     
     var body: some View {
-        VStack(spacing: 32) {
+        VStack(spacing: 0) {
             Spacer()
             
-            // Context-aware greeting
-            VStack(spacing: 16) {
-                Text(SyncContext.current().greeting)
-                    .font(.system(size: 28, weight: .bold))
-                    .foregroundColor(.white)
-                    .multilineTextAlignment(.center)
-                
-                Text("Let's quickly sync your nutrition plan")
-                    .font(.system(size: 16))
-                    .foregroundColor(.white.opacity(0.7))
-            }
-            .padding(.horizontal, 40)
+            // Icon matching context
+            Image(systemName: SyncContext.current().icon)
+                .font(.system(size: 60, weight: .medium))
+                .foregroundColor(.nutriSyncAccent)
+                .padding(.bottom, 32)
+            
+            DailySyncHeader(
+                title: SyncContext.current().greeting,
+                subtitle: "Let's quickly sync your nutrition plan"
+            )
             
             Spacer()
             
-            // Continue button
-            Button(action: { viewModel.nextScreen() }) {
-                Text("Get Started")
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundColor(.black)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 56)
-                    .background(Color.nutriSyncAccent)
-                    .cornerRadius(16)
-            }
-            .padding(.horizontal, 24)
-            .padding(.bottom, 40)
+            // Single Continue button (no back on first screen)
+            DailySyncBottomNav(
+                onBack: nil,
+                onNext: { viewModel.nextScreen() },
+                nextButtonTitle: "Get Started",
+                showBack: false
+            )
         }
     }
 }
 
-// MARK: - Energy View
-struct EnergyView: View {
+// MARK: - Already Eaten View (Styled)
+struct AlreadyEatenViewStyled: View {
     @ObservedObject var viewModel: DailySyncViewModel
+    @State private var showAddMeal = false
     
     var body: some View {
-        VStack(spacing: 32) {
-            // Progress dots
-            HStack(spacing: 8) {
-                ForEach(0..<4) { index in
-                    Circle()
-                        .fill(index <= 2 ? Color.nutriSyncAccent : Color.white.opacity(0.2))
-                        .frame(width: 8, height: 8)
-                }
-            }
-            .padding(.top, 20)
+        VStack(spacing: 0) {
+            DailySyncHeader(
+                title: "Have you eaten today?",
+                subtitle: "I'll adjust your remaining meals accordingly"
+            )
+            .padding(.top, 40)
             
-            VStack(spacing: 16) {
-                Text("How's your energy?")
-                    .font(.system(size: 24, weight: .bold))
-                    .foregroundColor(.white)
-                
-                Text("This helps optimize your meal timing")
-                    .font(.system(size: 14))
-                    .foregroundColor(.white.opacity(0.6))
+            Spacer()
+            
+            // Meal list or empty state
+            if viewModel.alreadyEatenMeals.isEmpty {
+                VStack(spacing: 24) {
+                    Image(systemName: "fork.knife.circle")
+                        .font(.system(size: 48))
+                        .foregroundColor(.white.opacity(0.3))
+                    
+                    Text("No meals logged yet")
+                        .font(.system(size: 16))
+                        .foregroundColor(.white.opacity(0.5))
+                    
+                    Button(action: { showAddMeal = true }) {
+                        Label("Add a meal", systemImage: "plus.circle.fill")
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundColor(.nutriSyncAccent)
+                    }
+                }
+            } else {
+                ScrollView {
+                    VStack(spacing: 12) {
+                        ForEach(viewModel.alreadyEatenMeals) { meal in
+                            QuickMealRow(meal: meal) {
+                                viewModel.alreadyEatenMeals.removeAll { $0.id == meal.id }
+                            }
+                        }
+                        
+                        Button(action: { showAddMeal = true }) {
+                            Label("Add another meal", systemImage: "plus.circle")
+                                .font(.system(size: 15, weight: .medium))
+                                .foregroundColor(.nutriSyncAccent)
+                                .padding(.top, 8)
+                        }
+                    }
+                    .padding(.horizontal, 24)
+                }
             }
             
             Spacer()
             
-            // Energy options
-            VStack(spacing: 12) {
-                ForEach(SimpleEnergyLevel.allCases, id: \.self) { level in
-                    Button(action: {
-                        viewModel.energyLevel = level
-                        viewModel.nextScreen()
-                    }) {
+            // Navigation
+            DailySyncBottomNav(
+                onBack: { viewModel.previousScreen() },
+                onNext: { viewModel.nextScreen() }
+            )
+        }
+        .sheet(isPresented: $showAddMeal) {
+            // Add meal sheet would go here
+        }
+    }
+}
+
+// MARK: - Schedule View (Styled)
+struct ScheduleViewStyled: View {
+    @ObservedObject var viewModel: DailySyncViewModel
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            DailySyncHeader(
+                title: "What's your schedule?",
+                subtitle: "I'll time your meals perfectly around your day"
+            )
+            .padding(.top, 40)
+            
+            Spacer()
+            
+            VStack(spacing: 20) {
+                // Work toggle
+                Toggle(isOn: $viewModel.hasWorkToday) {
+                    HStack(spacing: 12) {
+                        Image(systemName: "briefcase.fill")
+                            .foregroundColor(.white.opacity(0.7))
+                        Text("Working today")
+                            .font(.system(size: 17, weight: .medium))
+                            .foregroundColor(.white)
+                    }
+                }
+                .tint(.nutriSyncAccent)
+                .padding(.horizontal, 24)
+                
+                // Work hours (if working)
+                if viewModel.hasWorkToday {
+                    VStack(spacing: 16) {
                         HStack {
-                            Text(level.emoji)
-                                .font(.system(size: 24))
-                            
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(level.rawValue)
-                                    .font(.system(size: 16, weight: .semibold))
-                                    .foregroundColor(.white)
-                                
-                                Text(level.nutritionImpact)
-                                    .font(.system(size: 12))
-                                    .foregroundColor(.white.opacity(0.6))
-                            }
-                            
+                            Text("Work hours")
+                                .font(.system(size: 15))
+                                .foregroundColor(.white.opacity(0.6))
                             Spacer()
+                        }
+                        
+                        HStack(spacing: 12) {
+                            TimePickerCompact(
+                                label: "Start",
+                                time: $viewModel.workStart
+                            )
                             
-                            if viewModel.energyLevel == level {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .foregroundColor(.nutriSyncAccent)
-                                    .font(.system(size: 20))
+                            Image(systemName: "arrow.right")
+                                .foregroundColor(.white.opacity(0.3))
+                            
+                            TimePickerCompact(
+                                label: "End",
+                                time: $viewModel.workEnd
+                            )
+                        }
+                    }
+                    .padding(.horizontal, 24)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+                }
+                
+                // Workout toggle
+                VStack(spacing: 16) {
+                    Toggle(isOn: Binding(
+                        get: { viewModel.workoutTime != nil },
+                        set: { hasWorkout in
+                            if hasWorkout {
+                                viewModel.workoutTime = Date()
+                            } else {
+                                viewModel.workoutTime = nil
                             }
                         }
-                        .padding(16)
-                        .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(Color.white.opacity(viewModel.energyLevel == level ? 0.1 : 0.05))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .stroke(viewModel.energyLevel == level ? Color.nutriSyncAccent : Color.clear, lineWidth: 2)
-                                )
+                    )) {
+                        HStack(spacing: 12) {
+                            Image(systemName: "figure.run")
+                                .foregroundColor(.white.opacity(0.7))
+                            Text("Planning to workout")
+                                .font(.system(size: 17, weight: .medium))
+                                .foregroundColor(.white)
+                        }
+                    }
+                    .tint(.nutriSyncAccent)
+                    
+                    if viewModel.workoutTime != nil {
+                        TimePickerCompact(
+                            label: "Workout time",
+                            time: Binding(
+                                get: { viewModel.workoutTime ?? Date() },
+                                set: { viewModel.workoutTime = $0 }
+                            )
                         )
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                    }
+                }
+                .padding(.horizontal, 24)
+            }
+            
+            Spacer()
+            
+            // Navigation
+            DailySyncBottomNav(
+                onBack: { viewModel.previousScreen() },
+                onNext: { viewModel.nextScreen() }
+            )
+        }
+        .animation(.easeInOut(duration: 0.3), value: viewModel.hasWorkToday)
+        .animation(.easeInOut(duration: 0.3), value: viewModel.workoutTime != nil)
+    }
+}
+
+// MARK: - Energy View (Styled)
+struct EnergyViewStyled: View {
+    @ObservedObject var viewModel: DailySyncViewModel
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            DailySyncHeader(
+                title: "How's your energy?",
+                subtitle: "This helps optimize your meal timing"
+            )
+            .padding(.top, 40)
+            
+            Spacer()
+            
+            // Energy options using DailySyncOptionButton
+            VStack(spacing: 12) {
+                ForEach(SimpleEnergyLevel.allCases, id: \.self) { level in
+                    DailySyncOptionButton(
+                        icon: level.emoji,
+                        title: level.rawValue,
+                        subtitle: level.nutritionImpact,
+                        isSelected: viewModel.energyLevel == level
+                    ) {
+                        viewModel.energyLevel = level
                     }
                 }
             }
@@ -266,40 +381,23 @@ struct EnergyView: View {
             
             Spacer()
             
-            // Navigation buttons
-            HStack(spacing: 12) {
-                Button(action: { viewModel.previousScreen() }) {
-                    Image(systemName: "arrow.left")
-                        .font(.system(size: 20))
-                        .foregroundColor(.white)
-                        .frame(width: 56, height: 56)
-                        .background(Color.white.opacity(0.1))
-                        .cornerRadius(16)
-                }
-                
-                Button(action: { viewModel.nextScreen() }) {
-                    Text("Continue")
-                        .font(.system(size: 17, weight: .semibold))
-                        .foregroundColor(.black)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 56)
-                        .background(Color.nutriSyncAccent)
-                        .cornerRadius(16)
-                }
-            }
-            .padding(.horizontal, 24)
-            .padding(.bottom, 40)
+            // Navigation
+            DailySyncBottomNav(
+                onBack: { viewModel.previousScreen() },
+                onNext: { viewModel.nextScreen() },
+                canGoNext: true // Always can continue, has default selection
+            )
         }
     }
 }
 
-// MARK: - Complete View
-struct CompleteView: View {
+// MARK: - Complete View (Styled)
+struct CompleteViewStyled: View {
     @ObservedObject var viewModel: DailySyncViewModel
     let dismiss: DismissAction
     
     var body: some View {
-        VStack(spacing: 32) {
+        VStack(spacing: 0) {
             Spacer()
             
             // Success animation
@@ -308,44 +406,59 @@ struct CompleteView: View {
                 .foregroundColor(.nutriSyncAccent)
                 .scaleEffect(1.2)
                 .animation(.spring(response: 0.5, dampingFraction: 0.6), value: true)
+                .padding(.bottom, 32)
             
-            VStack(spacing: 16) {
-                Text("Perfect!")
-                    .font(.system(size: 28, weight: .bold))
-                    .foregroundColor(.white)
-                
-                Text("I'm optimizing your \(viewModel.syncData.remainingMealsCount) remaining meals")
-                    .font(.system(size: 16))
-                    .foregroundColor(.white.opacity(0.7))
-                    .multilineTextAlignment(.center)
-            }
-            .padding(.horizontal, 40)
+            DailySyncHeader(
+                title: "Perfect!",
+                subtitle: "I'm optimizing your \(viewModel.syncData.remainingMealsCount) remaining meals"
+            )
             
             Spacer()
             
-            // Done button
-            Button(action: {
-                Task {
-                    await viewModel.saveSyncData()
-                    dismiss()
-                }
-            }) {
-                Text("View Schedule")
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundColor(.black)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 56)
-                    .background(Color.nutriSyncAccent)
-                    .cornerRadius(16)
-            }
-            .padding(.horizontal, 24)
-            .padding(.bottom, 40)
+            // Single button to complete (no back on final screen)
+            DailySyncBottomNav(
+                onBack: nil,
+                onNext: {
+                    Task {
+                        await viewModel.saveSyncData()
+                        dismiss()
+                    }
+                },
+                nextButtonTitle: "View Schedule",
+                showBack: false
+            )
         }
         .onAppear {
             // Trigger haptic feedback
             let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
             impactFeedback.impactOccurred()
         }
+    }
+}
+
+// MARK: - Helper Components
+struct TimePickerCompact: View {
+    let label: String
+    @Binding var time: Date
+    
+    var body: some View {
+        VStack(spacing: 4) {
+            Text(label)
+                .font(.system(size: 12))
+                .foregroundColor(.white.opacity(0.5))
+            
+            DatePicker("", selection: $time, displayedComponents: .hourAndMinute)
+                .datePickerStyle(.compact)
+                .labelsHidden()
+                .colorScheme(.dark)
+                .accentColor(.nutriSyncAccent)
+        }
+        .padding(.vertical, 8)
+        .padding(.horizontal, 12)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.white.opacity(0.05))
+        )
     }
 }
 
