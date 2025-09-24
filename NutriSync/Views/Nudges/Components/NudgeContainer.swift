@@ -10,7 +10,7 @@ import SwiftUI
 struct NudgeContainer: View {
     @StateObject private var nudgeManager = NudgeManager.shared
     private let dataProvider = DataSourceProvider.shared.provider
-    @State private var showMorningCheckIn = false
+    @State private var showDailySync = false
     @State private var showPostMealCheckIn = false
     @State private var postMealCheckInMeal: LoggedMeal?
     
@@ -26,15 +26,15 @@ struct NudgeContainer: View {
             
             if let activeNudge = nudgeManager.activeNudge {
                 switch activeNudge {
-                case .morningCheckIn:
-                    MorningCheckInNudge(
-                        onCheckIn: {
+                case .dailySync:
+                    DailySyncNudge(
+                        onSync: {
                             nudgeManager.dismissCurrentNudge()
-                            showMorningCheckIn = true
+                            showDailySync = true
                         },
                         onDismiss: {
-                            // Don't allow dismissal - must complete check-in
-                            showMorningCheckIn = true
+                            // Don't allow dismissal - must complete sync
+                            showDailySync = true
                             nudgeManager.dismissCurrentNudge()
                         }
                     )
@@ -111,8 +111,8 @@ struct NudgeContainer: View {
             }
         }
         .animation(.spring(response: 0.4, dampingFraction: 0.8), value: nudgeManager.activeNudge?.id)
-        .sheet(isPresented: $showMorningCheckIn) {
-            MorningCheckInCoordinator(isMandatory: true)
+        .sheet(isPresented: $showDailySync) {
+            DailySyncCoordinator(isMandatory: true)
                 .interactiveDismissDisabled(true) // Prevent swipe down dismissal
         }
         .sheet(isPresented: $showPostMealCheckIn) {

@@ -151,17 +151,17 @@ class NotificationManager: NSObject, ObservableObject {
         DebugLogger.shared.success("Scheduled notifications for \(windows.count) windows")
     }
     
-    /// Schedule morning check-in reminder
-    func scheduleMorningCheckInReminder(for date: Date) async {
+    /// Schedule daily sync reminder
+    func scheduleDailySyncReminder(for date: Date) async {
         guard isAuthorized else { return }
         
         let calendar = Calendar.current
         
         // Progressive reminders: 8 AM, 9:30 AM, 11 AM
         let reminderTimes = [
-            (hour: 8, minute: 0, message: "Good morning! How did you sleep?"),
-            (hour: 9, minute: 30, message: "Start your day right with a quick check-in"),
-            (hour: 11, minute: 0, message: "Last chance for morning check-in!")
+            (hour: 8, minute: 0, message: "Good morning! Let's sync your nutrition plan"),
+            (hour: 9, minute: 30, message: "Sync your nutrition for optimal timing today"),
+            (hour: 11, minute: 0, message: "Last chance to sync your nutrition plan!")
         ]
         
         for (index, reminder) in reminderTimes.enumerated() {
@@ -173,12 +173,12 @@ class NotificationManager: NSObject, ObservableObject {
                   notificationDate > timeProvider.currentTime else { continue }
             
             await scheduleNotification(
-                id: "morning-checkin-\(index)-\(ISO8601DateFormatter.yyyyMMdd.string(from: date))",
-                title: "Morning Check-In",
+                id: "daily-sync-\(index)-\(ISO8601DateFormatter.yyyyMMdd.string(from: date))",
+                title: "Daily Nutrition Sync",
                 body: reminder.message,
                 date: notificationDate,
                 category: .checkInReminder,
-                userInfo: ["type": "morningCheckIn", "reminderIndex": index]
+                userInfo: ["type": "dailySync", "reminderIndex": index]
             )
         }
     }
@@ -406,11 +406,11 @@ class NotificationManager: NSObject, ObservableObject {
                 "windowId": window.id
             ]
             
-        case .morningCheckIn:
-            content.title = "Good Morning!"
-            content.body = "Start your day right with a quick check-in to personalize today's meal windows."
+        case .dailySync:
+            content.title = "Time to Sync!"
+            content.body = "Sync your nutrition plan to optimize your meal timing for today."
             content.categoryIdentifier = "CHECK_IN"
-            content.userInfo = ["type": "morningCheckIn"]
+            content.userInfo = ["type": "dailySync"]
             
         case .postMealCheckIn(let meal):
             content.title = "How are you feeling?"
@@ -453,7 +453,7 @@ enum NotificationType {
     case activeWindowReminder(window: MealWindow, timeRemaining: TimeInterval)
     case windowEndingAlert(window: MealWindow)
     case missedWindow(window: MealWindow)
-    case morningCheckIn
+    case dailySync
     case postMealCheckIn(meal: LoggedMeal)
 }
 
@@ -511,9 +511,9 @@ extension NotificationManager: UNUserNotificationCenterDelegate {
                         userInfo: ["tab": "scan"]
                     )
                     
-                case "morningCheckIn":
-                    // Trigger morning check-in nudge
-                    nudgeManager.triggerNudge(.morningCheckIn)
+                case "dailySync":
+                    // Trigger daily sync nudge
+                    nudgeManager.triggerNudge(.dailySync)
                     
                 case "postMealCheckIn":
                     // Trigger post-meal check-in nudge

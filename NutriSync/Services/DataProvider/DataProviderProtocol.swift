@@ -26,6 +26,8 @@ protocol DataProvider {
     // MARK: - Check-In Operations
     func saveMorningCheckIn(_ checkIn: MorningCheckInData) async throws
     func getMorningCheckIn(for date: Date) async throws -> MorningCheckInData?
+    func saveDailySync(_ sync: DailySync) async throws
+    func getDailySync(for date: Date) async throws -> DailySync?
     func savePostMealCheckIn(_ checkIn: PostMealCheckIn) async throws
     func getPostMealCheckIns(for date: Date) async throws -> [PostMealCheckIn]
     func getPendingPostMealCheckIns() async throws -> [PostMealCheckIn]

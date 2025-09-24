@@ -11,7 +11,7 @@ struct AIScheduleView: View {
     @State private var showWindowDetail = false
     @State private var selectedMealId: String?
     @State private var showMissedMealsRecovery = false
-    @State private var showMorningCheckIn = false
+    @State private var showDailySync = false
     @State private var showDayDetail = false
     @State private var showingSettingsMenu = false
     @Namespace private var animationNamespace
@@ -38,8 +38,8 @@ struct AIScheduleView: View {
             .sheet(isPresented: $showMissedMealsRecovery) {
                 missedMealsSheet
             }
-            .sheet(isPresented: $showMorningCheckIn) {
-                morningCheckInSheet
+            .sheet(isPresented: $showDailySync) {
+                dailySyncSheet
             }
             .fullScreenCover(isPresented: $showDayDetail) {
                 dayDetailSheet
@@ -50,7 +50,7 @@ struct AIScheduleView: View {
             .sheet(isPresented: $showingSettingsMenu) {
                 SettingsMenuView()
             }
-            .onChange(of: showMorningCheckIn) { wasShowing, isShowing in
+            .onChange(of: showDailySync) { wasShowing, isShowing in
                 handleMorningCheckInChange(wasShowing: wasShowing, isShowing: isShowing)
             }
     }
@@ -139,8 +139,8 @@ struct AIScheduleView: View {
     }
     
     @ViewBuilder
-    private var morningCheckInSheet: some View {
-        MorningCheckInCoordinator(isMandatory: viewModel.mealWindows.isEmpty)
+    private var dailySyncSheet: some View {
+        DailySyncCoordinator(isMandatory: viewModel.mealWindows.isEmpty)
             .interactiveDismissDisabled(viewModel.mealWindows.isEmpty)
     }
     
@@ -276,13 +276,13 @@ struct AIScheduleView: View {
                     .fontWeight(.semibold)
                     .foregroundColor(.white)
                 
-                Text("Complete your morning check-in to generate\na personalized meal schedule")
+                Text("Complete your daily sync to generate\na personalized meal schedule")
                     .font(.subheadline)
                     .foregroundColor(.white.opacity(0.7))
                     .multilineTextAlignment(.center)
                 
-                Button(action: { showMorningCheckIn = true }) {
-                    Text("Start Morning Check-In")
+                Button(action: { showDailySync = true }) {
+                    Text("Start Daily Sync")
                         .font(.headline)
                         .foregroundColor(.black)
                         .padding(.horizontal, 24)

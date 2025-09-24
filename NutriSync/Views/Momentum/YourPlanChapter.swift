@@ -512,8 +512,8 @@ struct TodaysMissionCard: View {
             VStack(spacing: 12) {
                 MissionStep(
                     stepNumber: 1,
-                    title: "Morning Check-in",
-                    description: "Establishes your circadian baseline",
+                    title: "Daily Nutrition Sync",
+                    description: "Establishes your daily nutrition plan",
                     isChecked: checkedSteps.contains(1),
                     onTap: { toggleStep(1) }
                 )

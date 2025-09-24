@@ -23,7 +23,7 @@ class NudgeManager: ObservableObject {
     }
     
     enum NudgeType: Identifiable {
-        case morningCheckIn
+        case dailySync
         case firstTimeTutorial(page: Int)
         case mealLoggedCelebration(meal: LoggedMeal, metadata: AnalysisMetadata?)
         case activeWindowReminder(window: MealWindow, timeRemaining: Int)
@@ -32,8 +32,8 @@ class NudgeManager: ObservableObject {
         
         var id: String {
             switch self {
-            case .morningCheckIn:
-                return "morning_checkin"
+            case .dailySync:
+                return "daily_sync"
             case .firstTimeTutorial(let page):
                 return "tutorial_\(page)"
             case .mealLoggedCelebration(let meal, _):
@@ -49,7 +49,7 @@ class NudgeManager: ObservableObject {
         
         var priority: NudgePriority {
             switch self {
-            case .morningCheckIn:
+            case .dailySync:
                 return .critical
             case .activeWindowReminder, .postMealCheckIn:
                 return .prominent
@@ -75,12 +75,12 @@ class NudgeManager: ObservableObject {
     }
     
     private func setupObservers() {
-        // Check for morning check-in status periodically
+        // Check for daily sync status periodically
         Timer.publish(every: 300, on: .main, in: .common) // Check every 5 minutes
             .autoconnect()
             .sink { [weak self] _ in
                 Task {
-                    await self?.checkMorningCheckInStatus()
+                    await self?.checkDailySyncStatus()
                 }
             }
             .store(in: &cancellables)
@@ -96,17 +96,17 @@ class NudgeManager: ObservableObject {
             .store(in: &cancellables)
     }
     
-    private func checkMorningCheckInStatus() async {
+    private func checkDailySyncStatus() async {
         do {
             // Morning check-in is important for all users, including first-day users
             // First-day users need check-in data to generate better windows
             
             let today = Calendar.current.startOfDay(for: TimeProvider.shared.currentTime)
-            let checkIn = try await DataSourceProvider.shared.provider.getMorningCheckIn(for: today)
+            let sync = try await DataSourceProvider.shared.provider.getDailySync(for: today)
             
             // Show morning nudge if not completed, regardless of time
             // This makes it mandatory
-            if checkIn == nil {
+            if sync == nil {
                 // Check if we haven't shown this nudge in the last 30 minutes
                 let lastShown = UserDefaults.standard.object(forKey: "lastMorningNudgeDate") as? Date ?? Date.distantPast
                 let timeSinceLastShown = Date().timeIntervalSince(lastShown)
@@ -115,7 +115,7 @@ class NudgeManager: ObservableObject {
                 // This ensures the nudge keeps appearing until completed
                 if timeSinceLastShown > 1800 { // 30 minutes
                     await MainActor.run {
-                        self.triggerNudge(.morningCheckIn)
+                        self.triggerNudge(.dailySync)
                         UserDefaults.standard.set(Date(), forKey: "lastMorningNudgeDate")
                     }
                 }
@@ -219,7 +219,7 @@ class NudgeManager: ObservableObject {
         switch nudge {
         case .firstTimeTutorial, .mealLoggedCelebration, .voiceInputTips:
             return true
-        case .morningCheckIn, .activeWindowReminder, .postMealCheckIn:
+        case .dailySync, .activeWindowReminder, .postMealCheckIn:
             return false // Can reappear
         }
     }
