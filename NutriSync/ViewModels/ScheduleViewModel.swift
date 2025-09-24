@@ -599,7 +599,7 @@ class ScheduleViewModel: ObservableObject {
             // Schedule notifications for the new windows
             Task {
                 await notificationManager.scheduleWindowNotifications(for: windows)
-                await notificationManager.scheduleMorningCheckInReminder(for: Date().addingTimeInterval(86400)) // Tomorrow
+                await notificationManager.scheduleDailySyncReminder(for: Date().addingTimeInterval(86400)) // Tomorrow
             }
         } catch {
             // Handle AI generation requirement
