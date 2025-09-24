@@ -37,6 +37,23 @@ enum SyncContext: String, Codable {
         self != .earlyMorning
     }
     
+    var icon: String {
+        switch self {
+        case .earlyMorning:
+            return "sun.max.fill"
+        case .lateMorning:
+            return "sun.haze.fill"
+        case .midday:
+            return "sun.max"
+        case .afternoon:
+            return "sun.haze"
+        case .evening:
+            return "moon.stars.fill"
+        case .lateNight:
+            return "moon.zzz.fill"
+        }
+    }
+    
     static func current() -> SyncContext {
         let hour = Calendar.current.component(.hour, from: Date())
         switch hour {
