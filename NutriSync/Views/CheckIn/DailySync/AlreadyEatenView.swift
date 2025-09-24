@@ -79,7 +79,7 @@ struct AlreadyEatenView: View {
                 ScrollView {
                     VStack(spacing: 12) {
                         ForEach(viewModel.alreadyEatenMeals) { meal in
-                            MealRow(meal: meal) {
+                            QuickMealRow(meal: meal) {
                                 viewModel.alreadyEatenMeals.removeAll { $0.id == meal.id }
                             }
                         }
@@ -152,8 +152,8 @@ struct AlreadyEatenView: View {
     }
 }
 
-// MARK: - Meal Row
-struct MealRow: View {
+// MARK: - Quick Meal Row
+struct QuickMealRow: View {
     let meal: QuickMeal
     let onDelete: () -> Void
     
