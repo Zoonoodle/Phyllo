@@ -564,6 +564,31 @@ class FirebaseDataProvider: @preconcurrency DataProvider, ObservableObject {
     
     // MARK: - Check-In Operations
     
+    // MARK: - Daily Sync (New System)
+    
+    func saveDailySync(_ sync: DailySync) async throws {
+        let dateString = ISO8601DateFormatter.yyyyMMdd.string(from: sync.timestamp)
+        
+        guard let userRef = userRef else {
+            throw DataProviderError.notAuthenticated
+        }
+        let syncRef = userRef.collection("dailySync").document(dateString)
+        try await syncRef.setData(sync.toFirestore())
+    }
+    
+    func getDailySync(for date: Date) async throws -> DailySync? {
+        let dateString = ISO8601DateFormatter.yyyyMMdd.string(from: date)
+        
+        guard let userRef = userRef else {
+            throw DataProviderError.notAuthenticated
+        }
+        let doc = try await userRef.collection("dailySync").document(dateString).getDocument()
+        guard let data = doc.data() else { return nil }
+        return DailySync.fromFirestore(data)
+    }
+    
+    // MARK: - Legacy Morning Check-In (To be deprecated)
+    
     func saveMorningCheckIn(_ checkIn: MorningCheckInData) async throws {
         let dateString = ISO8601DateFormatter.yyyyMMdd.string(from: checkIn.date)
 
