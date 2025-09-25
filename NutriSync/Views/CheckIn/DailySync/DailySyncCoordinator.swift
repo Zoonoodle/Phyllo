@@ -62,6 +62,7 @@ struct DailySyncCoordinator: View {
 }
 
 // MARK: - View Model
+@MainActor
 class DailySyncViewModel: ObservableObject {
     @Published var currentScreen: DailySyncScreen = .greeting
     @Published var syncData = DailySync()
@@ -132,8 +133,8 @@ class DailySyncViewModel: ObservableObject {
             currentEnergy: energyLevel
         )
         
-        // Save to Firebase
-        DailySyncManager.shared.saveDailySync(syncData)
+        // Save to Firebase and trigger window generation
+        await DailySyncManager.shared.saveDailySync(syncData)
     }
 }
 

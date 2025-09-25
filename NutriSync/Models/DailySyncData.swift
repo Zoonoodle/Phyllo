@@ -311,6 +311,7 @@ struct DailySync: Identifiable, Codable {
 }
 
 // MARK: - Daily Sync Manager
+@MainActor
 class DailySyncManager: ObservableObject {
     @Published var todaySync: DailySync?
     @Published var hasCompletedDailySync = false
@@ -334,14 +335,99 @@ class DailySyncManager: ObservableObject {
         }
     }
     
-    func saveDailySync(_ sync: DailySync) {
+    func saveDailySync(_ sync: DailySync) async {
         todaySync = sync
         hasCompletedDailySync = true
         
-        // Convert quick meals to logged meals if needed
-        if !sync.alreadyConsumed.isEmpty {
-            // TODO: Process quick meals into proper logged meals
+        // Save to Firebase
+        do {
+            try await FirebaseDataProvider.shared.saveDailySync(sync)
+            
+            // Trigger window generation if needed
+            if sync.needsWindowRegeneration {
+                await triggerWindowGeneration(for: sync)
+            }
+        } catch {
+            print("❌ Failed to save daily sync: \(error)")
         }
+    }
+    
+    private func triggerWindowGeneration(for sync: DailySync) async {
+        print("🔄 Triggering window generation for \(sync.remainingMealsCount) remaining meals")
+        
+        do {
+            // Get user profile
+            guard let profile = try await FirebaseDataProvider.shared.getUserProfile() else {
+                print("❌ No user profile found")
+                return
+            }
+            
+            // Convert DailySync to MorningCheckInData for compatibility
+            // TODO: Update window generation to use DailySync directly
+            let checkInData = convertToCheckInData(sync)
+            
+            // Generate windows through Firebase
+            let windows = try await FirebaseDataProvider.shared.generateDailyWindows(
+                for: Date(),
+                profile: profile,
+                checkIn: checkInData
+            )
+            
+            print("✅ Generated \(windows.count) windows after Daily Sync")
+            
+            // Schedule notifications
+            await NotificationManager.shared.scheduleWindowNotifications(for: windows)
+            
+        } catch {
+            print("❌ Failed to generate windows: \(error)")
+        }
+    }
+    
+    private func convertToCheckInData(_ sync: DailySync) -> MorningCheckInData? {
+        // Convert DailySync to MorningCheckInData for backward compatibility
+        // This is temporary until we update the window generation to use DailySync directly
+        
+        // Calculate wake time based on work schedule or default to 7am
+        let calendar = Calendar.current
+        var wakeComponents = calendar.dateComponents([.year, .month, .day], from: Date())
+        wakeComponents.hour = 7
+        wakeComponents.minute = 0
+        let wakeTime = calendar.date(from: wakeComponents) ?? Date()
+        
+        // Calculate bedtime based on work schedule or default to 11pm
+        var bedComponents = calendar.dateComponents([.year, .month, .day], from: Date())
+        bedComponents.hour = 23
+        bedComponents.minute = 0
+        let plannedBedtime = calendar.date(from: bedComponents) ?? Date().addingTimeInterval(16 * 3600)
+        
+        // Convert energy level
+        let energyLevel = sync.currentEnergy == .high ? 8 : (sync.currentEnergy == .good ? 6 : 4)
+        
+        // Build activities list from sync data
+        var activities: [String] = []
+        if let workout = sync.workoutTime {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "h:mm a"
+            activities.append("Workout \(formatter.string(from: workout))")
+        }
+        if let work = sync.workSchedule {
+            activities.append("Work \(work.formattedString)")
+        }
+        
+        return MorningCheckIn(
+            date: Date(),
+            wakeTime: wakeTime,
+            plannedBedtime: plannedBedtime,
+            sleepQuality: 7, // Default to good
+            energyLevel: energyLevel,
+            hungerLevel: 5, // Default to moderate
+            dayFocus: [], // Empty for now
+            morningMood: nil,
+            plannedActivities: activities,
+            windowPreference: .auto, // Let AI decide based on sync data
+            hasRestrictions: false,
+            restrictions: []
+        )
     }
     
     func shouldPromptForSync() -> Bool {
