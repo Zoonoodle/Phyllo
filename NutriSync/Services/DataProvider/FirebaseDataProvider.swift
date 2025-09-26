@@ -569,7 +569,7 @@ class FirebaseDataProvider: @preconcurrency DataProvider, ObservableObject {
     func saveDailySync(_ sync: DailySync) async throws {
         let dateString = ISO8601DateFormatter.yyyyMMdd.string(from: sync.timestamp)
         
-        await DebugLogger.shared.log("💾 Saving DailySync - Date: \(sync.timestamp), DateString: \(dateString)", category: .data)
+        await DebugLogger.shared.log("💾 Saving DailySync - Date: \(sync.timestamp), DateString: \(dateString)", category: .dataProvider)
         
         guard let userRef = userRef else {
             throw DataProviderError.notAuthenticated
@@ -581,14 +581,14 @@ class FirebaseDataProvider: @preconcurrency DataProvider, ObservableObject {
     func getDailySync(for date: Date) async throws -> DailySync? {
         let dateString = ISO8601DateFormatter.yyyyMMdd.string(from: date)
         
-        await DebugLogger.shared.log("🔍 Getting DailySync - Date: \(date), DateString: \(dateString)", category: .data)
+        await DebugLogger.shared.log("🔍 Getting DailySync - Date: \(date), DateString: \(dateString)", category: .dataProvider)
         
         guard let userRef = userRef else {
             throw DataProviderError.notAuthenticated
         }
         let doc = try await userRef.collection("dailySync").document(dateString).getDocument()
         let exists = doc.exists
-        await DebugLogger.shared.log("📄 DailySync Document - DateString: \(dateString), Exists: \(exists)", category: .data)
+        await DebugLogger.shared.log("📄 DailySync Document - DateString: \(dateString), Exists: \(exists)", category: .dataProvider)
         
         guard let data = doc.data() else { return nil }
         return DailySync.fromFirestore(data)

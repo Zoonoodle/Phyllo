@@ -105,7 +105,7 @@ class NudgeManager: ObservableObject {
             let sync = try await DataSourceProvider.shared.provider.getDailySync(for: today)
             
             // Debug logging to understand why sync keeps appearing
-            await DebugLogger.shared.log("🔍 Checking Daily Sync - Date: \(today), Found: \(sync != nil)", category: .data)
+            await DebugLogger.shared.log("🔍 Checking Daily Sync - Date: \(today), Found: \(sync != nil)", category: .dataProvider)
             
             // Show morning nudge if not completed, regardless of time
             // This makes it mandatory
