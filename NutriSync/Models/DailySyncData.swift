@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import FirebaseFirestore
 
 // MARK: - Sync Context
 enum SyncContext: String, Codable {
@@ -243,11 +244,15 @@ struct DailySync: Identifiable, Codable {
     // Create from Firebase
     static func fromFirestore(_ data: [String: Any]) -> DailySync? {
         guard let id = data["id"] as? String,
-              let timestamp = data["timestamp"] as? Date,
               let syncContextRaw = data["syncContext"] as? String,
               let syncContext = SyncContext(rawValue: syncContextRaw),
               let energyRaw = data["currentEnergy"] as? String,
               let currentEnergy = SimpleEnergyLevel(rawValue: energyRaw) else {
+            return nil
+        }
+        
+        // Handle Firestore Timestamp conversion
+        guard let timestamp = (data["timestamp"] as? FirebaseFirestore.Timestamp)?.dateValue() ?? (data["timestamp"] as? Date) else {
             return nil
         }
         
@@ -256,8 +261,11 @@ struct DailySync: Identifiable, Codable {
         if let mealsData = data["alreadyConsumed"] as? [[String: Any]] {
             alreadyConsumed = mealsData.compactMap { mealData in
                 guard let mealId = mealData["id"] as? String,
-                      let name = mealData["name"] as? String,
-                      let time = mealData["time"] as? Date else {
+                      let name = mealData["name"] as? String else {
+                    return nil
+                }
+                // Handle Firestore Timestamp for meal time
+                guard let time = (mealData["time"] as? FirebaseFirestore.Timestamp)?.dateValue() ?? (mealData["time"] as? Date) else {
                     return nil
                 }
                 return QuickMeal(
@@ -273,10 +281,15 @@ struct DailySync: Identifiable, Codable {
         
         // Parse work schedule
         let workSchedule: TimeRange?
-        if let scheduleData = data["workSchedule"] as? [String: Any],
-           let start = scheduleData["start"] as? Date,
-           let end = scheduleData["end"] as? Date {
-            workSchedule = TimeRange(start: start, end: end)
+        if let scheduleData = data["workSchedule"] as? [String: Any] {
+            // Handle Firestore Timestamp for schedule times
+            let start = (scheduleData["start"] as? FirebaseFirestore.Timestamp)?.dateValue() ?? (scheduleData["start"] as? Date)
+            let end = (scheduleData["end"] as? FirebaseFirestore.Timestamp)?.dateValue() ?? (scheduleData["end"] as? Date)
+            if let start = start, let end = end {
+                workSchedule = TimeRange(start: start, end: end)
+            } else {
+                workSchedule = nil
+            }
         } else {
             workSchedule = nil
         }
@@ -287,8 +300,11 @@ struct DailySync: Identifiable, Codable {
             specialEvents = eventsData.compactMap { eventData in
                 guard let typeRaw = eventData["type"] as? String,
                       let type = SpecialEvent.EventType(rawValue: typeRaw),
-                      let time = eventData["time"] as? Date,
                       let duration = eventData["duration"] as? TimeInterval else {
+                    return nil
+                }
+                // Handle Firestore Timestamp for event time
+                guard let time = (eventData["time"] as? FirebaseFirestore.Timestamp)?.dateValue() ?? (eventData["time"] as? Date) else {
                     return nil
                 }
                 return SpecialEvent(type: type, time: time, duration: duration)
@@ -297,13 +313,16 @@ struct DailySync: Identifiable, Codable {
             specialEvents = []
         }
         
+        // Parse workout time with Firestore Timestamp handling
+        let workoutTime = (data["workoutTime"] as? FirebaseFirestore.Timestamp)?.dateValue() ?? (data["workoutTime"] as? Date)
+        
         return DailySync(
             id: UUID(uuidString: id) ?? UUID(),
             timestamp: timestamp,
             syncContext: syncContext,
             alreadyConsumed: alreadyConsumed,
             workSchedule: workSchedule,
-            workoutTime: data["workoutTime"] as? Date,
+            workoutTime: workoutTime,
             currentEnergy: currentEnergy,
             specialEvents: specialEvents
         )
