@@ -72,11 +72,16 @@ class NudgeManager: ObservableObject {
     
     private init() {
         setupObservers()
+        
+        // Check Daily Sync status immediately on startup
+        Task {
+            await checkDailySyncStatus()
+        }
     }
     
     private func setupObservers() {
         // Check for daily sync status periodically
-        Timer.publish(every: 300, on: .main, in: .common) // Check every 5 minutes
+        Timer.publish(every: 60, on: .main, in: .common) // Check every minute for debugging
             .autoconnect()
             .sink { [weak self] _ in
                 Task {

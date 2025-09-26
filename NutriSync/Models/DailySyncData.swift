@@ -336,12 +336,15 @@ class DailySyncManager: ObservableObject {
     }
     
     func saveDailySync(_ sync: DailySync) async {
+        print("📝 DailySyncManager.saveDailySync called - timestamp: \(sync.timestamp)")
         todaySync = sync
         hasCompletedDailySync = true
         
         // Save to Firebase
         do {
+            print("💾 Attempting to save Daily Sync to Firebase...")
             try await FirebaseDataProvider.shared.saveDailySync(sync)
+            print("✅ Daily Sync saved successfully")
             
             // Trigger window generation if needed
             if sync.needsWindowRegeneration {
