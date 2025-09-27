@@ -1,7 +1,7 @@
 why# NutriSync Codebase Master Todo List
 ## Overall Project Tracking
 
-Last Updated: 2025-09-02
+Last Updated: 2025-09-26
 
 ---
 
@@ -21,6 +21,20 @@ Last Updated: 2025-09-02
   - Compl`exity: Medium
   - Implemented: Sliders with haptics, time selectors, activity categories, TimeBlockBuilder
   
+- [ ] **Daily Sync Integration** - Complete new DailySync system integration
+  - Status: Critical - Partially Implemented
+  - Sessions Required: 2-3
+  - Complexity: High
+  - Note: Currently converts to legacy MorningCheckInData, needs direct integration
+  - File: Models/DailySyncData.swift:388
+  
+- [ ] **FoodAnalysisView Real Data** - Replace hardcoded values
+  - Status: High Priority
+  - Sessions Required: 1-2
+  - Complexity: Medium
+  - Note: Multiple TODOs for connecting real data sources
+  - Files: Views/Scan/Results/FoodAnalysisView.swift:388-551
+  
 - [ ] **Missed Windows View** - Handle skipped meal scenarios
   - Status: Not Started
   - Sessions Required: 2-3
@@ -32,17 +46,31 @@ Last Updated: 2025-09-02
   - Sessions Required: 2-3
   - Complexity: Medium
   - Note: REQUIRES user design approval
-
-### Priority 1: Critical Infrastructure
-- [ ] **Firebase Migration** - Replace MockDataManager in 47+ files
-  - Status: Not Started
-  - Sessions Required: 5-7
-  - Complexity: High
   
-- [ ] **AI Window Generation Fixes** - Handle midnight/workout edge cases
+- [ ] **Barcode Scanning** - Implement barcode lookup for food items
   - Status: Not Started
   - Sessions Required: 2-3
   - Complexity: Medium
+  - Note: MealCaptureService.swift:230
+
+### Priority 1: Critical Infrastructure
+- [x] **Firebase Migration** - Replace MockDataManager in 47+ files
+  - Status: COMPLETED (2025-09-26)
+  - Sessions Required: 5-7
+  - Complexity: High
+  - Note: Only 2 legacy references remain, FirebaseDataProvider fully implemented
+  
+- [ ] **Analytics Implementation** - Complete missing analytics functions
+  - Status: Not Started
+  - Sessions Required: 2-3
+  - Complexity: Medium
+  - Files: FirebaseDataProvider.swift (lines 763, 865, 1156)
+  
+- [ ] **AI Window Generation Service** - Implement AIWindowGenerationService
+  - Status: Not Started
+  - Sessions Required: 3-4
+  - Complexity: High
+  - File: FirebaseDataProvider.swift:1485
 
 ### Priority 2: Core Features
 - [ ] **Dynamic Daily Targets** - Different calorie/macro targets for each day
@@ -52,6 +80,12 @@ Last Updated: 2025-09-02
   - Note: Like MacroFactor's cycling approach for weight loss/gain
   - Benefits: More effective metabolic adaptation, better adherence
   - Implementation: AI calculates daily variations based on activity, goals, metabolism
+  
+- [ ] **Voice Recording Implementation** - Add voice input for meal logging
+  - Status: Not Started
+  - Sessions Required: 2-3
+  - Complexity: Medium
+  - File: Views/Focus/SimplifiedMealLoggingView.swift:201
   
 - [ ] **Voice Context Onboarding** - Reduce onboarding screens via intelligent voice input
   - Status: Not Started
@@ -86,10 +120,22 @@ Last Updated: 2025-09-02
   - Status: Not Started
   - Sessions Required: 1-2
   - Complexity: Low
+  
+- [ ] **User Profile Integration** - Replace hardcoded user data
+  - Status: Not Started
+  - Sessions Required: 1-2
+  - Complexity: Low
+  - Files: SleepVisualizations.swift:13, YourPlanChapter.swift:33,101
+  
+- [ ] **Password Reset** - Implement password reset functionality
+  - Status: Not Started
+  - Sessions Required: 1
+  - Complexity: Low
+  - File: Views/Auth/LoginView.swift:100
 
 ---
 
-## 🐛 Known Bugs
+## 🐛 Known Bugs & Issues
 
 - [ ] **Build Timeout Issues** - Full xcodebuild times out
   - Workaround: Use file-specific compilation
@@ -99,10 +145,32 @@ Last Updated: 2025-09-02
   - Current: Unknown
   - Target: <$0.03 per operation
   - Priority: Medium
+  
+- [ ] **Clarification Cancellation Logic** - Implement real meal cancellation
+  - File: ClarificationQuestionsView.swift:305
+  - Priority: Medium
+  
+- [ ] **Camera Preparation Messages** - Show user feedback during camera init
+  - File: ScanTabView.swift:316
+  - Priority: Low
+  
+- [ ] **Push Notification Token** - Send token to server if using remote push
+  - File: AppDelegate.swift:27
+  - Priority: Low
+  
+- [ ] **DataProvider Configuration** - Ensure configure() is always called
+  - File: DataProviderProtocol.swift:436
+  - Priority: High
 
 ---
 
 ## 🔄 Completed Tasks
+
+### 2025-09-26
+- [x] Firebase Migration - Successfully removed MockDataManager from codebase
+  - Replaced with FirebaseDataProvider throughout
+  - Only 2 legacy references remain for development purposes
+  - All main functionality now uses Firebase
 
 ### 2025-09-03
 - [x] Meal scan loading animation enhancement
@@ -147,18 +215,19 @@ Last Updated: 2025-09-02
 
 ## 📊 Progress Metrics
 
-**Total Tasks:** 16
-**Completed:** 14
-**In Progress:** 0
-**Not Started:** 2
-**Completion Rate:** 88%
+**Total Tasks:** 24
+**Completed:** 15
+**In Progress:** 1
+**Not Started:** 8
+**Completion Rate:** 63%
 
-### TestFlight Readiness: 40%
-- [ ] Core features complete
+### TestFlight Readiness: 60%
+- [ ] Core features complete (Daily Sync integration pending)
 - [x] UI/UX polished (mostly complete)
-- [ ] Multi-user testing ready
+- [x] Firebase backend ready
 - [x] Onboarding flow complete
 - [ ] AI accuracy optimized
+- [ ] Real data integration complete
 
 ---
 
@@ -167,13 +236,17 @@ Last Updated: 2025-09-02
 ### TestFlight Sprint (Priority 0)
 1. Onboarding screens conversion (MacroFactor → NutriSync) ✅
 2. Check-In views polish (with user input) ✅
-3. Missed Windows view implementation
-4. Scan view enhancement
+3. Daily Sync integration completion (CRITICAL)
+4. FoodAnalysisView real data connection (HIGH)
+5. Missed Windows view implementation
+6. Scan view enhancement
 
 ### Infrastructure (Priority 1)
 1. Complete SimplePerformanceView implementation
-2. Begin Firebase Migration Sprint
-3. Implement real-time meal window redistribution
+2. Firebase Migration Sprint ✅
+3. Implement AIWindowGenerationService
+4. Complete analytics implementation
+5. Fix DataProvider configuration issues
 
 ---
 

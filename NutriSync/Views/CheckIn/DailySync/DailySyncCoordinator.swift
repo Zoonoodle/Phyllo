@@ -183,6 +183,9 @@ struct GreetingView: View {
 struct AlreadyEatenViewStyled: View {
     @ObservedObject var viewModel: DailySyncViewModel
     @State private var showAddMeal = false
+    @State private var mealName = ""
+    @State private var mealTime = Date()
+    @State private var estimatedCalories = ""
     
     var body: some View {
         VStack(spacing: 0) {
@@ -240,7 +243,23 @@ struct AlreadyEatenViewStyled: View {
             )
         }
         .sheet(isPresented: $showAddMeal) {
-            // Add meal sheet would go here
+            EnhancedMealEntry(
+                mealName: $mealName,
+                mealTime: $mealTime,
+                estimatedCalories: $estimatedCalories,
+                onSave: {
+                    let meal = QuickMeal(
+                        name: mealName.isEmpty ? "Unnamed meal" : mealName,
+                        time: mealTime,
+                        estimatedCalories: Int(estimatedCalories)
+                    )
+                    viewModel.alreadyEatenMeals.append(meal)
+                    // Reset fields for next entry
+                    mealName = ""
+                    estimatedCalories = ""
+                    mealTime = Date()
+                }
+            )
         }
     }
 }
