@@ -467,7 +467,7 @@ class AIWindowGenerationService {
         checkIn: MorningCheckInData?,
         dailySync: DailySync?,
         date: Date,
-        dataProvider: any DataProvider? = nil
+        dataProvider: (any DataProvider)? = nil
     ) async -> String {
         // Get timezone information
         let timeZone = TimeZone.current
