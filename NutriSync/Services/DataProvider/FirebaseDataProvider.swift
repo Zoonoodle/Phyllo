@@ -816,6 +816,11 @@ class FirebaseDataProvider: @preconcurrency DataProvider, ObservableObject {
         try await userRef.collection("profile").document("current").setData(profile.toFirestore())
     }
     
+    func updateUserProfile(_ profile: UserProfile) async throws {
+        // Alias for saveUserProfile for consistency
+        try await saveUserProfile(profile)
+    }
+    
     func getUserGoals() async throws -> UserGoals? {
         guard let userRef = userRef else {
             throw DataProviderError.notAuthenticated

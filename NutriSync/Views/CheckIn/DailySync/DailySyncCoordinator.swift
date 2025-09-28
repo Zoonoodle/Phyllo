@@ -38,6 +38,8 @@ struct DailySyncCoordinator: View {
                     switch viewModel.currentScreen {
                     case .greeting:
                         GreetingView(viewModel: viewModel)
+                    case .weightCheck:
+                        WeightCheckView(viewModel: viewModel)
                     case .alreadyEaten:
                         AlreadyEatenViewStyled(viewModel: viewModel)
                     case .schedule:
@@ -73,6 +75,7 @@ class DailySyncViewModel: ObservableObject {
     @Published var workoutTime: Date?
     @Published var energyLevel: SimpleEnergyLevel = .good
     @Published var isGeneratingWindows = false  // Track window generation
+    @Published var recordedWeight: Double? = nil  // Track if weight was recorded
     
     var screenFlow: [DailySyncScreen] = []
     var currentIndex = 0
@@ -81,6 +84,37 @@ class DailySyncViewModel: ObservableObject {
     func setupFlow() {
         let context = SyncContext.current()
         var screens: [DailySyncScreen] = [.greeting]
+        
+        // Check if we should prompt for weight
+        Task {
+            do {
+                // Load weight history first
+                try await WeightTrackingManager.shared.loadWeightHistory()
+                
+                // Get user profile for goal
+                let profile = try await FirebaseDataProvider.shared.getUserProfile()
+                
+                if let profile = profile {
+                    let shouldWeigh = WeightCheckSchedule.shouldPromptForWeighIn(
+                        lastWeighIn: WeightTrackingManager.shared.lastWeightEntry?.date,
+                        goal: profile.primaryGoal,
+                        syncContext: context
+                    )
+                    
+                    if shouldWeigh {
+                        // Insert weight check after greeting
+                        await MainActor.run {
+                            if !screens.contains(.weightCheck) {
+                                screens.insert(.weightCheck, at: 1)
+                                self.screenFlow = screens
+                            }
+                        }
+                    }
+                }
+            } catch {
+                print("Failed to check weight schedule: \(error)")
+            }
+        }
         
         // Only ask about eaten meals after 8am
         if context.shouldAskAboutEatenMeals {
@@ -150,6 +184,7 @@ class DailySyncViewModel: ObservableObject {
 // MARK: - Screen Types
 enum DailySyncScreen {
     case greeting
+    case weightCheck  // New weight tracking screen
     case alreadyEaten
     case schedule
     case energy
