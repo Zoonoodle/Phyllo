@@ -72,6 +72,7 @@ class DailySyncViewModel: ObservableObject {
     @Published var hasWorkToday = true
     @Published var workoutTime: Date?
     @Published var energyLevel: SimpleEnergyLevel = .good
+    @Published var isGeneratingWindows = false  // Track window generation
     
     var screenFlow: [DailySyncScreen] = []
     var currentIndex = 0
@@ -123,6 +124,11 @@ class DailySyncViewModel: ObservableObject {
     }
     
     func saveSyncData() async {
+        // Start loading state
+        await MainActor.run {
+            isGeneratingWindows = true
+        }
+        
         let workSchedule = hasWorkToday ? TimeRange(start: workStart, end: workEnd) : nil
         
         syncData = DailySync(
@@ -135,6 +141,9 @@ class DailySyncViewModel: ObservableObject {
         
         // Save to Firebase and trigger window generation
         await DailySyncManager.shared.saveDailySync(syncData)
+        
+        // Windows are now generating, the loading view will be shown
+        // The dismiss will happen after generation completes
     }
 }
 
@@ -415,44 +424,67 @@ struct EnergyViewStyled: View {
 struct CompleteViewStyled: View {
     @ObservedObject var viewModel: DailySyncViewModel
     let dismiss: DismissAction
+    @State private var windowsGenerated = false
     
     var body: some View {
-        VStack(spacing: 0) {
-            Spacer()
+        ZStack {
+            // Main content
+            if !viewModel.isGeneratingWindows {
+                VStack(spacing: 0) {
+                    Spacer()
+                    
+                    // Success animation
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 80))
+                        .foregroundColor(.nutriSyncAccent)
+                        .scaleEffect(1.2)
+                        .animation(.spring(response: 0.5, dampingFraction: 0.6), value: true)
+                        .padding(.bottom, 32)
+                    
+                    DailySyncHeader(
+                        title: "Perfect!",
+                        subtitle: "I'm optimizing your \(viewModel.syncData.remainingMealsCount) remaining meals"
+                    )
+                    
+                    Spacer()
+                    
+                    // Single button to complete (no back on final screen)
+                    DailySyncBottomNav(
+                        onBack: nil,
+                        onNext: {
+                            Task {
+                                await viewModel.saveSyncData()
+                                // Wait for windows to generate (they're triggered automatically)
+                                // Adding a small delay to ensure generation completes
+                                try? await Task.sleep(nanoseconds: 5_000_000_000) // 5 seconds
+                                
+                                await MainActor.run {
+                                    windowsGenerated = true
+                                    // Small delay before dismissing to show completion
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                        dismiss()
+                                    }
+                                }
+                            }
+                        },
+                        nextButtonTitle: "View Schedule",
+                        showBack: false
+                    )
+                }
+                .onAppear {
+                    // Trigger haptic feedback
+                    let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+                    impactFeedback.impactOccurred()
+                }
+            }
             
-            // Success animation
-            Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 80))
-                .foregroundColor(.nutriSyncAccent)
-                .scaleEffect(1.2)
-                .animation(.spring(response: 0.5, dampingFraction: 0.6), value: true)
-                .padding(.bottom, 32)
-            
-            DailySyncHeader(
-                title: "Perfect!",
-                subtitle: "I'm optimizing your \(viewModel.syncData.remainingMealsCount) remaining meals"
-            )
-            
-            Spacer()
-            
-            // Single button to complete (no back on final screen)
-            DailySyncBottomNav(
-                onBack: nil,
-                onNext: {
-                    Task {
-                        await viewModel.saveSyncData()
-                        dismiss()
-                    }
-                },
-                nextButtonTitle: "View Schedule",
-                showBack: false
-            )
+            // Loading overlay
+            if viewModel.isGeneratingWindows {
+                WindowGenerationLoadingView()
+                    .transition(.opacity.combined(with: .scale))
+            }
         }
-        .onAppear {
-            // Trigger haptic feedback
-            let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
-            impactFeedback.impactOccurred()
-        }
+        .animation(.easeInOut(duration: 0.3), value: viewModel.isGeneratingWindows)
     }
 }
 
