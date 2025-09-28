@@ -170,10 +170,6 @@ struct DailySync: Identifiable, Codable {
     let specialEvents: [SpecialEvent]
     
     // Computed properties
-    var needsWindowRegeneration: Bool {
-        !alreadyConsumed.isEmpty || syncContext != .earlyMorning
-    }
-    
     var remainingMealsCount: Int {
         // Calculate based on time of day and what's already eaten
         let totalPlanned = 5 // Default
@@ -365,10 +361,10 @@ class DailySyncManager: ObservableObject {
             try await FirebaseDataProvider.shared.saveDailySync(sync)
             print("✅ Daily Sync saved successfully")
             
-            // Trigger window generation if needed
-            if sync.needsWindowRegeneration {
-                await triggerWindowGeneration(for: sync)
-            }
+            // ALWAYS trigger window generation after Daily Sync
+            // The whole point of Daily Sync is to generate personalized windows for the day
+            print("🔄 Generating windows after Daily Sync completion...")
+            await triggerWindowGeneration(for: sync)
         } catch {
             print("❌ Failed to save daily sync: \(error)")
         }
