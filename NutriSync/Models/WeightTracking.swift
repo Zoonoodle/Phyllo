@@ -264,9 +264,7 @@ class WeightTrackingManager: ObservableObject {
     /// Save a new weight entry
     func saveWeightEntry(_ entry: WeightEntry) async throws {
         // Save to Firebase
-        guard let userId = FirebaseDataProvider.shared.currentUserId else {
-            throw DataProviderError.notAuthenticated
-        }
+        let userId = FirebaseDataProvider.shared.currentUserId
         
         let db = Firestore.firestore()
         let weightRef = db.collection("users").document(userId)
@@ -289,9 +287,7 @@ class WeightTrackingManager: ObservableObject {
     
     /// Load weight history
     func loadWeightHistory() async throws {
-        guard let userId = FirebaseDataProvider.shared.currentUserId else {
-            throw DataProviderError.notAuthenticated
-        }
+        let userId = FirebaseDataProvider.shared.currentUserId
         
         let db = Firestore.firestore()
         let snapshot = try await db.collection("users").document(userId)
