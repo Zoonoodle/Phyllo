@@ -405,7 +405,7 @@ class AIWindowGenerationService {
             checkIn: checkIn, 
             dailySync: dailySync,
             date: actualDate,
-            dataProvider: dataProvider
+            dataProvider: FirebaseDataProvider.shared
         )
         
         Task { @MainActor in
@@ -560,7 +560,8 @@ class AIWindowGenerationService {
         }
         
         // Add weight tracking history if available
-        if let dataProvider = dataProvider, let userId = profile.userId {
+        if let dataProvider = dataProvider {
+            let userId = FirebaseDataProvider.shared.currentUserId
             let weightTrend = await getWeightTrend(userId: userId, dataProvider: dataProvider)
             prompt += "\n\n" + weightTrend
         }
@@ -884,11 +885,13 @@ class AIWindowGenerationService {
             """
         }
         
-        // Calculate consumed calories and macros
+        // Calculate consumed calories (QuickMeal only tracks calories, not individual macros)
         let consumedCalories = sync.alreadyConsumed.reduce(0) { $0 + ($1.estimatedCalories ?? 0) }
-        let consumedProtein = sync.alreadyConsumed.reduce(0) { $0 + ($1.estimatedProtein ?? 0) }
-        let consumedCarbs = sync.alreadyConsumed.reduce(0) { $0 + ($1.estimatedCarbs ?? 0) }
-        let consumedFat = sync.alreadyConsumed.reduce(0) { $0 + ($1.estimatedFat ?? 0) }
+        // Estimate macros based on typical distribution (we don't have actual macro data from QuickMeals)
+        // Using standard macro distribution: 40% carbs, 30% protein, 30% fat
+        let consumedProtein = Int(Double(consumedCalories) * 0.30 / 4)  // 4 cal per gram protein
+        let consumedCarbs = Int(Double(consumedCalories) * 0.40 / 4)    // 4 cal per gram carbs
+        let consumedFat = Int(Double(consumedCalories) * 0.30 / 9)      // 9 cal per gram fat
         
         // Calculate remaining
         let remainingCalories = max(0, profile.dailyCalorieTarget - consumedCalories)
@@ -949,7 +952,7 @@ class AIWindowGenerationService {
             context += "- Special Events Today:\n"
             for event in sync.specialEvents {
                 let timeStr = formatTime(event.time)
-                context += "  • \(event.type.displayName) at \(timeStr)\n"
+                context += "  • \(event.type.rawValue) at \(timeStr)\n"
             }
             context += "  Adjust window timing to accommodate events\n"
         }
@@ -1070,46 +1073,42 @@ class AIWindowGenerationService {
     /// Get recent weight trend from weight tracking history
     private func getWeightTrend(userId: String, dataProvider: any DataProvider) async -> String {
         // Fetch recent weight entries (last 7-14 days)
-        do {
-            let recentEntries = await dataProvider.getRecentWeightEntries(userId: userId, days: 14)
-            
-            guard recentEntries.count >= 2 else {
-                return "- Weight Trend: Insufficient data (need at least 2 entries)"
-            }
-            
-            // Calculate trend
-            let sortedEntries = recentEntries.sorted { $0.date < $1.date }
-            let firstWeight = sortedEntries.first?.weight ?? 0
-            let lastWeight = sortedEntries.last?.weight ?? 0
-            let weightChange = lastWeight - firstWeight
-            let daysBetween = Calendar.current.dateComponents([.day], 
-                from: sortedEntries.first?.date ?? Date(), 
-                to: sortedEntries.last?.date ?? Date()).day ?? 1
-            let weeklyRate = (weightChange / Double(daysBetween)) * 7
-            
-            var trend = "## Weight Tracking History\n"
-            trend += "- Current Weight: \(String(format: "%.1f", lastWeight)) lbs\n"
-            trend += "- Starting Weight: \(String(format: "%.1f", firstWeight)) lbs (\(daysBetween) days ago)\n"
-            trend += "- Total Change: \(weightChange > 0 ? "+" : "")\(String(format: "%.1f", weightChange)) lbs\n"
-            trend += "- Weekly Rate: \(weeklyRate > 0 ? "+" : "")\(String(format: "%.1f", weeklyRate)) lbs/week\n"
-            
-            // Add guidance based on trend for weight goals
-            // Note: We'll need to get the goal from the profile passed to buildPrompt
-            // This is a simplified version - could be enhanced with goal tracking
-            if weeklyRate > 0.5 {
-                trend += "- ⚠️ Weight increasing rapidly - review calorie intake\n"
-            } else if weeklyRate < -2.0 {
-                trend += "- ⚠️ Losing very fast - ensure adequate nutrition\n"
-            } else if weeklyRate < -0.5 && weeklyRate > -2.0 {
-                trend += "- ✅ Steady weight loss progress\n"
-            } else if abs(weeklyRate) < 0.2 {
-                trend += "- Weight stable - maintaining current weight\n"
-            }
-            
-            return trend
-        } catch {
-            return "- Weight Trend: Unable to fetch history"
+        let recentEntries = await dataProvider.getRecentWeightEntries(userId: userId, days: 14)
+        
+        guard recentEntries.count >= 2 else {
+            return "- Weight Trend: Insufficient data (need at least 2 entries)"
         }
+        
+        // Calculate trend
+        let sortedEntries = recentEntries.sorted { $0.date < $1.date }
+        let firstWeight = sortedEntries.first?.weight ?? 0
+        let lastWeight = sortedEntries.last?.weight ?? 0
+        let weightChange = lastWeight - firstWeight
+        let daysBetween = Calendar.current.dateComponents([.day], 
+            from: sortedEntries.first?.date ?? Date(), 
+            to: sortedEntries.last?.date ?? Date()).day ?? 1
+        let weeklyRate = (weightChange / Double(daysBetween)) * 7
+        
+        var trend = "## Weight Tracking History\n"
+        trend += "- Current Weight: \(String(format: "%.1f", lastWeight)) lbs\n"
+        trend += "- Starting Weight: \(String(format: "%.1f", firstWeight)) lbs (\(daysBetween) days ago)\n"
+        trend += "- Total Change: \(weightChange > 0 ? "+" : "")\(String(format: "%.1f", weightChange)) lbs\n"
+        trend += "- Weekly Rate: \(weeklyRate > 0 ? "+" : "")\(String(format: "%.1f", weeklyRate)) lbs/week\n"
+        
+        // Add guidance based on trend for weight goals
+        // Note: We'll need to get the goal from the profile passed to buildPrompt
+        // This is a simplified version - could be enhanced with goal tracking
+        if weeklyRate > 0.5 {
+            trend += "- ⚠️ Weight increasing rapidly - review calorie intake\n"
+        } else if weeklyRate < -2.0 {
+            trend += "- ⚠️ Losing very fast - ensure adequate nutrition\n"
+        } else if weeklyRate < -0.5 && weeklyRate > -2.0 {
+            trend += "- ✅ Steady weight loss progress\n"
+        } else if abs(weeklyRate) < 0.2 {
+            trend += "- Weight stable - maintaining current weight\n"
+        }
+        
+        return trend
     }
     
     /// Parse AI response into MealWindow objects and DayPurpose
@@ -1514,7 +1513,6 @@ extension AIWindowGenerationService {
         dateFormatter.dateFormat = "yyyy-MM-dd"
         dateFormatter.timeZone = TimeZone.current
         
-        let calendar = Calendar.current
         let todayString = dateFormatter.string(from: startTime)
         
         // Calculate hours available
