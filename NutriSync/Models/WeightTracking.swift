@@ -187,7 +187,7 @@ struct WeightCheckSchedule {
         syncContext: SyncContext
     ) -> Bool {
         // Only prompt during morning syncs for most accurate weight
-        guard syncContext == .earlyMorning || syncContext == .morning else { 
+        guard syncContext == .earlyMorning || syncContext == .lateMorning else { 
             return false 
         }
         

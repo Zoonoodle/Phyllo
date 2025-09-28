@@ -47,6 +47,11 @@ protocol DataProvider {
     func getMealsForDateRange(from: Date, to: Date) async throws -> [Date: [LoggedMeal]]
     func getWindowsForDateRange(from: Date, to: Date) async throws -> [Date: [MealWindow]]
     
+    // MARK: - Weight Tracking Operations
+    func saveWeightEntry(_ entry: WeightEntry) async throws
+    func getRecentWeightEntries(userId: String, days: Int) async -> [WeightEntry]
+    func getLatestWeightEntry(userId: String) async throws -> WeightEntry?
+    
     // MARK: - Real-time Updates
     func observeMeals(for date: Date, onChange: @escaping ([LoggedMeal]) -> Void) -> ObservationToken
     func observeWindows(for date: Date, onChange: @escaping ([MealWindow]) -> Void) -> ObservationToken

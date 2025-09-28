@@ -393,13 +393,20 @@ class AIWindowGenerationService {
     func generateWindows(
         for profile: UserProfile,
         checkIn: MorningCheckInData?,
+        dailySync: DailySync? = nil,
         date: Date
     ) async throws -> (windows: [MealWindow], dayPurpose: DayPurpose?) {
         
         // Determine actual date for windows based on check-in time
         let actualDate = determineWindowDate(checkIn: checkIn, requestedDate: date)
         
-        let prompt = buildPrompt(profile: profile, checkIn: checkIn, date: actualDate)
+        let prompt = await buildPrompt(
+            profile: profile, 
+            checkIn: checkIn, 
+            dailySync: dailySync,
+            date: actualDate,
+            dataProvider: dataProvider
+        )
         
         Task { @MainActor in
             DebugLogger.shared.info("=== WINDOW GENERATION REQUEST ===")
@@ -454,12 +461,14 @@ class AIWindowGenerationService {
         return requestedDate
     }
     
-    /// Build the prompt for AI window generation
+    /// Build the prompt for AI window generation (enhanced version)
     private func buildPrompt(
         profile: UserProfile,
         checkIn: MorningCheckInData?,
-        date: Date
-    ) -> String {
+        dailySync: DailySync?,
+        date: Date,
+        dataProvider: any DataProvider? = nil
+    ) async -> String {
         // Get timezone information
         let timeZone = TimeZone.current
         let formatter = ISO8601DateFormatter()
@@ -516,11 +525,13 @@ class AIWindowGenerationService {
         let firstWindowStart = todayWakeTime.addingTimeInterval(60 * 60) // 1 hour after waking
         let firstWindowEnd = firstWindowStart.addingTimeInterval(120 * 60) // 2 hour window
         
+        // Build enhanced prompt with ALL actual data we collect
         var prompt = """
         Generate a personalized meal window schedule for the following user:
         
         ## User Profile
         - Goal: \(profile.primaryGoal.displayName)
+        \(formatGoalDetails(profile.primaryGoal))
         - Age: \(profile.age)
         - Gender: \(profile.gender)
         - Weight: \(profile.weight) lbs
@@ -530,7 +541,31 @@ class AIWindowGenerationService {
         - Daily Protein Target: \(profile.dailyProteinTarget)g
         - Daily Carb Target: \(profile.dailyCarbTarget)g
         - Daily Fat Target: \(profile.dailyFatTarget)g
+        
+        ## Dietary Requirements
+        \(formatDietaryRequirements(profile))
+        
+        \(formatMealTimingPreferences(profile))
+        
+        \(formatFastingProtocol(profile))
+        
+        \(formatMicronutrientPriorities(profile))
+        
+        \(formatWorkScheduleAdaptation(profile))
         """
+        
+        // Add Daily Sync context if available
+        if let dailySync = dailySync {
+            prompt += "\n\n" + formatDailySyncContext(dailySync, profile: profile)
+        }
+        
+        // Add weight tracking history if available
+        if let dataProvider = dataProvider, let userId = profile.userId {
+            let weightTrend = await getWeightTrend(userId: userId, dataProvider: dataProvider)
+            prompt += "\n\n" + weightTrend
+        }
+        
+        prompt += "\n"
         
         // Detect schedule type
         let bedTime = checkIn?.plannedBedtime ?? calendar.date(bySettingHour: 22, minute: 30, second: 0, of: date) ?? date
@@ -711,6 +746,370 @@ class AIWindowGenerationService {
         let formatter = DateFormatter()
         formatter.timeStyle = .short
         return formatter.string(from: date)
+    }
+    
+    // MARK: - Enhanced Helper Methods for Realistic Data
+    
+    /// Format dietary restrictions and preferences
+    private func formatDietaryRequirements(_ profile: UserProfile) -> String {
+        var requirements = ""
+        
+        if !profile.dietaryRestrictions.isEmpty {
+            requirements += "- Dietary Restrictions: \(profile.dietaryRestrictions.joined(separator: ", "))\n"
+            requirements += "  CRITICAL: ALL food suggestions MUST comply with these restrictions\n"
+        } else {
+            requirements += "- Dietary Restrictions: None\n"
+        }
+        
+        if !profile.dietaryPreferences.isEmpty {
+            requirements += "- Dietary Preferences: \(profile.dietaryPreferences.joined(separator: ", "))\n"
+            requirements += "  Prefer foods that align with stated preferences when possible\n"
+        } else {
+            requirements += "- Dietary Preferences: None specified\n"
+        }
+        
+        return requirements
+    }
+    
+    /// Format weight goal details based on NutritionGoal enum
+    private func formatGoalDetails(_ goal: NutritionGoal) -> String {
+        switch goal {
+        case .weightLoss(let targetPounds, let timeline):
+            let weeklyTarget = targetPounds / Double(timeline)
+            return """
+            - Target: Lose \(targetPounds) pounds in \(timeline) weeks
+            - Weekly target: \(String(format: "%.1f", weeklyTarget)) lbs per week
+            - Strategy: Create sustainable deficit with satisfying, high-volume foods
+            - Focus on nutrient density and satiety to support adherence
+            """
+            
+        case .muscleGain(let targetPounds, let timeline):
+            let weeklyTarget = targetPounds / Double(timeline)
+            return """
+            - Target: Gain \(targetPounds) pounds of muscle in \(timeline) weeks
+            - Weekly target: \(String(format: "%.1f", weeklyTarget)) lbs per week
+            - Strategy: Consistent surplus with protein timing around workouts
+            - Prioritize post-workout anabolic windows
+            """
+            
+        case .maintainWeight:
+            return "- Target: Maintain current weight with balanced nutrition"
+            
+        case .performanceFocus:
+            return "- Target: Optimize athletic performance through strategic nutrient timing"
+            
+        case .betterSleep:
+            return "- Target: Improve sleep quality through evening nutrition optimization"
+            
+        case .overallWellbeing:
+            return "- Target: General health and wellbeing through balanced nutrition"
+            
+        case .athleticPerformance(let sport):
+            return """
+            - Target: Optimize performance for \(sport)
+            - Strategy: Sport-specific nutrient timing and recovery windows
+            """
+        }
+    }
+    
+    /// Format fasting protocol integration
+    private func formatFastingProtocol(_ profile: UserProfile) -> String {
+        guard profile.fastingProtocol != .none else {
+            return "- Fasting Protocol: None - flexible eating times throughout the day"
+        }
+        
+        switch profile.fastingProtocol {
+        case .sixteen8:
+            return """
+            - Fasting Protocol: 16:8 - Compress all windows within 8-hour eating period
+            - First window should break fast gently with easily digestible foods
+            - Last window must end 16 hours before tomorrow's first meal
+            - Hydration is critical during fasting period
+            """
+            
+        case .eighteen6:
+            return """
+            - Fasting Protocol: 18:6 - All eating within 6-hour window
+            - Compress windows closer together
+            - Higher calorie density per window required
+            - First window should be substantial to meet daily targets
+            """
+            
+        case .twenty4:
+            return """
+            - Fasting Protocol: 20:4 - Very restricted 4-hour eating window
+            - Likely 2-3 larger windows maximum
+            - Each window must be calorie and nutrient dense
+            - Consider liquid calories if needed to meet targets
+            """
+            
+        case .omad:
+            return """
+            - Fasting Protocol: OMAD - One Meal A Day
+            - Single large eating window (typically 1-2 hours)
+            - Must contain all daily calories and nutrients
+            - Consider pre/post meal small windows if absolutely needed
+            """
+            
+        case .fiveTwoDay:
+            return """
+            - Fasting Protocol: 5:2 - Check if today is a fasting or normal day
+            - If fasting day: Limit to 500-600 calories total
+            - If normal day: Regular window distribution
+            """
+            
+        case .eatStopEat:
+            return """
+            - Fasting Protocol: Eat-Stop-Eat - 24-hour fasts 1-2x per week
+            - Check if today is a fasting day
+            - If yes: No windows until fast completion
+            - If no: Normal window distribution
+            """
+            
+        case .custom:
+            return "- Fasting Protocol: Custom - Follow user's specific timing preferences"
+            
+        default:
+            return "- Fasting Protocol: \(profile.fastingProtocol.rawValue)"
+        }
+    }
+    
+    /// Format today's context from Daily Sync
+    private func formatDailySyncContext(_ sync: DailySync?, profile: UserProfile) -> String {
+        guard let sync = sync else {
+            return """
+            ## Today's Context
+            - No Daily Sync completed yet
+            - Using standard window distribution based on profile
+            """
+        }
+        
+        // Calculate consumed calories and macros
+        let consumedCalories = sync.alreadyConsumed.reduce(0) { $0 + ($1.estimatedCalories ?? 0) }
+        let consumedProtein = sync.alreadyConsumed.reduce(0) { $0 + ($1.estimatedProtein ?? 0) }
+        let consumedCarbs = sync.alreadyConsumed.reduce(0) { $0 + ($1.estimatedCarbs ?? 0) }
+        let consumedFat = sync.alreadyConsumed.reduce(0) { $0 + ($1.estimatedFat ?? 0) }
+        
+        // Calculate remaining
+        let remainingCalories = max(0, profile.dailyCalorieTarget - consumedCalories)
+        let remainingProtein = max(0, profile.dailyProteinTarget - consumedProtein)
+        let remainingCarbs = max(0, profile.dailyCarbTarget - consumedCarbs)
+        let remainingFat = max(0, profile.dailyFatTarget - consumedFat)
+        
+        var context = "## Today's Context (from Daily Sync)\n"
+        
+        // Already consumed meals
+        if !sync.alreadyConsumed.isEmpty {
+            context += "- Already Consumed Today:\n"
+            for meal in sync.alreadyConsumed {
+                let timeStr = formatTime(meal.time)
+                let cals = meal.estimatedCalories ?? 0
+                context += "  • \(meal.name) at \(timeStr) (\(cals) cal)\n"
+            }
+        } else {
+            context += "- Already Consumed: Nothing yet\n"
+        }
+        
+        // Remaining targets
+        context += "- Remaining Calories: \(remainingCalories) cal\n"
+        context += "- Remaining Macros: P:\(remainingProtein)g C:\(remainingCarbs)g F:\(remainingFat)g\n"
+        
+        // Work schedule
+        if let workSchedule = sync.workSchedule {
+            let startStr = formatTime(workSchedule.start)
+            let endStr = formatTime(workSchedule.end)
+            context += "- Work Schedule Today: \(startStr) to \(endStr)\n"
+            context += "  Plan windows around work commitments\n"
+        } else {
+            context += "- Work Schedule: Flexible/not specified\n"
+        }
+        
+        // Workout time
+        if let workoutTime = sync.workoutTime {
+            let timeStr = formatTime(workoutTime)
+            context += "- Workout Planned: Yes at \(timeStr)\n"
+            context += "  Include pre and post-workout nutrition windows\n"
+        } else {
+            context += "- Workout: No workout planned today\n"
+        }
+        
+        // Current energy
+        context += "- Current Energy Level: \(sync.currentEnergy.rawValue)\n"
+        switch sync.currentEnergy {
+        case .low:
+            context += "  Prioritize energy-boosting foods and timing\n"
+        case .good:
+            context += "  Maintain steady energy with balanced windows\n"
+        case .high:
+            context += "  Can handle longer gaps between windows if needed\n"
+        }
+        
+        // Special events
+        if !sync.specialEvents.isEmpty {
+            context += "- Special Events Today:\n"
+            for event in sync.specialEvents {
+                let timeStr = formatTime(event.time)
+                context += "  • \(event.type.displayName) at \(timeStr)\n"
+            }
+            context += "  Adjust window timing to accommodate events\n"
+        }
+        
+        return context
+    }
+    
+    /// Format meal timing preferences
+    private func formatMealTimingPreferences(_ profile: UserProfile) -> String {
+        var timing = "## Meal Timing Preferences\n"
+        
+        if !profile.preferredMealTimes.isEmpty {
+            timing += "- Preferred Times: \(profile.preferredMealTimes.joined(separator: ", "))\n"
+        } else {
+            timing += "- Preferred Times: Flexible\n"
+        }
+        
+        if let earliest = profile.earliestMealHour {
+            timing += "- Earliest Meal: \(earliest):00\n"
+        } else {
+            timing += "- Earliest Meal: 6:00 AM (default)\n"
+        }
+        
+        if let latest = profile.latestMealHour {
+            timing += "- Latest Meal: \(latest):00\n"
+        } else {
+            timing += "- Latest Meal: 21:00 (9 PM default)\n"
+        }
+        
+        if let wakeTime = profile.typicalWakeTime {
+            timing += "- Typical Wake Time: \(formatTime(wakeTime))\n"
+        }
+        
+        if let sleepTime = profile.typicalSleepTime {
+            timing += "- Typical Sleep Time: \(formatTime(sleepTime))\n"
+        }
+        
+        return timing
+    }
+    
+    /// Format micronutrient priorities
+    private func formatMicronutrientPriorities(_ profile: UserProfile) -> String {
+        guard !profile.micronutrientPriorities.isEmpty else {
+            return "## Micronutrient Focus\n- No specific priorities set\n"
+        }
+        
+        return """
+        ## Micronutrient Priorities
+        - Focus on: \(profile.micronutrientPriorities.joined(separator: ", "))
+        - Include foods rich in these nutrients across windows
+        - Distribute for optimal absorption (e.g., iron separate from calcium)
+        - Consider timing for bioavailability
+        """
+    }
+    
+    /// Format work schedule adaptation
+    private func formatWorkScheduleAdaptation(_ profile: UserProfile) -> String {
+        switch profile.workSchedule {
+        case .night:
+            return """
+            ## Work Schedule Adaptation
+            - Night shift worker: Reverse typical meal timing
+            - "Breakfast" may be at 6-8 PM when they wake
+            - Larger meals before and after shift
+            - Light meals during shift for alertness
+            - Avoid heavy meals 2-3 hours before day sleep
+            """
+            
+        case .earlyMorning:
+            return """
+            ## Work Schedule Adaptation
+            - Early morning worker: Quick, portable first window
+            - May need to eat very early (4-5 AM)
+            - Pack portable options for work hours
+            - Main meals after work when more time available
+            """
+            
+        case .evening:
+            return """
+            ## Work Schedule Adaptation
+            - Evening shift worker: Front-load nutrition
+            - Larger meals before work
+            - Light, easy-to-digest during evening shift
+            - May need late-night recovery meal
+            """
+            
+        case .remote:
+            return """
+            ## Work Schedule Adaptation
+            - Remote worker: Maximum flexibility
+            - Can eat at optimal times without commute constraints
+            - Ability to prepare fresh meals throughout day
+            - Watch for mindless snacking - structure is still important
+            """
+            
+        case .flexible:
+            return """
+            ## Work Schedule Adaptation
+            - Flexible schedule: Adapt daily based on needs
+            - Keep portable options ready
+            - May need different patterns on different days
+            """
+            
+        case .standard:
+            return """
+            ## Work Schedule Adaptation
+            - Standard 9-5 schedule
+            - Morning window before work
+            - Lunch window during work break
+            - Main meals after work
+            """
+            
+        default:
+            return "## Work Schedule: \(profile.workSchedule.rawValue)"
+        }
+    }
+    
+    /// Get recent weight trend from weight tracking history
+    private func getWeightTrend(userId: String, dataProvider: any DataProvider) async -> String {
+        // Fetch recent weight entries (last 7-14 days)
+        do {
+            let recentEntries = await dataProvider.getRecentWeightEntries(userId: userId, days: 14)
+            
+            guard recentEntries.count >= 2 else {
+                return "- Weight Trend: Insufficient data (need at least 2 entries)"
+            }
+            
+            // Calculate trend
+            let sortedEntries = recentEntries.sorted { $0.date < $1.date }
+            let firstWeight = sortedEntries.first?.weight ?? 0
+            let lastWeight = sortedEntries.last?.weight ?? 0
+            let weightChange = lastWeight - firstWeight
+            let daysBetween = Calendar.current.dateComponents([.day], 
+                from: sortedEntries.first?.date ?? Date(), 
+                to: sortedEntries.last?.date ?? Date()).day ?? 1
+            let weeklyRate = (weightChange / Double(daysBetween)) * 7
+            
+            var trend = "## Weight Tracking History\n"
+            trend += "- Current Weight: \(String(format: "%.1f", lastWeight)) lbs\n"
+            trend += "- Starting Weight: \(String(format: "%.1f", firstWeight)) lbs (\(daysBetween) days ago)\n"
+            trend += "- Total Change: \(weightChange > 0 ? "+" : "")\(String(format: "%.1f", weightChange)) lbs\n"
+            trend += "- Weekly Rate: \(weeklyRate > 0 ? "+" : "")\(String(format: "%.1f", weeklyRate)) lbs/week\n"
+            
+            // Add guidance based on trend for weight goals
+            // Note: We'll need to get the goal from the profile passed to buildPrompt
+            // This is a simplified version - could be enhanced with goal tracking
+            if weeklyRate > 0.5 {
+                trend += "- ⚠️ Weight increasing rapidly - review calorie intake\n"
+            } else if weeklyRate < -2.0 {
+                trend += "- ⚠️ Losing very fast - ensure adequate nutrition\n"
+            } else if weeklyRate < -0.5 && weeklyRate > -2.0 {
+                trend += "- ✅ Steady weight loss progress\n"
+            } else if abs(weeklyRate) < 0.2 {
+                trend += "- Weight stable - maintaining current weight\n"
+            }
+            
+            return trend
+        } catch {
+            return "- Weight Trend: Unable to fetch history"
+        }
     }
     
     /// Parse AI response into MealWindow objects and DayPurpose

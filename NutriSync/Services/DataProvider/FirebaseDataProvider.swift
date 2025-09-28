@@ -42,7 +42,7 @@ class FirebaseDataProvider: @preconcurrency DataProvider, ObservableObject {
     var onRedistributionProposed: ((RedistributionResult) -> Void)?
     
     // Current user ID - dynamically fetched from Firebase Auth
-    private var currentUserId: String {
+    var currentUserId: String {
         // Use authenticated user ID or empty string if not authenticated
         return Auth.auth().currentUser?.uid ?? ""
     }
@@ -1657,6 +1657,130 @@ extension FirebaseDataProvider {
         try await userDocRef.delete()
         
         print("[FirebaseDataProvider] Deleted all data for user: \(userId)")
+    }
+    
+    // MARK: - Weight Tracking Operations
+    
+    func saveWeightEntry(_ entry: WeightEntry) async throws {
+        guard let userRef = userRef else {
+            throw DataProviderError.notAuthenticated
+        }
+        
+        let data = [
+            "id": entry.id.uuidString,
+            "date": entry.date,
+            "weight": entry.weight,
+            "userId": entry.userId,
+            "context": [
+                "timeOfDay": entry.context.timeOfDay,
+                "syncContext": entry.context.syncContext.rawValue,
+                "notes": entry.context.notes ?? NSNull()
+            ] as [String : Any]
+        ] as [String : Any]
+        
+        try await userRef.collection("weightEntries")
+            .document(entry.id.uuidString)
+            .setData(data)
+        
+        Task { @MainActor in
+            DebugLogger.shared.info("Saved weight entry: \(entry.weight) lbs on \(entry.date)")
+        }
+    }
+    
+    func getRecentWeightEntries(userId: String, days: Int) async -> [WeightEntry] {
+        guard let userRef = userRef else {
+            return []
+        }
+        
+        let calendar = Calendar.current
+        let startDate = calendar.date(byAdding: .day, value: -days, to: Date()) ?? Date()
+        
+        do {
+            let snapshot = try await userRef.collection("weightEntries")
+                .whereField("date", isGreaterThanOrEqualTo: startDate)
+                .order(by: "date", descending: false)
+                .getDocuments()
+            
+            let entries = snapshot.documents.compactMap { doc -> WeightEntry? in
+                let data = doc.data()
+                guard let idString = data["id"] as? String,
+                      let id = UUID(uuidString: idString),
+                      let timestamp = data["date"] as? Timestamp,
+                      let weight = data["weight"] as? Double,
+                      let userId = data["userId"] as? String,
+                      let contextData = data["context"] as? [String: Any],
+                      let timeOfDay = contextData["timeOfDay"] as? String,
+                      let syncContextRaw = contextData["syncContext"] as? String,
+                      let syncContext = SyncContext(rawValue: syncContextRaw) else {
+                    return nil
+                }
+                
+                let notes = contextData["notes"] as? String
+                let context = WeightEntry.WeighInContext(
+                    timeOfDay: timeOfDay,
+                    syncContext: syncContext,
+                    notes: notes
+                )
+                
+                return WeightEntry(
+                    id: id,
+                    date: timestamp.dateValue(),
+                    weight: weight,
+                    context: context,
+                    userId: userId
+                )
+            }
+            
+            return entries
+        } catch {
+            Task { @MainActor in
+                DebugLogger.shared.error("Failed to fetch weight entries: \(error)")
+            }
+            return []
+        }
+    }
+    
+    func getLatestWeightEntry(userId: String) async throws -> WeightEntry? {
+        guard let userRef = userRef else {
+            throw DataProviderError.notAuthenticated
+        }
+        
+        let snapshot = try await userRef.collection("weightEntries")
+            .order(by: "date", descending: true)
+            .limit(to: 1)
+            .getDocuments()
+        
+        guard let doc = snapshot.documents.first else {
+            return nil
+        }
+        
+        let data = doc.data()
+        guard let idString = data["id"] as? String,
+              let id = UUID(uuidString: idString),
+              let timestamp = data["date"] as? Timestamp,
+              let weight = data["weight"] as? Double,
+              let userId = data["userId"] as? String,
+              let contextData = data["context"] as? [String: Any],
+              let timeOfDay = contextData["timeOfDay"] as? String,
+              let syncContextRaw = contextData["syncContext"] as? String,
+              let syncContext = SyncContext(rawValue: syncContextRaw) else {
+            return nil
+        }
+        
+        let notes = contextData["notes"] as? String
+        let context = WeightEntry.WeighInContext(
+            timeOfDay: timeOfDay,
+            syncContext: syncContext,
+            notes: notes
+        )
+        
+        return WeightEntry(
+            id: id,
+            date: timestamp.dateValue(),
+            weight: weight,
+            context: context,
+            userId: userId
+        )
     }
 }
 
