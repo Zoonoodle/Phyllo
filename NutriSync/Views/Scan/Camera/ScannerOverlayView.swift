@@ -29,31 +29,6 @@ struct ScannerOverlayView: View {
                         .position(cornerPosition(for: CornerPosition(rawValue: index)!, in: geometry.size))
                         .opacity(0.8)
                 }
-                
-                // Center crosshair (subtle)
-                VStack(spacing: 0) {
-                    Rectangle()
-                        .fill(Color.white.opacity(0.2))
-                        .frame(width: 1, height: 30)
-                    
-                    HStack(spacing: 0) {
-                        Rectangle()
-                            .fill(Color.white.opacity(0.2))
-                            .frame(width: 30, height: 1)
-                        
-                        Spacer()
-                            .frame(width: 20, height: 20)
-                        
-                        Rectangle()
-                            .fill(Color.white.opacity(0.2))
-                            .frame(width: 30, height: 1)
-                    }
-                    
-                    Rectangle()
-                        .fill(Color.white.opacity(0.2))
-                        .frame(width: 1, height: 30)
-                }
-                .position(x: geometry.size.width / 2, y: geometry.size.height / 2)
             }
         }
     }

@@ -10,7 +10,6 @@ struct AIScheduleView: View {
     @State private var selectedWindow: MealWindow?
     @State private var showWindowDetail = false
     @State private var selectedMealId: String?
-    @State private var showMissedMealsRecovery = false
     @State private var showDailySync = false
     @State private var showDayDetail = false
     @State private var showingSettingsMenu = false
@@ -34,9 +33,6 @@ struct AIScheduleView: View {
             }
             .onChange(of: viewModel.legacyViewModel.isLoading) { _, newValue in
                 handleLoadingChange(newValue)
-            }
-            .sheet(isPresented: $showMissedMealsRecovery) {
-                missedMealsSheet
             }
             .sheet(isPresented: $showDailySync) {
                 dailySyncSheet
@@ -131,14 +127,6 @@ struct AIScheduleView: View {
     }
     
     @ViewBuilder
-    private var missedMealsSheet: some View {
-        MissedMealsRecoveryView(
-            viewModel: viewModel.legacyViewModel,
-            missedWindows: viewModel.missedWindows
-        )
-    }
-    
-    @ViewBuilder
     private var dailySyncSheet: some View {
         DailySyncCoordinator(isMandatory: viewModel.mealWindows.isEmpty)
             .interactiveDismissDisabled(viewModel.mealWindows.isEmpty)
@@ -186,10 +174,6 @@ struct AIScheduleView: View {
     }
     
     private func handleOnAppear() {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            checkForMissedMeals()
-        }
-        
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             if !viewModel.legacyViewModel.isLoading {
                 viewModel.hasLoadedInitialData = true
@@ -312,16 +296,6 @@ struct AIScheduleView: View {
             // Timeout after 10 seconds
             DispatchQueue.main.asyncAfter(deadline: .now() + 10) {
                 viewModel.isGeneratingWindows = false
-            }
-        }
-    }
-    
-    private func checkForMissedMeals() {
-        if !viewModel.missedWindows.isEmpty && !viewModel.hasShownMissedMealsToday {
-            // Delay showing missed meals sheet to avoid presentation conflicts
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                showMissedMealsRecovery = true
-                viewModel.markMissedMealsShown()
             }
         }
     }

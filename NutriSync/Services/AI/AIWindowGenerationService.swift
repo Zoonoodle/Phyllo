@@ -389,13 +389,13 @@ class AIWindowGenerationService {
     ///   - profile: User's profile with goals and preferences
     ///   - checkIn: Morning check-in data with wake time and energy levels
     ///   - date: Date to generate windows for
-    /// - Returns: Tuple of meal windows array and optional day purpose
+    /// - Returns: Tuple of meal windows array, optional day purpose, and optional context insights
     func generateWindows(
         for profile: UserProfile,
         checkIn: MorningCheckInData?,
         dailySync: DailySync? = nil,
         date: Date
-    ) async throws -> (windows: [MealWindow], dayPurpose: DayPurpose?) {
+    ) async throws -> (windows: [MealWindow], dayPurpose: DayPurpose?, contextInsights: [String]?) {
         
         // Determine actual date for windows based on check-in time
         let actualDate = determineWindowDate(checkIn: checkIn, requestedDate: date)
@@ -446,8 +446,8 @@ class AIWindowGenerationService {
             // Log full response for debugging
             DebugLogger.shared.info("Full response:\n\(text)")
         }
-        
-        // Parse the JSON response with the actual date
+
+        // Parse the JSON response with the actual date (returns windows, dayPurpose, and contextInsights)
         return try parseAIResponse(text, for: actualDate)
     }
     
@@ -561,7 +561,7 @@ class AIWindowGenerationService {
         
         // Add weight tracking history if available
         if let dataProvider = dataProvider {
-            let userId = FirebaseDataProvider.shared.currentUserId
+            let userId = await FirebaseDataProvider.shared.currentUserId
             let weightTrend = await getWeightTrend(userId: userId, dataProvider: dataProvider)
             prompt += "\n\n" + weightTrend
         }
@@ -709,6 +709,21 @@ class AIWindowGenerationService {
         4. Recovery Focus: How nutrition will support recovery and adaptation
         5. Key Priorities: Top 3 priorities for successful execution today
         
+        ## Context Insights Requirements:
+        IMPORTANT: If the user provided a dailyContextDescription (see "Today's Context" section above), you MUST include a "contextInsights" array in your response summarizing what you learned from their natural language input.
+
+        Format contextInsights as 2-4 short, specific bullets that demonstrate you understood their day:
+        - Focus on what you learned that will affect window planning
+        - Be specific about detected energy, meetings, workouts, stress, etc.
+        - Keep each insight under 15 words
+        - Examples:
+          * "Low energy detected - planned lighter, frequent meals"
+          * "Meetings until 3pm - windows scheduled around them"
+          * "Gym at 6pm - added pre/post-workout windows"
+          * "Didn't sleep well - prioritized protein for stable energy"
+
+        If NO dailyContextDescription was provided, you can omit the contextInsights field or set it to null.
+
         Return as JSON with this structure:
         {
             "dayPurpose": {
@@ -718,6 +733,11 @@ class AIWindowGenerationService {
                 "recoveryFocus": "Recovery and adaptation support through nutrition...",
                 "keyPriorities": ["Priority 1", "Priority 2", "Priority 3"]
             },
+            "contextInsights": [
+                "Insight 1 based on user's daily context",
+                "Insight 2 based on user's daily context",
+                "Insight 3 based on user's daily context"
+            ],
             "windows": [
                 {
                     "name": "Morning Metabolic Primer",
@@ -936,17 +956,59 @@ class AIWindowGenerationService {
             context += "- Workout: No workout planned today\n"
         }
         
-        // Current energy
-        context += "- Current Energy Level: \(sync.currentEnergy.rawValue)\n"
-        switch sync.currentEnergy {
-        case .low:
-            context += "  Prioritize energy-boosting foods and timing\n"
-        case .good:
-            context += "  Maintain steady energy with balanced windows\n"
-        case .high:
-            context += "  Can handle longer gaps between windows if needed\n"
+        // Current energy (inferred from context if available)
+        if let inferredEnergy = sync.inferredEnergyLevel {
+            context += "- Current Energy Level: \(inferredEnergy.rawValue) (inferred from daily context)\n"
+            switch inferredEnergy {
+            case .low:
+                context += "  Prioritize energy-boosting foods and timing\n"
+            case .good:
+                context += "  Maintain steady energy with balanced windows\n"
+            case .high:
+                context += "  Can handle longer gaps between windows if needed\n"
+            }
         }
         
+        // NEW: Daily context description (HIGH PRIORITY - user's own words)
+        if let contextDesc = sync.dailyContextDescription, !contextDesc.isEmpty {
+            context += "\n## Today's Context (User's Own Words - HIGHEST PRIORITY)\n"
+            context += "\"\(contextDesc)\"\n\n"
+            context += "CRITICAL PARSING INSTRUCTIONS:\n"
+            context += "Analyze this description for:\n\n"
+            context += "1. **Energy Level** - Parse mentions of:\n"
+            context += "   - Tired, exhausted, low energy → Prioritize easy-to-digest meals, avoid heavy foods\n"
+            context += "   - Great, energized, high energy → Can handle larger meals, complex macros\n"
+            context += "   - Normal, okay, decent → Standard meal distribution\n\n"
+            context += "2. **Meetings & Work Commitments** - Parse mentions of:\n"
+            context += "   - \"Meetings until 3pm\" → Schedule windows BEFORE/AFTER, not during\n"
+            context += "   - \"Back-to-back calls\" → Suggest quick, convenient meals\n"
+            context += "   - \"Important presentation\" → Avoid heavy meals right before (energy crash risk)\n"
+            context += "   - \"Flexible schedule\" → Can use wider time ranges for windows\n\n"
+            context += "3. **Social Events** - Parse mentions of:\n"
+            context += "   - \"Dinner with friends at 8pm\" → Plan lighter earlier windows, save calories\n"
+            context += "   - \"Lunch meeting\" → Accommodate the meal timing\n"
+            context += "   - \"Date night\" → Adjust macros to allow flexibility\n\n"
+            context += "4. **Travel Plans** - Parse mentions of:\n"
+            context += "   - \"Long drive\", \"airport\", \"commute\" → Suggest portable, easy-to-eat meals\n"
+            context += "   - \"On the road\" → Prioritize convenience\n\n"
+            context += "5. **Workout Details** - Parse mentions of:\n"
+            context += "   - \"Gym at 6pm\" → Create pre-workout window (carbs) + post-workout window (protein+carbs)\n"
+            context += "   - \"Morning run\" → Ensure adequate fuel or fasted options based on preference\n"
+            context += "   - \"Rest day\" → Adjust calorie distribution slightly lower\n\n"
+            context += "6. **Sleep Quality** - Parse mentions of:\n"
+            context += "   - \"Didn't sleep well\" → Prioritize protein, avoid high-carb crashes\n"
+            context += "   - \"Slept great\" → Standard distribution\n\n"
+            context += "7. **Stress Indicators** - Parse mentions of:\n"
+            context += "   - \"Busy day\", \"stressful\", \"hectic\" → Prioritize convenient, satisfying meals\n"
+            context += "   - \"Relaxed\", \"chill\" → Can suggest more complex meal prep\n\n"
+            context += "8. **Work Location** - Parse mentions of:\n"
+            context += "   - \"Working from home\" → More flexible windows, can suggest longer meal prep\n"
+            context += "   - \"In office\" → More structured windows, portable options\n"
+            context += "   - \"On-site\" → Adjust for convenience\n\n"
+            context += "**Use this context to override structured data when appropriate.**\n"
+            context += "For example: If context says \"feeling great\" but energy was marked low earlier, trust the context.\n\n"
+        }
+
         // Special events
         if !sync.specialEvents.isEmpty {
             context += "- Special Events Today:\n"
@@ -956,7 +1018,7 @@ class AIWindowGenerationService {
             }
             context += "  Adjust window timing to accommodate events\n"
         }
-        
+
         return context
     }
     
@@ -1111,8 +1173,8 @@ class AIWindowGenerationService {
         return trend
     }
     
-    /// Parse AI response into MealWindow objects and DayPurpose
-    private func parseAIResponse(_ response: String, for date: Date) throws -> (windows: [MealWindow], dayPurpose: DayPurpose?) {
+    /// Parse AI response into MealWindow objects, DayPurpose, and contextInsights
+    private func parseAIResponse(_ response: String, for date: Date) throws -> (windows: [MealWindow], dayPurpose: DayPurpose?, contextInsights: [String]?) {
         guard let data = response.data(using: .utf8) else {
             throw NSError(domain: "AIWindowGeneration", code: 3002, 
                          userInfo: [NSLocalizedDescriptionKey: "Failed to convert response to data"])
@@ -1245,9 +1307,19 @@ class AIWindowGenerationService {
                     type: window.type
                 )
             }
-            
-            // Return both windows and day purpose
-            return (windows: windows, dayPurpose: aiResponse.dayPurpose)
+
+            // Log contextInsights if present
+            if let insights = aiResponse.contextInsights, !insights.isEmpty {
+                Task { @MainActor in
+                    DebugLogger.shared.success("AI generated \(insights.count) context insights:")
+                    for insight in insights {
+                        DebugLogger.shared.info("  • \(insight)")
+                    }
+                }
+            }
+
+            // Return windows, day purpose, and context insights
+            return (windows: windows, dayPurpose: aiResponse.dayPurpose, contextInsights: aiResponse.contextInsights)
             
         } catch {
             Task { @MainActor in
@@ -1263,6 +1335,7 @@ class AIWindowGenerationService {
 private struct AIWindowResponse: Codable {
     let windows: [AIWindow]
     let dayPurpose: DayPurpose?  // Optional for backwards compatibility
+    let contextInsights: [String]?  // NEW: AI-generated insights from user's daily context
 }
 
 private struct AIWindow: Codable {

@@ -11,9 +11,6 @@ import PhotosUI
 struct AlreadyEatenView: View {
     @ObservedObject var viewModel: DailySyncViewModel
     @State private var showAddMeal = false
-    @State private var mealName = ""
-    @State private var mealTime = Date()
-    @State private var estimatedCalories = ""
     
     var body: some View {
         VStack(spacing: 32) {
@@ -130,24 +127,16 @@ struct AlreadyEatenView: View {
             .padding(.horizontal, 24)
             .padding(.bottom, 40)
         }
-        .sheet(isPresented: $showAddMeal) {
-            QuickMealEntry(
-                mealName: $mealName,
-                mealTime: $mealTime,
-                estimatedCalories: $estimatedCalories,
-                onSave: {
-                    let meal = QuickMeal(
-                        name: mealName.isEmpty ? "Unnamed meal" : mealName,
-                        time: mealTime,
-                        estimatedCalories: Int(estimatedCalories)
-                    )
-                    viewModel.alreadyEatenMeals.append(meal)
-                    mealName = ""
-                    estimatedCalories = ""
-                    mealTime = Date()
-                    showAddMeal = false
-                }
-            )
+        .fullScreenCover(isPresented: $showAddMeal) {
+            QuickVoiceAddView { mealDescription in
+                // Create a simple meal entry from the voice description
+                let meal = QuickMeal(
+                    name: mealDescription,
+                    time: Date(),
+                    estimatedCalories: nil // AI will handle this
+                )
+                viewModel.alreadyEatenMeals.append(meal)
+            }
         }
     }
 }

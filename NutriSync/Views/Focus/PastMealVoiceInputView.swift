@@ -1,15 +1,15 @@
 //
-//  RealVoiceInputView.swift
+//  PastMealVoiceInputView.swift
 //  NutriSync
 //
-//  Created on 8/17/25.
+//  Created for logging missed meal windows
 //
 
 import SwiftUI
 import Speech
 import AVFoundation
 
-struct RealVoiceInputView: View {
+struct PastMealVoiceInputView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var isListening = false
     @State private var isPaused = false
@@ -20,33 +20,35 @@ struct RealVoiceInputView: View {
     @State private var showPermissionAlert = false
     @State private var permissionStatus = SFSpeechRecognizerAuthorizationStatus.notDetermined
     @State private var showTips = false
-    
+
     // Manual text editing states
     @State private var isEditingText = false
     @State private var editableText = ""
     @FocusState private var isTextFieldFocused: Bool
-    
+
     // Speech recognition properties
     @State private var speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
     @State private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
     @State private var recognitionTask: SFSpeechRecognitionTask?
     @State private var audioEngine = AVAudioEngine()
-    
-    // Captured image from camera
-    let capturedImage: UIImage?
-    
-    // Completion handler
-    var onComplete: ((String) -> Void)?
-    
+
+    // Window context
+    let window: MealWindow
+    @ObservedObject var viewModel: ScheduleViewModel
+
+    // Service references
+    @StateObject private var mealCaptureService = MealCaptureService.shared
+    @State private var isProcessing = false
+
     // Timer for updating audio levels
     let timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
-    
+
     // Computed property for adaptive instruction height
     private var instructionMaxHeight: CGFloat {
         let screenHeight = UIScreen.main.bounds.height
         let minHeight: CGFloat = 150
         let maxHeight: CGFloat = 300
-        
+
         // Adjust based on device size
         if screenHeight < 700 { // SE, mini
             return minHeight
@@ -56,16 +58,28 @@ struct RealVoiceInputView: View {
             return maxHeight
         }
     }
-    
+
+    // Window title for display
+    private var windowTitle: String {
+        if !window.name.isEmpty {
+            return window.name
+        }
+        let hour = Calendar.current.component(.hour, from: window.startTime)
+        switch hour {
+        case 5...10: return "Breakfast"
+        case 11...12: return "Brunch"
+        case 13...15: return "Lunch"
+        case 16...17: return "Snack"
+        case 18...21: return "Dinner"
+        default: return "Snack"
+        }
+    }
+
     var body: some View {
         ZStack {
-            // Background with captured photo
-            backgroundLayer
-            
-            // Very subtle dark overlay for text readability
-            Color.black.opacity(0.05)
-                .ignoresSafeArea()
-            
+            // Background
+            Color.black.ignoresSafeArea()
+
             // Main content
             VStack(spacing: 12) {
                 // Top info icon
@@ -125,7 +139,7 @@ struct RealVoiceInputView: View {
                     .frame(maxHeight: 150)
                     .padding(.horizontal)
                     .transition(.opacity.combined(with: .move(edge: .top)))
-                    
+
                     // Hint text for long-press capability
                     if !isEditingText && !transcribedText.isEmpty {
                         Text("Long press to edit")
@@ -133,7 +147,7 @@ struct RealVoiceInputView: View {
                             .foregroundColor(Color.white.opacity(0.4))
                             .padding(.top, 4)
                     }
-                    
+
                     // Done editing button when in edit mode
                     if isEditingText {
                         Button(action: {
@@ -154,14 +168,14 @@ struct RealVoiceInputView: View {
                         .padding(.top, 8)
                     }
                 }
-                
+
                 Spacer(minLength: 20)
 
                 // Central listening indicator
                 listeningIndicator
 
                 Spacer(minLength: 20)
-                
+
                 // Bottom controls
                 bottomControls
                     .padding(.bottom, 30)
@@ -172,15 +186,6 @@ struct RealVoiceInputView: View {
         .preferredColorScheme(.dark)
         .onAppear {
             checkSpeechAuthorization()
-            
-            // Show voice tips nudge on first use
-            let hasShownVoiceTips = UserDefaults.standard.bool(forKey: "hasShownVoiceInputTips")
-            if !hasShownVoiceTips {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    NudgeManager.shared.triggerNudge(.voiceInputTips)
-                    UserDefaults.standard.set(true, forKey: "hasShownVoiceInputTips")
-                }
-            }
         }
         .onDisappear {
             stopRecording()
@@ -204,181 +209,28 @@ struct RealVoiceInputView: View {
             tipsSheet
         }
     }
-    
+
     // MARK: - Components
-    
-    private var backgroundLayer: some View {
-        ZStack {
-            // Always use black background as base
-            Color.black
-                .ignoresSafeArea()
-            
-            // Add blurred image overlay if available
-            if let image = capturedImage {
-                GeometryReader { geometry in
-                    Image(uiImage: image)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(width: geometry.size.width, height: geometry.size.height)
-                        .clipped()
-                        .blur(radius: 30)
-                        .opacity(0.15) // More transparent for subtler effect
-                }
-                .ignoresSafeArea()
-            }
-        }
-    }
-    
-    private var listeningIndicator: some View {
-        VStack(spacing: 30) {
-            // Main circle with waveform
-            ZStack {
-                // Outer pulse circle
-                Circle()
-                    .fill(Color.white.opacity(0.1))
-                    .frame(width: 220, height: 220)
-                    .scaleEffect(circleScale)
-                    .onAppear {
-                        withAnimation(.easeInOut(duration: 2).repeatForever(autoreverses: true)) {
-                            circleScale = 1.15
-                        }
-                    }
-                
-                // Main white circle
-                Circle()
-                    .fill(Color.white)
-                    .frame(width: 180, height: 180)
-                    .shadow(color: .black.opacity(0.3), radius: 20, y: 10)
-                
-                // Waveform inside circle
-                if isListening && !isPaused {
-                    HStack(spacing: 6) {
-                        ForEach(0..<5) { index in
-                            Capsule()
-                                .fill(Color.black)
-                                .frame(width: 5, height: audioLevels[index] * 45)
-                                .animation(.spring(response: 0.3), value: audioLevels[index])
-                        }
-                    }
-                } else if isPaused {
-                    Image(systemName: "pause.fill")
-                        .font(.system(size: 45))
-                        .foregroundColor(.black)
-                } else {
-                    Image(systemName: "mic.fill")
-                        .font(.system(size: 45))
-                        .foregroundColor(.black)
-                }
-            }
-            
-            // Status text
-            Text(isPaused ? "Paused" : (isListening ? "Listening" : "Tap to start"))
-                .font(.system(size: 20, weight: .medium))
-                .foregroundColor(.white)
-        }
-        .onTapGesture {
-            if !isListening {
-                startRecording()
-            } else {
-                withAnimation(.spring(response: 0.3)) {
-                    isPaused.toggle()
-                }
-                if isPaused {
-                    audioEngine.pause()
-                } else {
-                    try? audioEngine.start()
-                }
-            }
-        }
-    }
-    
-    private var bottomControls: some View {
-        VStack(spacing: 24) {
-            // Voice level indicator
-            HStack(spacing: 4) {
-                ForEach(0..<4) { index in
-                    Circle()
-                        .fill(Color.white.opacity(isListening && !isPaused ? 0.8 : 0.3))
-                        .frame(width: 8, height: 8)
-                }
-            }
-            
-            // Control buttons
-            HStack(spacing: 20) {
-                // Cancel button
-                Button(action: { 
-                    let generator = UIImpactFeedbackGenerator(style: .light)
-                    generator.impactOccurred()
-                    stopRecording()
-                    dismiss() 
-                }) {
-                    HStack(spacing: 8) {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 18, weight: .medium))
-                        Text("Cancel")
-                            .font(.system(size: 16, weight: .medium))
-                    }
-                    .foregroundColor(.white.opacity(0.8))
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 14)
-                    .background(
-                        RoundedRectangle(cornerRadius: 30)
-                            .fill(Color.white.opacity(0.1))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 30)
-                                    .strokeBorder(Color.white.opacity(0.2), lineWidth: 1)
-                            )
-                    )
-                }
-                
-                // Done button
-                Button(action: {
-                    let generator = UIImpactFeedbackGenerator(style: .medium)
-                    generator.impactOccurred()
-                    stopRecording()
-                    onComplete?(transcribedText)
-                    dismiss()
-                }) {
-                    HStack(spacing: 8) {
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 18, weight: .medium))
-                        Text(transcribedText.isEmpty ? "Done" : "Analyze Meal")
-                            .font(.system(size: 16, weight: .semibold))
-                    }
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 14)
-                    .background(
-                        RoundedRectangle(cornerRadius: 30)
-                            .fill(Color.nutriSyncAccent)
-                            .opacity(isListening || !transcribedText.isEmpty ? 1 : 0.3)
-                    )
-                }
-                .disabled(!isListening && transcribedText.isEmpty)
-            }
-            
-            // Skip button as secondary action
-            Button(action: {
-                let generator = UIImpactFeedbackGenerator(style: .light)
-                generator.impactOccurred()
-                stopRecording()
-                onComplete?("")  // Empty description
-                dismiss()
-            }) {
-                Text("Skip voice description")
-                    .font(.system(size: 14))
-                    .foregroundColor(Color.white.opacity(0.5))
-                    .padding(.top, 8)
-            }
-        }
-    }
-    
+
     private var instructionalContent: some View {
         VStack(spacing: 8) {
-            // Title - more compact
-            Text("Describe Your Meal")
-                .font(.system(size: 24, weight: .semibold))
-                .foregroundColor(.white)
+            // Window context header - more compact
+            VStack(spacing: 4) {
+                Text("What did you eat for")
+                    .font(.system(size: 17, weight: .medium))
+                    .foregroundColor(.white.opacity(0.8))
+
+                Text(windowTitle)
+                    .font(.system(size: 26, weight: .bold))
+                    .foregroundColor(.nutriSyncAccent)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+
+                Text(formatTimeRange(start: window.startTime, end: window.endTime))
+                    .font(.system(size: 14))
+                    .foregroundColor(.white.opacity(0.6))
+            }
+            .padding(.bottom, 4)
 
             // Instructions box - more compact
             VStack(spacing: 8) {
@@ -401,7 +253,7 @@ struct RealVoiceInputView: View {
 
                     instructionItem(
                         icon: "list.bullet",
-                        text: "List all ingredients you know",
+                        text: "List all ingredients you remember",
                         example: "\"Salad with chicken, avocado, and ranch\""
                     )
                 }
@@ -419,7 +271,7 @@ struct RealVoiceInputView: View {
         .padding(.horizontal, 20)
         .animation(.easeOut(duration: 0.3), value: isListening)
     }
-    
+
     private func instructionItem(icon: String, text: String, example: String) -> some View {
         HStack(alignment: .top, spacing: 8) {
             Image(systemName: icon)
@@ -430,77 +282,194 @@ struct RealVoiceInputView: View {
             VStack(alignment: .leading, spacing: 1) {
                 Text(text)
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(.white)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .foregroundColor(.white.opacity(0.85))
 
                 Text(example)
                     .font(.system(size: 11))
-                    .foregroundColor(.white.opacity(0.6))
+                    .foregroundColor(.white.opacity(0.5))
                     .italic()
-                    .fixedSize(horizontal: false, vertical: true)
             }
-            
-            Spacer()
         }
     }
-    
+
+    private var listeningIndicator: some View {
+        VStack(spacing: 30) {
+            // Main circle with waveform
+            ZStack {
+                // Outer pulse circle
+                Circle()
+                    .fill(Color.white.opacity(0.1))
+                    .frame(width: 220, height: 220)
+                    .scaleEffect(circleScale)
+                    .onAppear {
+                        withAnimation(.easeInOut(duration: 2).repeatForever(autoreverses: true)) {
+                            circleScale = 1.15
+                        }
+                    }
+
+                // Main white circle
+                Circle()
+                    .fill(Color.white)
+                    .frame(width: 180, height: 180)
+                    .shadow(color: .black.opacity(0.3), radius: 20, y: 10)
+
+                // Waveform inside circle
+                if isListening && !isPaused {
+                    HStack(spacing: 6) {
+                        ForEach(0..<5) { index in
+                            Capsule()
+                                .fill(Color.black)
+                                .frame(width: 5, height: audioLevels[index] * 45)
+                                .animation(.spring(response: 0.3), value: audioLevels[index])
+                        }
+                    }
+                } else if isPaused {
+                    Image(systemName: "pause.fill")
+                        .font(.system(size: 45))
+                        .foregroundColor(.black)
+                } else {
+                    Image(systemName: "mic.fill")
+                        .font(.system(size: 45))
+                        .foregroundColor(.black)
+                }
+            }
+
+            // Status text
+            Text(isPaused ? "Paused" : (isListening ? "Listening" : "Tap to start"))
+                .font(.system(size: 20, weight: .medium))
+                .foregroundColor(.white)
+        }
+        .onTapGesture {
+            if !isListening {
+                startRecording()
+            } else {
+                withAnimation(.spring(response: 0.3)) {
+                    isPaused.toggle()
+                }
+                if isPaused {
+                    audioEngine.pause()
+                } else {
+                    try? audioEngine.start()
+                }
+            }
+        }
+    }
+
+    private var bottomControls: some View {
+        VStack(spacing: 24) {
+            // Voice level indicator
+            HStack(spacing: 4) {
+                ForEach(0..<4) { index in
+                    Circle()
+                        .fill(Color.white.opacity(isListening && !isPaused ? 0.8 : 0.3))
+                        .frame(width: 8, height: 8)
+                }
+            }
+
+            // Control buttons
+            HStack(spacing: 20) {
+                // Cancel button
+                Button(action: {
+                    let generator = UIImpactFeedbackGenerator(style: .light)
+                    generator.impactOccurred()
+                    stopRecording()
+                    dismiss()
+                }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 18, weight: .medium))
+                        Text("Cancel")
+                            .font(.system(size: 16, weight: .medium))
+                    }
+                    .foregroundColor(.white.opacity(0.8))
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 14)
+                    .background(
+                        RoundedRectangle(cornerRadius: 30)
+                            .fill(Color.white.opacity(0.1))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 30)
+                                    .strokeBorder(Color.white.opacity(0.2), lineWidth: 1)
+                            )
+                    )
+                }
+
+                // Done button
+                Button(action: logPastMeal) {
+                    HStack(spacing: 8) {
+                        if isProcessing {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: .black))
+                                .scaleEffect(0.8)
+                        } else {
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 18, weight: .medium))
+                            Text("Done")
+                                .font(.system(size: 16, weight: .semibold))
+                        }
+                    }
+                    .foregroundColor(.black)
+                    .padding(.horizontal, 32)
+                    .padding(.vertical, 14)
+                    .background(
+                        RoundedRectangle(cornerRadius: 30)
+                            .fill(transcribedText.isEmpty ? Color.white.opacity(0.3) : Color.nutriSyncAccent)
+                    )
+                }
+                .disabled(transcribedText.isEmpty || isProcessing)
+            }
+
+            // Skip text input hint
+            Text("or type your description below")
+                .font(.system(size: 13))
+                .foregroundColor(.white.opacity(0.5))
+        }
+    }
+
     private var tipsSheet: some View {
         NavigationView {
             ZStack {
                 Color.black.ignoresSafeArea()
-                
+
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 24) {
-                        // Header
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Voice Description Tips")
-                                .font(.system(size: 32, weight: .bold))
-                                .foregroundColor(.white)
-                            
-                            Text("Get the most accurate nutrition analysis")
-                                .font(.system(size: 16))
-                                .foregroundColor(.white.opacity(0.7))
-                        }
-                        .padding(.bottom, 8)
-                        
-                        // Tips sections
+                    VStack(alignment: .leading, spacing: 20) {
+                        Text("Voice Input Tips")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                            .foregroundColor(.white)
+                            .padding(.bottom, 8)
+
                         tipSection(
-                            title: "🏷️ Brand Names Matter",
-                            description: "Our AI can search for exact nutrition data from restaurants and brands.",
-                            examples: [
-                                "\"McDonald's Big Mac with medium fries\"",
-                                "\"Chipotle chicken burrito bowl\"",
-                                "\"Trader Joe's cauliflower gnocchi\""
-                            ]
+                            icon: "mic.fill",
+                            title: "Be specific",
+                            description: "The more details you provide, the more accurate the nutrition analysis will be."
                         )
-                        
+
                         tipSection(
-                            title: "📏 Be Specific About Portions",
-                            description: "The more specific you are about amounts, the more accurate the analysis.",
-                            examples: [
-                                "\"12 oz ribeye steak\" instead of \"steak\"",
-                                "\"2 cups of brown rice\" instead of \"rice\"",
-                                "\"Half an avocado\" instead of \"avocado\""
-                            ]
+                            icon: "tag.fill",
+                            title: "Mention brands",
+                            description: "Brand names help us find exact nutrition information from databases."
                         )
-                        
+
                         tipSection(
-                            title: "🥗 List All Ingredients",
-                            description: "Don't forget sauces, dressings, and cooking methods.",
-                            examples: [
-                                "\"Grilled chicken Caesar salad with croutons and parmesan\"",
-                                "\"Scrambled eggs cooked in butter with cheddar cheese\"",
-                                "\"Whole wheat pasta with marinara sauce and olive oil\""
-                            ]
+                            icon: "scalemass.fill",
+                            title: "Include portions",
+                            description: "Describe serving sizes like 'large bowl', 'small plate', or specific measurements."
                         )
-                        
+
                         tipSection(
-                            title: "🎯 Why This Helps",
-                            description: "When you mention brands or restaurants, our AI automatically searches for official nutrition data. For homemade meals, detailed descriptions help estimate portions and identify all ingredients.",
-                            examples: []
+                            icon: "pause.circle.fill",
+                            title: "Pause anytime",
+                            description: "Tap the circle while recording to pause and resume when ready."
+                        )
+
+                        tipSection(
+                            icon: "hand.tap.fill",
+                            title: "Edit your text",
+                            description: "Long press on your transcribed text to edit it manually."
                         )
                     }
-                    .padding()
+                    .padding(20)
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
@@ -512,70 +481,88 @@ struct RealVoiceInputView: View {
                     .foregroundColor(.nutriSyncAccent)
                 }
             }
+            .preferredColorScheme(.dark)
         }
     }
-    
-    private func tipSection(title: String, description: String, examples: [String]) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(title)
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundColor(.white)
-            
-            Text(description)
-                .font(.system(size: 15))
-                .foregroundColor(.white.opacity(0.8))
-                .fixedSize(horizontal: false, vertical: true)
-            
-            if !examples.isEmpty {
-                VStack(alignment: .leading, spacing: 8) {
-                    ForEach(examples, id: \.self) { example in
-                        HStack(alignment: .top, spacing: 8) {
-                            Text("•")
-                                .foregroundColor(.nutriSyncAccent)
-                            Text(example)
-                                .font(.system(size: 14))
-                                .foregroundColor(.white.opacity(0.6))
-                                .italic()
-                        }
-                    }
-                }
-                .padding(.leading, 8)
+
+    private func tipSection(icon: String, title: String, description: String) -> some View {
+        HStack(alignment: .top, spacing: 16) {
+            Image(systemName: icon)
+                .font(.system(size: 24))
+                .foregroundColor(.nutriSyncAccent)
+                .frame(width: 32)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundColor(.white)
+
+                Text(description)
+                    .font(.system(size: 15))
+                    .foregroundColor(.white.opacity(0.7))
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .padding()
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(Color.white.opacity(0.03))
-        )
     }
-    
-    // MARK: - Helper Methods
-    
+
+    // MARK: - Helper Functions
+
+    private func formatTimeRange(start: Date, end: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "h:mm a"
+        return "\(formatter.string(from: start)) - \(formatter.string(from: end))"
+    }
+
+    private func logPastMeal() {
+        guard !transcribedText.isEmpty, !isProcessing else { return }
+
+        isProcessing = true
+        stopRecording()
+
+        Task {
+            do {
+                // Start meal analysis using the service with the window's start time
+                let _ = try await mealCaptureService.startMealAnalysis(
+                    image: nil,
+                    voiceTranscript: transcribedText,
+                    timestamp: window.startTime
+                )
+
+                // Dismiss and navigate back
+                await MainActor.run {
+                    dismiss()
+                }
+
+            } catch {
+                await MainActor.run {
+                    isProcessing = false
+                    // TODO: Show error alert
+                }
+            }
+        }
+    }
+
+    // MARK: - Speech Recognition Methods
+
     private func checkSpeechAuthorization() {
         SFSpeechRecognizer.requestAuthorization { authStatus in
             DispatchQueue.main.async {
                 self.permissionStatus = authStatus
-                switch authStatus {
-                case .authorized:
-                    // Permission granted, ready to record
-                    break
-                case .denied, .restricted:
+                if authStatus != .authorized {
                     self.showPermissionAlert = true
-                case .notDetermined:
-                    break
-                @unknown default:
-                    break
                 }
             }
         }
     }
-    
+
     private func startRecording() {
-        guard permissionStatus == .authorized else {
+        // Check authorization
+        let authStatus = SFSpeechRecognizer.authorizationStatus()
+        guard authStatus == .authorized else {
             showPermissionAlert = true
             return
         }
-        
+
         // Configure audio session
         let audioSession = AVAudioSession.sharedInstance()
         do {
@@ -585,45 +572,44 @@ struct RealVoiceInputView: View {
             print("Failed to set up audio session: \(error)")
             return
         }
-        
+
         // Create recognition request
         recognitionRequest = SFSpeechAudioBufferRecognitionRequest()
         guard let recognitionRequest = recognitionRequest else { return }
-        
+
         recognitionRequest.shouldReportPartialResults = true
         recognitionRequest.requiresOnDeviceRecognition = false
-        
+
         // Start recognition task
         recognitionTask = speechRecognizer?.recognitionTask(with: recognitionRequest) { result, error in
             if let result = result {
                 self.transcribedText = result.bestTranscription.formattedString
             }
-            
+
             if error != nil || result?.isFinal == true {
                 self.stopRecording()
             }
         }
-        
+
         // Configure audio engine
         let inputNode = audioEngine.inputNode
         let recordingFormat = inputNode.outputFormat(forBus: 0)
-        
+
         inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { buffer, _ in
             self.recognitionRequest?.append(buffer)
-            
-            // Update audio levels based on actual audio
             self.updateRealAudioLevels(from: buffer)
         }
-        
+
         // Start audio engine
         do {
             try audioEngine.start()
             isListening = true
+            waveformAnimation = true
         } catch {
             print("Failed to start audio engine: \(error)")
         }
     }
-    
+
     private func stopRecording() {
         audioEngine.stop()
         audioEngine.inputNode.removeTap(onBus: 0)
@@ -632,12 +618,12 @@ struct RealVoiceInputView: View {
         recognitionRequest = nil
         recognitionTask = nil
         isListening = false
-        isPaused = false
+        waveformAnimation = false
     }
-    
+
     private func updateAudioLevels() {
-        guard isListening && !isPaused else { return }
-        
+        guard isListening else { return }
+
         // Only use simulated levels if we don't have real audio
         if audioLevels.allSatisfy({ $0 == 0.5 }) {
             for i in 0..<audioLevels.count {
@@ -645,21 +631,21 @@ struct RealVoiceInputView: View {
             }
         }
     }
-    
+
     private func updateRealAudioLevels(from buffer: AVAudioPCMBuffer) {
         guard let channelData = buffer.floatChannelData else { return }
-        
+
         let channelDataValue = channelData.pointee
         let channelDataValueArray = stride(from: 0, to: Int(buffer.frameLength), by: buffer.stride)
             .map { channelDataValue[$0] }
-        
+
         let rms = sqrt(channelDataValueArray.map { $0 * $0 }.reduce(0, +) / Float(buffer.frameLength))
         let avgPower = 20 * log10(rms)
-        
+
         // Convert to 0-1 range for visualization
         let normalizedPower = (avgPower + 50) / 50
         let clampedPower = min(max(normalizedPower, 0), 1)
-        
+
         DispatchQueue.main.async {
             // Shift levels and add new one
             self.audioLevels.removeFirst()
@@ -669,8 +655,12 @@ struct RealVoiceInputView: View {
 }
 
 #Preview {
-    RealVoiceInputView(capturedImage: nil) { transcript in
-        print("Transcript: \(transcript)")
+    @Previewable @StateObject var viewModel = ScheduleViewModel()
+
+    if let window = viewModel.mealWindows.first {
+        PastMealVoiceInputView(
+            window: window,
+            viewModel: viewModel
+        )
     }
-    .preferredColorScheme(.dark)
 }

@@ -166,16 +166,39 @@ struct DailySync: Identifiable, Codable {
     let alreadyConsumed: [QuickMeal]
     let workSchedule: TimeRange?
     let workoutTime: Date?
-    let currentEnergy: SimpleEnergyLevel
     let specialEvents: [SpecialEvent]
-    
+    let dailyContextDescription: String?  // NEW: Free-form voice/text daily context
+
     // Computed properties
     var remainingMealsCount: Int {
         // Calculate based on time of day and what's already eaten
         let totalPlanned = 5 // Default
         return max(0, totalPlanned - alreadyConsumed.count)
     }
-    
+
+    // NEW: Infer energy level from context for backward compatibility
+    var inferredEnergyLevel: SimpleEnergyLevel? {
+        guard let context = dailyContextDescription?.lowercased() else { return nil }
+
+        // Parse context for energy indicators
+        if context.contains("tired") || context.contains("exhausted") ||
+           context.contains("low energy") || context.contains("drained") ||
+           context.contains("didn't sleep") || context.contains("sleepy") {
+            return .low
+        } else if context.contains("great") || context.contains("high energy") ||
+                  context.contains("energized") || context.contains("pumped") ||
+                  context.contains("feeling good") || context.contains("refreshed") {
+            return .high
+        } else {
+            return .good  // Default/neutral
+        }
+    }
+
+    var hasDetailedContext: Bool {
+        guard let context = dailyContextDescription else { return false }
+        return !context.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
     init(
         id: UUID = UUID(),
         timestamp: Date = Date(),
@@ -183,8 +206,8 @@ struct DailySync: Identifiable, Codable {
         alreadyConsumed: [QuickMeal] = [],
         workSchedule: TimeRange? = nil,
         workoutTime: Date? = nil,
-        currentEnergy: SimpleEnergyLevel = .good,
-        specialEvents: [SpecialEvent] = []
+        specialEvents: [SpecialEvent] = [],
+        dailyContextDescription: String? = nil
     ) {
         self.id = id
         self.timestamp = timestamp
@@ -192,8 +215,8 @@ struct DailySync: Identifiable, Codable {
         self.alreadyConsumed = alreadyConsumed
         self.workSchedule = workSchedule
         self.workoutTime = workoutTime
-        self.currentEnergy = currentEnergy
         self.specialEvents = specialEvents
+        self.dailyContextDescription = dailyContextDescription
     }
     
     // Convert to Firebase format
@@ -202,7 +225,6 @@ struct DailySync: Identifiable, Codable {
             "id": id.uuidString,
             "timestamp": timestamp,
             "syncContext": syncContext.rawValue,
-            "currentEnergy": currentEnergy.rawValue,
             "alreadyConsumed": alreadyConsumed.map { meal in
                 [
                     "id": meal.id.uuidString,
@@ -212,18 +234,23 @@ struct DailySync: Identifiable, Codable {
                 ]
             }
         ]
-        
+
+        // NEW: Add daily context if present
+        if let context = dailyContextDescription {
+            data["dailyContextDescription"] = context
+        }
+
         if let workSchedule = workSchedule {
             data["workSchedule"] = [
                 "start": workSchedule.start,
                 "end": workSchedule.end
             ]
         }
-        
+
         if let workoutTime = workoutTime {
             data["workoutTime"] = workoutTime
         }
-        
+
         if !specialEvents.isEmpty {
             data["specialEvents"] = specialEvents.map { event in
                 [
@@ -233,7 +260,7 @@ struct DailySync: Identifiable, Codable {
                 ]
             }
         }
-        
+
         return data
     }
     
@@ -241,16 +268,17 @@ struct DailySync: Identifiable, Codable {
     static func fromFirestore(_ data: [String: Any]) -> DailySync? {
         guard let id = data["id"] as? String,
               let syncContextRaw = data["syncContext"] as? String,
-              let syncContext = SyncContext(rawValue: syncContextRaw),
-              let energyRaw = data["currentEnergy"] as? String,
-              let currentEnergy = SimpleEnergyLevel(rawValue: energyRaw) else {
+              let syncContext = SyncContext(rawValue: syncContextRaw) else {
             return nil
         }
-        
+
         // Handle Firestore Timestamp conversion
         guard let timestamp = (data["timestamp"] as? FirebaseFirestore.Timestamp)?.dateValue() ?? (data["timestamp"] as? Date) else {
             return nil
         }
+
+        // NEW: Parse daily context description
+        let dailyContextDescription = data["dailyContextDescription"] as? String
         
         // Parse already consumed meals
         let alreadyConsumed: [QuickMeal]
@@ -311,7 +339,7 @@ struct DailySync: Identifiable, Codable {
         
         // Parse workout time with Firestore Timestamp handling
         let workoutTime = (data["workoutTime"] as? FirebaseFirestore.Timestamp)?.dateValue() ?? (data["workoutTime"] as? Date)
-        
+
         return DailySync(
             id: UUID(uuidString: id) ?? UUID(),
             timestamp: timestamp,
@@ -319,8 +347,8 @@ struct DailySync: Identifiable, Codable {
             alreadyConsumed: alreadyConsumed,
             workSchedule: workSchedule,
             workoutTime: workoutTime,
-            currentEnergy: currentEnergy,
-            specialEvents: specialEvents
+            specialEvents: specialEvents,
+            dailyContextDescription: dailyContextDescription  // NEW
         )
     }
 }
@@ -365,6 +393,12 @@ class DailySyncManager: ObservableObject {
             // The whole point of Daily Sync is to generate personalized windows for the day
             print("🔄 Generating windows after Daily Sync completion...")
             await triggerWindowGeneration(for: sync)
+
+            // Process already consumed meals through AI analysis
+            if !sync.alreadyConsumed.isEmpty {
+                print("🍽️ Processing \(sync.alreadyConsumed.count) already consumed meals...")
+                await processAlreadyConsumedMeals(sync.alreadyConsumed)
+            }
         } catch {
             print("❌ Failed to save daily sync: \(error)")
         }
@@ -418,8 +452,13 @@ class DailySyncManager: ObservableObject {
         bedComponents.minute = 0
         let plannedBedtime = calendar.date(from: bedComponents) ?? Date().addingTimeInterval(16 * 3600)
         
-        // Convert energy level
-        let energyLevel = sync.currentEnergy == .high ? 8 : (sync.currentEnergy == .good ? 6 : 4)
+        // Convert energy level (inferred from context if available)
+        let energyLevel: Int
+        if let inferredEnergy = sync.inferredEnergyLevel {
+            energyLevel = inferredEnergy == .high ? 8 : (inferredEnergy == .good ? 6 : 4)
+        } else {
+            energyLevel = 6  // Default to "good"
+        }
         
         // Build activities list from sync data
         var activities: [String] = []
@@ -447,7 +486,46 @@ class DailySyncManager: ObservableObject {
             restrictions: []
         )
     }
-    
+
+    /// Process already consumed meals from DailySync through AI analysis
+    /// This converts QuickMeal entries into fully analyzed LoggedMeal objects
+    private func processAlreadyConsumedMeals(_ meals: [QuickMeal]) async {
+        guard !meals.isEmpty else { return }
+
+        print("🍽️ Processing \(meals.count) already consumed meals from Daily Sync...")
+
+        // Process each meal through the meal capture service
+        // This handles: AI analysis, window assignment, saving to Firebase, and redistribution
+        for (index, quickMeal) in meals.enumerated() {
+            do {
+                print("📍 [\(index + 1)/\(meals.count)] Analyzing: '\(quickMeal.name)' eaten at \(quickMeal.time)")
+
+                // Use MealCaptureService which handles the complete meal analysis pipeline:
+                // 1. Finds closest window based on meal time
+                // 2. Creates AnalyzingMeal and saves to Firebase
+                // 3. Triggers AI analysis (Gemini) with the meal description
+                // 4. Completes analysis and saves as LoggedMeal
+                // 5. Automatically triggers redistribution if needed
+                _ = try await MealCaptureService.shared.startMealAnalysis(
+                    image: nil,                    // No photo for quick-added meals
+                    voiceTranscript: quickMeal.name, // Use meal name as description for AI
+                    barcode: nil,                  // No barcode
+                    timestamp: quickMeal.time      // Use the time they actually ate it
+                )
+
+                print("✅ [\(index + 1)/\(meals.count)] Successfully started analysis for: '\(quickMeal.name)'")
+
+            } catch {
+                print("❌ [\(index + 1)/\(meals.count)] Failed to process meal '\(quickMeal.name)': \(error.localizedDescription)")
+                // Continue with next meal even if one fails
+                // This ensures partial success rather than all-or-nothing
+            }
+        }
+
+        print("✅ Finished processing \(meals.count) already consumed meals")
+        print("   Note: Meals are analyzed in background and will appear as they complete")
+    }
+
     func shouldPromptForSync() -> Bool {
         // Don't prompt if already completed today
         if hasCompletedDailySync { return false }

@@ -421,16 +421,17 @@ class FirebaseDataProvider: @preconcurrency DataProvider, ObservableObject {
         // NO FALLBACK - AI generation is ALWAYS required
         // Call the AI Window Generation Service
         do {
-            let (aiWindows, dayPurpose) = try await AIWindowGenerationService.shared.generateWindows(
+            let (aiWindows, dayPurpose, contextInsights) = try await AIWindowGenerationService.shared.generateWindows(
                 for: profile,
                 checkIn: checkIn,
+                dailySync: try? await getDailySync(for: date),
                 date: date
             )
-            
+
             // Store day purpose if generated
             if let dayPurpose = dayPurpose {
                 self.currentDayPurpose = dayPurpose
-                
+
                 // Save day purpose to Firestore
                 let dateString = ISO8601DateFormatter.yyyyMMdd.string(from: date)
                 let dayPurposeRef = userRef.collection("dayPurposes").document(dateString)
@@ -443,11 +444,29 @@ class FirebaseDataProvider: @preconcurrency DataProvider, ObservableObject {
                     "generatedAt": Date()
                 ])
             }
-            
+
+            // Store context insights if generated
+            if let insights = contextInsights, !insights.isEmpty {
+                // Save insights to Firestore for the current date
+                let dateString = ISO8601DateFormatter.yyyyMMdd.string(from: date)
+                let insightsRef = userRef.collection("contextInsights").document(dateString)
+                try? await insightsRef.setData([
+                    "insights": insights,
+                    "generatedAt": Date()
+                ])
+
+                Task { @MainActor in
+                    DebugLogger.shared.success("Saved \(insights.count) context insights to Firestore")
+                }
+            }
+
             Task { @MainActor in
                 DebugLogger.shared.success("AI generated \(aiWindows.count) windows with rich content")
                 if dayPurpose != nil {
                     DebugLogger.shared.success("Day purpose also generated successfully")
+                }
+                if contextInsights != nil && !contextInsights!.isEmpty {
+                    DebugLogger.shared.success("Context insights also generated (\(contextInsights!.count) insights)")
                 }
             }
             
@@ -501,16 +520,17 @@ class FirebaseDataProvider: @preconcurrency DataProvider, ObservableObject {
         
         // Generate new windows with AI
         do {
-            let (aiWindows, dayPurpose) = try await AIWindowGenerationService.shared.generateWindows(
+            let (aiWindows, dayPurpose, contextInsights) = try await AIWindowGenerationService.shared.generateWindows(
                 for: profile,
                 checkIn: checkIn,
+                dailySync: try? await getDailySync(for: date),
                 date: date
             )
-            
+
             // Store day purpose if generated
             if let dayPurpose = dayPurpose {
                 self.currentDayPurpose = dayPurpose
-                
+
                 // Save day purpose to Firestore
                 let dateString = ISO8601DateFormatter.yyyyMMdd.string(from: date)
                 let dayPurposeRef = userRef.collection("dayPurposes").document(dateString)
@@ -522,6 +542,21 @@ class FirebaseDataProvider: @preconcurrency DataProvider, ObservableObject {
                     "keyPriorities": dayPurpose.keyPriorities,
                     "generatedAt": Date()
                 ])
+            }
+
+            // Store context insights if generated
+            if let insights = contextInsights, !insights.isEmpty {
+                // Save insights to Firestore for the current date
+                let dateString = ISO8601DateFormatter.yyyyMMdd.string(from: date)
+                let insightsRef = userRef.collection("contextInsights").document(dateString)
+                try? await insightsRef.setData([
+                    "insights": insights,
+                    "generatedAt": Date()
+                ])
+
+                Task { @MainActor in
+                    DebugLogger.shared.success("Saved \(insights.count) context insights to Firestore during regeneration")
+                }
             }
             
             // Save all windows to Firebase
@@ -569,7 +604,7 @@ class FirebaseDataProvider: @preconcurrency DataProvider, ObservableObject {
     func saveDailySync(_ sync: DailySync) async throws {
         let dateString = ISO8601DateFormatter.yyyyMMdd.string(from: sync.timestamp)
         
-        await DebugLogger.shared.log("💾 Saving DailySync - Date: \(sync.timestamp), DateString: \(dateString)", category: .dataProvider)
+        DebugLogger.shared.log("💾 Saving DailySync - Date: \(sync.timestamp), DateString: \(dateString)", category: .dataProvider)
         
         guard let userRef = userRef else {
             throw DataProviderError.notAuthenticated
@@ -581,14 +616,14 @@ class FirebaseDataProvider: @preconcurrency DataProvider, ObservableObject {
     func getDailySync(for date: Date) async throws -> DailySync? {
         let dateString = ISO8601DateFormatter.yyyyMMdd.string(from: date)
         
-        await DebugLogger.shared.log("🔍 Getting DailySync - Date: \(date), DateString: \(dateString)", category: .dataProvider)
+        DebugLogger.shared.log("🔍 Getting DailySync - Date: \(date), DateString: \(dateString)", category: .dataProvider)
         
         guard let userRef = userRef else {
             throw DataProviderError.notAuthenticated
         }
         let doc = try await userRef.collection("dailySync").document(dateString).getDocument()
         let exists = doc.exists
-        await DebugLogger.shared.log("📄 DailySync Document - DateString: \(dateString), Exists: \(exists)", category: .dataProvider)
+        DebugLogger.shared.log("📄 DailySync Document - DateString: \(dateString), Exists: \(exists)", category: .dataProvider)
         
         guard let data = doc.data() else { return nil }
         return DailySync.fromFirestore(data)
@@ -696,7 +731,7 @@ class FirebaseDataProvider: @preconcurrency DataProvider, ObservableObject {
         }
         let doc = try await userRef.collection("dayPurposes").document(dateString).getDocument()
         guard let data = doc.data() else { return nil }
-        
+
         return DayPurpose(
             nutritionalStrategy: data["nutritionalStrategy"] as? String ?? "",
             energyManagement: data["energyManagement"] as? String ?? "",
@@ -705,7 +740,20 @@ class FirebaseDataProvider: @preconcurrency DataProvider, ObservableObject {
             keyPriorities: data["keyPriorities"] as? [String] ?? []
         )
     }
-    
+
+    /// Retrieve context insights generated by AI for a specific date
+    func getContextInsights(for date: Date) async throws -> [String]? {
+        let dateString = ISO8601DateFormatter.yyyyMMdd.string(from: date)
+
+        guard let userRef = userRef else {
+            throw DataProviderError.notAuthenticated
+        }
+        let doc = try await userRef.collection("contextInsights").document(dateString).getDocument()
+        guard let data = doc.data() else { return nil }
+
+        return data["insights"] as? [String]
+    }
+
     func savePostMealCheckIn(_ checkIn: PostMealCheckIn) async throws {
         guard let userRef = userRef else {
             throw DataProviderError.notAuthenticated
@@ -1716,10 +1764,14 @@ extension FirebaseDataProvider {
                 }
                 
                 let notes = contextData["notes"] as? String
+                let skippedReason = contextData["skippedReason"] as? String
+                let wasEstimated = contextData["wasEstimated"] as? Bool ?? false
                 let context = WeightEntry.WeighInContext(
                     timeOfDay: timeOfDay,
                     syncContext: syncContext,
-                    notes: notes
+                    notes: notes,
+                    skippedReason: skippedReason,
+                    wasEstimated: wasEstimated
                 )
                 
                 return WeightEntry(
@@ -1768,10 +1820,14 @@ extension FirebaseDataProvider {
         }
         
         let notes = contextData["notes"] as? String
+        let skippedReason = contextData["skippedReason"] as? String
+        let wasEstimated = contextData["wasEstimated"] as? Bool ?? false
         let context = WeightEntry.WeighInContext(
             timeOfDay: timeOfDay,
             syncContext: syncContext,
-            notes: notes
+            notes: notes,
+            skippedReason: skippedReason,
+            wasEstimated: wasEstimated
         )
         
         return WeightEntry(

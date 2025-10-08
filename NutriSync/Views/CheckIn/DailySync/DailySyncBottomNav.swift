@@ -29,41 +29,44 @@ struct DailySyncBottomNav: View {
     }
     
     var body: some View {
-        HStack(spacing: 16) {
-            // Back arrow button (matches onboarding style)
+        HStack {
+            // Back button (exact onboarding style)
             if showBack, let onBack = onBack {
                 Button(action: onBack) {
-                    Image(systemName: "arrow.left")
-                        .font(.system(size: 20, weight: .semibold))
-                        .foregroundColor(.white)
-                        .frame(width: 56, height: 56)
-                        .background(Color.white.opacity(0.05))
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 16)
-                                .stroke(Color.white.opacity(0.1), lineWidth: 1)
-                        )
+                    HStack(spacing: 6) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 16, weight: .semibold))
+                        Text("Back")
+                            .font(.system(size: 16, weight: .medium))
+                    }
+                    .foregroundColor(.white.opacity(0.7))
+                    .frame(height: 44)
+                    .padding(.horizontal, 16)
+                    .background(Color.white.opacity(0.05))
+                    .cornerRadius(22)
                 }
             }
-            
-            // Continue button (prominent green, matches onboarding)
+
+            Spacer()
+
+            // Next button (exact onboarding style)
             Button(action: onNext) {
-                Text(nextButtonTitle)
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundColor(canGoNext ? .black : .white.opacity(0.5))
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 56)
-                    .background(canGoNext ? Color.nutriSyncAccent : Color.white.opacity(0.05))
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16)
-                            .stroke(canGoNext ? Color.clear : Color.white.opacity(0.1), lineWidth: 1)
-                    )
+                HStack(spacing: 6) {
+                    Text(nextButtonTitle)
+                        .font(.system(size: 17, weight: .semibold))
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 14, weight: .semibold))
+                }
+                .foregroundColor(canGoNext ? .black : .white.opacity(0.5))
+                .frame(height: 44)
+                .padding(.horizontal, 24)
+                .background(canGoNext ? Color.nutriSyncAccent : Color.white.opacity(0.1))
+                .cornerRadius(22)
             }
             .disabled(!canGoNext)
         }
-        .padding(.horizontal, 24)
-        .padding(.bottom, 34) // Matches onboarding padding
+        .padding(.horizontal, 20)
+        .padding(.bottom, 34)
     }
 }
 

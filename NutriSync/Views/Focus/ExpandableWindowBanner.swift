@@ -158,7 +158,7 @@ struct ExpandableWindowBanner: View {
     // State for missed window actions
     @State private var showMissedWindowActions = false
     @State private var showInlineMissedActions = false
-    @State private var showSimplifiedMealLogging = false
+    @State private var showPastMealLogging = false
     @State private var selectedMissedWindow: MealWindow?
     @State private var isProcessingFasting = false
     
@@ -522,13 +522,12 @@ struct ExpandableWindowBanner: View {
                 pulseAnimation = true
             }
         }
-        // Removed old modal sheet - now using inline UI for missed windows
-        .sheet(isPresented: $showSimplifiedMealLogging) {
+        // Full screen voice input for missed windows
+        .fullScreenCover(isPresented: $showPastMealLogging) {
             if let missedWindow = selectedMissedWindow {
-                SimplifiedMealLoggingView(
+                PastMealVoiceInputView(
                     window: missedWindow,
-                    viewModel: viewModel,
-                    isPresented: $showSimplifiedMealLogging
+                    viewModel: viewModel
                 )
             }
         }
@@ -539,16 +538,16 @@ struct ExpandableWindowBanner: View {
         HStack(spacing: 8) {
             windowInfoSection
                 .frame(maxWidth: .infinity, alignment: .leading)
-            
+
             quickStatsSection
                 .frame(minWidth: 80, alignment: .trailing)
-            
+
             statusIndicator
                 .frame(width: 44, height: 44)
         }
         .padding(windowBannerPadding)
     }
-    
+
     // Use consistent padding for cleaner look
     private var windowBannerPadding: CGFloat {
         return 14
@@ -995,75 +994,65 @@ struct ExpandableWindowBanner: View {
     
     @ViewBuilder
     private var missedWindowActionsContent: some View {
-        ZStack {
-            // Background tap to dismiss
-            Color.clear
+        HStack(spacing: 0) {
+            // Log meal button (left side)
+            Button(action: {
+                selectedMissedWindow = window
+                showPastMealLogging = true
+                showInlineMissedActions = false
+            }) {
+                HStack(spacing: 6) {
+                    Image(systemName: "text.badge.plus")
+                        .font(.system(size: 14))
+                    Text("Log meal")
+                        .font(.system(size: 13, weight: .medium))
+                }
+                .foregroundColor(.white.opacity(0.85))
+                .frame(maxWidth: .infinity)
+                .frame(height: 44)
                 .contentShape(Rectangle())
-                .onTapGesture {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                        showInlineMissedActions = false
-                    }
-                }
-            
-            HStack(spacing: 0) {
-                // Log meal button (left side)
-                Button(action: {
-                    selectedMissedWindow = window
-                    showSimplifiedMealLogging = true
-                    showInlineMissedActions = false
-                }) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "text.badge.plus")
-                            .font(.system(size: 14))
-                        Text("Log meal")
-                            .font(.system(size: 13, weight: .medium))
-                    }
-                    .foregroundColor(.white.opacity(0.85))
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(PlainButtonStyle())
-                
-                // Vertical divider
-                Rectangle()
-                    .fill(Color.white.opacity(0.1))
-                    .frame(width: 1)
-                    .padding(.vertical, 16)
-                
-                // Mark as fasted button (right side)
-                Button(action: {
-                    Task {
-                        isProcessingFasting = true
-                        if let windowId = UUID(uuidString: window.id) {
-                            await viewModel.markWindowAsFasted(windowId: windowId)
-                        }
-                        isProcessingFasting = false
-                        showInlineMissedActions = false
-                    }
-                }) {
-                    HStack(spacing: 6) {
-                        if isProcessingFasting {
-                            ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                                .scaleEffect(0.6)
-                        } else {
-                            Image(systemName: "clock.badge.xmark")
-                                .font(.system(size: 14))
-                        }
-                        Text("I was fasting")
-                            .font(.system(size: 13, weight: .medium))
-                    }
-                    .foregroundColor(.white.opacity(0.85))
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(PlainButtonStyle())
-                .disabled(isProcessingFasting)
-                .opacity(isProcessingFasting ? 0.5 : 1.0)
             }
-            .frame(height: 56) // Slightly smaller to match banner content
-            .padding(.horizontal, windowBannerPadding)
+            .buttonStyle(PlainButtonStyle())
+
+            // Vertical divider
+            Rectangle()
+                .fill(Color.white.opacity(0.1))
+                .frame(width: 1)
+                .padding(.vertical, 8)
+
+            // Mark as fasted button (right side)
+            Button(action: {
+                Task {
+                    isProcessingFasting = true
+                    if let windowId = UUID(uuidString: window.id) {
+                        await viewModel.markWindowAsFasted(windowId: windowId)
+                    }
+                    isProcessingFasting = false
+                    showInlineMissedActions = false
+                }
+            }) {
+                HStack(spacing: 6) {
+                    if isProcessingFasting {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            .scaleEffect(0.6)
+                    } else {
+                        Image(systemName: "clock.badge.xmark")
+                            .font(.system(size: 14))
+                    }
+                    Text("I was fasting")
+                        .font(.system(size: 13, weight: .medium))
+                }
+                .foregroundColor(.white.opacity(0.85))
+                .frame(maxWidth: .infinity)
+                .frame(height: 44)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(PlainButtonStyle())
+            .disabled(isProcessingFasting)
+            .opacity(isProcessingFasting ? 0.5 : 1.0)
         }
+        .padding(windowBannerPadding)
     }
     
     private func getPurposeInsight() -> String {

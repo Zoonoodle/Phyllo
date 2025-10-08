@@ -36,6 +36,9 @@ extension Color {
     static let phylloBackground = nutriSyncBackground
     static let phylloCard = Color.white.opacity(0.03)
     static let phylloAccent = nutriSyncAccent // Uses #C0FF73
+    static let phylloText = nutriSyncTextPrimary
+    static let phylloTextSecondary = nutriSyncTextSecondary
+    static let phylloTextTertiary = nutriSyncTextTertiary
     
     // Window state colors
     static let phylloFasted = Color.gray.opacity(0.6)  // Neutral gray for fasted

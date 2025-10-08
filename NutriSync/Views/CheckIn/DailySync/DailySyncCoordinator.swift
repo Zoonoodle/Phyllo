@@ -21,7 +21,7 @@ struct DailySyncCoordinator: View {
     var body: some View {
         ZStack {
             Color.nutriSyncBackground.ignoresSafeArea()
-            
+
             VStack(spacing: 0) {
                 // Progress dots at top (matching onboarding)
                 if viewModel.currentScreen != .greeting {
@@ -32,33 +32,42 @@ struct DailySyncCoordinator: View {
                     .padding(.top, 60)
                     .padding(.bottom, 40)
                 }
-                
-                // Dynamic screen content
-                Group {
-                    switch viewModel.currentScreen {
-                    case .greeting:
-                        GreetingView(viewModel: viewModel)
-                    case .weightCheck:
-                        WeightCheckView(viewModel: viewModel)
-                    case .alreadyEaten:
-                        AlreadyEatenViewStyled(viewModel: viewModel)
-                    case .schedule:
-                        ScheduleViewStyled(viewModel: viewModel)
-                    case .energy:
-                        EnergyViewStyled(viewModel: viewModel)
-                    case .complete:
-                        CompleteViewStyled(viewModel: viewModel, dismiss: dismiss)
+
+                // Carousel content with onboarding-style animation
+                GeometryReader { geometry in
+                    HStack(spacing: 0) {
+                        ForEach(0..<viewModel.screenFlow.count, id: \.self) { index in
+                            getScreenContentView(at: index)
+                                .frame(width: geometry.size.width, height: geometry.size.height)
+                        }
                     }
+                    .offset(x: -CGFloat(viewModel.currentIndex) * geometry.size.width)
+                    .animation(.spring(response: 0.5, dampingFraction: 0.85, blendDuration: 0), value: viewModel.currentIndex)
                 }
-                .transition(.asymmetric(
-                    insertion: .move(edge: .trailing).combined(with: .opacity),
-                    removal: .move(edge: .leading).combined(with: .opacity)
-                ))
             }
         }
-        .animation(.easeInOut(duration: 0.3), value: viewModel.currentScreen)
         .onAppear {
             viewModel.setupFlow()
+        }
+    }
+
+    @ViewBuilder
+    private func getScreenContentView(at index: Int) -> some View {
+        let screen = viewModel.screenFlow[safe: index] ?? .greeting
+
+        switch screen {
+        case .greeting:
+            GreetingView(viewModel: viewModel)
+        case .weightCheck:
+            WeightCheckView(viewModel: viewModel)
+        case .alreadyEaten:
+            AlreadyEatenViewStyled(viewModel: viewModel)
+        case .schedule:
+            ScheduleViewStyled(viewModel: viewModel)
+        case .dailyContext:
+            DailyContextInputView(viewModel: viewModel)
+        case .complete:
+            CompleteViewStyled(viewModel: viewModel, dismiss: dismiss)
         }
     }
 }
@@ -76,10 +85,25 @@ class DailySyncViewModel: ObservableObject {
     @Published var energyLevel: SimpleEnergyLevel = .good
     @Published var isGeneratingWindows = false  // Track window generation
     @Published var recordedWeight: Double? = nil  // Track if weight was recorded
+
+    // NEW: Store daily context description
+    @Published var dailyContextDescription: String?
+
+    // NEW: Store AI-generated insights for display
+    @Published var lastGeneratedInsights: [String]?
     
     var screenFlow: [DailySyncScreen] = []
     var currentIndex = 0
-    
+
+    // NEW: Computed property for progress tracking
+    var currentScreenIndex: Int {
+        return currentIndex
+    }
+
+    var screens: [DailySyncScreen] {
+        return screenFlow
+    }
+
     // Setup dynamic flow based on context
     func setupFlow() {
         let context = SyncContext.current()
@@ -123,28 +147,16 @@ class DailySyncViewModel: ObservableObject {
         
         // Always ask about schedule
         screens.append(.schedule)
-        
-        // Only ask energy if it matters for timing
-        if shouldAskEnergy(context) {
-            screens.append(.energy)
-        }
-        
+
+        // NEW: Always show daily context screen (replaces energy)
+        screens.append(.dailyContext)
+
         screens.append(.complete)
         
         self.screenFlow = screens
         self.currentScreen = screens[0]
     }
-    
-    private func shouldAskEnergy(_ context: SyncContext) -> Bool {
-        // Ask about energy if it's midday or later and they haven't eaten much
-        switch context {
-        case .midday, .afternoon, .evening:
-            return alreadyEatenMeals.count < 2
-        default:
-            return true
-        }
-    }
-    
+
     func nextScreen() {
         guard currentIndex < screenFlow.count - 1 else { return }
         currentIndex += 1
@@ -156,7 +168,12 @@ class DailySyncViewModel: ObservableObject {
         currentIndex -= 1
         currentScreen = screenFlow[currentIndex]
     }
-    
+
+    // NEW: Save daily context method
+    func saveDailyContext(_ context: String?) {
+        self.dailyContextDescription = context
+    }
+
     func saveSyncData() async {
         // Start loading state
         await MainActor.run {
@@ -170,7 +187,7 @@ class DailySyncViewModel: ObservableObject {
             alreadyConsumed: alreadyEatenMeals,
             workSchedule: workSchedule,
             workoutTime: workoutTime,
-            currentEnergy: energyLevel
+            dailyContextDescription: dailyContextDescription  // NEW
         )
         
         // Save to Firebase and trigger window generation
@@ -187,7 +204,7 @@ enum DailySyncScreen {
     case weightCheck  // New weight tracking screen
     case alreadyEaten
     case schedule
-    case energy
+    case dailyContext  // NEW: Replaces energy screen with rich context input
     case complete
 }
 
@@ -414,47 +431,6 @@ struct ScheduleViewStyled: View {
     }
 }
 
-// MARK: - Energy View (Styled)
-struct EnergyViewStyled: View {
-    @ObservedObject var viewModel: DailySyncViewModel
-    
-    var body: some View {
-        VStack(spacing: 0) {
-            DailySyncHeader(
-                title: "How's your energy?",
-                subtitle: "This helps optimize your meal timing"
-            )
-            .padding(.top, 40)
-            
-            Spacer()
-            
-            // Energy options using DailySyncOptionButton
-            VStack(spacing: 12) {
-                ForEach(SimpleEnergyLevel.allCases, id: \.self) { level in
-                    DailySyncOptionButton(
-                        icon: level.emoji,
-                        title: level.rawValue,
-                        subtitle: level.nutritionImpact,
-                        isSelected: viewModel.energyLevel == level
-                    ) {
-                        viewModel.energyLevel = level
-                    }
-                }
-            }
-            .padding(.horizontal, 24)
-            
-            Spacer()
-            
-            // Navigation
-            DailySyncBottomNav(
-                onBack: { viewModel.previousScreen() },
-                onNext: { viewModel.nextScreen() },
-                canGoNext: true // Always can continue, has default selection
-            )
-        }
-    }
-}
-
 // MARK: - Complete View (Styled)
 struct CompleteViewStyled: View {
     @ObservedObject var viewModel: DailySyncViewModel
@@ -480,7 +456,35 @@ struct CompleteViewStyled: View {
                         title: "Perfect!",
                         subtitle: "I'm optimizing your \(viewModel.syncData.remainingMealsCount) remaining meals"
                     )
-                    
+
+                    // NEW: Show AI insights if daily context was provided
+                    if let insights = viewModel.lastGeneratedInsights, !insights.isEmpty {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("I understood:")
+                                .font(.subheadline.weight(.medium))
+                                .foregroundColor(.phylloTextSecondary)
+
+                            VStack(alignment: .leading, spacing: 8) {
+                                ForEach(insights, id: \.self) { insight in
+                                    HStack(alignment: .top, spacing: 8) {
+                                        Image(systemName: "checkmark.circle.fill")
+                                            .font(.system(size: 14))
+                                            .foregroundColor(.nutriSyncAccent)
+
+                                        Text(insight)
+                                            .font(.body)
+                                            .foregroundColor(.phylloText)
+                                    }
+                                }
+                            }
+                            .padding()
+                            .background(Color.white.opacity(0.03))
+                            .cornerRadius(12)
+                        }
+                        .padding(.horizontal)
+                        .padding(.top, 16)
+                    }
+
                     Spacer()
                     
                     // Single button to complete (no back on final screen)
@@ -510,6 +514,15 @@ struct CompleteViewStyled: View {
                     // Trigger haptic feedback
                     let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
                     impactFeedback.impactOccurred()
+
+                    // Load context insights if available (they were saved during window generation)
+                    Task {
+                        if let insights = try? await FirebaseDataProvider.shared.getContextInsights(for: Date()) {
+                            await MainActor.run {
+                                viewModel.lastGeneratedInsights = insights
+                            }
+                        }
+                    }
                 }
             }
             
