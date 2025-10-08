@@ -604,15 +604,47 @@ class AIWindowGenerationService {
         dateOnlyFormatter.formatOptions = [.withFullDate]
         let todayString = dateOnlyFormatter.string(from: date)
         
+        // Determine target window count based on user preference
+        let targetWindowCount: String
+        if let mealsPerDay = profile.mealsPerDay {
+            targetWindowCount = "EXACTLY \(mealsPerDay)"
+        } else {
+            // Default fallback if not set
+            targetWindowCount = "4-6"
+        }
+
+        // Calculate latest window timing based on sleep time
+        let latestWindowStartTime: String
+        let latestWindowEndTime: String
+        if let sleepTime = profile.typicalSleepTime {
+            let calendar = Calendar.current
+            let sleepHour = calendar.component(.hour, from: sleepTime)
+            let sleepMinute = calendar.component(.minute, from: sleepTime)
+
+            let sleepDate = calendar.date(bySettingHour: sleepHour, minute: sleepMinute, second: 0, of: date) ?? date
+
+            // Last window should START 2.5 hours before sleep
+            let latestStart = sleepDate.addingTimeInterval(-2.5 * 60 * 60)
+            latestWindowStartTime = simpleTimeFormatter.string(from: latestStart)
+
+            // And END 1 hour before sleep
+            let latestEnd = sleepDate.addingTimeInterval(-1.0 * 60 * 60)
+            latestWindowEndTime = simpleTimeFormatter.string(from: latestEnd)
+        } else {
+            // Default if sleep time not set
+            latestWindowStartTime = "7:00 PM"
+            latestWindowEndTime = "8:30 PM"
+        }
+
         prompt += """
-        
+
         ## Requirements
-        Generate 4-6 meal windows for THE SAME DAY AS THE WAKE TIME (\(todayString)) optimized for the user's goal with:
+        Generate \(targetWindowCount) meal windows for THE SAME DAY AS THE WAKE TIME (\(todayString)) optimized for the user's goal with:
         1. Window timing based on the WAKE TIME provided above (not fixed hours)
-        2. First meal window should start 30-90 minutes after wake time  
+        2. First meal window should start 30-90 minutes after wake time
         3. CRITICAL: Each window MUST be between 1.5 to 3 hours in duration (90-180 minutes)
         4. Space windows appropriately throughout the day (2-4 hours apart)
-        5. Last meal should be 2-3 hours before typical bedtime (assume 10-11 PM if not specified)
+        5. CRITICAL SLEEP CONSTRAINT: Last window must START by \(latestWindowStartTime) at the latest and MUST END by \(latestWindowEndTime) to allow digestion before sleep at \(profile.typicalSleepTime != nil ? simpleTimeFormatter.string(from: profile.typicalSleepTime!) : "typical bedtime")
         6. Creative, contextual window names based on:
            - Window purpose and timing (e.g., "Morning Metabolic Primer", "Pre-Workout Fuel", "Recovery Feast")  
            - User's goal (e.g., for weight loss: "Fat Burning Window", "Metabolic Boost")

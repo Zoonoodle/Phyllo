@@ -111,6 +111,7 @@ struct UserProfile: Codable, Identifiable {
     // Schedule preferences for dynamic timeline
     var earliestMealHour: Int?      // Earliest hour user typically eats
     var latestMealHour: Int?        // Latest hour user typically eats
+    var mealsPerDay: Int?           // Preferred number of meal windows per day
     var workSchedule: WorkSchedule = .standard
     var typicalWakeTime: Date?
     var typicalSleepTime: Date?
@@ -141,6 +142,7 @@ struct UserProfile: Codable, Identifiable {
         micronutrientPriorities: [String],
         earliestMealHour: Int? = nil,
         latestMealHour: Int? = nil,
+        mealsPerDay: Int? = nil,
         workSchedule: WorkSchedule = .standard,
         typicalWakeTime: Date? = nil,
         typicalSleepTime: Date? = nil,
@@ -167,6 +169,7 @@ struct UserProfile: Codable, Identifiable {
         self.micronutrientPriorities = micronutrientPriorities
         self.earliestMealHour = earliestMealHour
         self.latestMealHour = latestMealHour
+        self.mealsPerDay = mealsPerDay
         self.workSchedule = workSchedule
         self.typicalWakeTime = typicalWakeTime
         self.typicalSleepTime = typicalSleepTime
@@ -226,6 +229,9 @@ struct UserProfile: Codable, Identifiable {
         if let latestMealHour = latestMealHour {
             data["latestMealHour"] = latestMealHour
         }
+        if let mealsPerDay = mealsPerDay {
+            data["mealsPerDay"] = mealsPerDay
+        }
         
         // Safely convert dates to Firebase Timestamps
         // Firebase Timestamps require dates after year 1 AD (Unix epoch - 62135596800 seconds)
@@ -277,6 +283,7 @@ struct UserProfile: Codable, Identifiable {
         // Parse new schedule fields
         let earliestMealHour = data["earliestMealHour"] as? Int
         let latestMealHour = data["latestMealHour"] as? Int
+        let mealsPerDay = data["mealsPerDay"] as? Int
         let workSchedule = WorkSchedule(rawValue: data["workSchedule"] as? String ?? "standard") ?? .standard
         let fastingProtocol = FastingProtocol(rawValue: data["fastingProtocol"] as? String ?? "none") ?? .none
         
@@ -309,6 +316,7 @@ struct UserProfile: Codable, Identifiable {
         // Set optional schedule fields
         profile.earliestMealHour = earliestMealHour
         profile.latestMealHour = latestMealHour
+        profile.mealsPerDay = mealsPerDay
         profile.workSchedule = workSchedule
         profile.typicalWakeTime = typicalWakeTime
         profile.typicalSleepTime = typicalSleepTime

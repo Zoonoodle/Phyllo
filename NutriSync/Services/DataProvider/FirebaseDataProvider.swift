@@ -1211,32 +1211,145 @@ class FirebaseDataProvider: @preconcurrency DataProvider, ObservableObject {
     }
     
     // MARK: - Clear All Data
-    
+
+    /// Clears today's data only - allows redoing DailySync → window generation
+    func clearTodayData() async throws {
+        guard let userRef = userRef else {
+            throw DataProviderError.notAuthenticated
+        }
+
+        Task { @MainActor in
+            DebugLogger.shared.warning("Clearing today's data for user: \(currentUserId)")
+        }
+
+        let calendar = Calendar.current
+        let today = Date()
+        let startOfToday = calendar.startOfDay(for: today)
+        let startOfTomorrow = calendar.date(byAdding: .day, value: 1, to: startOfToday)!
+        let dateString = ISO8601DateFormatter.yyyyMMdd.string(from: today)
+
+        // 1. Clear today's windows
+        let windowsSnapshot = try await userRef.collection("windows")
+            .whereField("dayDate", isEqualTo: FirebaseFirestore.Timestamp(date: startOfToday))
+            .getDocuments()
+
+        for doc in windowsSnapshot.documents {
+            try await doc.reference.delete()
+        }
+        Task { @MainActor in
+            DebugLogger.shared.firebase("Cleared \(windowsSnapshot.documents.count) windows for today")
+        }
+
+        // 2. Clear today's meals
+        let mealsSnapshot = try await userRef.collection("meals")
+            .whereField("timestamp", isGreaterThanOrEqualTo: FirebaseFirestore.Timestamp(date: startOfToday))
+            .whereField("timestamp", isLessThan: FirebaseFirestore.Timestamp(date: startOfTomorrow))
+            .getDocuments()
+
+        for doc in mealsSnapshot.documents {
+            try await doc.reference.delete()
+        }
+        Task { @MainActor in
+            DebugLogger.shared.firebase("Cleared \(mealsSnapshot.documents.count) meals for today")
+        }
+
+        // 3. Clear today's analyzing meals
+        let analyzingSnapshot = try await userRef.collection("analyzingMeals")
+            .whereField("timestamp", isGreaterThanOrEqualTo: FirebaseFirestore.Timestamp(date: startOfToday))
+            .whereField("timestamp", isLessThan: FirebaseFirestore.Timestamp(date: startOfTomorrow))
+            .getDocuments()
+
+        for doc in analyzingSnapshot.documents {
+            try await doc.reference.delete()
+        }
+        Task { @MainActor in
+            DebugLogger.shared.firebase("Cleared \(analyzingSnapshot.documents.count) analyzing meals for today")
+        }
+
+        // 4. Clear today's dailySync
+        let dailySyncDoc = userRef.collection("dailySync").document(dateString)
+        if try await dailySyncDoc.getDocument().exists {
+            try await dailySyncDoc.delete()
+            Task { @MainActor in
+                DebugLogger.shared.firebase("Cleared today's dailySync")
+            }
+        }
+
+        // 5. Clear today's dayPurpose
+        let dayPurposeDoc = userRef.collection("dayPurposes").document(dateString)
+        if try await dayPurposeDoc.getDocument().exists {
+            try await dayPurposeDoc.delete()
+            Task { @MainActor in
+                DebugLogger.shared.firebase("Cleared today's dayPurpose")
+            }
+        }
+
+        // 6. Clear today's contextInsights
+        let contextInsightsDoc = userRef.collection("contextInsights").document(dateString)
+        if try await contextInsightsDoc.getDocument().exists {
+            try await contextInsightsDoc.delete()
+            Task { @MainActor in
+                DebugLogger.shared.firebase("Cleared today's contextInsights")
+            }
+        }
+
+        // 7. Clear today's morning check-in
+        let morningCheckInDoc = userRef.collection("checkIns").document("morning").collection("data").document(dateString)
+        if try await morningCheckInDoc.getDocument().exists {
+            try await morningCheckInDoc.delete()
+            Task { @MainActor in
+                DebugLogger.shared.firebase("Cleared today's morning check-in")
+            }
+        }
+
+        // 8. Reset in-memory state
+        await MainActor.run {
+            // Reset DailySyncManager so user can do DailySync again
+            DailySyncManager.shared.todaySync = nil
+            DailySyncManager.shared.hasCompletedDailySync = false
+            DailySyncManager.shared.pendingQuickMeals = []
+
+            // Reset day purpose cache
+            self.currentDayPurpose = nil
+
+            DebugLogger.shared.success("Reset in-memory state for today")
+        }
+
+        Task { @MainActor in
+            DebugLogger.shared.success("Successfully cleared all of today's data - ready for fresh DailySync!")
+        }
+    }
+
     /// Clears ALL user data from Firebase - USE WITH CAUTION
     func clearAllUserData() async throws {
         Task { @MainActor in
             DebugLogger.shared.warning("Starting complete Firebase data deletion for user: \(currentUserId)")
         }
         
-        // Collections to clear
+        // Collections to clear (simple collections with direct documents)
         let collections = [
             "meals",
             "windows",
-            "analyzingMeals"
+            "analyzingMeals",
+            "dailySync",
+            "dayPurposes",
+            "contextInsights",
+            "weightEntries",
+            "insights"
         ]
-        
+
         // Clear each collection
         guard let userRef = userRef else {
             throw DataProviderError.notAuthenticated
         }
-        
+
         for collectionName in collections {
             let snapshot = try await userRef.collection(collectionName).getDocuments()
-            
+
             for document in snapshot.documents {
                 try await document.reference.delete()
             }
-            
+
             Task { @MainActor in
                 DebugLogger.shared.firebase("Cleared \(snapshot.documents.count) documents from \(collectionName)")
             }

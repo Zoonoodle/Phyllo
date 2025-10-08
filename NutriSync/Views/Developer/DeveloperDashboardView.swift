@@ -318,7 +318,7 @@ struct FirebaseTabView: View {
                     } else {
                         Image(systemName: "trash.fill")
                     }
-                    Text("Clear All Firebase Data")
+                    Text("Clear Today's Data")
                 }
                 .frame(maxWidth: .infinity)
                 .padding()
@@ -327,13 +327,13 @@ struct FirebaseTabView: View {
                 .cornerRadius(12)
             }
             .disabled(isClearing)
-            .confirmationDialog("Clear All Data", isPresented: $showClearConfirmation) {
-                Button("Clear ALL Data from Firebase", role: .destructive) {
+            .confirmationDialog("Clear Today's Data", isPresented: $showClearConfirmation) {
+                Button("Clear Today's Data", role: .destructive) {
                     clearAllData()
                 }
                 Button("Cancel", role: .cancel) {}
             } message: {
-                Text("This will permanently delete ALL data from Firebase. This action cannot be undone.")
+                Text("This will delete today's windows, meals, and DailySync data. You'll be able to redo the DailySync → window generation flow.")
             }
         }
         .onAppear {
@@ -424,77 +424,37 @@ struct FirebaseTabView: View {
     
     private func clearAllData() {
         isClearing = true
-        
+
         Task {
             do {
-                let userRef = Firestore.firestore()
-                    .collection("users")
-                    .document("dev_user_001")
-                
-                // Clear all meals
-                let mealsSnapshot = try await userRef
-                    .collection("meals")
-                    .getDocuments()
-                
-                for doc in mealsSnapshot.documents {
-                    try await doc.reference.delete()
-                }
-                
-                // Clear all windows
-                let windowsSnapshot = try await userRef
-                    .collection("windows")
-                    .getDocuments()
-                
-                for doc in windowsSnapshot.documents {
-                    try await doc.reference.delete()
-                }
-                
-                // Clear all check-ins (IMPORTANT!)
-                let checkInsSnapshot = try await userRef
-                    .collection("checkIns")
-                    .getDocuments()
-                
-                for doc in checkInsSnapshot.documents {
-                    try await doc.reference.delete()
-                }
-                
-                // Clear analyzing meals
-                let analyzingSnapshot = try await userRef
-                    .collection("analyzingMeals")
-                    .getDocuments()
-                
-                for doc in analyzingSnapshot.documents {
-                    try await doc.reference.delete()
-                }
-                
-                // Clear insights
-                let insightsSnapshot = try await userRef
-                    .collection("insights")
-                    .getDocuments()
-                
-                for doc in insightsSnapshot.documents {
-                    try await doc.reference.delete()
-                }
-                
+                // Use FirebaseDataProvider's clearTodayData method
+                // This clears: today's windows, meals, dailySync, dayPurpose, contextInsights, analyzing meals
+                // And resets: DailySyncManager state
+                try await FirebaseDataProvider.shared.clearTodayData()
+
                 await MainActor.run {
                     isClearing = false
                     totalMeals = 0
-                    
-                    // Clear in-memory check-in data to prevent immediate regeneration
+
+                    // Clear in-memory check-in data
                     CheckInManager.shared.morningCheckIns.removeAll()
                     CheckInManager.shared.hasCompletedMorningCheckIn = false
                     CheckInManager.shared.postMealCheckIns.removeAll()
                     CheckInManager.shared.pendingPostMealCheckIns.removeAll()
-                    
-                    // Post notification to clear check-in data in ViewModels
+
+                    // Post notification to refresh ViewModels
                     NotificationCenter.default.post(name: .clearAllDataNotification, object: nil)
-                    
-                    DebugLogger.shared.success("Cleared all Firebase data and in-memory check-ins")
+
+                    DebugLogger.shared.success("✅ Cleared today's data - ready for fresh DailySync!")
                 }
+
+                // Refresh stats after clearing
+                await fetchFirebaseStats()
+
             } catch {
                 await MainActor.run {
                     isClearing = false
-                    DebugLogger.shared.error("Failed to clear data: \(error)")
+                    DebugLogger.shared.error("Failed to clear today's data: \(error)")
                 }
             }
         }
