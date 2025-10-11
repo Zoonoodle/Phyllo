@@ -601,7 +601,7 @@ struct TimePickerCompact: View {
                     }
                 }
                 .pickerStyle(.wheel)
-                .frame(width: 50)
+                .frame(width: 60, height: 80)
                 .clipped()
 
                 Text(":")
@@ -617,7 +617,7 @@ struct TimePickerCompact: View {
                     }
                 }
                 .pickerStyle(.wheel)
-                .frame(width: 50)
+                .frame(width: 60, height: 80)
                 .clipped()
             }
             .colorScheme(.dark)
