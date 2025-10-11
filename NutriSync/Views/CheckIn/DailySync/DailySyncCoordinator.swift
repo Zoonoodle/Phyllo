@@ -585,42 +585,62 @@ struct TimePickerCompact: View {
     private let hours24 = Array(0...23)  // All 24 hours
     private let minutes = [0, 15, 30, 45]
 
+    // Computed property to determine AM/PM
+    private var period: String {
+        selectedHour24 < 12 ? "AM" : "PM"
+    }
+
     var body: some View {
         VStack(spacing: 4) {
             Text(label)
                 .font(.system(size: 12))
                 .foregroundColor(.white.opacity(0.5))
 
-            HStack(spacing: 4) {
-                // Hour picker (shows 12-hour format with AM/PM in picker)
-                Picker("", selection: $selectedHour24) {
-                    ForEach(hours24, id: \.self) { hour24 in
-                        Text(formatHour(hour24))
-                            .foregroundColor(.white)
-                            .tag(hour24)
+            ZStack(alignment: .topLeading) {
+                // Time pickers
+                HStack(spacing: 4) {
+                    // Hour picker (shows 1-12 only)
+                    Picker("", selection: $selectedHour24) {
+                        ForEach(hours24, id: \.self) { hour24 in
+                            Text("\(hour24To12(hour24))")
+                                .foregroundColor(.white)
+                                .tag(hour24)
+                        }
                     }
-                }
-                .pickerStyle(.wheel)
-                .frame(width: 70, height: 80)
-                .clipped()
+                    .pickerStyle(.wheel)
+                    .frame(width: 50, height: 80)
+                    .clipped()
 
-                Text(":")
-                    .foregroundColor(.white.opacity(0.7))
-                    .font(.system(size: 18, weight: .medium))
+                    Text(":")
+                        .foregroundColor(.white.opacity(0.7))
+                        .font(.system(size: 18, weight: .medium))
 
-                // Minute picker (15-minute intervals only)
-                Picker("", selection: $selectedMinute) {
-                    ForEach(minutes, id: \.self) { minute in
-                        Text(String(format: "%02d", minute))
-                            .foregroundColor(.white)
-                            .tag(minute)
+                    // Minute picker (15-minute intervals only)
+                    Picker("", selection: $selectedMinute) {
+                        ForEach(minutes, id: \.self) { minute in
+                            Text(String(format: "%02d", minute))
+                                .foregroundColor(.white)
+                                .tag(minute)
+                        }
                     }
+                    .pickerStyle(.wheel)
+                    .frame(width: 50, height: 80)
+                    .clipped()
                 }
-                .pickerStyle(.wheel)
-                .frame(width: 50, height: 80)
-                .clipped()
+                .colorScheme(.dark)
+
+                // AM/PM indicator (top-left)
+                Text(period)
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundColor(.nutriSyncAccent)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 3)
+                    .background(
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(Color.nutriSyncAccent.opacity(0.15))
+                    )
+                    .offset(x: 4, y: 4)
             }
-            .colorScheme(.dark)
         }
         .padding(.vertical, 8)
         .padding(.horizontal, 12)
@@ -649,26 +669,15 @@ struct TimePickerCompact: View {
         }
     }
 
-    /// Format 24-hour time to 12-hour with AM/PM
-    private func formatHour(_ hour24: Int) -> String {
-        let hour12: Int
-        let period: String
-
+    /// Convert 24-hour to 12-hour display (1-12)
+    private func hour24To12(_ hour24: Int) -> Int {
         if hour24 == 0 {
-            hour12 = 12
-            period = "AM"
-        } else if hour24 < 12 {
-            hour12 = hour24
-            period = "AM"
-        } else if hour24 == 12 {
-            hour12 = 12
-            period = "PM"
+            return 12
+        } else if hour24 <= 12 {
+            return hour24
         } else {
-            hour12 = hour24 - 12
-            period = "PM"
+            return hour24 - 12
         }
-
-        return "\(hour12) \(period)"
     }
 
     private func updateTime() {
