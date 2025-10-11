@@ -579,21 +579,48 @@ struct TimePickerCompact: View {
     let label: String
     @Binding var time: Date
 
+    @State private var selectedHour: Int = 9
+    @State private var selectedMinute: Int = 0
+
+    private let hours = Array(0...23)
+    private let minutes = [0, 15, 30, 45]
+
     var body: some View {
         VStack(spacing: 4) {
             Text(label)
                 .font(.system(size: 12))
                 .foregroundColor(.white.opacity(0.5))
 
-            DatePicker("", selection: $time, displayedComponents: .hourAndMinute)
-                .datePickerStyle(.wheel)
-                .labelsHidden()
-                .colorScheme(.dark)
-                .accentColor(.nutriSyncAccent)
-                .frame(maxWidth: 120)
+            HStack(spacing: 4) {
+                // Hour picker
+                Picker("", selection: $selectedHour) {
+                    ForEach(hours, id: \.self) { hour in
+                        Text(String(format: "%02d", hour))
+                            .foregroundColor(.white)
+                            .tag(hour)
+                    }
+                }
+                .pickerStyle(.wheel)
+                .frame(width: 50)
                 .clipped()
-                // 15-minute intervals
-                .environment(\.minuteInterval, 15)
+
+                Text(":")
+                    .foregroundColor(.white.opacity(0.7))
+                    .font(.system(size: 18, weight: .medium))
+
+                // Minute picker (15-minute intervals only)
+                Picker("", selection: $selectedMinute) {
+                    ForEach(minutes, id: \.self) { minute in
+                        Text(String(format: "%02d", minute))
+                            .foregroundColor(.white)
+                            .tag(minute)
+                    }
+                }
+                .pickerStyle(.wheel)
+                .frame(width: 50)
+                .clipped()
+            }
+            .colorScheme(.dark)
         }
         .padding(.vertical, 8)
         .padding(.horizontal, 12)
@@ -602,31 +629,35 @@ struct TimePickerCompact: View {
                 .fill(Color.white.opacity(0.05))
         )
         .onAppear {
-            // Round to nearest 15 minutes on appear
-            time = roundToNearest15Minutes(time)
+            // Initialize from binding
+            let calendar = Calendar.current
+            let components = calendar.dateComponents([.hour, .minute], from: time)
+            selectedHour = components.hour ?? 9
+
+            // Round minute to nearest 15
+            let rawMinute = components.minute ?? 0
+            selectedMinute = (rawMinute + 7) / 15 * 15
+            if selectedMinute >= 60 {
+                selectedMinute = 0
+            }
+        }
+        .onChange(of: selectedHour) { _ in
+            updateTime()
+        }
+        .onChange(of: selectedMinute) { _ in
+            updateTime()
         }
     }
 
-    /// Rounds a date to the nearest 15-minute increment
-    private func roundToNearest15Minutes(_ date: Date) -> Date {
+    private func updateTime() {
         let calendar = Calendar.current
-        let components = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: date)
+        var components = calendar.dateComponents([.year, .month, .day], from: time)
+        components.hour = selectedHour
+        components.minute = selectedMinute
 
-        guard let minute = components.minute else { return date }
-
-        // Round to nearest 15 minutes
-        let roundedMinute = (minute + 7) / 15 * 15 // +7 for proper rounding
-
-        var newComponents = components
-        newComponents.minute = roundedMinute % 60
-
-        // Handle hour overflow if minute rounds to 60
-        if roundedMinute >= 60, let hour = components.hour {
-            newComponents.hour = hour + 1
-            newComponents.minute = 0
+        if let newDate = calendar.date(from: components) {
+            time = newDate
         }
-
-        return calendar.date(from: newComponents) ?? date
     }
 }
 
