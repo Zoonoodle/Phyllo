@@ -579,11 +579,13 @@ struct TimePickerCompact: View {
     let label: String
     @Binding var time: Date
 
-    @State private var selectedHour: Int = 9
+    @State private var selectedHour: Int = 9  // 12-hour format (1-12)
     @State private var selectedMinute: Int = 0
+    @State private var selectedPeriod: Int = 0  // 0 = AM, 1 = PM
 
-    private let hours = Array(0...23)
+    private let hours = Array(1...12)  // 12-hour format
     private let minutes = [0, 15, 30, 45]
+    private let periods = ["AM", "PM"]
 
     var body: some View {
         VStack(spacing: 4) {
@@ -592,16 +594,16 @@ struct TimePickerCompact: View {
                 .foregroundColor(.white.opacity(0.5))
 
             HStack(spacing: 4) {
-                // Hour picker
+                // Hour picker (12-hour format)
                 Picker("", selection: $selectedHour) {
                     ForEach(hours, id: \.self) { hour in
-                        Text(String(format: "%02d", hour))
+                        Text("\(hour)")
                             .foregroundColor(.white)
                             .tag(hour)
                     }
                 }
                 .pickerStyle(.wheel)
-                .frame(width: 60, height: 80)
+                .frame(width: 50, height: 80)
                 .clipped()
 
                 Text(":")
@@ -617,7 +619,19 @@ struct TimePickerCompact: View {
                     }
                 }
                 .pickerStyle(.wheel)
-                .frame(width: 60, height: 80)
+                .frame(width: 50, height: 80)
+                .clipped()
+
+                // AM/PM picker
+                Picker("", selection: $selectedPeriod) {
+                    ForEach(0..<periods.count, id: \.self) { index in
+                        Text(periods[index])
+                            .foregroundColor(.white)
+                            .tag(index)
+                    }
+                }
+                .pickerStyle(.wheel)
+                .frame(width: 50, height: 80)
                 .clipped()
             }
             .colorScheme(.dark)
@@ -629,10 +643,25 @@ struct TimePickerCompact: View {
                 .fill(Color.white.opacity(0.05))
         )
         .onAppear {
-            // Initialize from binding
+            // Initialize from binding (convert 24-hour to 12-hour)
             let calendar = Calendar.current
             let components = calendar.dateComponents([.hour, .minute], from: time)
-            selectedHour = components.hour ?? 9
+            let hour24 = components.hour ?? 9
+
+            // Convert 24-hour to 12-hour format
+            if hour24 == 0 {
+                selectedHour = 12
+                selectedPeriod = 0  // AM
+            } else if hour24 < 12 {
+                selectedHour = hour24
+                selectedPeriod = 0  // AM
+            } else if hour24 == 12 {
+                selectedHour = 12
+                selectedPeriod = 1  // PM
+            } else {
+                selectedHour = hour24 - 12
+                selectedPeriod = 1  // PM
+            }
 
             // Round minute to nearest 15
             let rawMinute = components.minute ?? 0
@@ -647,12 +676,24 @@ struct TimePickerCompact: View {
         .onChange(of: selectedMinute) { _ in
             updateTime()
         }
+        .onChange(of: selectedPeriod) { _ in
+            updateTime()
+        }
     }
 
     private func updateTime() {
         let calendar = Calendar.current
         var components = calendar.dateComponents([.year, .month, .day], from: time)
-        components.hour = selectedHour
+
+        // Convert 12-hour format to 24-hour
+        var hour24: Int
+        if selectedPeriod == 0 {  // AM
+            hour24 = selectedHour == 12 ? 0 : selectedHour
+        } else {  // PM
+            hour24 = selectedHour == 12 ? 12 : selectedHour + 12
+        }
+
+        components.hour = hour24
         components.minute = selectedMinute
 
         if let newDate = calendar.date(from: components) {
