@@ -116,7 +116,6 @@ struct ContentView: View {
                 } else {
                     ZStack {
                         MainTabView()
-                            .withNudges()
                             .fullScreenCover(isPresented: $showNotificationOnboarding) {
                                 NotificationOnboardingView(isPresented: $showNotificationOnboarding)
                                     .environmentObject(notificationManager)
@@ -372,7 +371,6 @@ struct ContentView_Previews: PreviewProvider {
             .environment(\.isPreview, true)
             .onAppear {
                 // Initialize singletons for preview
-                _ = NudgeManager.shared
                 _ = TimeProvider.shared
                 _ = ClarificationManager.shared
             }

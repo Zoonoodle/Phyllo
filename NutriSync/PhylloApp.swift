@@ -15,7 +15,6 @@ struct NutriSyncApp: App {
     @StateObject private var firebaseConfig = FirebaseConfig.shared
     @StateObject private var dataProvider = FirebaseDataProvider.shared
     @StateObject private var timeProvider = TimeProvider.shared
-    @StateObject private var nudgeManager = NudgeManager.shared
     @StateObject private var clarificationManager = ClarificationManager.shared
     @StateObject private var checkInManager = CheckInManager.shared
     @StateObject private var vertexAIService = VertexAIService.shared
@@ -39,7 +38,6 @@ struct NutriSyncApp: App {
                 .environmentObject(firebaseConfig)
                 .environmentObject(dataProvider)
                 .environmentObject(timeProvider)
-                .environmentObject(nudgeManager)
                 .environmentObject(clarificationManager)
                 .environmentObject(checkInManager)
                 .environmentObject(vertexAIService)

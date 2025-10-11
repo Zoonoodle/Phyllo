@@ -172,15 +172,6 @@ struct RealVoiceInputView: View {
         .preferredColorScheme(.dark)
         .onAppear {
             checkSpeechAuthorization()
-            
-            // Show voice tips nudge on first use
-            let hasShownVoiceTips = UserDefaults.standard.bool(forKey: "hasShownVoiceInputTips")
-            if !hasShownVoiceTips {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    NudgeManager.shared.triggerNudge(.voiceInputTips)
-                    UserDefaults.standard.set(true, forKey: "hasShownVoiceInputTips")
-                }
-            }
         }
         .onDisappear {
             stopRecording()

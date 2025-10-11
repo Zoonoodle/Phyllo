@@ -8,7 +8,6 @@
 import SwiftUI
 
 struct NoWindowsView: View {
-    @StateObject private var nudgeManager = NudgeManager.shared
     @State private var showContent = false
     @State private var animateText = false
     var onContinue: (() -> Void)? = nil

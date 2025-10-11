@@ -16,7 +16,6 @@ class NotificationManager: NSObject, ObservableObject {
     
     // MARK: - Private Properties
     private let notificationCenter = UNUserNotificationCenter.current()
-    private let nudgeManager = NudgeManager.shared
     private let timeProvider = TimeProvider.shared
     private let dataProvider = DataSourceProvider.shared.provider
     
@@ -205,8 +204,8 @@ class NotificationManager: NSObject, ObservableObject {
     func notifyMissedWindow(_ window: MealWindow) async {
         guard isAuthorized,
               notificationPreferences.missedWindowAlerts else { return }
-        
-        // Check if app is in foreground - let NudgeManager handle it
+
+        // Don't show notification if app is in foreground
         if UIApplication.shared.applicationState == .active {
             return
         }
@@ -467,13 +466,6 @@ extension NotificationManager: UNUserNotificationCenterDelegate {
         willPresent notification: UNNotification,
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
     ) {
-        // Check if we should suppress this notification
-        if NudgeManager.shared.hasActiveNudge {
-            // Don't show notification if there's already an in-app nudge
-            completionHandler([])
-            return
-        }
-        
         // Show banner and play sound
         if #available(iOS 14.0, *) {
             completionHandler([.banner, .sound])
@@ -512,42 +504,21 @@ extension NotificationManager: UNUserNotificationCenterDelegate {
                     )
                     
                 case "dailySync":
-                    // Trigger daily sync nudge
-                    nudgeManager.triggerNudge(.dailySync)
-                    
+                    // Navigate to schedule tab (nudges removed)
+                    NotificationCenter.default.post(
+                        name: .navigateToTab,
+                        object: nil,
+                        userInfo: ["tab": "schedule"]
+                    )
+
                 case "postMealCheckIn":
-                    // Trigger post-meal check-in nudge
-                    if let mealIdString = userInfo["mealId"] as? String {
-                        Task {
-                            do {
-                                if let meal = try await dataProvider.getMeal(id: mealIdString) {
-                                    await MainActor.run {
-                                        nudgeManager.triggerNudge(.postMealCheckIn(meal: meal))
-                                    }
-                                } else {
-                                    // Fallback to schedule tab if meal not found
-                                    await MainActor.run {
-                                        NotificationCenter.default.post(
-                                            name: .navigateToTab,
-                                            object: nil,
-                                            userInfo: ["tab": "schedule"]
-                                        )
-                                    }
-                                }
-                            } catch {
-                                print("Error fetching meal: \(error)")
-                                // Fallback to schedule tab on error
-                                await MainActor.run {
-                                    NotificationCenter.default.post(
-                                        name: .navigateToTab,
-                                        object: nil,
-                                        userInfo: ["tab": "schedule"]
-                                    )
-                                }
-                            }
-                        }
-                    }
-                    
+                    // Navigate to schedule tab (nudges removed)
+                    NotificationCenter.default.post(
+                        name: .navigateToTab,
+                        object: nil,
+                        userInfo: ["tab": "schedule"]
+                    )
+
                 default:
                     break
                 }
@@ -642,6 +613,11 @@ struct NotificationPreferences: Codable, Equatable {
 
 extension Notification.Name {
     static let navigateToTab = Notification.Name("navigateToTab")
+    static let switchToScheduleTab = Notification.Name("switchToScheduleTab")
+    static let switchToScanTab = Notification.Name("switchToScanTab")
+    static let switchToTimelineWithScroll = Notification.Name("switchToTimelineWithScroll")
+    static let navigateToMealDetails = Notification.Name("navigateToMealDetails")
+    static let animateMealToWindow = Notification.Name("animateMealToWindow")
     static let clearAllDataNotification = Notification.Name("clearAllDataNotification")
     static let appDataRefreshed = Notification.Name("appDataRefreshed")
 }
