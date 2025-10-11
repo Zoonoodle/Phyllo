@@ -78,8 +78,8 @@ class DailySyncViewModel: ObservableObject {
     @Published var currentScreen: DailySyncScreen = .greeting
     @Published var syncData = DailySync()
     @Published var alreadyEatenMeals: [QuickMeal] = []
-    @Published var workStart: Date = Date()
-    @Published var workEnd: Date = Date()
+    @Published var workStart: Date
+    @Published var workEnd: Date
     @Published var hasWorkToday = true
     @Published var workoutTime: Date?
     @Published var energyLevel: SimpleEnergyLevel = .good
@@ -91,9 +91,27 @@ class DailySyncViewModel: ObservableObject {
 
     // NEW: Store AI-generated insights for display
     @Published var lastGeneratedInsights: [String]?
-    
+
     var screenFlow: [DailySyncScreen] = []
     var currentIndex = 0
+
+    init() {
+        // Initialize work times to sensible defaults, rounded to 15 minutes
+        let now = Date()
+        let calendar = Calendar.current
+
+        // Default work start: 9:00 AM today
+        var startComponents = calendar.dateComponents([.year, .month, .day], from: now)
+        startComponents.hour = 9
+        startComponents.minute = 0
+        self.workStart = calendar.date(from: startComponents) ?? now
+
+        // Default work end: 5:00 PM today
+        var endComponents = calendar.dateComponents([.year, .month, .day], from: now)
+        endComponents.hour = 17
+        endComponents.minute = 0
+        self.workEnd = calendar.date(from: endComponents) ?? now
+    }
 
     // NEW: Computed property for progress tracking
     var currentScreenIndex: Int {
@@ -388,7 +406,27 @@ struct ScheduleViewStyled: View {
                         get: { viewModel.workoutTime != nil },
                         set: { hasWorkout in
                             if hasWorkout {
-                                viewModel.workoutTime = Date()
+                                // Set to current time rounded to nearest 15 minutes
+                                let calendar = Calendar.current
+                                let now = Date()
+                                let components = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: now)
+                                guard let minute = components.minute else {
+                                    viewModel.workoutTime = now
+                                    return
+                                }
+
+                                // Round to nearest 15 minutes
+                                let roundedMinute = (minute + 7) / 15 * 15
+                                var newComponents = components
+                                newComponents.minute = roundedMinute % 60
+
+                                // Handle hour overflow if minute rounds to 60
+                                if roundedMinute >= 60, let hour = components.hour {
+                                    newComponents.hour = hour + 1
+                                    newComponents.minute = 0
+                                }
+
+                                viewModel.workoutTime = calendar.date(from: newComponents) ?? now
                             } else {
                                 viewModel.workoutTime = nil
                             }
@@ -540,18 +578,22 @@ struct CompleteViewStyled: View {
 struct TimePickerCompact: View {
     let label: String
     @Binding var time: Date
-    
+
     var body: some View {
         VStack(spacing: 4) {
             Text(label)
                 .font(.system(size: 12))
                 .foregroundColor(.white.opacity(0.5))
-            
+
             DatePicker("", selection: $time, displayedComponents: .hourAndMinute)
-                .datePickerStyle(.compact)
+                .datePickerStyle(.wheel)
                 .labelsHidden()
                 .colorScheme(.dark)
                 .accentColor(.nutriSyncAccent)
+                .frame(maxWidth: 120)
+                .clipped()
+                // 15-minute intervals
+                .environment(\.minuteInterval, 15)
         }
         .padding(.vertical, 8)
         .padding(.horizontal, 12)
@@ -559,6 +601,32 @@ struct TimePickerCompact: View {
             RoundedRectangle(cornerRadius: 12)
                 .fill(Color.white.opacity(0.05))
         )
+        .onAppear {
+            // Round to nearest 15 minutes on appear
+            time = roundToNearest15Minutes(time)
+        }
+    }
+
+    /// Rounds a date to the nearest 15-minute increment
+    private func roundToNearest15Minutes(_ date: Date) -> Date {
+        let calendar = Calendar.current
+        let components = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: date)
+
+        guard let minute = components.minute else { return date }
+
+        // Round to nearest 15 minutes
+        let roundedMinute = (minute + 7) / 15 * 15 // +7 for proper rounding
+
+        var newComponents = components
+        newComponents.minute = roundedMinute % 60
+
+        // Handle hour overflow if minute rounds to 60
+        if roundedMinute >= 60, let hour = components.hour {
+            newComponents.hour = hour + 1
+            newComponents.minute = 0
+        }
+
+        return calendar.date(from: newComponents) ?? date
     }
 }
 
