@@ -596,7 +596,7 @@ struct TimePickerCompact: View {
                 .font(.system(size: 12))
                 .foregroundColor(.white.opacity(0.5))
 
-            ZStack(alignment: .topLeading) {
+            ZStack(alignment: .topTrailing) {
                 // Time pickers
                 HStack(spacing: 4) {
                     // Hour picker (shows 1-12 only)
@@ -629,7 +629,7 @@ struct TimePickerCompact: View {
                 }
                 .colorScheme(.dark)
 
-                // AM/PM indicator (top-left)
+                // AM/PM indicator (top-right)
                 Text(period)
                     .font(.system(size: 10, weight: .semibold))
                     .foregroundColor(.nutriSyncAccent)
@@ -639,7 +639,7 @@ struct TimePickerCompact: View {
                         RoundedRectangle(cornerRadius: 4)
                             .fill(Color.nutriSyncAccent.opacity(0.15))
                     )
-                    .offset(x: 4, y: 4)
+                    .offset(x: -4, y: 4)
             }
         }
         .padding(.vertical, 8)
