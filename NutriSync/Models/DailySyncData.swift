@@ -170,11 +170,8 @@ struct DailySync: Identifiable, Codable {
     let dailyContextDescription: String?  // NEW: Free-form voice/text daily context
 
     // Computed properties
-    var remainingMealsCount: Int {
-        // Calculate based on time of day and what's already eaten
-        let totalPlanned = 5 // Default
-        return max(0, totalPlanned - alreadyConsumed.count)
-    }
+    // Note: Remaining meal count is determined by user's mealsPerDay preference in profile
+    // and current alreadyConsumed count, calculated dynamically during window generation
 
     // NEW: Infer energy level from context for backward compatibility
     var inferredEnergyLevel: SimpleEnergyLevel? {
@@ -405,7 +402,7 @@ class DailySyncManager: ObservableObject {
     }
     
     private func triggerWindowGeneration(for sync: DailySync) async {
-        print("🔄 Triggering window generation for \(sync.remainingMealsCount) remaining meals")
+        print("🔄 Triggering window generation based on user preferences and daily context")
         
         do {
             // Get user profile

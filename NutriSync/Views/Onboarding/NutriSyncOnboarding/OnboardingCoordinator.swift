@@ -398,6 +398,7 @@ class NutriSyncOnboardingViewModel {
             micronutrientPriorities: [],
             earliestMealHour: Calendar.current.component(.hour, from: wakeTime),
             latestMealHour: Calendar.current.component(.hour, from: bedTime) - 3, // 3 hours before bed
+            mealsPerDay: Int(mealFrequency) ?? 4, // User's preferred meal count from onboarding
             workSchedule: .standard,
             typicalWakeTime: wakeTime,
             typicalSleepTime: bedTime,

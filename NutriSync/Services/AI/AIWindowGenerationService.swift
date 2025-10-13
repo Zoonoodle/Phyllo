@@ -636,12 +636,37 @@ class AIWindowGenerationService {
             latestWindowEndTime = "8:30 PM"
         }
 
+        // Extract work schedule info from dailySync if available
+        var workScheduleConstraint = ""
+        if let sync = dailySync, let workSchedule = sync.workSchedule {
+            let calendar = Calendar.current
+            let workStartHour = calendar.component(.hour, from: workSchedule.start)
+            let workStartMinute = calendar.component(.minute, from: workSchedule.start)
+            let wakeHour = calendar.component(.hour, from: wakeTime)
+
+            // If work starts within 2 hours of waking, add special constraint
+            let hoursDiff = workStartHour - wakeHour
+            if hoursDiff <= 2 && hoursDiff > 0 {
+                workScheduleConstraint = """
+
+                **CRITICAL WORK SCHEDULE CONSTRAINT:**
+                - Work starts at \(simpleTimeFormatter.string(from: workSchedule.start))
+                - User wakes at \(wakeTimeSimple)
+                - First meal window MUST START and END **BEFORE** work begins
+                - Recommended: First meal starts 30-45 minutes after waking and ENDS at least 15 minutes before work
+                - For example: If wake is 7:00 AM and work is 8:00 AM, first meal should be 7:30 AM - 7:45 AM
+                - This allows time to eat before starting work commitments
+
+                """
+            }
+        }
+
         prompt += """
 
         ## Requirements
         Generate \(targetWindowCount) meal windows for THE SAME DAY AS THE WAKE TIME (\(todayString)) optimized for the user's goal with:
         1. Window timing based on the WAKE TIME provided above (not fixed hours)
-        2. First meal window should start 30-90 minutes after wake time
+        2. First meal window should start 30-90 minutes after wake time\(workScheduleConstraint)
         3. CRITICAL: Each window MUST be between 1.5 to 3 hours in duration (90-180 minutes)
         4. Space windows appropriately throughout the day (2-4 hours apart)
         5. CRITICAL SLEEP CONSTRAINT: Last window must START by \(latestWindowStartTime) at the latest and MUST END by \(latestWindowEndTime) to allow digestion before sleep at \(profile.typicalSleepTime != nil ? simpleTimeFormatter.string(from: profile.typicalSleepTime!) : "typical bedtime")
