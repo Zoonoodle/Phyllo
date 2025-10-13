@@ -1783,41 +1783,105 @@ private extension FirebaseDataProvider {
 
 extension FirebaseDataProvider {
     func deleteAllUserData(userId: String) async throws {
-        // Delete all user data from Firestore
+        Task { @MainActor in
+            DebugLogger.shared.warning("Starting COMPLETE account deletion for user: \(userId)")
+        }
+
         let userDocRef = db.collection("users").document(userId)
-        
-        // Delete ALL subcollections - including analytics and any nested collections
-        let subcollections = [
-            "profile", 
-            "goals", 
-            "meals", 
-            "windows", 
-            "checkIns", 
-            "onboarding", 
-            "insights", 
+
+        // COMPLETE list of ALL collections - must include everything
+        let simpleCollections = [
+            "profile",
+            "goals",
+            "meals",
+            "windows",
+            "onboarding",
+            "insights",
             "dayPurposes",
-            "analytics"  // Added analytics collection
+            "analyzingMeals",      // ADDED: Currently analyzing meals
+            "dailySync",            // ADDED: Daily sync data
+            "contextInsights",      // ADDED: AI context insights
+            "weightEntries"         // ADDED: Weight tracking history
         ]
-        
-        for subcollection in subcollections {
-            let documents = try await userDocRef.collection(subcollection).getDocuments()
+
+        // Delete all simple collections (documents directly under collection)
+        for collectionName in simpleCollections {
+            let documents = try await userDocRef.collection(collectionName).getDocuments()
+
             for document in documents.documents {
-                // For analytics, also delete nested collections
-                if subcollection == "analytics" {
-                    // Delete the daily analytics nested collection if it exists
-                    let dailyDocs = try await document.reference.collection("data").getDocuments()
-                    for dailyDoc in dailyDocs.documents {
-                        try await dailyDoc.reference.delete()
-                    }
-                }
                 try await document.reference.delete()
             }
+
+            Task { @MainActor in
+                DebugLogger.shared.firebase("Deleted \(documents.documents.count) documents from \(collectionName)")
+            }
         }
-        
-        // Delete the main user document
+
+        // Delete nested collections (checkIns has morning/postMeal subcollections)
+        // Morning check-ins: checkIns/morning/data/[documents]
+        let morningCheckIns = try await userDocRef
+            .collection("checkIns")
+            .document("morning")
+            .collection("data")
+            .getDocuments()
+
+        for doc in morningCheckIns.documents {
+            try await doc.reference.delete()
+        }
+
+        Task { @MainActor in
+            DebugLogger.shared.firebase("Deleted \(morningCheckIns.documents.count) morning check-ins")
+        }
+
+        // Post-meal check-ins: checkIns/postMeal/data/[documents]
+        let postMealCheckIns = try await userDocRef
+            .collection("checkIns")
+            .document("postMeal")
+            .collection("data")
+            .getDocuments()
+
+        for doc in postMealCheckIns.documents {
+            try await doc.reference.delete()
+        }
+
+        Task { @MainActor in
+            DebugLogger.shared.firebase("Deleted \(postMealCheckIns.documents.count) post-meal check-ins")
+        }
+
+        // Delete parent checkIns documents
+        let checkInDocs = try await userDocRef.collection("checkIns").getDocuments()
+        for doc in checkInDocs.documents {
+            try await doc.reference.delete()
+        }
+
+        // Delete analytics (nested: analytics/daily/data/[documents])
+        let analyticsDaily = try await userDocRef
+            .collection("analytics")
+            .document("daily")
+            .collection("data")
+            .getDocuments()
+
+        for doc in analyticsDaily.documents {
+            try await doc.reference.delete()
+        }
+
+        Task { @MainActor in
+            DebugLogger.shared.firebase("Deleted \(analyticsDaily.documents.count) analytics entries")
+        }
+
+        // Delete parent analytics documents
+        let analyticsDocs = try await userDocRef.collection("analytics").getDocuments()
+        for doc in analyticsDocs.documents {
+            try await doc.reference.delete()
+        }
+
+        // Delete the main user document itself
         try await userDocRef.delete()
-        
-        print("[FirebaseDataProvider] Deleted all data for user: \(userId)")
+
+        Task { @MainActor in
+            DebugLogger.shared.success("✅ COMPLETE account deletion finished for user: \(userId)")
+            DebugLogger.shared.success("   All Firestore data has been permanently deleted")
+        }
     }
     
     // MARK: - Weight Tracking Operations
