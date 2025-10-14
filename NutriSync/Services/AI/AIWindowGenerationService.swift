@@ -781,6 +781,21 @@ class AIWindowGenerationService {
 
         If NO dailyContextDescription was provided, you can omit the contextInsights field or set it to null.
 
+        ## CRITICAL ISO8601 TIME FORMAT REQUIREMENTS:
+        **YOU MUST USE 24-HOUR FORMAT IN ALL TIMESTAMPS - NOT 12-HOUR FORMAT**
+
+        CORRECT 24-hour examples:
+        - 2:00 PM → "2025-10-14T14:00:00-05:00" (NOT "2025-10-14T02:00:00-05:00")
+        - 3:30 PM → "2025-10-14T15:30:00-05:00" (NOT "2025-10-14T03:30:00-05:00")
+        - 6:00 PM → "2025-10-14T18:00:00-05:00" (NOT "2025-10-14T06:00:00-05:00")
+        - 9:00 AM → "2025-10-14T09:00:00-05:00" (correct - single digit needs leading zero)
+        - 12:00 PM (noon) → "2025-10-14T12:00:00-05:00" (NOT "2025-10-14T00:00:00-05:00")
+        - 12:00 AM (midnight) → "2025-10-14T00:00:00-05:00" (correct)
+
+        REMEMBER: In 24-hour format, hours go from 00-23:
+        - 1 AM = 01:00, 2 AM = 02:00, ... 11 AM = 11:00, 12 PM = 12:00
+        - 1 PM = 13:00, 2 PM = 14:00, 3 PM = 15:00, ... 11 PM = 23:00
+
         Return as JSON with this structure:
         {
             "dayPurpose": {
