@@ -339,28 +339,37 @@ class OnboardingCompletionViewModel {
             bmr = (10 * weight) + (6.25 * height) - (5 * Double(age)) - 161
         }
         
-        // Activity factor
-        let activityFactor: Double = {
-            switch coordinator.dailyActivity {
-            case "Low Active": return 1.375
-            case "Active": return 1.55
-            case "Very Active": return 1.725
-            default: return 1.5
+        // Use the coordinator's pre-calculated TDEE instead of recalculating
+        // This ensures consistency with what was shown in the expenditure screen
+        let tdee = Int(coordinator.tdee ?? bmr * 1.5)
+
+        // Adjust for goal using user's specified rate (weightLossRate)
+        // Convert lbs/week to calories/day: 1 lb = 3500 calories, divide by 7 days
+        if let weeklyRate = coordinator.weightLossRate {
+            let dailyAdjustment = Int((weeklyRate * 3500) / 7)
+
+            switch coordinator.goal.lowercased() {
+            case let goal where goal.contains("lose") || goal.contains("weight loss"):
+                return tdee - dailyAdjustment // Deficit for weight loss
+            case let goal where goal.contains("gain") || goal.contains("muscle") || goal.contains("build"):
+                return tdee + dailyAdjustment // Surplus for weight/muscle gain
+            case let goal where goal.contains("performance"):
+                return tdee + (dailyAdjustment / 2) // Small surplus for performance
+            default:
+                return tdee
             }
-        }()
-        
-        let tdee = Int(bmr * activityFactor)
-        
-        // Adjust for goal
-        switch coordinator.goal {
-        case "Lose Weight":
-            return tdee - 550 // ~1 lb/week deficit
-        case "Build Muscle":
-            return tdee + 300 // Moderate surplus
-        case "Improve Performance":
-            return tdee + 100 // Slight surplus
-        default:
-            return tdee
+        } else {
+            // Fallback to fixed adjustments if rate wasn't specified
+            switch coordinator.goal.lowercased() {
+            case let goal where goal.contains("lose") || goal.contains("weight loss"):
+                return tdee - 500
+            case let goal where goal.contains("gain") || goal.contains("muscle") || goal.contains("build"):
+                return tdee + 250
+            case let goal where goal.contains("performance"):
+                return tdee + 100
+            default:
+                return tdee
+            }
         }
     }
     
@@ -426,17 +435,25 @@ class OnboardingCompletionViewModel {
     }
     
     private func calculateTDEE(_ coordinator: NutriSyncOnboardingViewModel) -> Int {
+        // Use the coordinator's pre-calculated TDEE for consistency
+        if let tdee = coordinator.tdee {
+            return Int(tdee)
+        }
+
+        // Fallback calculation if TDEE wasn't calculated yet
         let bmr = Double(calculateBMR(coordinator))
-        
+
         let activityFactor: Double = {
-            switch coordinator.dailyActivity {
-            case "Low Active": return 1.375
-            case "Active": return 1.55
-            case "Very Active": return 1.725
+            switch coordinator.dailyActivity.lowercased() {
+            case let level where level.contains("sedentary"): return 1.2
+            case let level where level.contains("lightly active"): return 1.375
+            case let level where level.contains("moderately active"): return 1.55
+            case let level where level.contains("very active"): return 1.725
+            case let level where level.contains("extremely active"): return 1.9
             default: return 1.5
             }
         }()
-        
+
         return Int(bmr * activityFactor)
     }
     

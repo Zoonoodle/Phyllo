@@ -379,6 +379,23 @@ class NutriSyncOnboardingViewModel {
                 .overallWellbeing
         }
         
+        // Calculate adjusted calorie target based on goal and rate
+        let adjustedCalorieTarget: Int
+        if let tdeeValue = tdee, let weeklyRate = weightLossRate {
+            let dailyAdjustment = Int((weeklyRate * 3500) / 7)
+
+            if goal.lowercased().contains("lose") || goal.lowercased().contains("weight loss") {
+                adjustedCalorieTarget = Int(tdeeValue) - dailyAdjustment
+            } else if goal.lowercased().contains("gain") || goal.lowercased().contains("muscle") || goal.lowercased().contains("build") {
+                adjustedCalorieTarget = Int(tdeeValue) + dailyAdjustment
+            } else {
+                adjustedCalorieTarget = Int(tdeeValue)
+            }
+        } else {
+            // Fallback if rate wasn't specified
+            adjustedCalorieTarget = Int(tdee ?? 2000)
+        }
+
         return UserProfile(
             id: UUID(),
             name: "User", // This should be collected in a future update
@@ -390,10 +407,10 @@ class NutriSyncOnboardingViewModel {
             primaryGoal: nutritionGoal,
             dietaryPreferences: Array(dietaryRestrictions), // Using restrictions as preferences for now
             dietaryRestrictions: Array(dietaryRestrictions),
-            dailyCalorieTarget: Int(tdee ?? 2000),
+            dailyCalorieTarget: adjustedCalorieTarget,
             dailyProteinTarget: Int(weightInPounds * 0.8), // 0.8g per lb (weight already in pounds)
-            dailyCarbTarget: calculateCarbs(calories: Int(tdee ?? 2000), goal: nutritionGoal),
-            dailyFatTarget: calculateFat(calories: Int(tdee ?? 2000), goal: nutritionGoal),
+            dailyCarbTarget: calculateCarbs(calories: adjustedCalorieTarget, goal: nutritionGoal),
+            dailyFatTarget: calculateFat(calories: adjustedCalorieTarget, goal: nutritionGoal),
             preferredMealTimes: [],
             micronutrientPriorities: [],
             earliestMealHour: Calendar.current.component(.hour, from: wakeTime),
@@ -428,8 +445,25 @@ class NutriSyncOnboardingViewModel {
             default: .moderatelyActive
         }
         
-        let calorieTarget = Int(tdee ?? 2000) - (primaryGoal == .loseWeight ? 500 : 0)
-        
+        // Calculate calorie target based on goal and user's specified rate
+        let calorieTarget: Int
+        if let tdeeValue = tdee, let weeklyRate = weightLossRate {
+            // Use the user's selected weight change rate (in lbs/week)
+            // Convert to daily calorie adjustment: 1 lb = 3500 calories, divide by 7 days
+            let dailyAdjustment = Int((weeklyRate * 3500) / 7)
+
+            if primaryGoal == .loseWeight {
+                calorieTarget = Int(tdeeValue) - dailyAdjustment // Deficit for weight loss
+            } else if primaryGoal == .buildMuscle {
+                calorieTarget = Int(tdeeValue) + dailyAdjustment // Surplus for weight/muscle gain
+            } else {
+                calorieTarget = Int(tdeeValue) // Maintenance for other goals
+            }
+        } else {
+            // Fallback to fixed adjustments if data is missing
+            calorieTarget = Int(tdee ?? 2000) - (primaryGoal == .loseWeight ? 500 : 0)
+        }
+
         return UserGoals(
             primaryGoal: primaryGoal,
             activityLevel: activityLevelEnum,
