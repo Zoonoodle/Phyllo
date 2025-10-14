@@ -34,7 +34,7 @@ struct DailyContextInputView: View {
 
     // Typewriter animation state
     @State private var displayedExampleText = ""
-    private let fullExampleText = "\"I have back-to-back meetings until 3pm, then gym at 6. Feeling pretty tired today, didn't sleep great.\""
+    private let fullExampleText = "\"Working 9-5 today with back-to-back meetings until 3pm, then hitting the gym at 6. Feeling pretty tired, didn't sleep great last night.\""
 
     // NEW: Character limit
     private let maxCharacters = 500
@@ -54,14 +54,14 @@ struct DailyContextInputView: View {
 
     // Topics to suggest (not full examples)
     private let suggestionTopics = [
+        "Work hours",
+        "Workout timing",
         "Meetings or calls",
         "Energy level",
-        "Workout plans",
-        "Social events",
-        "Work schedule",
-        "Travel plans",
         "Sleep quality",
-        "Stress level"
+        "Social events",
+        "Stress level",
+        "Travel plans"
     ]
 
     // Timer for audio level animation

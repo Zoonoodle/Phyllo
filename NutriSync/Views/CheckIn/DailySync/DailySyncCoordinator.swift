@@ -163,11 +163,8 @@ class DailySyncViewModel: ObservableObject {
         if context.shouldAskAboutEatenMeals {
             screens.append(.alreadyEaten)
         }
-        
-        // Always ask about schedule
-        screens.append(.schedule)
 
-        // NEW: Always show daily context screen (replaces energy)
+        // Daily context screen captures schedule + energy + context in natural language
         screens.append(.dailyContext)
 
         screens.append(.complete)
