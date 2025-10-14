@@ -140,9 +140,10 @@ class DailySyncViewModel: ObservableObject {
                     let shouldWeigh = WeightCheckSchedule.shouldPromptForWeighIn(
                         lastWeighIn: WeightTrackingManager.shared.lastWeightEntry?.date,
                         goal: profile.primaryGoal,
-                        syncContext: context
+                        syncContext: context,
+                        onboardingCompletedAt: profile.onboardingCompletedAt
                     )
-                    
+
                     if shouldWeigh {
                         // Insert weight check after greeting
                         await MainActor.run {

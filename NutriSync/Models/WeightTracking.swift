@@ -184,15 +184,25 @@ struct WeightCheckSchedule {
     static func shouldPromptForWeighIn(
         lastWeighIn: Date?,
         goal: NutritionGoal,
-        syncContext: SyncContext
+        syncContext: SyncContext,
+        onboardingCompletedAt: Date? = nil
     ) -> Bool {
         // Only prompt during morning syncs for most accurate weight
-        guard syncContext == .earlyMorning || syncContext == .lateMorning else { 
-            return false 
+        guard syncContext == .earlyMorning || syncContext == .lateMorning else {
+            return false
         }
-        
-        // Always prompt if never weighed in
-        guard let lastWeighIn = lastWeighIn else { 
+
+        // Check if user recently completed onboarding (within last 24 hours)
+        // Give new users time to explore the app before prompting for weight
+        if let onboardingDate = onboardingCompletedAt {
+            let hoursSinceOnboarding = Date().timeIntervalSince(onboardingDate) / 3600
+            if hoursSinceOnboarding < 24 {
+                return false // Don't prompt for weight within first 24 hours
+            }
+        }
+
+        // Prompt if never weighed in AND not a brand new user
+        guard let lastWeighIn = lastWeighIn else {
             return true
         }
         
