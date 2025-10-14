@@ -215,13 +215,13 @@ struct DailyContextInputView: View {
             listeningIndicator
                 .padding(.vertical, 16)
 
-            // Pause/Resume button (when recording)
+            // Reset button (when recording)
             if isListening {
-                Button(action: togglePauseResume) {
+                Button(action: resetRecording) {
                     HStack(spacing: 8) {
-                        Image(systemName: isPaused ? "play.fill" : "pause.fill")
+                        Image(systemName: "arrow.counterclockwise")
                             .font(.system(size: 16))
-                        Text(isPaused ? "Resume" : "Pause")
+                        Text("Reset")
                             .font(.subheadline.weight(.medium))
                     }
                     .foregroundColor(.phylloText)
@@ -313,8 +313,9 @@ struct DailyContextInputView: View {
         .onTapGesture {
             if !isListening {
                 startRecording()
-            } else if !isPaused {
-                stopRecording()
+            } else {
+                // Toggle pause/resume when recording
+                togglePauseResume()
             }
         }
         .onChange(of: isListening) { _, newValue in
@@ -521,6 +522,14 @@ struct DailyContextInputView: View {
             audioEngine.pause()
             isPaused = true
         }
+    }
+
+    private func resetRecording() {
+        // Stop recording and clear transcribed text
+        stopRecording()
+        transcribedText = ""
+        editableText = ""
+        isEditingText = false
     }
 
     private func updateAudioLevels() {
