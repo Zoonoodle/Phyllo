@@ -492,7 +492,7 @@ struct CompleteViewStyled: View {
                     
                     DailySyncHeader(
                         title: "Perfect!",
-                        subtitle: "I'm optimizing your \(viewModel.syncData.remainingMealsCount) remaining meals"
+                        subtitle: "I'm creating your personalized meal schedule for today"
                     )
 
                     // NEW: Show AI insights if daily context was provided
