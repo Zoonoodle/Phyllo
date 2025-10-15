@@ -80,7 +80,8 @@ struct NutriSyncOnboardingFlow {
             "Diet Preference",
             "Sleep Schedule",
             "Meal Frequency",
-            "Dietary Restrictions"
+            "Dietary Restrictions",
+            "Macro Customization"
         ],
         .finish: [
             "Review Program"

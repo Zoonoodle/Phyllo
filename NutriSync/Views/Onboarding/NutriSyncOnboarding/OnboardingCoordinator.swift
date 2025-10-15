@@ -124,6 +124,7 @@ class NutriSyncOnboardingViewModel {
     // Nutrition preferences
     var dietaryRestrictions: Set<String> = []
     var largerMealPreference: String = ""
+    var macroProfile: MacroProfile? = nil // User's customized macro profile
     
     // Window preferences
     var flexibilityLevel: String = ""
@@ -772,6 +773,8 @@ struct NutriSyncOnboardingCoordinator: View {
                 .foregroundColor(.white)
         case "Dietary Restrictions":
             DietaryRestrictionsContentView()
+        case "Macro Customization":
+            MacroCustomizationContentView()
         case "Nutrition Preferences":
             Text("Nutrition Preferences screen removed")
                 .foregroundColor(.white)
@@ -781,7 +784,7 @@ struct NutriSyncOnboardingCoordinator: View {
         case "Notification Preferences":
             Text("Notification Preferences screen removed")
                 .foregroundColor(.white)
-            
+
         // Finish Section
         case "Review Program":
             EnhancedFinishView()

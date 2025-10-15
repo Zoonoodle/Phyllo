@@ -116,8 +116,9 @@ struct UserProfile: Codable, Identifiable {
     var typicalWakeTime: Date?
     var typicalSleepTime: Date?
     var fastingProtocol: FastingProtocol = .none
-    var lastBulkLogDate: Date?      // Track when we last prompted for missed meals
-    
+    var macroProfile: MacroProfile?         // User's customized macro distribution
+    var lastBulkLogDate: Date?              // Track when we last prompted for missed meals
+
     // Post-onboarding tracking
     var firstDayCompleted: Bool = false     // Track if first day windows have been generated
     var onboardingCompletedAt: Date?        // Timestamp when onboarding was completed
@@ -221,8 +222,11 @@ struct UserProfile: Codable, Identifiable {
             "fastingProtocol": fastingProtocol.rawValue,
             "firstDayCompleted": firstDayCompleted
         ]
-        
+
         // Only add optional values if they're not nil
+        if let macroProfile = macroProfile {
+            data["macroProfile"] = macroProfile.toFirestore()
+        }
         if let earliestMealHour = earliestMealHour {
             data["earliestMealHour"] = earliestMealHour
         }
@@ -286,7 +290,15 @@ struct UserProfile: Codable, Identifiable {
         let mealsPerDay = data["mealsPerDay"] as? Int
         let workSchedule = WorkSchedule(rawValue: data["workSchedule"] as? String ?? "standard") ?? .standard
         let fastingProtocol = FastingProtocol(rawValue: data["fastingProtocol"] as? String ?? "none") ?? .none
-        
+
+        // Parse macro profile
+        let macroProfile: MacroProfile? = {
+            if let macroData = data["macroProfile"] as? [String: Any] {
+                return MacroProfile.fromFirestore(macroData)
+            }
+            return nil
+        }()
+
         // Handle Date fields
         let typicalWakeTime = (data["typicalWakeTime"] as? FirebaseFirestore.Timestamp)?.dateValue() ?? (data["typicalWakeTime"] as? Date)
         let typicalSleepTime = (data["typicalSleepTime"] as? FirebaseFirestore.Timestamp)?.dateValue() ?? (data["typicalSleepTime"] as? Date)
@@ -321,10 +333,11 @@ struct UserProfile: Codable, Identifiable {
         profile.typicalWakeTime = typicalWakeTime
         profile.typicalSleepTime = typicalSleepTime
         profile.fastingProtocol = fastingProtocol
+        profile.macroProfile = macroProfile
         profile.lastBulkLogDate = lastBulkLogDate
         profile.firstDayCompleted = firstDayCompleted
         profile.onboardingCompletedAt = onboardingCompletedAt
-        
+
         return profile
     }
     

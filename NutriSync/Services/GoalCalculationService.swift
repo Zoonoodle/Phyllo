@@ -29,12 +29,21 @@ class GoalCalculationService {
     
     struct NutritionTargets {
         let dailyCalories: Int
-        let protein: Int // grams
-        let carbs: Int // grams
-        let fat: Int // grams
+        let macroProfile: MacroProfile  // User's macro distribution profile
         let deficit: Int? // Calorie deficit if applicable
         let surplus: Int? // Calorie surplus if applicable
         let weeklyWeightChange: Double // Expected pounds per week
+
+        // Computed properties for backward compatibility
+        var protein: Int {
+            macroProfile.calculateGrams(calories: dailyCalories).protein
+        }
+        var carbs: Int {
+            macroProfile.calculateGrams(calories: dailyCalories).carbs
+        }
+        var fat: Int {
+            macroProfile.calculateGrams(calories: dailyCalories).fat
+        }
     }
     
     // MARK: - TDEE Calculation
@@ -154,20 +163,14 @@ class GoalCalculationService {
         // Calculate daily calorie adjustment (3500 calories = 1 pound)
         let dailyCalorieAdjustment = Int(safeWeeklyChange * 3500 / 7)
         let dailyCalories = Int(tdee) + dailyCalorieAdjustment
-        
-        // Calculate macros based on goal direction
-        let macros = calculateMacros(
-            calories: dailyCalories,
-            weight: currentWeight,
-            isWeightLoss: totalWeightChange < 0,
-            activityLevel: activityLevel
-        )
-        
+
+        // Get macro profile based on goal direction
+        let goal: UserGoals.Goal = totalWeightChange < 0 ? .loseWeight : .buildMuscle
+        let macroProfile = MacroCalculationService.getProfile(for: goal)
+
         return NutritionTargets(
             dailyCalories: dailyCalories,
-            protein: macros.protein,
-            carbs: macros.carbs,
-            fat: macros.fat,
+            macroProfile: macroProfile,
             deficit: dailyCalorieAdjustment < 0 ? abs(dailyCalorieAdjustment) : nil,
             surplus: dailyCalorieAdjustment > 0 ? dailyCalorieAdjustment : nil,
             weeklyWeightChange: safeWeeklyChange
@@ -198,21 +201,18 @@ class GoalCalculationService {
         )
         
         let dailyCalories = Int(tdee) + calorieAdjustment
-        
-        // Higher protein for composition goals
-        let macros = calculateMacros(
-            calories: dailyCalories,
-            weight: weight,
-            isWeightLoss: focus == .fatLoss,
-            activityLevel: activityLevel,
-            highProtein: true
-        )
-        
+
+        // Get macro profile based on composition focus
+        let goal: UserGoals.Goal = switch focus {
+            case .leanMuscleGain: .buildMuscle
+            case .fatLoss: .loseWeight
+            case .recomposition: .loseWeight  // Use weight loss profile for recomp
+        }
+        let macroProfile = MacroCalculationService.getProfile(for: goal)
+
         return NutritionTargets(
             dailyCalories: dailyCalories,
-            protein: macros.protein,
-            carbs: macros.carbs,
-            fat: macros.fat,
+            macroProfile: macroProfile,
             deficit: calorieAdjustment < 0 ? abs(calorieAdjustment) : nil,
             surplus: calorieAdjustment > 0 ? calorieAdjustment : nil,
             weeklyWeightChange: weeklyChange
@@ -232,20 +232,13 @@ class GoalCalculationService {
         
         // Performance goals typically maintain or slightly surplus
         let dailyCalories = Int(tdee * 1.05) // 5% surplus for recovery
-        
-        let macros = calculateMacros(
-            calories: dailyCalories,
-            weight: weight,
-            isWeightLoss: false,
-            activityLevel: activityLevel,
-            performance: true
-        )
-        
+
+        // Get macro profile for performance goals
+        let macroProfile = MacroCalculationService.getProfile(for: .improvePerformance)
+
         return NutritionTargets(
             dailyCalories: dailyCalories,
-            protein: macros.protein,
-            carbs: macros.carbs,
-            fat: macros.fat,
+            macroProfile: macroProfile,
             deficit: nil,
             surplus: Int(tdee * 0.05),
             weeklyWeightChange: 0.0
@@ -275,7 +268,11 @@ class GoalCalculationService {
             return (-200, -0.25) // 200 cal deficit, 0.25 lb/week loss
         }
     }
-    
+
+    // MARK: - DEPRECATED: Old macro calculation method
+    // This method has been replaced by MacroCalculationService
+    // Kept for reference only - remove after verification
+    /*
     private func calculateMacros(
         calories: Int,
         weight: Double,
@@ -284,39 +281,10 @@ class GoalCalculationService {
         highProtein: Bool = false,
         performance: Bool = false
     ) -> (protein: Int, carbs: Int, fat: Int) {
-        // Protein calculation (g per lb of body weight)
-        let proteinPerLb: Double
-        if highProtein || isWeightLoss {
-            proteinPerLb = 1.0 // Higher protein for muscle preservation
-        } else if performance {
-            proteinPerLb = 0.9
-        } else {
-            proteinPerLb = 0.8
-        }
-        
-        let protein = Int(weight * proteinPerLb)
-        let proteinCalories = protein * 4
-        
-        // Fat calculation (% of total calories)
-        let fatPercentage: Double
-        if isWeightLoss {
-            fatPercentage = 0.25 // Lower fat for weight loss
-        } else if performance {
-            fatPercentage = 0.30 // Moderate fat for performance
-        } else {
-            fatPercentage = 0.28 // Balanced approach
-        }
-        
-        let fatCalories = Int(Double(calories) * fatPercentage)
-        let fat = fatCalories / 9
-        
-        // Carbs fill the remainder
-        let carbCalories = calories - proteinCalories - fatCalories
-        let carbs = carbCalories / 4
-        
-        return (protein: protein, carbs: carbs, fat: fat)
+        // DEPRECATED - See MacroCalculationService.swift
     }
-    
+    */
+
     // MARK: - Default Body Fat Estimation
     
     /// Estimate body fat percentage based on gender and BMI if not provided

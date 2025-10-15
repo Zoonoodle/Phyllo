@@ -236,31 +236,6 @@ enum NutritionGoal: Identifiable, Codable {
 }
 
 // MARK: - Macro Configuration
-struct MacroConfiguration: Codable {
-    var carbPercentage: Double
-    var proteinPercentage: Double
-    var fatPercentage: Double
-    
-    // Common presets
-    static let balanced = MacroConfiguration(carbPercentage: 0.40, proteinPercentage: 0.30, fatPercentage: 0.30)
-    static let highProtein = MacroConfiguration(carbPercentage: 0.30, proteinPercentage: 0.40, fatPercentage: 0.30)
-    static let lowCarb = MacroConfiguration(carbPercentage: 0.20, proteinPercentage: 0.35, fatPercentage: 0.45)
-    static let athleteTraining = MacroConfiguration(carbPercentage: 0.50, proteinPercentage: 0.25, fatPercentage: 0.25)
-    
-    var totalPercentage: Double {
-        carbPercentage + proteinPercentage + fatPercentage
-    }
-    
-    // Calculate macros in grams from calorie target
-    func calculateMacros(for calories: Int) -> (protein: Int, carbs: Int, fat: Int) {
-        let proteinCalories = Double(calories) * proteinPercentage
-        let carbCalories = Double(calories) * carbPercentage
-        let fatCalories = Double(calories) * fatPercentage
-        
-        return (
-            protein: Int(proteinCalories / 4),  // 4 calories per gram of protein
-            carbs: Int(carbCalories / 4),        // 4 calories per gram of carbs
-            fat: Int(fatCalories / 9)            // 9 calories per gram of fat
-        )
-    }
-}
+// DEPRECATED: MacroConfiguration has been replaced by MacroCalculationService
+// See MacroCalculationService.swift for the new centralized macro calculation system
+// This comment left for reference - the old struct has been removed
