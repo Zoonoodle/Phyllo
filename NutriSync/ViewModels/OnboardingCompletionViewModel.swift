@@ -294,33 +294,34 @@ class OnboardingCompletionViewModel {
     
     private func calculateMacros(_ coordinator: NutriSyncOnboardingViewModel) async -> OnboardingMacroTargets {
         let calories = calculateDailyCalories(coordinator)
-        
-        // Calculate protein based on goal and weight
-        let weightInLbs = coordinator.weight * 2.20462
-        let proteinPerLb: Double = {
-            switch coordinator.goal {
-            case "Build Muscle": return 1.0
-            case "Improve Performance": return 0.9
-            case "Lose Weight": return 0.8
-            default: return 0.85
+
+        // Use user's chosen macro profile or get recommended profile for goal
+        let macroProfile: MacroProfile = {
+            // First, check if user customized their macros
+            if let customProfile = coordinator.macroProfile {
+                return customProfile
             }
+
+            // Otherwise, get recommended profile based on goal
+            let goal: UserGoals.Goal = switch coordinator.goal.lowercased() {
+                case let g where g.contains("lose") || g.contains("weight loss"): .loseWeight
+                case let g where g.contains("build") || g.contains("muscle"): .buildMuscle
+                case let g where g.contains("performance"): .improvePerformance
+                case let g where g.contains("sleep"): .betterSleep
+                case let g where g.contains("maintain"): .maintainWeight
+                default: .overallHealth
+            }
+
+            return MacroCalculationService.getProfile(for: goal)
         }()
-        let protein = Int(weightInLbs * proteinPerLb)
-        
-        // Calculate fat (25-30% of calories)
-        let fatCalories = Int(Double(calories) * 0.28)
-        let fat = fatCalories / 9
-        
-        // Calculate carbs (remaining calories)
-        let proteinCalories = protein * 4
-        let remainingCalories = calories - proteinCalories - fatCalories
-        let carbs = remainingCalories / 4
-        
+
+        let macros = macroProfile.calculateGrams(calories: calories)
+
         return OnboardingMacroTargets(
             calories: calories,
-            protein: protein,
-            carbs: carbs,
-            fat: fat
+            protein: macros.protein,
+            carbs: macros.carbs,
+            fat: macros.fat
         )
     }
     
