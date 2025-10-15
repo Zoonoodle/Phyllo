@@ -1005,10 +1005,25 @@ extension ScheduleViewModel {
         let totalCarbs = todaysMeals.reduce(0) { $0 + $1.carbs }
         
         // Calculate daily targets from all windows
-        let targetCalories = mealWindows.reduce(0) { $0 + $1.effectiveCalories }
-        let targetProtein = mealWindows.reduce(0) { $0 + $1.effectiveMacros.protein }
-        let targetFat = mealWindows.reduce(0) { $0 + $1.effectiveMacros.fat }
-        let targetCarbs = mealWindows.reduce(0) { $0 + $1.effectiveMacros.carbs }
+        // If no windows exist, fallback to user profile's daily targets
+        let targetCalories: Int
+        let targetProtein: Int
+        let targetFat: Int
+        let targetCarbs: Int
+
+        if mealWindows.isEmpty {
+            // No windows - use profile's daily targets
+            targetCalories = userProfile.dailyCalorieTarget
+            targetProtein = userProfile.dailyProteinTarget
+            targetFat = userProfile.dailyFatTarget
+            targetCarbs = userProfile.dailyCarbTarget
+        } else {
+            // Sum up targets from all windows
+            targetCalories = mealWindows.reduce(0) { $0 + $1.effectiveCalories }
+            targetProtein = mealWindows.reduce(0) { $0 + $1.effectiveMacros.protein }
+            targetFat = mealWindows.reduce(0) { $0 + $1.effectiveMacros.fat }
+            targetCarbs = mealWindows.reduce(0) { $0 + $1.effectiveMacros.carbs }
+        }
         
         // Count completed windows (windows with at least one meal)
         let completedWindows = mealWindows.filter { window in

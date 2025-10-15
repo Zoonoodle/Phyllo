@@ -687,8 +687,81 @@ class AIWindowGenerationService {
         9. Micronutrient focus (2-3 vitamins/minerals to prioritize)
         10. Optimization tips (2-3 actionable tips)
         11. Rationale explaining why this window supports their goal
-        12. Appropriate macro distribution based on window purpose
-        
+        12. Window-specific macro distribution (see detailed guidance below)
+
+        ## CRITICAL: Window-Specific Macro Distribution
+
+        **User's Daily Macro Targets (for reference):**
+        - Total Daily Calories: \(profile.dailyCalorieTarget)
+        - Total Daily Protein: \(profile.dailyProteinTarget)g
+        - Total Daily Carbs: \(profile.dailyCarbTarget)g
+        - Total Daily Fat: \(profile.dailyFatTarget)g
+
+        \(formatMacroProfileContext(profile))
+
+        **Window-Specific Macro Distributions:**
+        IMPORTANT: Each window should optimize its macro ratios based on its PURPOSE, not just divide daily targets evenly. However, the SUM of all windows MUST equal the daily targets above.
+
+        Use these distributions for each window purpose:
+
+        **Pre-Workout Windows** (purpose: "preWorkout"):
+        - Protein: 20% of window calories
+        - Carbs: 60% of window calories (HIGH - for immediate energy)
+        - Fat: 20% of window calories (LOW - for quick digestion)
+        - Example: 500 cal window → P: 25g (100 cal), C: 75g (300 cal), F: 11g (100 cal)
+        - Rationale: High carbs for glycogen stores and energy; moderate protein; low fat for faster digestion
+
+        **Post-Workout Windows** (purpose: "postWorkout"):
+        - Protein: 40% of window calories (HIGH - for muscle recovery)
+        - Carbs: 45% of window calories (MODERATE-HIGH - to replenish glycogen)
+        - Fat: 15% of window calories (LOW - not priority post-workout)
+        - Example: 600 cal window → P: 60g (240 cal), C: 68g (270 cal), F: 10g (90 cal)
+        - Rationale: Maximize protein for muscle protein synthesis; adequate carbs for recovery; minimize fat
+
+        **Metabolic Boost Windows** (purpose: "metabolicBoost"):
+        - Protein: 30% of window calories (MODERATE-HIGH - thermogenic effect)
+        - Carbs: 40% of window calories (MODERATE)
+        - Fat: 30% of window calories (MODERATE - for satiety)
+        - Example: 450 cal window → P: 34g (135 cal), C: 45g (180 cal), F: 15g (135 cal)
+        - Rationale: Balanced with higher protein for metabolism boost; moderate everything else
+
+        **Sustained Energy Windows** (purpose: "sustainedEnergy"):
+        - Protein: 25% of window calories
+        - Carbs: 45% of window calories (MODERATE - steady release)
+        - Fat: 30% of window calories (MODERATE - sustained energy)
+        - Example: 550 cal window → P: 34g (138 cal), C: 62g (248 cal), F: 18g (165 cal)
+        - Rationale: Balanced distribution for steady energy without spikes
+
+        **Sleep Optimization Windows** (purpose: "sleepOptimization"):
+        - Protein: 30% of window calories (for overnight muscle repair)
+        - Carbs: 25% of window calories (LOW - avoid blood sugar spikes before bed)
+        - Fat: 45% of window calories (HIGH - slow digestion, satiety through night)
+        - Example: 400 cal window → P: 30g (120 cal), C: 25g (100 cal), F: 20g (180 cal)
+        - Rationale: Higher fat and protein, lower carbs for better sleep quality
+
+        **Focus Boost Windows** (purpose: "focusBoost"):
+        - Protein: 30% of window calories (for steady amino acid supply)
+        - Carbs: 40% of window calories (MODERATE - brain fuel without crash)
+        - Fat: 30% of window calories (MODERATE - sustained brain energy)
+        - Example: 500 cal window → P: 38g (150 cal), C: 50g (200 cal), F: 17g (150 cal)
+        - Rationale: Balanced for cognitive performance; avoid high carbs that cause crashes
+
+        **Recovery Windows** (purpose: "recovery"):
+        - Protein: 35% of window calories (HIGH - tissue repair)
+        - Carbs: 40% of window calories (MODERATE - glycogen replenishment)
+        - Fat: 25% of window calories (MODERATE - for absorption of nutrients)
+        - Example: 550 cal window → P: 48g (193 cal), C: 55g (220 cal), F: 15g (137 cal)
+        - Rationale: Prioritize protein for recovery; balanced carbs and fats
+
+        **CRITICAL DAILY TOTAL VALIDATION:**
+        After generating all windows with purpose-specific distributions, verify:
+        - Sum of all window calories = \(profile.dailyCalorieTarget) (±50 cal acceptable)
+        - Sum of all window protein = \(profile.dailyProteinTarget)g (±5g acceptable)
+        - Sum of all window carbs = \(profile.dailyCarbTarget)g (±10g acceptable)
+        - Sum of all window fat = \(profile.dailyFatTarget)g (±5g acceptable)
+
+        If totals don't match, adjust the largest window's macros to compensate.
+
         CRITICAL DATE AND TIMEZONE INSTRUCTIONS:
         - The wake time is \(wakeTimeSimple) in the user's LOCAL timezone
         - ALL windows MUST be for THE SAME DATE as the wake time (\(todayString))
@@ -905,6 +978,31 @@ class AIWindowGenerationService {
         }
     }
     
+    /// Format user's customized macro profile if available
+    private func formatMacroProfileContext(_ profile: UserProfile) -> String {
+        guard let macroProfile = profile.macroProfile else {
+            return """
+            **User Macro Profile:**
+            - Using recommended default macros for their goal
+            - User has NOT customized their macro ratios
+            """
+        }
+
+        // User has customized their macros
+        let proteinPercent = Int(macroProfile.proteinPercentage * 100)
+        let carbPercent = Int(macroProfile.carbPercentage * 100)
+        let fatPercent = Int(macroProfile.fatPercentage * 100)
+
+        return """
+        **User Macro Profile (CUSTOMIZED):**
+        - User has CUSTOMIZED their macro distribution
+        - Daily Protein Target: \(proteinPercent)% (\(profile.dailyProteinTarget)g)
+        - Daily Carb Target: \(carbPercent)% (\(profile.dailyCarbTarget)g)
+        - Daily Fat Target: \(fatPercent)% (\(profile.dailyFatTarget)g)
+        - IMPORTANT: While individual windows use purpose-specific ratios, the DAILY TOTALS must match these user-chosen percentages
+        """
+    }
+
     /// Format fasting protocol integration
     private func formatFastingProtocol(_ profile: UserProfile) -> String {
         guard profile.fastingProtocol != .none else {

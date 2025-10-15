@@ -360,10 +360,10 @@ class NutriSyncOnboardingViewModel {
     private func buildUserProfile() -> UserProfile {
         // Convert weight from kg to pounds for UserProfile
         let weightInPounds = weight * 2.20462
-        
+
         // Convert height from cm to inches (assuming average height for now)
         let heightInInches = 68.0 // This should be collected in a future update
-        
+
         // Map goal string to NutritionGoal enum
         let nutritionGoal: NutritionGoal = switch goal.lowercased() {
             case "lose weight", "weight loss":
@@ -379,7 +379,7 @@ class NutriSyncOnboardingViewModel {
             default:
                 .overallWellbeing
         }
-        
+
         // Calculate adjusted calorie target based on goal and rate
         let adjustedCalorieTarget: Int
         if let tdeeValue = tdee, let weeklyRate = weightLossRate {
@@ -397,7 +397,28 @@ class NutriSyncOnboardingViewModel {
             adjustedCalorieTarget = Int(tdee ?? 2000)
         }
 
-        return UserProfile(
+        // Get or create macro profile
+        let finalMacroProfile: MacroProfile
+        if let customProfile = macroProfile {
+            // User customized their macros during onboarding
+            finalMacroProfile = customProfile
+        } else {
+            // Use recommended profile for goal
+            let userGoal: UserGoals.Goal = switch goal.lowercased() {
+                case "lose weight", "weight loss": .loseWeight
+                case "build muscle", "muscle gain", "gain weight": .buildMuscle
+                case "maintain weight": .maintainWeight
+                case "improve performance", "performance": .improvePerformance
+                case "better sleep": .betterSleep
+                default: .overallHealth
+            }
+            finalMacroProfile = MacroCalculationService.getProfile(for: userGoal)
+        }
+
+        // Calculate macros using the profile
+        let macros = finalMacroProfile.calculateGrams(calories: adjustedCalorieTarget)
+
+        var profile = UserProfile(
             id: UUID(),
             name: "User", // This should be collected in a future update
             age: 30, // This should be collected in a future update
@@ -409,9 +430,9 @@ class NutriSyncOnboardingViewModel {
             dietaryPreferences: Array(dietaryRestrictions), // Using restrictions as preferences for now
             dietaryRestrictions: Array(dietaryRestrictions),
             dailyCalorieTarget: adjustedCalorieTarget,
-            dailyProteinTarget: Int(weightInPounds * 0.8), // 0.8g per lb (weight already in pounds)
-            dailyCarbTarget: calculateCarbs(calories: adjustedCalorieTarget, goal: nutritionGoal),
-            dailyFatTarget: calculateFat(calories: adjustedCalorieTarget, goal: nutritionGoal),
+            dailyProteinTarget: macros.protein,  // Use MacroProfile calculation
+            dailyCarbTarget: macros.carbs,        // Use MacroProfile calculation
+            dailyFatTarget: macros.fat,           // Use MacroProfile calculation
             preferredMealTimes: [],
             micronutrientPriorities: [],
             earliestMealHour: Calendar.current.component(.hour, from: wakeTime),
@@ -425,6 +446,11 @@ class NutriSyncOnboardingViewModel {
             firstDayCompleted: false, // Will be set to true after first day windows are generated
             onboardingCompletedAt: Date() // Set the current time as onboarding completion
         )
+
+        // Set the macro profile on the profile
+        profile.macroProfile = finalMacroProfile
+
+        return profile
     }
     
     private func buildUserGoals() -> UserGoals {
@@ -436,7 +462,7 @@ class NutriSyncOnboardingViewModel {
             case "better sleep": .betterSleep
             default: .overallHealth
         }
-        
+
         let activityLevelEnum: UserGoals.ActivityLevel = switch activityLevel.lowercased() {
             case "sedentary": .sedentary
             case "lightly active", "lightlyactive": .lightlyActive
@@ -445,7 +471,7 @@ class NutriSyncOnboardingViewModel {
             case "extremely active", "extremelyactive", "athlete": .athlete
             default: .moderatelyActive
         }
-        
+
         // Calculate calorie target based on goal and user's specified rate
         let calorieTarget: Int
         if let tdeeValue = tdee, let weeklyRate = weightLossRate {
@@ -465,13 +491,26 @@ class NutriSyncOnboardingViewModel {
             calorieTarget = Int(tdee ?? 2000) - (primaryGoal == .loseWeight ? 500 : 0)
         }
 
+        // Get or create macro profile (same as buildUserProfile)
+        let finalMacroProfile: MacroProfile
+        if let customProfile = macroProfile {
+            // User customized their macros during onboarding
+            finalMacroProfile = customProfile
+        } else {
+            // Use recommended profile for goal
+            finalMacroProfile = MacroCalculationService.getProfile(for: primaryGoal)
+        }
+
+        // Calculate macros using the profile
+        let macros = finalMacroProfile.calculateGrams(calories: calorieTarget)
+
         return UserGoals(
             primaryGoal: primaryGoal,
             activityLevel: activityLevelEnum,
             dailyCalories: calorieTarget,
-            dailyProtein: Int((weight * 2.2) * 0.8), // 0.8g per lb
-            dailyCarbs: 200,
-            dailyFat: 65,
+            dailyProtein: macros.protein,  // Use MacroProfile calculation
+            dailyCarbs: macros.carbs,      // Use MacroProfile calculation
+            dailyFat: macros.fat,          // Use MacroProfile calculation
             targetWeight: targetWeight.map { $0 * 2.20462 }, // Convert to pounds safely
             timeline: 12 // Default 12 weeks
         )

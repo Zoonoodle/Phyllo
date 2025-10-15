@@ -223,19 +223,20 @@ extension FirstDayConfiguration {
         }
         
         var macroDistribution: (proteinRatio: Double, carbRatio: Double, fatRatio: Double) {
+            // These distributions match AIWindowGenerationService for consistency
             switch self {
             case .preWorkout:
                 return (0.20, 0.60, 0.20) // Higher carbs for energy
             case .postWorkout:
-                return (0.40, 0.40, 0.20) // High protein for recovery
+                return (0.40, 0.45, 0.15) // High protein for recovery, moderate carbs
             case .sustainedEnergy:
-                return (0.30, 0.40, 0.30) // Balanced
+                return (0.25, 0.45, 0.30) // Balanced for steady energy
             case .recovery:
-                return (0.35, 0.35, 0.30) // Protein focused
+                return (0.35, 0.40, 0.25) // High protein for tissue repair
             case .metabolicBoost:
-                return (0.35, 0.25, 0.40) // Lower carbs, higher fat
+                return (0.30, 0.40, 0.30) // Balanced with moderate protein boost
             case .sleepOptimized:
-                return (0.25, 0.30, 0.45) // Light, higher fat for satiety
+                return (0.30, 0.25, 0.45) // Higher fat and protein, lower carbs for sleep
             }
         }
     }
