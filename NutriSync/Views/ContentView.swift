@@ -58,6 +58,25 @@ struct ContentView: View {
                 mainContent
             }
         }
+        .task {
+            await checkProfileExistence()
+        }
+        .onChange(of: firebaseConfig.authState) { _, newState in
+            if case .anonymous = newState {
+                Task {
+                    await checkProfileExistence()
+                }
+            } else if case .authenticated = newState {
+                Task {
+                    await checkProfileExistence()
+                }
+            }
+        }
+        .alert("Error", isPresented: $showError) {
+            Button("OK") {}
+        } message: {
+            Text(errorMessage)
+        }
     }
 
     @ViewBuilder
@@ -66,14 +85,14 @@ struct ContentView: View {
             switch firebaseConfig.authState {
             case .unknown, .authenticating:
                 LoadingView(message: "Initializing...")
-                
+
             case .failed(let error):
                 AuthErrorView(error: error) {
                     Task {
                         await firebaseConfig.initializeAuth()
                     }
                 }
-                
+
             case .anonymous, .authenticated:
                 if isCheckingProfile {
                     LoadingView(message: "Loading your profile...")
@@ -188,25 +207,6 @@ struct ContentView: View {
                     }
                 }
             }
-        }
-        .task {
-            await checkProfileExistence()
-        }
-        .onChange(of: firebaseConfig.authState) { _, newState in
-            if case .anonymous = newState {
-                Task {
-                    await checkProfileExistence()
-                }
-            } else if case .authenticated = newState {
-                Task {
-                    await checkProfileExistence()
-                }
-            }
-        }
-        .alert("Error", isPresented: $showError) {
-            Button("OK") {}
-        } message: {
-            Text(errorMessage)
         }
     }
     
