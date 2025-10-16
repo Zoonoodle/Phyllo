@@ -10,13 +10,27 @@ import SwiftUI
 struct WindowGenerationLoadingView: View {
     @State private var isAnimating = false
     @State private var currentMessage = 0
-    
+    @State private var currentFactIndex = 0
+
+    // Progress messages - shown sequentially
     let messages = [
-        "Generating your personalized schedule...",
-        "Analyzing your preferences...",
+        "Analyzing your daily context...",
         "Optimizing meal timing...",
-        "Calculating nutrition distribution...",
+        "Calculating macro distribution...",
         "Finalizing your windows..."
+    ]
+
+    // Meal timing science facts - shown as educational tips
+    let scienceFacts = [
+        "Protein timing around workouts can boost muscle synthesis by 25-30%",
+        "Eating within 3 hours of bedtime can reduce sleep quality by up to 30%",
+        "Your metabolism is 10-15% higher in the morning hours",
+        "Spacing meals 4-5 hours apart optimizes insulin sensitivity",
+        "Pre-workout carbs increase exercise performance by 12-15%",
+        "Post-workout meals have a 2-hour optimal absorption window",
+        "Circadian-aligned eating can improve metabolic health by 20%",
+        "Consistent meal timing regulates hunger hormones naturally",
+        "Strategic fasting windows can enhance fat oxidation by 40%"
     ]
     
     var body: some View {
@@ -34,7 +48,7 @@ struct WindowGenerationLoadingView: View {
                     Circle()
                         .stroke(Color.white.opacity(0.05), lineWidth: 3)
                         .frame(width: 220, height: 220)
-                    
+
                     // Animated gradient circle outline
                     Circle()
                         .trim(from: 0, to: 0.75)
@@ -56,35 +70,32 @@ struct WindowGenerationLoadingView: View {
                                 .repeatForever(autoreverses: false),
                             value: isAnimating
                         )
-                    
-                    // Center icon
-                    VStack(spacing: 8) {
-                        Image(systemName: "calendar.badge.clock")
-                            .font(.system(size: 48, weight: .light))
-                            .foregroundColor(.nutriSyncAccent)
-                            .opacity(isAnimating ? 1 : 0.3)
-                            .animation(
-                                Animation.easeInOut(duration: 1.5)
-                                    .repeatForever(autoreverses: true),
-                                value: isAnimating
-                            )
-                        
-                        Text("AI POWERED")
-                            .font(.system(size: 10, weight: .medium))
-                            .foregroundColor(.white.opacity(0.4))
-                            .tracking(1.5)
-                    }
+
+                    // Center logo - using AppIcon from asset catalog
+                    Image("AppIcon")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 80, height: 80)
+                        .clipShape(RoundedRectangle(cornerRadius: 18))
+                        .opacity(isAnimating ? 1 : 0.3)
+                        .scaleEffect(isAnimating ? 1.0 : 0.95)
+                        .animation(
+                            Animation.easeInOut(duration: 1.5)
+                                .repeatForever(autoreverses: true),
+                            value: isAnimating
+                        )
                 }
                 
-                // Rotating messages
-                VStack(spacing: 8) {
+                // Rotating messages and science facts
+                VStack(spacing: 24) {
+                    // Main progress message
                     Text(messages[currentMessage])
                         .font(.system(size: 18, weight: .medium))
                         .foregroundColor(.white.opacity(0.9))
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 40)
                         .animation(.easeInOut(duration: 0.5), value: currentMessage)
-                    
+
                     // Progress dots
                     HStack(spacing: 6) {
                         ForEach(0..<messages.count, id: \.self) { index in
@@ -94,7 +105,35 @@ struct WindowGenerationLoadingView: View {
                                 .animation(.easeInOut, value: currentMessage)
                         }
                     }
-                    .padding(.top, 12)
+
+                    // Divider
+                    Rectangle()
+                        .fill(Color.white.opacity(0.1))
+                        .frame(width: 60, height: 1)
+                        .padding(.vertical, 8)
+
+                    // Science fact card
+                    VStack(spacing: 8) {
+                        Text("DID YOU KNOW?")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundColor(.nutriSyncAccent)
+                            .tracking(1.2)
+
+                        Text(scienceFacts[currentFactIndex])
+                            .font(.system(size: 14, weight: .regular))
+                            .foregroundColor(.white.opacity(0.7))
+                            .multilineTextAlignment(.center)
+                            .lineSpacing(4)
+                            .padding(.horizontal, 40)
+                            .frame(height: 50)
+                            .animation(.easeInOut(duration: 0.5), value: currentFactIndex)
+                    }
+                    .padding(.vertical, 12)
+                    .padding(.horizontal, 20)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color.white.opacity(0.03))
+                    )
                 }
                 
                 Spacer()
@@ -110,11 +149,18 @@ struct WindowGenerationLoadingView: View {
             withAnimation {
                 isAnimating = true
             }
-            
-            // Rotate through messages
-            Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { timer in
-                withAnimation {
+
+            // Rotate through progress messages
+            Timer.scheduledTimer(withTimeInterval: 2.5, repeats: true) { timer in
+                withAnimation(.easeInOut(duration: 0.5)) {
                     currentMessage = (currentMessage + 1) % messages.count
+                }
+            }
+
+            // Rotate through science facts (every 4 seconds for longer read time)
+            Timer.scheduledTimer(withTimeInterval: 4.0, repeats: true) { timer in
+                withAnimation(.easeInOut(duration: 0.5)) {
+                    currentFactIndex = (currentFactIndex + 1) % scienceFacts.count
                 }
             }
         }
