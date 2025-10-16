@@ -1449,18 +1449,25 @@ struct AnalyzingMealRowCompact: View {
     }
     
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 6) {
             // Time (matching MealRowCompact)
             Text(timeFormatter.string(from: meal.timestamp))
                 .font(.system(size: 11))
                 .monospacedDigit()
                 .foregroundColor(.white.opacity(0.5))
-                .frame(width: 35, alignment: .leading)
-
-            // Just plain text - matching regular meal row style
+                .frame(width: 35)
+            
+            // Icon spacer to match emoji in regular rows
+            Image(systemName: "sparkles")
+                .font(.system(size: 14))
+                .foregroundColor(windowColor.opacity(0.6))
+                .frame(width: 20)
+            
+            // Animated text with shimmer effect
             Text(statusMessage.lowercased())
                 .font(.system(size: 13, weight: .medium))
                 .foregroundColor(windowColor)
+                .modifier(ShimmerEffect(isAnimating: true))
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .onAppear {
@@ -1510,5 +1517,41 @@ struct AnalyzingMealRowCompact: View {
                 .padding(.horizontal)
             }
         }
+    }
+}
+// MARK: - Shimmer Effect Modifier
+struct ShimmerEffect: ViewModifier {
+    let isAnimating: Bool
+    @State private var phase: CGFloat = 0
+    
+    func body(content: Content) -> some View {
+        content
+            .overlay(
+                GeometryReader { geometry in
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            Color.white.opacity(0),
+                            Color.white.opacity(0.3),
+                            Color.white.opacity(0)
+                        ]),
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                    .frame(width: geometry.size.width * 2)
+                    .offset(x: phase * geometry.size.width * 2 - geometry.size.width)
+                    .blendMode(.overlay)
+                }
+                .mask(content)
+            )
+            .onAppear {
+                if isAnimating {
+                    withAnimation(
+                        Animation.linear(duration: 2.0)
+                            .repeatForever(autoreverses: false)
+                    ) {
+                        phase = 1
+                    }
+                }
+            }
     }
 }

@@ -315,10 +315,11 @@ struct ClarificationQuestionsView: View {
             // Food name display
             if let foodName = mealResult?.name ?? clarificationManager.pendingAnalysisResult?.mealName {
                 Text(foodName)
-                    .font(.system(size: 22, weight: .bold))
-                    .foregroundColor(.white)
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundColor(.nutriSyncAccent)
                     .multilineTextAlignment(.center)
                     .padding(.bottom, 4)
+                    .offset(y: -3)
             }
 
             HStack(spacing: 12) {
