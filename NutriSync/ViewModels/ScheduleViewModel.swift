@@ -638,10 +638,22 @@ class ScheduleViewModel: ObservableObject {
     
     /// Delete a meal
     func deleteMeal(_ meal: LoggedMeal) async {
+        // Optimistic UI update - remove meal immediately from local state
+        await MainActor.run {
+            todaysMeals.removeAll { $0.id == meal.id }
+            DebugLogger.shared.info("Optimistically removed meal from local state: \(meal.name)")
+        }
+
         do {
             try await dataProvider.deleteMeal(id: meal.id.uuidString)
-            // Meals will update via observation
+            DebugLogger.shared.success("Meal deleted from Firebase: \(meal.name)")
+            // Observation will sync any changes from Firebase
         } catch {
+            // Revert optimistic update on failure
+            await MainActor.run {
+                todaysMeals.append(meal)
+                DebugLogger.shared.warning("Reverted meal deletion due to error: \(meal.name)")
+            }
             errorMessage = "Failed to delete meal: \(error.localizedDescription)"
             DebugLogger.shared.error("Failed to delete meal: \(error)")
         }
