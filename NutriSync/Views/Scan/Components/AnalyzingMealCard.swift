@@ -20,20 +20,36 @@ struct AnalyzingMealCard: View {
     }
 
     var body: some View {
-        // Glass morphism text with grey container box
-        CompactMealAnalysisLoader(
-            size: .card,
-            windowColor: displayColor
-        )
-        .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(Color.white.opacity(0.03))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16)
-                        .strokeBorder(displayColor.opacity(0.3), lineWidth: 1)
-                )
-        )
+        VStack(spacing: 12) {
+            // Show stage indicators
+            AnalysisStageIndicator(
+                tool: agent.currentTool,
+                color: displayColor,
+                isCompleted: false
+            )
+
+            // Plain text status message
+            Text(statusMessage.lowercased())
+                .font(.system(size: 15, weight: .medium))
+                .foregroundColor(displayColor)
+        }
+        .padding(.vertical, 12)
+    }
+
+    // Get current status message
+    private var statusMessage: String {
+        // Use agent's actual progress if available
+        if !agent.toolProgress.isEmpty && agent.isUsingTools {
+            return agent.toolProgress
+        }
+
+        // Use tool-specific message if available
+        if let tool = agent.currentTool {
+            return tool.displayName
+        }
+
+        // Fallback
+        return "analyzing meal..."
     }
     
     private func timeString(from date: Date) -> String {
@@ -57,9 +73,11 @@ struct AnalyzingMealRow: View {
 
     var body: some View {
         // Just show the glass morphism text - no extra UI elements
+        // Timeline view stays minimal without stage indicators
         CompactMealAnalysisLoader(
             size: .inline,
-            windowColor: displayColor
+            windowColor: displayColor,
+            showStageIndicators: false  // No stage dots in timeline
         )
         .padding(.vertical, 8)
     }
@@ -68,42 +86,6 @@ struct AnalyzingMealRow: View {
         let formatter = DateFormatter()
         formatter.dateFormat = "h:mm"
         return formatter
-    }
-}
-
-// Shimmer effect modifier
-struct ShimmerModifier: ViewModifier {
-    @State private var phase: CGFloat = 0
-    
-    func body(content: Content) -> some View {
-        content
-            .overlay(
-                LinearGradient(
-                    gradient: Gradient(colors: [
-                        Color.white.opacity(0),
-                        Color.white.opacity(0.1),
-                        Color.white.opacity(0)
-                    ]),
-                    startPoint: .leading,
-                    endPoint: .trailing
-                )
-                .offset(x: phase * 200 - 100)
-                .mask(content)
-            )
-            .onAppear {
-                withAnimation(
-                    Animation.linear(duration: 1.5)
-                        .repeatForever(autoreverses: false)
-                ) {
-                    phase = 1
-                }
-            }
-    }
-}
-
-extension View {
-    func shimmer() -> some View {
-        modifier(ShimmerModifier())
     }
 }
 

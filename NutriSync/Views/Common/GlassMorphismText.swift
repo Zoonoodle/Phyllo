@@ -11,6 +11,10 @@ struct GlassMorphismText: View {
     let text: String
     let color: Color
     let size: GlassTextSize
+    let isPulsing: Bool
+
+    @State private var pulseScale: CGFloat = 1.0
+    @State private var pulseOpacity: Double = 0.08
 
     enum GlassTextSize {
         case small  // For inline/compact views
@@ -54,8 +58,9 @@ struct GlassMorphismText: View {
                         .fill(.ultraThinMaterial)
                         .overlay(
                             RoundedRectangle(cornerRadius: 14)
-                                .fill(Color.white.opacity(0.08))
+                                .fill(Color.white.opacity(isPulsing ? pulseOpacity : 0.08))
                         )
+                        .scaleEffect(isPulsing ? pulseScale : 1.0)
 
                     // Gradient border with color tint
                     RoundedRectangle(cornerRadius: 14)
@@ -89,6 +94,19 @@ struct GlassMorphismText: View {
             )
             .shadow(color: color.opacity(0.3), radius: 12, x: 0, y: 4)
             .shadow(color: .black.opacity(0.2), radius: 6, x: 0, y: 2)
+            .onAppear {
+                if isPulsing {
+                    startPulseAnimation()
+                }
+            }
+    }
+
+    private func startPulseAnimation() {
+        // Breathing effect: subtle scale and opacity pulse
+        withAnimation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true)) {
+            pulseScale = 1.02
+            pulseOpacity = 0.12
+        }
     }
 }
 
@@ -103,32 +121,35 @@ struct GlassMorphismText_Previews: PreviewProvider {
                 GlassMorphismText(
                     text: "calculating",
                     color: .nutriSyncAccent,
-                    size: .small
+                    size: .small,
+                    isPulsing: false
                 )
 
-                // Medium size
+                // Medium size with pulse
                 GlassMorphismText(
                     text: "analyzing portions...",
                     color: .blue,
-                    size: .medium
+                    size: .medium,
+                    isPulsing: true
                 )
 
                 // Large size
                 GlassMorphismText(
                     text: "searching nutrition info...",
                     color: .orange,
-                    size: .large
+                    size: .large,
+                    isPulsing: false
                 )
 
                 // Different colors with window purposes
                 VStack(spacing: 16) {
-                    GlassMorphismText(text: "pre-workout energy", color: .orange, size: .medium)
-                    GlassMorphismText(text: "post-workout recovery", color: .blue, size: .medium)
-                    GlassMorphismText(text: "sustained energy", color: .nutriSyncAccent, size: .medium)
-                    GlassMorphismText(text: "metabolic boost", color: .red, size: .medium)
-                    GlassMorphismText(text: "sleep optimization", color: .indigo, size: .medium)
-                    GlassMorphismText(text: "recovery mode", color: .purple, size: .medium)
-                    GlassMorphismText(text: "focus boost", color: .cyan, size: .medium)
+                    GlassMorphismText(text: "pre-workout energy", color: .orange, size: .medium, isPulsing: false)
+                    GlassMorphismText(text: "post-workout recovery", color: .blue, size: .medium, isPulsing: false)
+                    GlassMorphismText(text: "sustained energy", color: .nutriSyncAccent, size: .medium, isPulsing: false)
+                    GlassMorphismText(text: "metabolic boost", color: .red, size: .medium, isPulsing: false)
+                    GlassMorphismText(text: "sleep optimization", color: .indigo, size: .medium, isPulsing: false)
+                    GlassMorphismText(text: "recovery mode", color: .purple, size: .medium, isPulsing: false)
+                    GlassMorphismText(text: "focus boost", color: .cyan, size: .medium, isPulsing: false)
                 }
             }
             .padding()

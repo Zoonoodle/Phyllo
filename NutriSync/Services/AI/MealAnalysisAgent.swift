@@ -113,9 +113,16 @@ class MealAnalysisAgent: ObservableObject {
             request: request,
             toolsUsed: toolsUsedInAnalysis
         )
-        
+
         currentMetadata = metadata
-        
+
+        // Post completion notification
+        DebugLogger.shared.info("Meal analysis completed - posting notification")
+        NotificationCenter.default.post(
+            name: .mealAnalysisCompleted,
+            object: nil  // Can be enhanced later to pass meal ID
+        )
+
         return (result: finalResult, metadata: metadata)
     }
     

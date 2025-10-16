@@ -1455,13 +1455,13 @@ struct AnalyzingMealRowCompact: View {
                 .font(.system(size: 11))
                 .monospacedDigit()
                 .foregroundColor(.white.opacity(0.5))
-                .frame(width: 35)
+                .frame(width: 35, alignment: .leading)
 
-            // Just show the glass morphism text - no circle, no grey bar
-            CompactMealAnalysisLoader(
-                size: .inline,
-                windowColor: windowColor
-            )
+            // Just plain text - matching regular meal row style
+            Text(statusMessage.lowercased())
+                .font(.system(size: 13, weight: .medium))
+                .foregroundColor(windowColor)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
         .onAppear {
             startMessageRotation()
