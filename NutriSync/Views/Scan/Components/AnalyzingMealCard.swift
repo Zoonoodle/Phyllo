@@ -20,105 +20,12 @@ struct AnalyzingMealCard: View {
     }
 
     var body: some View {
-        HStack(spacing: 16) {
-            // New compact meal analysis loader with window-specific color
-            CompactMealAnalysisLoader(
-                size: .card,
-                windowColor: displayColor
-            )
-            .frame(width: 80)
-            
-            // Meal info (loading state)
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 8) {
-                    Text("Analyzing")
-                        .font(.system(size: 14))
-                        .foregroundColor(.white.opacity(0.7))
-                    
-                    Text("•")
-                        .foregroundColor(.white.opacity(0.3))
-                    
-                    Text(timeString(from: timestamp))
-                        .font(.system(size: 14))
-                        .foregroundColor(.white.opacity(0.7))
-                }
-                
-                // Tool progress indicator or metadata
-                if let metadata = metadata {
-                    // Show completed analysis metadata
-                    VStack(alignment: .leading, spacing: 4) {
-                        // Complexity badge
-                        HStack(spacing: 6) {
-                            Image(systemName: metadata.complexity.icon)
-                                .font(.system(size: 10))
-                                .foregroundColor(.nutriSyncAccent)
-                            
-                            Text(metadata.complexity.displayName)
-                                .font(.system(size: 11, weight: .medium))
-                                .foregroundColor(.nutriSyncAccent)
-                            
-                            if !metadata.toolsUsed.isEmpty {
-                                Text("•")
-                                    .foregroundColor(.white.opacity(0.3))
-                                
-                                Text("\(metadata.toolsUsed.count) tool\(metadata.toolsUsed.count == 1 ? "" : "s")")
-                                    .font(.system(size: 11))
-                                    .foregroundColor(.white.opacity(0.6))
-                            }
-                        }
-                        
-                        // Tools used badges
-                        if !metadata.toolsUsed.isEmpty {
-                            HStack(spacing: 4) {
-                                ForEach(metadata.toolsUsed, id: \.self) { tool in
-                                    HStack(spacing: 3) {
-                                        Image(systemName: tool.icon)
-                                            .font(.system(size: 9))
-                                        Text(tool.displayName)
-                                            .font(.system(size: 9))
-                                    }
-                                    .padding(.horizontal, 6)
-                                    .padding(.vertical, 2)
-                                    .background(Color(hex: tool.color).opacity(0.2))
-                                    .foregroundColor(Color(hex: tool.color))
-                                    .cornerRadius(4)
-                                }
-                            }
-                        }
-                    }
-                    .transition(.scale.combined(with: .opacity))
-                } else if agent.isUsingTools, agent.currentTool != nil {
-                    HStack(spacing: 6) {
-                        Image(systemName: agent.currentTool?.iconName ?? "sparkle")
-                            .font(.system(size: 11))
-                            .foregroundColor(.nutriSyncAccent)
-                        
-                        Text(agent.toolProgress)
-                            .font(.system(size: 12))
-                            .foregroundColor(.nutriSyncAccent.opacity(0.8))
-                            .lineLimit(1)
-                    }
-                    .transition(.move(edge: .leading).combined(with: .opacity))
-                } else {
-                    // Shimmer placeholder for macro data
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(Color.white.opacity(0.1))
-                        .frame(width: 120, height: 12)
-                        .shimmer()
-                }
-            }
-            
-            Spacer()
-        }
-        .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(Color.white.opacity(0.03))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16)
-                        .strokeBorder(displayColor.opacity(0.3), lineWidth: 1)
-                )
+        // Just show the glass morphism text - no extra UI elements
+        CompactMealAnalysisLoader(
+            size: .card,
+            windowColor: displayColor
         )
+        .padding(.vertical, 16)
     }
     
     private func timeString(from date: Date) -> String {
@@ -141,68 +48,12 @@ struct AnalyzingMealRow: View {
     }
 
     var body: some View {
-        HStack(spacing: 12) {
-            // Time
-            Text(timeFormatter.string(from: timestamp))
-                .font(.system(size: 11))
-                .foregroundColor(.white.opacity(0.5))
-                .frame(width: 35)
-
-            // New compact meal analysis loader with window-specific color
-            CompactMealAnalysisLoader(
-                size: .inline,
-                windowColor: displayColor
-            )
-            
-            // Meal info (if metadata available)
-            if let metadata = metadata {
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: 4) {
-                        // Show completed analysis badge
-                        Image(systemName: metadata.complexity.icon)
-                            .font(.system(size: 10))
-                            .foregroundColor(.nutriSyncAccent)
-                        
-                        Text(metadata.complexity.displayName)
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(.white)
-                            .lineLimit(1)
-                    }
-                    
-                    // Show tools if available
-                    if !metadata.toolsUsed.isEmpty {
-                        HStack(spacing: 3) {
-                            ForEach(metadata.toolsUsed.prefix(2), id: \.self) { tool in
-                                Image(systemName: tool.icon)
-                                    .font(.system(size: 9))
-                                    .foregroundColor(Color(hex: tool.color))
-                            }
-                            if metadata.toolsUsed.count > 2 {
-                                Text("+\(metadata.toolsUsed.count - 2)")
-                                    .font(.system(size: 9))
-                                    .foregroundColor(.white.opacity(0.5))
-                            }
-                        }
-                    }
-                }
-            }
-            
-            Spacer()
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(Color.nutriSyncBackground)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(Color.white.opacity(0.03))
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .strokeBorder(displayColor.opacity(0.3), lineWidth: 1)
-                )
+        // Just show the glass morphism text - no extra UI elements
+        CompactMealAnalysisLoader(
+            size: .inline,
+            windowColor: displayColor
         )
+        .padding(.vertical, 8)
     }
     
     private var timeFormatter: DateFormatter {

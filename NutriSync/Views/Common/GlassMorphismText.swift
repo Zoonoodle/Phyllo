@@ -19,17 +19,17 @@ struct GlassMorphismText: View {
 
         var fontSize: CGFloat {
             switch self {
-            case .small: return 11
-            case .medium: return 13
-            case .large: return 16
+            case .small: return 13
+            case .medium: return 16
+            case .large: return 20
             }
         }
 
         var padding: EdgeInsets {
             switch self {
-            case .small: return EdgeInsets(top: 6, leading: 12, bottom: 6, trailing: 12)
-            case .medium: return EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16)
-            case .large: return EdgeInsets(top: 12, leading: 20, bottom: 12, trailing: 20)
+            case .small: return EdgeInsets(top: 8, leading: 14, bottom: 8, trailing: 14)
+            case .medium: return EdgeInsets(top: 12, leading: 20, bottom: 12, trailing: 20)
+            case .large: return EdgeInsets(top: 16, leading: 24, bottom: 16, trailing: 24)
             }
         }
 
@@ -49,47 +49,46 @@ struct GlassMorphismText: View {
             .padding(size.padding)
             .background(
                 ZStack {
-                    // Frosted glass background
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color.white.opacity(0.05))
-                        .background(
-                            // Blur effect behind
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(.ultraThinMaterial)
-                                .opacity(0.6)
+                    // Frosted glass background with stronger effect
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(.ultraThinMaterial)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 14)
+                                .fill(Color.white.opacity(0.08))
                         )
 
-                    // Subtle border with color tint
-                    RoundedRectangle(cornerRadius: 12)
+                    // Gradient border with color tint
+                    RoundedRectangle(cornerRadius: 14)
                         .strokeBorder(
                             LinearGradient(
                                 colors: [
-                                    color.opacity(0.3),
-                                    color.opacity(0.1)
+                                    color.opacity(0.4),
+                                    color.opacity(0.2)
                                 ],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             ),
-                            lineWidth: 1
+                            lineWidth: 1.5
                         )
 
-                    // Inner glow
-                    RoundedRectangle(cornerRadius: 12)
+                    // Inner glow for depth
+                    RoundedRectangle(cornerRadius: 14)
                         .fill(
                             RadialGradient(
                                 colors: [
-                                    color.opacity(0.15),
+                                    color.opacity(0.2),
                                     Color.clear
                                 ],
                                 center: .center,
                                 startRadius: 0,
-                                endRadius: 80
+                                endRadius: 100
                             )
                         )
+                        .blendMode(.plusLighter)
                 }
             )
-            .shadow(color: color.opacity(0.2), radius: 8, x: 0, y: 2)
-            .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+            .shadow(color: color.opacity(0.3), radius: 12, x: 0, y: 4)
+            .shadow(color: .black.opacity(0.2), radius: 6, x: 0, y: 2)
     }
 }
 
