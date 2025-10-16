@@ -12,7 +12,7 @@ struct ContentView: View {
     @EnvironmentObject private var firebaseConfig: FirebaseConfig
     @EnvironmentObject private var dataProvider: FirebaseDataProvider
     @EnvironmentObject private var notificationManager: NotificationManager
-    
+
     @State private var hasProfile = false
     @State private var isCheckingProfile = true
     @State private var showError = false
@@ -24,26 +24,44 @@ struct ContentView: View {
     @AppStorage("hasSeenGetStarted") private var hasSeenGetStarted = false
     @State private var hasInitializedGetStarted = false  // Track if we've set initial state
     @AppStorage("onboardingResetFlag") private var onboardingResetFlag = 0  // For testing/reset
-    
+
+    // Splash screen
+    @State private var showSplash = true
+
     // First day window generation
     @State private var isGeneratingFirstDayWindows = false
     @State private var showWelcomeBanner = false
     @State private var userProfile: UserProfile?
-    
+
     // Notification onboarding
     @State private var showNotificationOnboarding = false
     @AppStorage("hasSeenNotificationOnboarding") private var hasSeenNotificationOnboarding = false
     @AppStorage("lastNotificationPromptDate") private var lastNotificationPromptDate: Double = 0
-    
+
     // App refresh tracking
     @Environment(\.scenePhase) private var scenePhase
     @AppStorage("lastBackgroundTimestamp") private var lastBackgroundTimestamp: Double = 0
     @State private var shouldRefreshData = false
-    
+
     // Refresh threshold: 20 minutes in seconds
     private let refreshThreshold: TimeInterval = 20 * 60
-    
+
     var body: some View {
+        ZStack {
+            if showSplash {
+                SplashScreenView {
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        showSplash = false
+                    }
+                }
+            } else {
+                mainContent
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var mainContent: some View {
         ZStack {
             switch firebaseConfig.authState {
             case .unknown, .authenticating:
