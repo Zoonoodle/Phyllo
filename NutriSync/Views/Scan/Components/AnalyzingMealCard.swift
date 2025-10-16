@@ -20,12 +20,20 @@ struct AnalyzingMealCard: View {
     }
 
     var body: some View {
-        // Just show the glass morphism text - no extra UI elements
+        // Glass morphism text with grey container box
         CompactMealAnalysisLoader(
             size: .card,
             windowColor: displayColor
         )
-        .padding(.vertical, 16)
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color.white.opacity(0.03))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .strokeBorder(displayColor.opacity(0.3), lineWidth: 1)
+                )
+        )
     }
     
     private func timeString(from date: Date) -> String {

@@ -1449,39 +1449,19 @@ struct AnalyzingMealRowCompact: View {
     }
     
     var body: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 8) {
             // Time (matching MealRowCompact)
             Text(timeFormatter.string(from: meal.timestamp))
                 .font(.system(size: 11))
                 .monospacedDigit()
                 .foregroundColor(.white.opacity(0.5))
                 .frame(width: 35)
-            
-            // Progress ring where emoji would be (slightly larger than emoji)
+
+            // Just show the glass morphism text - no circle, no grey bar
             CompactMealAnalysisLoader(
                 size: .inline,
                 windowColor: windowColor
             )
-            .frame(width: 24, height: 24)
-            .scaleEffect(0.48) // Scale down the 50px ring to fit in 24px frame
-            
-            // Status info (matching MealRowCompact layout)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(statusMessage)
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(.white)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                
-                // Shimmer placeholder for nutrition info
-                RoundedRectangle(cornerRadius: 2)
-                    .fill(Color.white.opacity(0.1))
-                    .frame(height: 11)
-                    .frame(maxWidth: 140)
-                    .shimmer()
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .onAppear {
             startMessageRotation()

@@ -81,132 +81,52 @@ struct ContentView: View {
 
     @ViewBuilder
     private var mainContent: some View {
-        ZStack {
-            switch firebaseConfig.authState {
-            case .unknown, .authenticating:
-                LoadingView(message: "Initializing...")
+        switch firebaseConfig.authState {
+        case .unknown, .authenticating:
+            LoadingView(message: "Initializing...")
 
-            case .failed(let error):
-                AuthErrorView(error: error) {
-                    Task {
-                        await firebaseConfig.initializeAuth()
-                    }
-                }
+        case .failed(let error):
+            authErrorView(error: error)
 
-            case .anonymous, .authenticated:
-                if isCheckingProfile {
-                    LoadingView(message: "Loading your profile...")
-                } else if !hasProfile {
-                    NavigationStack {
-                        NutriSyncOnboardingCoordinator(viewModel: onboardingViewModel, existingProgress: existingProgress, skipSectionIntro: showingGetStarted)
-                            .environmentObject(firebaseConfig)
-                            .environmentObject(dataProvider)
-                    }
-                    .fullScreenCover(isPresented: $showingGetStarted) {
-                        GetStartedView()
-                            .environmentObject(firebaseConfig)
-                            .environmentObject(dataProvider)
-                            .onDisappear {
-                                hasSeenGetStarted = true
-                            }
-                    }
-                    .onChange(of: onboardingViewModel.shouldReturnToGetStarted) { _, newValue in
-                        if newValue {
-                            // Reset the flag first
-                            onboardingViewModel.shouldReturnToGetStarted = false
-                            // Reset hasSeenGetStarted so the user can go back
-                            hasSeenGetStarted = false
-                            // Show the GetStartedView again
-                            showingGetStarted = true
-                        }
-                    }
-                    .onAppear {
-                        // Only initialize once to avoid state changes during view updates
-                        guard !hasInitializedGetStarted else { return }
-                        hasInitializedGetStarted = true
-                        
-                        // Debug: Reset flag if needed (increment onboardingResetFlag to trigger)
-                        #if DEBUG
-                        if onboardingResetFlag > 0 && hasSeenGetStarted {
-                            hasSeenGetStarted = false
-                            print("🔄 Reset GetStartedView flag for debugging")
-                        }
-                        #endif
-                        
-                        // Show GetStartedView for new users who haven't seen it yet
-                        // If they have onboarding progress beyond basics, skip GetStarted
-                        let hasProgressBeyondBasics = (existingProgress?.currentSection ?? 0) > 0 || 
-                                                      (existingProgress?.completedSections.contains(0) ?? false)
-                        
-                        // Show GetStarted if user hasn't seen it AND doesn't have progress beyond basics
-                        // For completely new users (no progress at all), always show GetStarted
-                        if existingProgress == nil && !hasSeenGetStarted {
-                            // Brand new user - always show GetStarted
-                            showingGetStarted = true
-                            print("📱 Showing GetStartedView for new user")
-                        } else {
-                            // User with some progress - check conditions
-                            showingGetStarted = !hasSeenGetStarted && !hasProgressBeyondBasics
-                            print("📱 GetStarted decision: hasSeenGetStarted=\(hasSeenGetStarted), hasProgressBeyondBasics=\(hasProgressBeyondBasics), showing=\(showingGetStarted)")
-                        }
-                    }
-                } else {
-                    ZStack {
-                        MainTabView()
-                            .fullScreenCover(isPresented: $showNotificationOnboarding) {
-                                NotificationOnboardingView(isPresented: $showNotificationOnboarding)
-                                    .environmentObject(notificationManager)
-                            }
-                            .task {
-                                await checkNotificationOnboarding()
-                                await checkFirstDayWindows()
-                            }
-                            .onChange(of: scenePhase) { oldPhase, newPhase in
-                                handleScenePhaseChange(from: oldPhase, to: newPhase)
-                            }
-                            .task(id: shouldRefreshData) {
-                                if shouldRefreshData {
-                                    await refreshAppData()
-                                    shouldRefreshData = false
-                                }
-                            }
-                        
-                        // Show welcome banner for first-time users
-                        if showWelcomeBanner {
-                            VStack {
-                                WelcomeBanner {
-                                    showWelcomeBanner = false
-                                }
-                                .padding(.top, 50)
-                                
-                                Spacer()
-                            }
-                            .transition(.move(edge: .top).combined(with: .opacity))
-                        }
-                        
-                        // Loading overlay for first day window generation
-                        if isGeneratingFirstDayWindows {
-                            Color.black.opacity(0.5)
-                                .ignoresSafeArea()
-                            
-                            VStack(spacing: 16) {
-                                ProgressView()
-                                    .progressViewStyle(CircularProgressViewStyle(tint: .nutriSyncAccent))
-                                    .scaleEffect(1.5)
-                                
-                                Text("Preparing your first day...")
-                                    .font(.headline)
-                                    .foregroundStyle(.white)
-                            }
-                            .padding(32)
-                            .background {
-                                RoundedRectangle(cornerRadius: 16)
-                                    .fill(Color.white.opacity(0.1))
-                            }
-                        }
-                    }
-                }
+        case .anonymous, .authenticated:
+            authenticatedContent
+        }
+    }
+
+    private func authErrorView(error: Error) -> some View {
+        AuthErrorView(error: error) {
+            Task {
+                await firebaseConfig.initializeAuth()
             }
+        }
+    }
+
+    @ViewBuilder
+    private var authenticatedContent: some View {
+        if isCheckingProfile {
+            LoadingView(message: "Loading your profile...")
+        } else if !hasProfile {
+            OnboardingFlowView(
+                viewModel: $onboardingViewModel,
+                existingProgress: existingProgress,
+                showingGetStarted: $showingGetStarted,
+                hasSeenGetStarted: $hasSeenGetStarted,
+                hasInitializedGetStarted: $hasInitializedGetStarted,
+                onboardingResetFlag: onboardingResetFlag
+            )
+        } else {
+            MainAppView(
+                showNotificationOnboarding: $showNotificationOnboarding,
+                showWelcomeBanner: $showWelcomeBanner,
+                isGeneratingFirstDayWindows: $isGeneratingFirstDayWindows,
+                scenePhase: scenePhase,
+                shouldRefreshData: $shouldRefreshData,
+                checkNotificationOnboarding: checkNotificationOnboarding,
+                checkFirstDayWindows: checkFirstDayWindows,
+                handleScenePhaseChange: handleScenePhaseChange,
+                refreshAppData: refreshAppData
+            )
+            .environmentObject(notificationManager)
         }
     }
     

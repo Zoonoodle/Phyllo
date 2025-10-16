@@ -9,10 +9,10 @@ import SwiftUI
 
 struct SplashScreenView: View {
     @State private var showSplash = true
-    @State private var leftPieceOffsetX: CGFloat = 0
-    @State private var leftPieceOffsetY: CGFloat = 0
-    @State private var rightPieceOffsetX: CGFloat = 0
-    @State private var rightPieceOffsetY: CGFloat = 0
+    @State private var whitePieceOffsetX: CGFloat = 0
+    @State private var whitePieceOffsetY: CGFloat = 0
+    @State private var greenPieceOffsetX: CGFloat = 0
+    @State private var greenPieceOffsetY: CGFloat = 0
     @State private var scale: CGFloat = 1.0
     @State private var opacity: Double = 1.0
 
@@ -27,31 +27,27 @@ struct SplashScreenView: View {
             if showSplash {
                 // Logo pieces stacked together
                 ZStack {
-                    // Left piece (white "N")
+                    // White piece (upper-left ">")
                     Image("appLogo")
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 200, height: 200)
                         .mask(
-                            Rectangle()
-                                .frame(width: 100, height: 200)
-                                .offset(x: -50) // Mask left half
+                            DiagonalMask(isUpperLeft: true)
                         )
-                        .offset(x: leftPieceOffsetX, y: leftPieceOffsetY)
+                        .offset(x: whitePieceOffsetX, y: whitePieceOffsetY)
                         .scaleEffect(scale)
                         .opacity(opacity)
 
-                    // Right piece (green accent)
+                    // Green piece (lower-right "<")
                     Image("appLogo")
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 200, height: 200)
                         .mask(
-                            Rectangle()
-                                .frame(width: 100, height: 200)
-                                .offset(x: 50) // Mask right half
+                            DiagonalMask(isUpperLeft: false)
                         )
-                        .offset(x: rightPieceOffsetX, y: rightPieceOffsetY)
+                        .offset(x: greenPieceOffsetX, y: greenPieceOffsetY)
                         .scaleEffect(scale)
                         .opacity(opacity)
                 }
@@ -67,13 +63,13 @@ struct SplashScreenView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
             // Phase 2: Separate diagonally and scale up (0.8s)
             withAnimation(.easeOut(duration: 0.8)) {
-                // Left piece goes up-left
-                leftPieceOffsetX = -80
-                leftPieceOffsetY = -80
+                // White piece goes up-left
+                whitePieceOffsetX = -80
+                whitePieceOffsetY = -80
 
-                // Right piece goes down-right
-                rightPieceOffsetX = 80
-                rightPieceOffsetY = 80
+                // Green piece goes down-right
+                greenPieceOffsetX = 80
+                greenPieceOffsetY = 80
 
                 // Scale up both pieces
                 scale = 1.4
@@ -92,6 +88,31 @@ struct SplashScreenView: View {
                 }
             }
         }
+    }
+}
+
+// MARK: - Diagonal Mask Shape
+struct DiagonalMask: Shape {
+    let isUpperLeft: Bool
+
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+
+        if isUpperLeft {
+            // Upper-left triangle for white piece
+            path.move(to: CGPoint(x: rect.minX, y: rect.minY))
+            path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY))
+            path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
+            path.closeSubpath()
+        } else {
+            // Lower-right triangle for green piece
+            path.move(to: CGPoint(x: rect.maxX, y: rect.minY))
+            path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
+            path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
+            path.closeSubpath()
+        }
+
+        return path
     }
 }
 
