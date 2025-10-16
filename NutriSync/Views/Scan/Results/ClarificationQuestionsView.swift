@@ -311,29 +311,35 @@ struct ClarificationQuestionsView: View {
     // MARK: - Components
     
     private var headerSection: some View {
-        
-        HStack(spacing: 12) {
-            Image(systemName: "lightbulb.fill")
-                .font(.system(size: 20))
-                .foregroundColor(.white.opacity(0.7))
-            
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Quick clarification")
-                    .font(.system(size: 18, weight: .semibold))
+        VStack(spacing: 8) {
+            // Food name display
+            if let foodName = mealResult?.name ?? clarificationManager.pendingAnalysisResult?.mealName {
+                Text(foodName)
+                    .font(.system(size: 22, weight: .bold))
                     .foregroundColor(.white)
-                
-                Text("A few details for accuracy")
-                    .font(.system(size: 14))
-                    .foregroundColor(.white.opacity(0.5))
+                    .multilineTextAlignment(.center)
+                    .padding(.bottom, 4)
             }
-            
-            Spacer()
-            
-            // Skip all button
-            Button(action: completeClarification) {
-                Text("Skip")
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(.white.opacity(0.5))
+
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Quick clarification")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(.white)
+
+                    Text("A few details for accuracy")
+                        .font(.system(size: 14))
+                        .foregroundColor(.white.opacity(0.5))
+                }
+
+                Spacer()
+
+                // Skip all button
+                Button(action: completeClarification) {
+                    Text("Skip")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundColor(.white.opacity(0.5))
+                }
             }
         }
         .padding(.horizontal, 20)
@@ -360,14 +366,6 @@ struct ClarificationQuestionsView: View {
         Group {
             if let currentQuestion = currentQuestion {
                 HStack(spacing: 12) {
-                    ZStack {
-                        Circle()
-                            .fill(Color.white.opacity(0.06))
-                            .frame(width: 34, height: 34)
-                        Image(systemName: iconForQuestion(currentQuestion.question))
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundColor(.white.opacity(0.8))
-                    }
                     VStack(alignment: .leading, spacing: 4) {
                         Text(currentQuestion.question)
                             .font(.system(size: 18, weight: .semibold))
@@ -392,56 +390,45 @@ struct ClarificationQuestionsView: View {
     }
     
     private var bottomButtons: some View {
-        HStack(spacing: 16) {
+        HStack {
             // Back button (if not on first question)
             if currentQuestionIndex > 0 {
                 Button(action: goBack) {
                     HStack(spacing: 6) {
                         Image(systemName: "chevron.left")
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(.system(size: 16, weight: .semibold))
                         Text("Back")
                             .font(.system(size: 16, weight: .medium))
                     }
-                    .foregroundColor(.white.opacity(0.6))
+                    .foregroundColor(.white.opacity(0.7))
+                    .frame(height: 44)
                     .padding(.horizontal, 16)
-                    .padding(.vertical, 14)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(Color.white.opacity(0.05))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .stroke(Color.white.opacity(0.1), lineWidth: 1)
-                            )
-                    )
+                    .background(Color.white.opacity(0.05))
+                    .cornerRadius(22)
                 }
             }
-            
+
+            Spacer()
+
             // Only show finish button on last question
             if currentQuestionIndex == questions.count - 1 {
                 let isSelected = currentQuestion.flatMap { selectedOptions[$0.id] } != nil
                 Button(action: completeClarification) {
-                    Text("Apply Adjustments")
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundColor(isSelected ? .white : .white.opacity(0.5))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                        .background(
-                            RoundedRectangle(cornerRadius: 16)
-                                .fill(isSelected ? Color(hex: "15E065").opacity(0.08) : Color.white.opacity(0.03))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 16)
-                                        .stroke(isSelected ? Color(hex: "15E065").opacity(0.2) : Color.white.opacity(0.1), lineWidth: 1)
-                                )
-                        )
+                    HStack(spacing: 6) {
+                        Text("Apply Adjustments")
+                            .font(.system(size: 17, weight: .semibold))
+                    }
+                    .foregroundColor(isSelected ? .black : .white.opacity(0.5))
+                    .frame(height: 44)
+                    .padding(.horizontal, 24)
+                    .background(isSelected ? Color.nutriSyncAccent : Color.white.opacity(0.1))
+                    .cornerRadius(22)
                 }
                 .disabled(!isSelected)
-            } else {
-                // Empty spacer to keep back button on the left
-                Spacer()
             }
         }
         .padding(.horizontal, 20)
-        .padding(.bottom, 40)
+        .padding(.bottom, 34)
     }
     
     // MARK: - Actions
