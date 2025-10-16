@@ -1529,24 +1529,27 @@ struct ShimmerEffect: ViewModifier {
             .overlay(
                 GeometryReader { geometry in
                     LinearGradient(
-                        gradient: Gradient(colors: [
-                            Color.white.opacity(0),
-                            Color.white.opacity(0.3),
-                            Color.white.opacity(0)
+                        gradient: Gradient(stops: [
+                            .init(color: Color.white.opacity(0), location: 0),
+                            .init(color: Color.white.opacity(0.2), location: 0.3),
+                            .init(color: Color.white.opacity(0.8), location: 0.5),
+                            .init(color: Color.white.opacity(0.2), location: 0.7),
+                            .init(color: Color.white.opacity(0), location: 1)
                         ]),
                         startPoint: .leading,
                         endPoint: .trailing
                     )
-                    .frame(width: geometry.size.width * 2)
-                    .offset(x: phase * geometry.size.width * 2 - geometry.size.width)
+                    .frame(width: geometry.size.width * 1.5)
+                    .offset(x: -geometry.size.width * 0.75 + phase * (geometry.size.width * 2.25))
                     .blendMode(.overlay)
                 }
                 .mask(content)
             )
+            .drawingGroup() // Hardware acceleration for smooth animation
             .onAppear {
                 if isAnimating {
                     withAnimation(
-                        Animation.linear(duration: 2.0)
+                        Animation.linear(duration: 1.5)
                             .repeatForever(autoreverses: false)
                     ) {
                         phase = 1
