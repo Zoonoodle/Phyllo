@@ -2,19 +2,16 @@
 //  SplashScreenView.swift
 //  NutriSync
 //
-//  Animated splash screen with logo pieces spreading apart
+//  Animated splash screen with glowing logo
 //
 
 import SwiftUI
 
 struct SplashScreenView: View {
     @State private var showSplash = true
-    @State private var whitePieceOffsetX: CGFloat = 0
-    @State private var whitePieceOffsetY: CGFloat = 0
-    @State private var greenPieceOffsetX: CGFloat = 0
-    @State private var greenPieceOffsetY: CGFloat = 0
-    @State private var scale: CGFloat = 1.0
+    @State private var glowIntensity: CGFloat = 0
     @State private var opacity: Double = 1.0
+    @State private var scale: CGFloat = 0.9
 
     var onComplete: () -> Void
 
@@ -25,32 +22,16 @@ struct SplashScreenView: View {
                 .ignoresSafeArea()
 
             if showSplash {
-                // Logo pieces stacked together
-                ZStack {
-                    // White piece (upper-left ">")
-                    Image("appLogo")
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 200, height: 200)
-                        .mask(
-                            DiagonalMask(isUpperLeft: true)
-                        )
-                        .offset(x: whitePieceOffsetX, y: whitePieceOffsetY)
-                        .scaleEffect(scale)
-                        .opacity(opacity)
-
-                    // Green piece (lower-right "<")
-                    Image("appLogo")
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 200, height: 200)
-                        .mask(
-                            DiagonalMask(isUpperLeft: false)
-                        )
-                        .offset(x: greenPieceOffsetX, y: greenPieceOffsetY)
-                        .scaleEffect(scale)
-                        .opacity(opacity)
-                }
+                // Full logo with glow effect
+                Image("appLogo")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 200, height: 200)
+                    .shadow(color: Color.nutriSyncAccent.opacity(glowIntensity), radius: 40, x: 0, y: 0)
+                    .shadow(color: Color.nutriSyncAccent.opacity(glowIntensity * 0.6), radius: 20, x: 0, y: 0)
+                    .shadow(color: Color.nutriSyncAccent.opacity(glowIntensity * 0.4), radius: 10, x: 0, y: 0)
+                    .scaleEffect(scale)
+                    .opacity(opacity)
             }
         }
         .onAppear {
@@ -59,60 +40,39 @@ struct SplashScreenView: View {
     }
 
     private func startAnimation() {
-        // Phase 1: Show logo in default state (1.2s)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
-            // Phase 2: Separate diagonally and scale up (0.8s)
-            withAnimation(.easeOut(duration: 0.8)) {
-                // White piece goes up-left
-                whitePieceOffsetX = -80
-                whitePieceOffsetY = -80
+        // Phase 1: Fade in and scale up slightly (0.5s)
+        withAnimation(.easeOut(duration: 0.5)) {
+            scale = 1.0
+            opacity = 1.0
+        }
 
-                // Green piece goes down-right
-                greenPieceOffsetX = 80
-                greenPieceOffsetY = 80
-
-                // Scale up both pieces
-                scale = 1.4
+        // Phase 2: Glow pulses (start at 0.3s, duration 1.0s)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            withAnimation(.easeInOut(duration: 0.6)) {
+                glowIntensity = 0.8
             }
 
-            // Phase 3: Fade out (0.4s) - starts at 0.6s into separation
+            // Glow fades slightly but stays visible
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-                withAnimation(.easeOut(duration: 0.4)) {
-                    opacity = 0
-                }
-
-                // Phase 4: Complete and transition (total 2.6s)
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-                    showSplash = false
-                    onComplete()
+                withAnimation(.easeInOut(duration: 0.4)) {
+                    glowIntensity = 0.4
                 }
             }
         }
-    }
-}
 
-// MARK: - Diagonal Mask Shape
-struct DiagonalMask: Shape {
-    let isUpperLeft: Bool
+        // Phase 3: Fade out everything (starts at 1.8s, duration 0.4s)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.8) {
+            withAnimation(.easeOut(duration: 0.4)) {
+                opacity = 0
+                glowIntensity = 0
+            }
 
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-
-        if isUpperLeft {
-            // Upper-left triangle for white piece
-            path.move(to: CGPoint(x: rect.minX, y: rect.minY))
-            path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY))
-            path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
-            path.closeSubpath()
-        } else {
-            // Lower-right triangle for green piece
-            path.move(to: CGPoint(x: rect.maxX, y: rect.minY))
-            path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
-            path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
-            path.closeSubpath()
+            // Phase 4: Complete and transition (total 2.2s)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                showSplash = false
+                onComplete()
+            }
         }
-
-        return path
     }
 }
 
