@@ -26,7 +26,7 @@ struct SplashScreenView: View {
                 Image("appLogo")
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-                    .frame(width: 200, height: 200)
+                    .frame(width: 300, height: 300)
                     .shadow(color: Color.nutriSyncAccent.opacity(glowIntensity), radius: 40, x: 0, y: 0)
                     .shadow(color: Color.nutriSyncAccent.opacity(glowIntensity * 0.6), radius: 20, x: 0, y: 0)
                     .shadow(color: Color.nutriSyncAccent.opacity(glowIntensity * 0.4), radius: 10, x: 0, y: 0)
