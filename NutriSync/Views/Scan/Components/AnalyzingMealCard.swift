@@ -255,8 +255,8 @@ extension View {
         VStack(spacing: 20) {
             // Create sample windows for different purposes
             let preWorkoutWindow = MealWindow.mockWindows(for: .performanceFocus).first!
-            let postWorkoutWindow = MealWindow.mockWindows(for: .muscleGain)[1]
-            let recoveryWindow = MealWindow.mockWindows(for: .muscleGain).last!
+            let postWorkoutWindow = MealWindow.mockWindows(for: .muscleGain(targetPounds: 5, timeline: 12))[1]
+            let recoveryWindow = MealWindow.mockWindows(for: .muscleGain(targetPounds: 5, timeline: 12)).last!
 
             // Standard analyzing - pre-workout (orange)
             AnalyzingMealCard(timestamp: Date(), metadata: nil, window: preWorkoutWindow)
@@ -300,7 +300,7 @@ extension View {
         Color.nutriSyncBackground.ignoresSafeArea()
 
         VStack(spacing: 20) {
-            let sustainedEnergyWindow = MealWindow.mockWindows(for: .weightLoss)[1]
+            let sustainedEnergyWindow = MealWindow.mockWindows(for: .weightLoss(targetPounds: 10, timeline: 8))[1]
 
             AnalyzingMealRow(timestamp: Date(), metadata: nil, window: sustainedEnergyWindow)
                 .padding()
