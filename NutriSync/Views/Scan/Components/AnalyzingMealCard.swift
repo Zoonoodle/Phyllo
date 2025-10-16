@@ -10,15 +10,21 @@ import SwiftUI
 struct AnalyzingMealCard: View {
     let timestamp: Date
     let metadata: AnalysisMetadata?
+    let window: MealWindow? // Optional window to get purpose color
     @ObservedObject private var agent = MealAnalysisAgent.shared
     @State private var showMetadata = false
-    
+
+    // Get color from window purpose, fallback to accent color
+    private var displayColor: Color {
+        window?.purpose.color ?? .nutriSyncAccent
+    }
+
     var body: some View {
         HStack(spacing: 16) {
-            // New compact meal analysis loader
+            // New compact meal analysis loader with window-specific color
             CompactMealAnalysisLoader(
                 size: .card,
-                windowColor: .nutriSyncAccent
+                windowColor: displayColor
             )
             .frame(width: 80)
             
@@ -110,7 +116,7 @@ struct AnalyzingMealCard: View {
                 .fill(Color.white.opacity(0.03))
                 .overlay(
                     RoundedRectangle(cornerRadius: 16)
-                        .strokeBorder(Color.nutriSyncAccent.opacity(0.3), lineWidth: 1)
+                        .strokeBorder(displayColor.opacity(0.3), lineWidth: 1)
                 )
         )
     }
@@ -126,8 +132,14 @@ struct AnalyzingMealCard: View {
 struct AnalyzingMealRow: View {
     let timestamp: Date
     let metadata: AnalysisMetadata?
+    let window: MealWindow? // Optional window to get purpose color
     @ObservedObject private var agent = MealAnalysisAgent.shared
-    
+
+    // Get color from window purpose, fallback to accent color
+    private var displayColor: Color {
+        window?.purpose.color ?? .nutriSyncAccent
+    }
+
     var body: some View {
         HStack(spacing: 12) {
             // Time
@@ -135,11 +147,11 @@ struct AnalyzingMealRow: View {
                 .font(.system(size: 11))
                 .foregroundColor(.white.opacity(0.5))
                 .frame(width: 35)
-            
-            // New compact meal analysis loader
+
+            // New compact meal analysis loader with window-specific color
             CompactMealAnalysisLoader(
                 size: .inline,
-                windowColor: .nutriSyncAccent
+                windowColor: displayColor
             )
             
             // Meal info (if metadata available)
@@ -188,7 +200,7 @@ struct AnalyzingMealRow: View {
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
-                        .strokeBorder(Color.nutriSyncAccent.opacity(0.3), lineWidth: 1)
+                        .strokeBorder(displayColor.opacity(0.3), lineWidth: 1)
                 )
         )
     }
@@ -239,13 +251,18 @@ extension View {
 #Preview("Window Card") {
     ZStack {
         Color.nutriSyncBackground.ignoresSafeArea()
-        
+
         VStack(spacing: 20) {
-            // Standard analyzing
-            AnalyzingMealCard(timestamp: Date(), metadata: nil)
+            // Create sample windows for different purposes
+            let preWorkoutWindow = MealWindow.mockWindows(for: .performanceFocus).first!
+            let postWorkoutWindow = MealWindow.mockWindows(for: .muscleGain)[1]
+            let recoveryWindow = MealWindow.mockWindows(for: .muscleGain).last!
+
+            // Standard analyzing - pre-workout (orange)
+            AnalyzingMealCard(timestamp: Date(), metadata: nil, window: preWorkoutWindow)
                 .padding()
-            
-            // With metadata - restaurant
+
+            // With metadata - restaurant (blue - post-workout)
             AnalyzingMealCard(
                 timestamp: Date(),
                 metadata: AnalysisMetadata(
@@ -255,11 +272,12 @@ extension View {
                     confidence: 0.95,
                     brandDetected: "Chipotle",
                     ingredientCount: 8
-                )
+                ),
+                window: postWorkoutWindow
             )
             .padding()
-            
-            // With metadata - complex
+
+            // With metadata - complex (purple - recovery)
             AnalyzingMealCard(
                 timestamp: Date(),
                 metadata: AnalysisMetadata(
@@ -269,7 +287,8 @@ extension View {
                     confidence: 0.82,
                     brandDetected: nil,
                     ingredientCount: 12
-                )
+                ),
+                window: recoveryWindow
             )
             .padding()
         }
@@ -279,11 +298,13 @@ extension View {
 #Preview("Timeline Row") {
     ZStack {
         Color.nutriSyncBackground.ignoresSafeArea()
-        
+
         VStack(spacing: 20) {
-            AnalyzingMealRow(timestamp: Date(), metadata: nil)
+            let sustainedEnergyWindow = MealWindow.mockWindows(for: .weightLoss)[1]
+
+            AnalyzingMealRow(timestamp: Date(), metadata: nil, window: sustainedEnergyWindow)
                 .padding()
-            
+
             // With metadata
             AnalyzingMealRow(
                 timestamp: Date(),
@@ -294,10 +315,11 @@ extension View {
                     confidence: 0.92,
                     brandDetected: "Starbucks",
                     ingredientCount: 5
-                )
+                ),
+                window: sustainedEnergyWindow
             )
             .padding()
-            
+
             // Preview of final state
             let mockMeal = LoggedMeal(
                 name: "Chicken Salad",

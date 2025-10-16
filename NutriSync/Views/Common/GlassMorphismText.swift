@@ -1,0 +1,138 @@
+//
+//  GlassMorphismText.swift
+//  NutriSync
+//
+//  Created by Claude on 2025-10-16.
+//
+
+import SwiftUI
+
+struct GlassMorphismText: View {
+    let text: String
+    let color: Color
+    let size: GlassTextSize
+
+    enum GlassTextSize {
+        case small  // For inline/compact views
+        case medium // For cards
+        case large  // For prominent displays
+
+        var fontSize: CGFloat {
+            switch self {
+            case .small: return 11
+            case .medium: return 13
+            case .large: return 16
+            }
+        }
+
+        var padding: EdgeInsets {
+            switch self {
+            case .small: return EdgeInsets(top: 6, leading: 12, bottom: 6, trailing: 12)
+            case .medium: return EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16)
+            case .large: return EdgeInsets(top: 12, leading: 20, bottom: 12, trailing: 20)
+            }
+        }
+
+        var blurRadius: CGFloat {
+            switch self {
+            case .small: return 8
+            case .medium: return 10
+            case .large: return 12
+            }
+        }
+    }
+
+    var body: some View {
+        Text(text)
+            .font(.system(size: size.fontSize, weight: .medium, design: .rounded))
+            .foregroundColor(color)
+            .padding(size.padding)
+            .background(
+                ZStack {
+                    // Frosted glass background
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color.white.opacity(0.05))
+                        .background(
+                            // Blur effect behind
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(.ultraThinMaterial)
+                                .opacity(0.6)
+                        )
+
+                    // Subtle border with color tint
+                    RoundedRectangle(cornerRadius: 12)
+                        .strokeBorder(
+                            LinearGradient(
+                                colors: [
+                                    color.opacity(0.3),
+                                    color.opacity(0.1)
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 1
+                        )
+
+                    // Inner glow
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(
+                            RadialGradient(
+                                colors: [
+                                    color.opacity(0.15),
+                                    Color.clear
+                                ],
+                                center: .center,
+                                startRadius: 0,
+                                endRadius: 80
+                            )
+                        )
+                }
+            )
+            .shadow(color: color.opacity(0.2), radius: 8, x: 0, y: 2)
+            .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+    }
+}
+
+// Preview
+struct GlassMorphismText_Previews: PreviewProvider {
+    static var previews: some View {
+        ZStack {
+            Color.nutriSyncBackground.ignoresSafeArea()
+
+            VStack(spacing: 30) {
+                // Small size
+                GlassMorphismText(
+                    text: "calculating",
+                    color: .nutriSyncAccent,
+                    size: .small
+                )
+
+                // Medium size
+                GlassMorphismText(
+                    text: "analyzing portions...",
+                    color: .blue,
+                    size: .medium
+                )
+
+                // Large size
+                GlassMorphismText(
+                    text: "searching nutrition info...",
+                    color: .orange,
+                    size: .large
+                )
+
+                // Different colors with window purposes
+                VStack(spacing: 16) {
+                    GlassMorphismText(text: "pre-workout energy", color: .orange, size: .medium)
+                    GlassMorphismText(text: "post-workout recovery", color: .blue, size: .medium)
+                    GlassMorphismText(text: "sustained energy", color: .nutriSyncAccent, size: .medium)
+                    GlassMorphismText(text: "metabolic boost", color: .red, size: .medium)
+                    GlassMorphismText(text: "sleep optimization", color: .indigo, size: .medium)
+                    GlassMorphismText(text: "recovery mode", color: .purple, size: .medium)
+                    GlassMorphismText(text: "focus boost", color: .cyan, size: .medium)
+                }
+            }
+            .padding()
+        }
+    }
+}
