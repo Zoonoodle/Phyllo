@@ -42,19 +42,19 @@ struct WindowGenerationLoadingView: View {
             VStack(spacing: 0) {
                 Spacer()
 
-                // Large logo - prominent and clean
+                // Extra large logo - hero element
                 Image("appLogo")
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-                    .frame(width: 140, height: 140)
-                    .opacity(isAnimating ? 1 : 0.7)
-                    .scaleEffect(isAnimating ? 1.0 : 0.92)
+                    .frame(width: 200, height: 200)
+                    .opacity(isAnimating ? 1.0 : 0.95)
+                    .scaleEffect(isAnimating ? 1.0 : 0.94)
                     .animation(
                         Animation.easeInOut(duration: 2.0)
                             .repeatForever(autoreverses: true),
                         value: isAnimating
                     )
-                    .padding(.top, 60)
+                    .padding(.top, 20)
 
                 Spacer()
                     .frame(height: 80)
