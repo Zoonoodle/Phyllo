@@ -38,10 +38,10 @@ struct WindowGenerationLoadingView: View {
             // Full screen background
             Color.nutriSyncBackground
                 .ignoresSafeArea()
-            
-            VStack(spacing: 60) {
+
+            VStack(spacing: 0) {
                 Spacer()
-                
+
                 // Large circular progress indicator - matches onboarding style
                 ZStack {
                     // Background circle (subtle)
@@ -71,12 +71,11 @@ struct WindowGenerationLoadingView: View {
                             value: isAnimating
                         )
 
-                    // Center logo - using AppIcon from asset catalog
-                    Image("AppIcon")
+                    // Center logo - using appLogo from asset catalog
+                    Image("appLogo")
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 80, height: 80)
-                        .clipShape(RoundedRectangle(cornerRadius: 18))
                         .opacity(isAnimating ? 1 : 0.3)
                         .scaleEffect(isAnimating ? 1.0 : 0.95)
                         .animation(
@@ -85,10 +84,13 @@ struct WindowGenerationLoadingView: View {
                             value: isAnimating
                         )
                 }
-                
-                // Rotating messages and science facts
-                VStack(spacing: 24) {
-                    // Main progress message
+                .padding(.top, 40)
+
+                Spacer()
+                    .frame(height: 80)
+
+                // Progress message and dots
+                VStack(spacing: 16) {
                     Text(messages[currentMessage])
                         .font(.system(size: 18, weight: .medium))
                         .foregroundColor(.white.opacity(0.9))
@@ -105,44 +107,29 @@ struct WindowGenerationLoadingView: View {
                                 .animation(.easeInOut, value: currentMessage)
                         }
                     }
-
-                    // Divider
-                    Rectangle()
-                        .fill(Color.white.opacity(0.1))
-                        .frame(width: 60, height: 1)
-                        .padding(.vertical, 8)
-
-                    // Science fact card
-                    VStack(spacing: 8) {
-                        Text("DID YOU KNOW?")
-                            .font(.system(size: 11, weight: .semibold))
-                            .foregroundColor(.nutriSyncAccent)
-                            .tracking(1.2)
-
-                        Text(scienceFacts[currentFactIndex])
-                            .font(.system(size: 14, weight: .regular))
-                            .foregroundColor(.white.opacity(0.7))
-                            .multilineTextAlignment(.center)
-                            .lineSpacing(4)
-                            .padding(.horizontal, 40)
-                            .frame(height: 50)
-                            .animation(.easeInOut(duration: 0.5), value: currentFactIndex)
-                    }
-                    .padding(.vertical, 12)
-                    .padding(.horizontal, 20)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(Color.white.opacity(0.03))
-                    )
                 }
-                
+
                 Spacer()
-                
-                // Subtle loading hint
-                Text("This may take a few seconds...")
-                    .font(.system(size: 14))
-                    .foregroundColor(.white.opacity(0.3))
-                    .padding(.bottom, 40)
+
+                // Science fact card at bottom (replacing "This may take a few seconds")
+                VStack(spacing: 8) {
+                    Text("DID YOU KNOW?")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(.nutriSyncAccent)
+                        .tracking(1.2)
+
+                    Text(scienceFacts[currentFactIndex])
+                        .font(.system(size: 14, weight: .regular))
+                        .foregroundColor(.white.opacity(0.7))
+                        .multilineTextAlignment(.center)
+                        .lineSpacing(4)
+                        .padding(.horizontal, 40)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .animation(.easeInOut(duration: 0.5), value: currentFactIndex)
+                }
+                .padding(.vertical, 16)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 40)
             }
         }
         .onAppear {
