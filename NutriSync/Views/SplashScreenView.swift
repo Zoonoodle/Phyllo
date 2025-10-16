@@ -49,13 +49,13 @@ struct SplashScreenView: View {
         // Phase 2: Glow pulses (start at 0.3s, duration 1.0s)
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
             withAnimation(.easeInOut(duration: 0.6)) {
-                glowIntensity = 0.8
+                glowIntensity = 0.4
             }
 
             // Glow fades slightly but stays visible
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
                 withAnimation(.easeInOut(duration: 0.4)) {
-                    glowIntensity = 0.4
+                    glowIntensity = 0.2
                 }
             }
         }
