@@ -42,49 +42,19 @@ struct WindowGenerationLoadingView: View {
             VStack(spacing: 0) {
                 Spacer()
 
-                // Large circular progress indicator - matches onboarding style
-                ZStack {
-                    // Background circle (subtle)
-                    Circle()
-                        .stroke(Color.white.opacity(0.05), lineWidth: 3)
-                        .frame(width: 220, height: 220)
-
-                    // Animated gradient circle outline
-                    Circle()
-                        .trim(from: 0, to: 0.75)
-                        .stroke(
-                            LinearGradient(
-                                colors: [
-                                    Color.nutriSyncAccent,
-                                    Color.nutriSyncAccent.opacity(0.7)
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            style: StrokeStyle(lineWidth: 3, lineCap: .round)
-                        )
-                        .frame(width: 220, height: 220)
-                        .rotationEffect(Angle(degrees: isAnimating ? 360 : 0))
-                        .animation(
-                            Animation.linear(duration: 2.5)
-                                .repeatForever(autoreverses: false),
-                            value: isAnimating
-                        )
-
-                    // Center logo - using appLogo from asset catalog
-                    Image("appLogo")
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 80, height: 80)
-                        .opacity(isAnimating ? 1 : 0.3)
-                        .scaleEffect(isAnimating ? 1.0 : 0.95)
-                        .animation(
-                            Animation.easeInOut(duration: 1.5)
-                                .repeatForever(autoreverses: true),
-                            value: isAnimating
-                        )
-                }
-                .padding(.top, 40)
+                // Large logo - prominent and clean
+                Image("appLogo")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 140, height: 140)
+                    .opacity(isAnimating ? 1 : 0.7)
+                    .scaleEffect(isAnimating ? 1.0 : 0.92)
+                    .animation(
+                        Animation.easeInOut(duration: 2.0)
+                            .repeatForever(autoreverses: true),
+                        value: isAnimating
+                    )
+                    .padding(.top, 60)
 
                 Spacer()
                     .frame(height: 80)
