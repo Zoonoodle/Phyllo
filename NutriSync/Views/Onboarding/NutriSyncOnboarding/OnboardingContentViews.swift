@@ -715,87 +715,127 @@ struct PlanAdvantageContentView: View {
         ScrollView {
             VStack(spacing: 0) {
                 // Title
-                Text("The Plan Advantage")
-                    .font(.system(size: 28, weight: .bold))
+                Text("The NutriSync Difference")
+                    .font(.system(size: 30, weight: .bold))
                     .foregroundColor(.white)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 12)
+                    .opacity(showContent ? 1 : 0)
+
+                // Subtitle
+                Text("More than a calorie target")
+                    .font(.system(size: 17))
+                    .foregroundColor(.white.opacity(0.7))
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 20)
                     .padding(.bottom, 40)
                     .opacity(showContent ? 1 : 0)
 
-                // Split comparison
-                HStack(alignment: .top, spacing: 20) {
-                    // Left side - Traditional approach (dimmed)
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Traditional Approach")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundColor(.white.opacity(0.5))
+                // Problem section
+                VStack(alignment: .leading, spacing: 16) {
+                    HStack(spacing: 12) {
+                        Image(systemName: "questionmark.circle.fill")
+                            .font(.system(size: 24))
+                            .foregroundColor(.red.opacity(0.7))
 
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Goal: Hit 2,500 calories")
-                                .font(.system(size: 14))
-                                .foregroundColor(.white.opacity(0.4))
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Other Apps")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundColor(.white.opacity(0.6))
 
-                            Text("\"Okay... but when?\"")
-                                .font(.system(size: 13, weight: .medium))
-                                .foregroundColor(.white.opacity(0.4))
-                                .italic()
-
-                            Text("\"How much per meal?\"")
-                                .font(.system(size: 13, weight: .medium))
-                                .foregroundColor(.white.opacity(0.4))
-                                .italic()
-
-                            Text("\"What if I get hungry?\"")
-                                .font(.system(size: 13, weight: .medium))
-                                .foregroundColor(.white.opacity(0.4))
-                                .italic()
+                            Text("\"Hit 2,500 calories today\"")
+                                .font(.system(size: 15))
+                                .foregroundColor(.white.opacity(0.5))
                         }
-                        .padding(.top, 8)
                     }
-                    .padding(16)
-                    .frame(maxWidth: .infinity)
-                    .background(Color.white.opacity(0.02))
-                    .cornerRadius(12)
 
-                    // Right side - NutriSync (highlighted)
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("NutriSync")
-                            .font(.system(size: 16, weight: .semibold))
+                    VStack(alignment: .leading, spacing: 8) {
+                        QuestionRow(text: "But when should I eat?")
+                        QuestionRow(text: "How much per meal?")
+                        QuestionRow(text: "What if I get hungry between meals?")
+                        QuestionRow(text: "Should I eat before or after my workout?")
+                    }
+                    .padding(.leading, 36)
+                }
+                .padding(20)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.red.opacity(0.08))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(Color.red.opacity(0.3), lineWidth: 1)
+                )
+                .cornerRadius(16)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 24)
+                .opacity(showContent ? 1 : 0)
+
+                // Arrow indicator
+                Image(systemName: "arrow.down")
+                    .font(.system(size: 24, weight: .bold))
+                    .foregroundColor(.nutriSyncAccent)
+                    .padding(.bottom, 24)
+                    .opacity(showContent ? 1 : 0)
+
+                // Solution section - NutriSync
+                VStack(alignment: .leading, spacing: 16) {
+                    HStack(spacing: 12) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 24))
                             .foregroundColor(.nutriSyncAccent)
 
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Your 4-Meal Plan:")
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(.white)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("NutriSync")
+                                .font(.system(size: 18, weight: .bold))
+                                .foregroundColor(.nutriSyncAccent)
 
-                            MealPlanRow(time: "7:00 AM", calories: "450 cal", label: "Breakfast")
-                            MealPlanRow(time: "12:30 PM", calories: "650 cal", label: "Pre-workout")
-                            MealPlanRow(time: "6:00 PM", calories: "850 cal", label: "Dinner")
-                            MealPlanRow(time: "8:30 PM", calories: "400 cal", label: "Evening")
+                            Text("Your complete daily plan")
+                                .font(.system(size: 15, weight: .medium))
+                                .foregroundColor(.white)
                         }
-                        .padding(.top, 8)
                     }
-                    .padding(16)
-                    .frame(maxWidth: .infinity)
-                    .background(Color.nutriSyncAccent.opacity(0.1))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(Color.nutriSyncAccent, lineWidth: 2)
-                    )
-                    .cornerRadius(12)
+
+                    VStack(alignment: .leading, spacing: 10) {
+                        PlanDetailRow(time: "7:00 AM", calories: "450 cal", label: "Breakfast", description: "Kickstart metabolism")
+                        PlanDetailRow(time: "12:30 PM", calories: "650 cal", label: "Pre-workout", description: "Fuel performance")
+                        PlanDetailRow(time: "6:00 PM", calories: "850 cal", label: "Dinner", description: "Recovery & repair")
+                        PlanDetailRow(time: "8:30 PM", calories: "400 cal", label: "Evening", description: "Light & satisfying")
+                    }
+
+                    Divider()
+                        .background(Color.nutriSyncAccent.opacity(0.3))
+                        .padding(.vertical, 8)
+
+                    HStack {
+                        Text("Total:")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.7))
+                        Spacer()
+                        Text("2,350 calories")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(.nutriSyncAccent)
+                    }
                 }
+                .padding(20)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.nutriSyncAccent.opacity(0.12))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(Color.nutriSyncAccent, lineWidth: 2)
+                )
+                .cornerRadius(16)
                 .padding(.horizontal, 20)
                 .padding(.bottom, 30)
                 .opacity(showContent ? 1 : 0)
 
-                // Bottom comparison
-                VStack(spacing: 12) {
-                    ComparisonRow(before: "Vague daily target", after: "Complete structured plan")
-                    ComparisonRow(before: "Decision fatigue", after: "AI handles the complexity")
-                    ComparisonRow(before: "Constant guessing", after: "Know exactly what to do")
+                // Key benefits
+                VStack(spacing: 16) {
+                    BenefitRow(icon: "brain.head.profile", text: "No more decision fatigue")
+                    BenefitRow(icon: "chart.line.uptrend.xyaxis", text: "Optimized for your goals")
+                    BenefitRow(icon: "sparkles", text: "AI adapts to your life")
                 }
                 .padding(.horizontal, 30)
+                .padding(.bottom, 20)
                 .opacity(showContent ? 1 : 0)
 
                 Spacer(minLength: 80)
@@ -805,6 +845,82 @@ struct PlanAdvantageContentView: View {
             withAnimation(.easeOut(duration: 0.6).delay(0.2)) {
                 showContent = true
             }
+        }
+    }
+}
+
+// New helper views for redesigned screen
+struct QuestionRow: View {
+    let text: String
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "circle.fill")
+                .font(.system(size: 6))
+                .foregroundColor(.white.opacity(0.4))
+
+            Text(text)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(.white.opacity(0.5))
+                .italic()
+        }
+    }
+}
+
+struct PlanDetailRow: View {
+    let time: String
+    let calories: String
+    let label: String
+    let description: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 16))
+                .foregroundColor(.nutriSyncAccent)
+                .padding(.top, 2)
+
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 8) {
+                    Text(time)
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundColor(.white)
+
+                    Text(calories)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.nutriSyncAccent)
+
+                    Text("• \(label)")
+                        .font(.system(size: 13))
+                        .foregroundColor(.white.opacity(0.6))
+                }
+
+                Text(description)
+                    .font(.system(size: 12))
+                    .foregroundColor(.white.opacity(0.5))
+            }
+
+            Spacer()
+        }
+    }
+}
+
+struct BenefitRow: View {
+    let icon: String
+    let text: String
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 18))
+                .foregroundColor(.nutriSyncAccent)
+                .frame(width: 24)
+
+            Text(text)
+                .font(.system(size: 15, weight: .medium))
+                .foregroundColor(.white.opacity(0.8))
+
+            Spacer()
         }
     }
 }

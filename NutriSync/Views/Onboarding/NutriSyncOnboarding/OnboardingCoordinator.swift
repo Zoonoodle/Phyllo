@@ -24,7 +24,7 @@ class NutriSyncOnboardingViewModel {
     var currentSection: NutriSyncOnboardingSection = .story
     var currentScreenIndex: Int = 0
     var completedSections: Set<NutriSyncOnboardingSection> = []
-    var showingSectionIntro: Bool = true
+    var showingSectionIntro: Bool = false  // Start directly at story content, skip section intro
     var navigationDirection: NavigationDirection = .forward
     var shouldReturnToGetStarted: Bool = false
     
