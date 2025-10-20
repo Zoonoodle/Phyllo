@@ -612,7 +612,6 @@ struct ExpenditureContentView: View {
 // MARK: - Story Section Content Views
 
 struct WelcomeToNutriSyncContentView: View {
-    @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
     @State private var showContent = false
 
     var body: some View {
@@ -710,7 +709,6 @@ struct ValuePropRow: View {
 }
 
 struct PlanAdvantageContentView: View {
-    @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
     @State private var showContent = false
 
     var body: some View {
@@ -859,7 +857,6 @@ struct ComparisonRow: View {
 }
 
 struct YourDayOptimizedContentView: View {
-    @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
     @State private var showContent = false
 
     var body: some View {
@@ -984,7 +981,6 @@ struct TimelineWindow: View {
 }
 
 struct ReadyToBuildContentView: View {
-    @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
     @State private var showContent = false
 
     var body: some View {
@@ -1363,7 +1359,6 @@ struct ConsentCheckbox: View {
 }
 
 struct YourPlanEvolvesContentView: View {
-    @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
     @State private var showContent = false
 
     var body: some View {
@@ -1501,7 +1496,6 @@ typealias NotToWorryContentView = YourPlanEvolvesContentView
 // MARK: - Goal Setting Section Content Views
 
 struct YourTransformationContentView: View {
-    @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
     @State private var showContent = false
 
     var body: some View {
