@@ -1150,7 +1150,7 @@ class PersonalizedWindowsPreviewViewModel: ObservableObject {
         let breakfastEnd = calendar.date(from: components)!
 
         var breakfastWindow = MealWindow(
-            name: "Breakfast",
+            name: "Morning Fuel",
             startTime: breakfastStart,
             endTime: breakfastEnd,
             targetCalories: 450,
@@ -1197,7 +1197,7 @@ class PersonalizedWindowsPreviewViewModel: ObservableObject {
         let lunchEnd = calendar.date(from: components)!
 
         var lunchWindow = MealWindow(
-            name: "Lunch",
+            name: "Pre-Gym Power",
             startTime: lunchStart,
             endTime: lunchEnd,
             targetCalories: 550,
@@ -1224,7 +1224,7 @@ class PersonalizedWindowsPreviewViewModel: ObservableObject {
         let afternoonEnd = calendar.date(from: components)!
 
         let afternoonWindow = MealWindow(
-            name: "Afternoon Snack",
+            name: "Brain Food",
             startTime: afternoonStart,
             endTime: afternoonEnd,
             targetCalories: 350,
@@ -1262,10 +1262,9 @@ struct YourDayOptimizedContentView: View {
     @State private var showWindowDetail = false
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 0) {
-                // Title
-                Text("Personalized Windows")
+        VStack(spacing: 0) {
+            // Title
+            Text("Personalized Windows")
                     .font(.system(size: 30, weight: .bold))
                     .foregroundColor(.white)
                     .multilineTextAlignment(.center)
@@ -1341,29 +1340,12 @@ struct YourDayOptimizedContentView: View {
                 )
                 .cornerRadius(12)
                 .padding(.horizontal, 20)
-                .padding(.bottom, 24)
+                .padding(.bottom, 32)
                 .opacity(showContent ? 1 : 0)
 
-                // Optimized For - simplified
-                Text("Optimized For")
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 14)
-                    .opacity(showContent ? 1 : 0)
-
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                    BenefitCard(icon: "bolt.fill", title: "Energy", description: "Sustained throughout day", color: .yellow)
-                    BenefitCard(icon: "figure.arms.open", title: "Weight", description: "Steady progress", color: .green)
-                }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 20)
-                .opacity(showContent ? 1 : 0)
-
-                Spacer(minLength: 80)
-            }
+            Spacer()
         }
+        .frame(maxHeight: .infinity)
         .onAppear {
             withAnimation(.easeOut(duration: 0.6).delay(0.2)) {
                 showContent = true
