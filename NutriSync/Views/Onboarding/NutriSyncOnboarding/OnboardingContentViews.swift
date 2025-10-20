@@ -739,7 +739,7 @@ struct PlanAdvantageContentView: View {
                             .foregroundColor(.red.opacity(0.85))
 
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("Other Apps")
+                            Text("Traditional Apps")
                                 .font(.system(size: 19, weight: .bold))
                                 .foregroundColor(.white.opacity(0.9))
 
@@ -1114,67 +1114,235 @@ struct YourDayOptimizedContentView: View {
         ScrollView {
             VStack(spacing: 0) {
                 // Title
-                Text("Your Day, Optimized")
-                    .font(.system(size: 28, weight: .bold))
+                Text("Personalized Windows")
+                    .font(.system(size: 30, weight: .bold))
                     .foregroundColor(.white)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 20)
                     .padding(.bottom, 12)
+                    .opacity(showContent ? 1 : 0)
 
                 // Subtitle
-                Text("Every meal timed and portioned for your goals and rhythm")
+                Text("Tailored to YOUR schedule and goals")
                     .font(.system(size: 17))
-                    .foregroundColor(.white.opacity(0.6))
+                    .foregroundColor(.white.opacity(0.85))
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 20)
-                    .padding(.bottom, 40)
+                    .padding(.bottom, 32)
+                    .opacity(showContent ? 1 : 0)
 
-                // Timeline
-                VStack(spacing: 24) {
-                    TimelineWindow(
+                // Example day with 2 windows
+                VStack(spacing: 12) {
+                    CompactWindowCard(
                         time: "7:00 AM",
-                        icon: "sun.max.fill",
-                        title: "Wake & Energize",
-                        calories: "450 cal | 35g protein",
-                        description: "Fuel your morning, kickstart metabolism"
+                        calories: 450,
+                        protein: 35,
+                        carbs: 45,
+                        icon: "sunrise.fill",
+                        color: .orange,
+                        label: "Breakfast"
                     )
 
-                    TimelineWindow(
+                    CompactWindowCard(
                         time: "12:30 PM",
+                        calories: 650,
+                        protein: 45,
+                        carbs: 70,
                         icon: "figure.run",
-                        title: "Performance Window",
-                        calories: "650 cal | 45g protein | 70g carbs",
-                        description: "Optimize workout nutrition"
-                    )
-
-                    TimelineWindow(
-                        time: "6:00 PM",
-                        icon: "fork.knife",
-                        title: "Recovery & Repair",
-                        calories: "850 cal | 50g protein",
-                        description: "Support muscle growth & prepare for sleep"
-                    )
-
-                    TimelineWindow(
-                        time: "8:30 PM",
-                        icon: "moon.fill",
-                        title: "Evening Boost (optional)",
-                        calories: "400 cal | 20g protein",
-                        description: "Satisfy hunger without disrupting sleep",
-                        isOptional: true
+                        color: .blue,
+                        label: "Pre-workout"
                     )
                 }
                 .padding(.horizontal, 20)
+                .padding(.bottom, 28)
+                .opacity(showContent ? 1 : 0)
+
+                // Smart Redistribution Feature
+                VStack(alignment: .leading, spacing: 16) {
+                    HStack(spacing: 12) {
+                        Image(systemName: "arrow.triangle.2.circlepath")
+                            .font(.system(size: 22))
+                            .foregroundColor(.nutriSyncAccent)
+
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Never Fall Behind")
+                                .font(.system(size: 18, weight: .bold))
+                                .foregroundColor(.white)
+
+                            Text("Missed a window? We redistribute")
+                                .font(.system(size: 14))
+                                .foregroundColor(.white.opacity(0.7))
+                        }
+                    }
+
+                    // Visual redistribution example
+                    VStack(spacing: 8) {
+                        HStack(spacing: 8) {
+                            Text("Missed 450 cal")
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundColor(.red.opacity(0.9))
+
+                            Image(systemName: "arrow.right")
+                                .font(.system(size: 12))
+                                .foregroundColor(.nutriSyncAccent)
+
+                            Text("Split to later windows")
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundColor(.nutriSyncAccent)
+
+                            Spacer()
+                        }
+                        .padding(12)
+                        .background(Color.white.opacity(0.03))
+                        .cornerRadius(10)
+
+                        Text("Stays on track for daily targets automatically")
+                            .font(.system(size: 12))
+                            .foregroundColor(.white.opacity(0.6))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+                .padding(16)
+                .background(Color.nutriSyncAccent.opacity(0.08))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14)
+                        .stroke(Color.nutriSyncAccent.opacity(0.3), lineWidth: 1.5)
+                )
+                .cornerRadius(14)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 28)
+                .opacity(showContent ? 1 : 0)
+
+                // Benefits Grid
+                Text("Optimized For")
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 16)
+                    .opacity(showContent ? 1 : 0)
+
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                    BenefitCard(icon: "bolt.fill", title: "Energy", description: "Sustained throughout day", color: .yellow)
+                    BenefitCard(icon: "figure.arms.open", title: "Weight", description: "Steady progress", color: .green)
+                    BenefitCard(icon: "flame.fill", title: "Performance", description: "Peak workout fuel", color: .orange)
+                    BenefitCard(icon: "moon.stars.fill", title: "Sleep", description: "Better recovery", color: .purple)
+                }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 20)
+                .opacity(showContent ? 1 : 0)
 
                 Spacer(minLength: 80)
             }
         }
-        .opacity(showContent ? 1 : 0)
         .onAppear {
             withAnimation(.easeOut(duration: 0.6).delay(0.2)) {
                 showContent = true
             }
         }
+    }
+}
+
+// Compact window card for the example
+struct CompactWindowCard: View {
+    let time: String
+    let calories: Int
+    let protein: Int
+    let carbs: Int
+    let icon: String
+    let color: Color
+    let label: String
+
+    var body: some View {
+        HStack(spacing: 14) {
+            // Icon
+            ZStack {
+                Circle()
+                    .fill(color.opacity(0.2))
+                    .frame(width: 50, height: 50)
+
+                Image(systemName: icon)
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundColor(color)
+            }
+
+            // Content
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 8) {
+                    Text(time)
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(.white)
+
+                    Text(label)
+                        .font(.system(size: 14))
+                        .foregroundColor(.white.opacity(0.6))
+                }
+
+                HStack(spacing: 12) {
+                    Label("\(calories) cal", systemImage: "flame.fill")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(.nutriSyncAccent)
+
+                    Text("\(protein)g P")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.white.opacity(0.7))
+
+                    Text("\(carbs)g C")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.white.opacity(0.7))
+                }
+            }
+
+            Spacer()
+        }
+        .padding(14)
+        .background(Color.white.opacity(0.04))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .strokeBorder(Color.white.opacity(0.1), lineWidth: 1)
+        )
+        .cornerRadius(12)
+    }
+}
+
+// Benefit card for the grid
+struct BenefitCard: View {
+    let icon: String
+    let title: String
+    let description: String
+    let color: Color
+
+    var body: some View {
+        VStack(spacing: 10) {
+            ZStack {
+                Circle()
+                    .fill(color.opacity(0.15))
+                    .frame(width: 50, height: 50)
+
+                Image(systemName: icon)
+                    .font(.system(size: 22))
+                    .foregroundColor(color)
+            }
+
+            Text(title)
+                .font(.system(size: 15, weight: .bold))
+                .foregroundColor(.white)
+
+            Text(description)
+                .font(.system(size: 12))
+                .foregroundColor(.white.opacity(0.65))
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 16)
+        .padding(.horizontal, 12)
+        .background(Color.white.opacity(0.03))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .strokeBorder(color.opacity(0.2), lineWidth: 1.5)
+        )
+        .cornerRadius(12)
     }
 }
 
