@@ -134,6 +134,7 @@ class NutriSyncOnboardingViewModel {
     // Health disclaimer acceptance
     var acceptHealthDisclaimer: Bool = false
     var acceptPrivacyNotice: Bool = false
+    var acceptAIConsent: Bool = false  // Required for AI processing and Google data sharing
     
     // Computed properties
     var currentSectionScreens: [String] {
@@ -350,7 +351,21 @@ class NutriSyncOnboardingViewModel {
             goals: goals,
             deleteProgress: true
         )
-        
+
+        // Save AI consent record for legal compliance
+        if let userId = Auth.auth().currentUser?.uid {
+            let aiConsent = AIConsentRecord(
+                userId: userId,
+                consentedAt: Date(),
+                aiMealAnalysisConsent: acceptAIConsent,
+                aiWindowGenerationConsent: acceptAIConsent,
+                googleDataSharingConsent: acceptAIConsent,
+                consentVersion: "1.0"
+            )
+            try await dataProvider.saveAIConsent(aiConsent)
+            print("[OnboardingCoordinator] AI consent recorded")
+        }
+
         // Generate initial windows
         try await dataProvider.generateInitialWindows()
         
@@ -358,6 +373,9 @@ class NutriSyncOnboardingViewModel {
     }
     
     private func buildUserProfile() -> UserProfile {
+        print("[OnboardingCoordinator] 🏗️ Building UserProfile...")
+        print("[OnboardingCoordinator] mealFrequency string value: '\(mealFrequency)'")
+
         // Convert weight from kg to pounds for UserProfile
         let weightInPounds = weight * 2.20462
 
@@ -418,6 +436,16 @@ class NutriSyncOnboardingViewModel {
         // Calculate macros using the profile
         let macros = finalMacroProfile.calculateGrams(calories: adjustedCalorieTarget)
 
+        // Parse mealsPerDay with proper fallback
+        let mealsPerDayValue: Int?
+        if !mealFrequency.isEmpty {
+            mealsPerDayValue = Int(mealFrequency)
+            print("[OnboardingCoordinator] ✅ Parsed mealsPerDay: \(mealsPerDayValue ?? 0) from string '\(mealFrequency)'")
+        } else {
+            mealsPerDayValue = nil
+            print("[OnboardingCoordinator] ⚠️ mealFrequency is empty, mealsPerDay will be nil (AI will use default 4-6)")
+        }
+
         var profile = UserProfile(
             id: UUID(),
             name: "User", // This should be collected in a future update
@@ -437,7 +465,7 @@ class NutriSyncOnboardingViewModel {
             micronutrientPriorities: [],
             earliestMealHour: Calendar.current.component(.hour, from: wakeTime),
             latestMealHour: Calendar.current.component(.hour, from: bedTime) - 3, // 3 hours before bed
-            mealsPerDay: Int(mealFrequency) ?? 4, // User's preferred meal count from onboarding
+            mealsPerDay: mealsPerDayValue, // User's preferred meal count from onboarding (nil if not set)
             workSchedule: .standard,
             typicalWakeTime: wakeTime,
             typicalSleepTime: bedTime,
@@ -449,6 +477,8 @@ class NutriSyncOnboardingViewModel {
 
         // Set the macro profile on the profile
         profile.macroProfile = finalMacroProfile
+
+        print("[OnboardingCoordinator] ✅ UserProfile created with mealsPerDay: \(profile.mealsPerDay?.description ?? "nil")")
 
         return profile
     }
@@ -627,7 +657,7 @@ struct NutriSyncOnboardingCoordinator: View {
                             Spacer()
                         
                         let isHealthDisclaimer = viewModel.currentScreen == "Health Disclaimer"
-                        let termsAccepted = viewModel.acceptHealthDisclaimer && viewModel.acceptPrivacyNotice
+                        let termsAccepted = viewModel.acceptHealthDisclaimer && viewModel.acceptPrivacyNotice && viewModel.acceptAIConsent
                         let isGoalSelection = viewModel.currentScreen == "Goal Selection"
                         let goalSelected = !viewModel.goal.isEmpty
                         let isTrainingPlan = viewModel.currentScreen == "Training Plan"
@@ -722,9 +752,9 @@ struct NutriSyncOnboardingCoordinator: View {
     // Handle next button action based on current screen
     private func handleNextAction() {
         // Check if on Health Disclaimer screen and terms aren't accepted
-        if viewModel.currentScreen == "Health Disclaimer" && 
-           (!viewModel.acceptHealthDisclaimer || !viewModel.acceptPrivacyNotice) {
-            // Don't navigate - user must accept both terms
+        if viewModel.currentScreen == "Health Disclaimer" &&
+           (!viewModel.acceptHealthDisclaimer || !viewModel.acceptPrivacyNotice || !viewModel.acceptAIConsent) {
+            // Don't navigate - user must accept all terms including AI consent
             return
         }
         
@@ -742,8 +772,18 @@ struct NutriSyncOnboardingCoordinator: View {
     @ViewBuilder
     private func getScreenContentView(at index: Int) -> some View {
         let screenName = viewModel.currentSectionScreens[safe: index] ?? ""
-        
+
         switch screenName {
+        // Story Section (NEW)
+        case "Welcome to NutriSync":
+            WelcomeToNutriSyncContentView()
+        case "The Plan Advantage":
+            PlanAdvantageContentView()
+        case "Your Day Optimized":
+            YourDayOptimizedContentView()
+        case "Ready to Build":
+            ReadyToBuildContentView()
+
         // Basics Section
         case "Sex Selection":
             SexSelectionView()
@@ -762,16 +802,20 @@ struct NutriSyncOnboardingCoordinator: View {
             ActivityLevelContentView()
         case "Expenditure":
             ExpenditureContentView()
-            
+
         // Notice Section
         case "Health Disclaimer":
             HealthDisclaimerContentView()
+        case "Your Plan Evolves":
+            YourPlanEvolvesContentView()
         case "Not to Worry":
-            NotToWorryContentView()
-            
+            NotToWorryContentView() // Keep for backward compatibility
+
         // Goal Setting Section
+        case "Your Transformation":
+            YourTransformationContentView()
         case "Goal Intro":
-            GoalSettingIntroContentView()
+            GoalSettingIntroContentView() // Keep for backward compatibility
         case "Goal Selection":
             GoalSelectionContentView()
         case "Trend Weight":
@@ -787,7 +831,7 @@ struct NutriSyncOnboardingCoordinator: View {
             PreWorkoutNutritionContentView()
         case "Post-Workout Nutrition":
             PostWorkoutNutritionContentView()
-            
+
         // Program Section
         case "Diet Preference":
             DietPreferenceContentView()
@@ -796,7 +840,7 @@ struct NutriSyncOnboardingCoordinator: View {
         case "Calorie Distribution":
             Text("Calorie Distribution screen removed")
                 .foregroundColor(.white)
-            
+
         // New Meal Timing Screens
         case "Sleep Schedule":
             SleepScheduleContentView()
@@ -825,9 +869,11 @@ struct NutriSyncOnboardingCoordinator: View {
                 .foregroundColor(.white)
 
         // Finish Section
+        case "Your Plan is Ready":
+            YourPlanIsReadyContentView()
         case "Review Program":
             EnhancedFinishView()
-            
+
         default:
             Text("Screen not found: \(screenName)")
                 .foregroundColor(.white)

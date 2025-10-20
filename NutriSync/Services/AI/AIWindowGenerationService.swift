@@ -608,9 +608,11 @@ class AIWindowGenerationService {
         let targetWindowCount: String
         if let mealsPerDay = profile.mealsPerDay {
             targetWindowCount = "EXACTLY \(mealsPerDay)"
+            print("[AIWindowGenerationService] ✅ Using user's preferred mealsPerDay: \(mealsPerDay)")
         } else {
             // Default fallback if not set
             targetWindowCount = "4-6"
+            print("[AIWindowGenerationService] ⚠️ No mealsPerDay set in profile, using default: 4-6 windows")
         }
 
         // Calculate latest window timing based on sleep time

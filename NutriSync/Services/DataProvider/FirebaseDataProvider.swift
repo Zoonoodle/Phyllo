@@ -1587,7 +1587,32 @@ extension FirebaseDataProvider {
         // Commit transaction
         try await batch.commit()
     }
-    
+
+    /// Save AI consent record for legal compliance (CCPA/CPRA)
+    func saveAIConsent(_ consent: AIConsentRecord) async throws {
+        guard let userRef = userRef else {
+            throw DataProviderError.notAuthenticated
+        }
+
+        let consentRef = userRef.collection("consent").document("ai_consent")
+        try await consentRef.setData(consent.toFirestore())
+
+        Task { @MainActor in
+            DebugLogger.shared.dataProvider("AI consent recorded for user: \(consent.userId)")
+        }
+    }
+
+    /// Retrieve AI consent record
+    func getAIConsent() async throws -> AIConsentRecord? {
+        guard let userRef = userRef else {
+            throw DataProviderError.notAuthenticated
+        }
+
+        let doc = try await userRef.collection("consent").document("ai_consent").getDocument()
+        guard let data = doc.data() else { return nil }
+        return AIConsentRecord.fromFirestore(data)
+    }
+
     func generateInitialWindows() async throws {
         guard let userId = Auth.auth().currentUser?.uid else {
             throw NSError(domain: "WindowGeneration", code: 1001, 

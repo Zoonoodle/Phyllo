@@ -609,278 +609,1028 @@ struct ExpenditureContentView: View {
     }
 }
 
+// MARK: - Story Section Content Views
+
+struct WelcomeToNutriSyncContentView: View {
+    @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
+    @State private var showContent = false
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 40) {
+                Spacer(minLength: 40)
+
+                // Large logo visual
+                ZStack {
+                    // Subtle radial gradient background
+                    Circle()
+                        .fill(
+                            RadialGradient(
+                                gradient: Gradient(colors: [
+                                    Color.nutriSyncAccent.opacity(0.15),
+                                    Color.nutriSyncAccent.opacity(0.05),
+                                    Color.clear
+                                ]),
+                                center: .center,
+                                startRadius: 20,
+                                endRadius: 100
+                            )
+                        )
+                        .frame(width: 200, height: 200)
+
+                    // Use SF Symbol for logo placeholder
+                    Image(systemName: "leaf.fill")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 100, height: 100)
+                        .foregroundColor(.nutriSyncAccent)
+                }
+                .scaleEffect(showContent ? 1 : 0.8)
+                .opacity(showContent ? 1 : 0)
+
+                // Headline
+                Text("Welcome to NutriSync")
+                    .font(.system(size: 34, weight: .bold))
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.center)
+                    .opacity(showContent ? 1 : 0)
+                    .offset(y: showContent ? 0 : 20)
+
+                // Subtitle
+                Text("Your daily meal plan, personalized and ready")
+                    .font(.system(size: 20, weight: .medium))
+                    .foregroundColor(.white.opacity(0.7))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 30)
+                    .opacity(showContent ? 1 : 0)
+                    .offset(y: showContent ? 0 : 20)
+
+                // Value props
+                VStack(alignment: .leading, spacing: 16) {
+                    ValuePropRow(icon: "calendar.badge.checkmark", text: "Get a complete daily eating plan, not just a calorie target")
+                    ValuePropRow(icon: "lightbulb.fill", text: "Know exactly what to eat, when, and how much")
+                    ValuePropRow(icon: "arrow.triangle.2.circlepath", text: "AI adapts your plan as your life changes")
+                    ValuePropRow(icon: "chart.xyaxis.line", text: "Science-backed meal timing optimization")
+                }
+                .padding(.horizontal, 30)
+                .opacity(showContent ? 1 : 0)
+                .offset(y: showContent ? 0 : 20)
+
+                Spacer(minLength: 80)
+            }
+            .padding(.horizontal, 20)
+        }
+        .onAppear {
+            withAnimation(.easeOut(duration: 0.6).delay(0.2)) {
+                showContent = true
+            }
+        }
+    }
+}
+
+struct ValuePropRow: View {
+    let icon: String
+    let text: String
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 22))
+                .foregroundColor(.nutriSyncAccent)
+                .frame(width: 30)
+
+            Text(text)
+                .font(.system(size: 17))
+                .foregroundColor(.white.opacity(0.9))
+                .fixedSize(horizontal: false, vertical: true)
+
+            Spacer()
+        }
+    }
+}
+
+struct PlanAdvantageContentView: View {
+    @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
+    @State private var showContent = false
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 0) {
+                // Title
+                Text("The Plan Advantage")
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 40)
+                    .opacity(showContent ? 1 : 0)
+
+                // Split comparison
+                HStack(alignment: .top, spacing: 20) {
+                    // Left side - Traditional approach (dimmed)
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Traditional Approach")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.5))
+
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Goal: Hit 2,500 calories")
+                                .font(.system(size: 14))
+                                .foregroundColor(.white.opacity(0.4))
+
+                            Text("\"Okay... but when?\"")
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundColor(.white.opacity(0.4))
+                                .italic()
+
+                            Text("\"How much per meal?\"")
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundColor(.white.opacity(0.4))
+                                .italic()
+
+                            Text("\"What if I get hungry?\"")
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundColor(.white.opacity(0.4))
+                                .italic()
+                        }
+                        .padding(.top, 8)
+                    }
+                    .padding(16)
+                    .frame(maxWidth: .infinity)
+                    .background(Color.white.opacity(0.02))
+                    .cornerRadius(12)
+
+                    // Right side - NutriSync (highlighted)
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("NutriSync")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.nutriSyncAccent)
+
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Your 4-Meal Plan:")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(.white)
+
+                            MealPlanRow(time: "7:00 AM", calories: "450 cal", label: "Breakfast")
+                            MealPlanRow(time: "12:30 PM", calories: "650 cal", label: "Pre-workout")
+                            MealPlanRow(time: "6:00 PM", calories: "850 cal", label: "Dinner")
+                            MealPlanRow(time: "8:30 PM", calories: "400 cal", label: "Evening")
+                        }
+                        .padding(.top, 8)
+                    }
+                    .padding(16)
+                    .frame(maxWidth: .infinity)
+                    .background(Color.nutriSyncAccent.opacity(0.1))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(Color.nutriSyncAccent, lineWidth: 2)
+                    )
+                    .cornerRadius(12)
+                }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 30)
+                .opacity(showContent ? 1 : 0)
+
+                // Bottom comparison
+                VStack(spacing: 12) {
+                    ComparisonRow(before: "Vague daily target", after: "Complete structured plan")
+                    ComparisonRow(before: "Decision fatigue", after: "AI handles the complexity")
+                    ComparisonRow(before: "Constant guessing", after: "Know exactly what to do")
+                }
+                .padding(.horizontal, 30)
+                .opacity(showContent ? 1 : 0)
+
+                Spacer(minLength: 80)
+            }
+        }
+        .onAppear {
+            withAnimation(.easeOut(duration: 0.6).delay(0.2)) {
+                showContent = true
+            }
+        }
+    }
+}
+
+struct MealPlanRow: View {
+    let time: String
+    let calories: String
+    let label: String
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 12))
+                .foregroundColor(.nutriSyncAccent)
+
+            Text("\(time) - \(calories)")
+                .font(.system(size: 13, weight: .medium))
+                .foregroundColor(.white.opacity(0.9))
+
+            Text("(\(label))")
+                .font(.system(size: 12))
+                .foregroundColor(.white.opacity(0.6))
+
+            Spacer()
+        }
+    }
+}
+
+struct ComparisonRow: View {
+    let before: String
+    let after: String
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 12) {
+            Text(before)
+                .font(.system(size: 14))
+                .foregroundColor(.white.opacity(0.5))
+                .frame(maxWidth: .infinity, alignment: .trailing)
+
+            Image(systemName: "arrow.right")
+                .font(.system(size: 12))
+                .foregroundColor(.nutriSyncAccent)
+
+            Text(after)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(.nutriSyncAccent)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+}
+
+struct YourDayOptimizedContentView: View {
+    @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
+    @State private var showContent = false
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 0) {
+                // Title
+                Text("Your Day, Optimized")
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 12)
+
+                // Subtitle
+                Text("Every meal timed and portioned for your goals and rhythm")
+                    .font(.system(size: 17))
+                    .foregroundColor(.white.opacity(0.6))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 40)
+
+                // Timeline
+                VStack(spacing: 24) {
+                    TimelineWindow(
+                        time: "7:00 AM",
+                        icon: "sun.max.fill",
+                        title: "Wake & Energize",
+                        calories: "450 cal | 35g protein",
+                        description: "Fuel your morning, kickstart metabolism"
+                    )
+
+                    TimelineWindow(
+                        time: "12:30 PM",
+                        icon: "figure.run",
+                        title: "Performance Window",
+                        calories: "650 cal | 45g protein | 70g carbs",
+                        description: "Optimize workout nutrition"
+                    )
+
+                    TimelineWindow(
+                        time: "6:00 PM",
+                        icon: "fork.knife",
+                        title: "Recovery & Repair",
+                        calories: "850 cal | 50g protein",
+                        description: "Support muscle growth & prepare for sleep"
+                    )
+
+                    TimelineWindow(
+                        time: "8:30 PM",
+                        icon: "moon.fill",
+                        title: "Evening Boost (optional)",
+                        calories: "400 cal | 20g protein",
+                        description: "Satisfy hunger without disrupting sleep",
+                        isOptional: true
+                    )
+                }
+                .padding(.horizontal, 20)
+
+                Spacer(minLength: 80)
+            }
+        }
+        .opacity(showContent ? 1 : 0)
+        .onAppear {
+            withAnimation(.easeOut(duration: 0.6).delay(0.2)) {
+                showContent = true
+            }
+        }
+    }
+}
+
+struct TimelineWindow: View {
+    let time: String
+    let icon: String
+    let title: String
+    let calories: String
+    let description: String
+    var isOptional: Bool = false
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 16) {
+            // Time + Icon column
+            VStack(spacing: 4) {
+                Text(time)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(.nutriSyncAccent)
+
+                Image(systemName: icon)
+                    .font(.system(size: 24))
+                    .foregroundColor(.nutriSyncAccent)
+            }
+            .frame(width: 80)
+
+            // Content column
+            VStack(alignment: .leading, spacing: 6) {
+                Text(title)
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(.white)
+
+                Text(calories)
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.white.opacity(0.8))
+
+                Text(description)
+                    .font(.system(size: 14))
+                    .foregroundColor(.white.opacity(0.6))
+                    .fixedSize(horizontal: false, vertical: true)
+
+                if isOptional {
+                    Text("Optional")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.nutriSyncAccent.opacity(0.8))
+                        .padding(.top, 2)
+                }
+            }
+
+            Spacer()
+        }
+        .padding(16)
+        .background(Color.white.opacity(0.03))
+        .cornerRadius(12)
+    }
+}
+
+struct ReadyToBuildContentView: View {
+    @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
+    @State private var showContent = false
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 0) {
+                // Title
+                Text("Ready to Build Your Plan?")
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 12)
+
+                // Subtitle
+                Text("We'll do the hard part (AI meal planning).\nYou answer 3 quick questions:")
+                    .font(.system(size: 17))
+                    .foregroundColor(.white.opacity(0.6))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 40)
+
+                // Three cards
+                VStack(spacing: 20) {
+                    QuestionCard(
+                        icon: "chart.bar.fill",
+                        title: "Your Energy System",
+                        subtitle: "How many calories you burn daily",
+                        note: "(We'll calculate it for you)"
+                    )
+                    .opacity(showContent ? 1 : 0)
+                    .offset(y: showContent ? 0 : 20)
+                    .animation(.easeOut(duration: 0.5).delay(0.3), value: showContent)
+
+                    QuestionCard(
+                        icon: "target",
+                        title: "Your Goal",
+                        subtitle: "What you're working toward",
+                        note: "(Weight, performance, or balance)"
+                    )
+                    .opacity(showContent ? 1 : 0)
+                    .offset(y: showContent ? 0 : 20)
+                    .animation(.easeOut(duration: 0.5).delay(0.4), value: showContent)
+
+                    QuestionCard(
+                        icon: "clock.fill",
+                        title: "Your Rhythm",
+                        subtitle: "When you wake, sleep, and move",
+                        note: "(So we can time everything perfectly)"
+                    )
+                    .opacity(showContent ? 1 : 0)
+                    .offset(y: showContent ? 0 : 20)
+                    .animation(.easeOut(duration: 0.5).delay(0.5), value: showContent)
+                }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 30)
+
+                // Time estimate
+                HStack(spacing: 8) {
+                    Image(systemName: "clock")
+                        .font(.system(size: 16))
+                        .foregroundColor(.nutriSyncAccent)
+
+                    Text("Takes 2 minutes. Your personalized plan is on the other side.")
+                        .font(.system(size: 15))
+                        .foregroundColor(.white.opacity(0.7))
+                }
+                .padding(.horizontal, 30)
+                .opacity(showContent ? 1 : 0)
+
+                Spacer(minLength: 80)
+            }
+        }
+        .onAppear {
+            withAnimation(.easeOut(duration: 0.6).delay(0.2)) {
+                showContent = true
+            }
+        }
+    }
+}
+
+struct QuestionCard: View {
+    let icon: String
+    let title: String
+    let subtitle: String
+    let note: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 16) {
+            Image(systemName: icon)
+                .font(.system(size: 28))
+                .foregroundColor(.nutriSyncAccent)
+                .frame(width: 40)
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text(title)
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(.white)
+
+                Text(subtitle)
+                    .font(.system(size: 15))
+                    .foregroundColor(.white.opacity(0.7))
+
+                Text(note)
+                    .font(.system(size: 13))
+                    .foregroundColor(.white.opacity(0.5))
+                    .italic()
+            }
+
+            Spacer()
+        }
+        .padding(20)
+        .background(Color.white.opacity(0.03))
+        .cornerRadius(16)
+    }
+}
+
 // MARK: - Notice Section Content Views
 
 struct HealthDisclaimerContentView: View {
     @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
-    
+    @State private var showAIDetails = false
+
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
                 // Title
-                Text("Health Disclaimer")
+                Text("Terms & AI Consent")
                     .font(.system(size: 28, weight: .bold))
                     .foregroundColor(.white)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 20)
                     .padding(.bottom, 12)
-                
+
                 // Subtitle
-                Text("Please review and accept our health terms")
+                Text("Please review and accept our terms")
                     .font(.system(size: 17))
                     .foregroundColor(.white.opacity(0.6))
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 20)
-                    .padding(.bottom, 40)
-                
-                // Main content
-                VStack(alignment: .leading, spacing: 24) {
-                    Text("NutriSync optimizes your meal timing to align with your body's natural rhythms and goals. This is educational information, not medical advice or personalized counseling. Always consult a healthcare professional before making significant health decisions. Understand and accept the risks involved with dietary and lifestyle changes. You are responsible for your health decisions and should seek professional guidance when necessary.")
-                        .font(.system(size: 17))
-                        .foregroundColor(.white.opacity(0.7))
-                        .fixedSize(horizontal: false, vertical: true)
-                    
-                    // Checkboxes
-                    VStack(alignment: .leading, spacing: 20) {
-                        HStack(alignment: .top, spacing: 12) {
-                            // Custom checkbox
-                            Button(action: { coordinator.acceptHealthDisclaimer.toggle() }) {
-                                ZStack {
-                                    Circle()
-                                        .stroke(Color.white.opacity(0.4), lineWidth: 2)
-                                        .frame(width: 24, height: 24)
-                                    
-                                    if coordinator.acceptHealthDisclaimer {
-                                        Circle()
-                                            .fill(Color.white)
-                                            .frame(width: 16, height: 16)
-                                    }
-                                }
-                            }
-                            .buttonStyle(PlainButtonStyle())
-                            
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("I Acknowledge and Accept the Terms of the")
-                                    .font(.system(size: 17))
-                                    .foregroundColor(.white)
-                                
-                                Text("Health Disclaimer")
-                                    .font(.system(size: 17))
-                                    .foregroundColor(.blue)
-                            }
-                            
-                            Spacer()
-                        }
-                        
-                        HStack(alignment: .top, spacing: 12) {
-                            // Custom checkbox
-                            Button(action: { coordinator.acceptPrivacyNotice.toggle() }) {
-                                ZStack {
-                                    Circle()
-                                        .stroke(Color.white.opacity(0.4), lineWidth: 2)
-                                        .frame(width: 24, height: 24)
-                                    
-                                    if coordinator.acceptPrivacyNotice {
-                                        Circle()
-                                            .fill(Color.white)
-                                            .frame(width: 16, height: 16)
-                                    }
-                                }
-                            }
-                            .buttonStyle(PlainButtonStyle())
-                            
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("I Acknowledge and Accept the Terms of the")
-                                    .font(.system(size: 17))
-                                    .foregroundColor(.white)
-                                
-                                Text("Consumer Health Privacy Notice")
-                                    .font(.system(size: 17))
-                                    .foregroundColor(.blue)
-                            }
-                            
-                            Spacer()
-                        }
-                    }
-                    .padding(.top, 20)
-                    
-                    // Status text
-                    if !coordinator.acceptHealthDisclaimer || !coordinator.acceptPrivacyNotice {
-                        Text("Please accept both terms to continue")
-                            .font(.system(size: 15))
-                            .foregroundColor(.white.opacity(0.5))
-                            .padding(.top, 16)
-                    } else {
-                        Text("✓ All terms accepted")
-                            .font(.system(size: 15))
+                    .padding(.bottom, 30)
+
+                // AI Notice Box (Prominent)
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack {
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 20))
                             .foregroundColor(.nutriSyncAccent)
-                            .padding(.top, 16)
+                        Text("AI-Powered App")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundColor(.white)
+                    }
+
+                    Text("NutriSync uses artificial intelligence to analyze your meals and create personalized eating schedules. **AI features are required** to use this app.")
+                        .font(.system(size: 15))
+                        .foregroundColor(.white.opacity(0.8))
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Button(action: { showAIDetails.toggle() }) {
+                        HStack {
+                            Text(showAIDetails ? "Hide Details" : "Learn More About AI")
+                                .font(.system(size: 15, weight: .medium))
+                            Image(systemName: showAIDetails ? "chevron.up" : "chevron.right")
+                                .font(.system(size: 12))
+                        }
+                        .foregroundColor(.nutriSyncAccent)
+                    }
+
+                    if showAIDetails {
+                        VStack(alignment: .leading, spacing: 16) {
+                            Divider()
+                                .background(Color.white.opacity(0.2))
+                                .padding(.vertical, 8)
+
+                            AIDetailItem(
+                                icon: "camera.fill",
+                                title: "AI Meal Analysis",
+                                description: "We analyze your meal photos and voice descriptions using Google's Gemini AI to estimate calories, macros, and ingredients."
+                            )
+
+                            AIDetailItem(
+                                icon: "calendar",
+                                title: "AI Meal Window Generation",
+                                description: "We use AI to create personalized eating schedules that tell you when to eat based on your goals, sleep schedule, and preferences."
+                            )
+
+                            AIDetailItem(
+                                icon: "network",
+                                title: "Data Shared with Google",
+                                description: "Your meal photos, dietary restrictions, nutrition goals, and meal history are sent to Google Vertex AI for processing. Google does not store your meal photos permanently."
+                            )
+
+                            AIDetailItem(
+                                icon: "hand.raised.fill",
+                                title: "Your Control",
+                                description: "You can delete your account and all data at any time in Settings > Account. This will remove your information from our systems and Google's AI."
+                            )
+                        }
+                        .padding(.top, 8)
+                    }
+                }
+                .padding(20)
+                .background(Color.white.opacity(0.05))
+                .cornerRadius(16)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 30)
+
+                // Checkboxes
+                VStack(alignment: .leading, spacing: 20) {
+                    // Health Disclaimer
+                    ConsentCheckbox(
+                        isChecked: coordinator.acceptHealthDisclaimer,
+                        title: "Health Disclaimer",
+                        description: "I understand this is educational information, not medical advice. I will consult healthcare professionals for medical decisions.",
+                        linkText: nil,
+                        linkAction: nil
+                    ) {
+                        coordinator.acceptHealthDisclaimer.toggle()
+                    }
+
+                    // Privacy Notice
+                    ConsentCheckbox(
+                        isChecked: coordinator.acceptPrivacyNotice,
+                        title: "Consumer Health Privacy Notice",
+                        description: "I acknowledge that NutriSync collects sensitive health information to provide personalized nutrition guidance.",
+                        linkText: nil,
+                        linkAction: nil
+                    ) {
+                        coordinator.acceptPrivacyNotice.toggle()
+                    }
+
+                    // AI Consent (NEW - Required)
+                    ConsentCheckbox(
+                        isChecked: coordinator.acceptAIConsent,
+                        title: "AI Processing & Data Sharing",
+                        description: "I consent to AI analysis of my meals and sharing my data with Google Vertex AI. I understand AI features are required to use NutriSync.",
+                        linkText: "Learn More About AI",
+                        linkAction: { showAIDetails = true },
+                        isRequired: true
+                    ) {
+                        coordinator.acceptAIConsent.toggle()
                     }
                 }
                 .padding(.horizontal, 20)
-                
-                Spacer(minLength: 80) // Space for navigation buttons
+
+                // Status text
+                if !allTermsAccepted {
+                    HStack {
+                        Image(systemName: "exclamationmark.circle.fill")
+                            .foregroundColor(.orange)
+                        Text("Please accept all terms to continue")
+                            .font(.system(size: 15))
+                            .foregroundColor(.white.opacity(0.7))
+                    }
+                    .padding(.top, 24)
+                } else {
+                    HStack {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundColor(.nutriSyncAccent)
+                        Text("All terms accepted")
+                            .font(.system(size: 15))
+                            .foregroundColor(.nutriSyncAccent)
+                    }
+                    .padding(.top, 24)
+                }
+
+                Spacer(minLength: 100)
             }
+            .padding(.top, 40)
         }
-        .onAppear {
-            // Load any existing acceptance state if needed
+    }
+
+    private var allTermsAccepted: Bool {
+        coordinator.acceptHealthDisclaimer &&
+        coordinator.acceptPrivacyNotice &&
+        coordinator.acceptAIConsent
+    }
+}
+
+// MARK: - Helper Views for AI Consent
+
+/// Detail item for explaining AI features
+struct AIDetailItem: View {
+    let icon: String
+    let title: String
+    let description: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 16))
+                .foregroundColor(.nutriSyncAccent)
+                .frame(width: 24)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundColor(.white)
+
+                Text(description)
+                    .font(.system(size: 14))
+                    .foregroundColor(.white.opacity(0.7))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
     }
 }
 
-struct NotToWorryContentView: View {
+/// Consent checkbox with description and optional link
+struct ConsentCheckbox: View {
+    let isChecked: Bool
+    let title: String
+    let description: String
+    let linkText: String?
+    let linkAction: (() -> Void)?
+    var isRequired: Bool = false
+    let action: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .top, spacing: 12) {
+                // Checkbox
+                Button(action: action) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 6)
+                            .stroke(isChecked ? Color.nutriSyncAccent : Color.white.opacity(0.4), lineWidth: 2)
+                            .frame(width: 24, height: 24)
+
+                        if isChecked {
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundColor(.nutriSyncAccent)
+                        }
+                    }
+                }
+                .buttonStyle(PlainButtonStyle())
+
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(spacing: 6) {
+                        Text(title)
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.white)
+
+                        if isRequired {
+                            Text("REQUIRED")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundColor(.nutriSyncAccent)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(Color.nutriSyncAccent.opacity(0.2))
+                                .cornerRadius(4)
+                        }
+                    }
+
+                    Text(description)
+                        .font(.system(size: 14))
+                        .foregroundColor(.white.opacity(0.7))
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    if let linkText = linkText {
+                        Button(action: { linkAction?() }) {
+                            Text(linkText)
+                                .font(.system(size: 14))
+                                .foregroundColor(.blue)
+                                .underline()
+                        }
+                    }
+                }
+
+                Spacer()
+            }
+        }
+        .padding(16)
+        .background(Color.white.opacity(0.03))
+        .cornerRadius(12)
+    }
+}
+
+struct YourPlanEvolvesContentView: View {
     @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
-    
+    @State private var showContent = false
+
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
                 // Title
-                Text("Not to worry!")
+                Text("Your Plan Evolves With You")
                     .font(.system(size: 28, weight: .bold))
                     .foregroundColor(.white)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 20)
                     .padding(.bottom, 12)
-                
+
                 // Subtitle
-                Text("NutriSync will adapt your eating windows based on your lifestyle and progress. This is just a starting point.")
+                Text("This isn't a rigid meal plan. It's a living system that learns your patterns.")
                     .font(.system(size: 17))
                     .foregroundColor(.white.opacity(0.6))
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 20)
                     .padding(.bottom, 40)
-                
+
+                // Timeline scenarios
                 VStack(spacing: 24) {
-                    // Week 1
-                    HStack(alignment: .top, spacing: 16) {
-                        Circle()
-                            .fill(Color.white)
-                            .frame(width: 8, height: 8)
-                            .padding(.top, 8)
-                        
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Week 1")
-                                .font(.system(size: 20, weight: .semibold))
-                                .foregroundColor(.white)
-                            
-                            Text("NutriSync will create your initial eating windows optimized for your daily rhythm.")
-                                .font(.system(size: 17))
-                                .foregroundColor(.white.opacity(0.6))
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-                    }
-                    
-                    // Week 2
-                    HStack(alignment: .top, spacing: 16) {
-                        Circle()
-                            .fill(Color.white)
-                            .frame(width: 8, height: 8)
-                            .padding(.top, 8)
-                        
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Week 2")
-                                .font(.system(size: 20, weight: .semibold))
-                                .foregroundColor(.white)
-                            
-                            Text("After you log eight consecutive days of meals and check-ins, our algorithm will start optimizing your windows based on your energy patterns and progress.")
-                                .font(.system(size: 17))
-                                .foregroundColor(.white.opacity(0.6))
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-                    }
-                    
-                    // Week 3 and beyond
-                    HStack(alignment: .top, spacing: 16) {
-                        Circle()
-                            .fill(Color.white)
-                            .frame(width: 8, height: 8)
-                            .padding(.top, 8)
-                        
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Week 3 and beyond")
-                                .font(.system(size: 20, weight: .semibold))
-                                .foregroundColor(.white)
-                            
-                            Text("Our algorithm will optimize your meal timing without complex tracking. Your needs change over time, but NutriSync will continue to adapt your eating windows to keep you aligned with your goals.")
-                                .font(.system(size: 17))
-                                .foregroundColor(.white.opacity(0.6))
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-                    }
+                    // Monday: Normal Schedule
+                    DayScenario(
+                        day: "Monday: Normal Schedule",
+                        times: ["7:00 AM", "12:30 PM", "6:00 PM", "8:30 PM"],
+                        description: "Perfect for your usual routine"
+                    )
+
+                    // Tuesday: Stuck in Meetings
+                    DayScenario(
+                        day: "Tuesday: Stuck in Meetings",
+                        times: ["9:30 AM", "2:00 PM", "7:30 PM"],
+                        description: "Windows automatically shift 2 hours later",
+                        isHighlighted: true
+                    )
+
+                    // Weekend: Sleeping In
+                    DayScenario(
+                        day: "Weekend: Sleeping In",
+                        times: ["10:00 AM", "1:00 PM", "8:00 PM"],
+                        description: "Adjusted for relaxed mornings"
+                    )
                 }
                 .padding(.horizontal, 20)
-                
-                Spacer(minLength: 80) // Space for navigation buttons
+                .padding(.bottom, 30)
+
+                // Real scenarios
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("Real scenarios where NutriSync adapts:")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 20)
+
+                    VStack(alignment: .leading, spacing: 12) {
+                        AdaptationScenario(text: "Morning meeting runs long? First window shifts")
+                        AdaptationScenario(text: "Gym time changes? Pre-workout nutrition moves with it")
+                        AdaptationScenario(text: "Late dinner with friends? Evening window flexes")
+                        AdaptationScenario(text: "Traveling across time zones? Plan adjusts automatically")
+                    }
+                    .padding(.horizontal, 20)
+                }
+
+                Spacer(minLength: 80)
+            }
+        }
+        .opacity(showContent ? 1 : 0)
+        .onAppear {
+            withAnimation(.easeOut(duration: 0.6).delay(0.2)) {
+                showContent = true
             }
         }
     }
 }
+
+struct DayScenario: View {
+    let day: String
+    let times: [String]
+    let description: String
+    var isHighlighted: Bool = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(day)
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundColor(isHighlighted ? .nutriSyncAccent : .white)
+
+            HStack(spacing: 8) {
+                ForEach(times, id: \.self) { time in
+                    Text(time)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(isHighlighted ? .nutriSyncAccent : .white.opacity(0.8))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(isHighlighted ? Color.nutriSyncAccent.opacity(0.15) : Color.white.opacity(0.05))
+                        .cornerRadius(8)
+                }
+            }
+
+            Text(description)
+                .font(.system(size: 14))
+                .foregroundColor(.white.opacity(0.6))
+                .italic()
+        }
+        .padding(16)
+        .background(Color.white.opacity(0.03))
+        .cornerRadius(12)
+    }
+}
+
+struct AdaptationScenario: View {
+    let text: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: "arrow.right.circle.fill")
+                .font(.system(size: 16))
+                .foregroundColor(.nutriSyncAccent)
+                .padding(.top, 2)
+
+            Text(text)
+                .font(.system(size: 15))
+                .foregroundColor(.white.opacity(0.8))
+                .fixedSize(horizontal: false, vertical: true)
+
+            Spacer()
+        }
+    }
+}
+
+// Keep old view name for backward compatibility during transition
+typealias NotToWorryContentView = YourPlanEvolvesContentView
 
 // MARK: - Goal Setting Section Content Views
 
-struct GoalSettingIntroContentView: View {
+struct YourTransformationContentView: View {
     @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
-    
+    @State private var showContent = false
+
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
                 // Title
-                Text("Let's set your goal")
+                Text("Your Transformation Journey")
                     .font(.system(size: 28, weight: .bold))
                     .foregroundColor(.white)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 20)
                     .padding(.bottom, 12)
-                
+
                 // Subtitle
-                Text("NutriSync's personalized windows are designed to optimize your nutrition timing. Don't worry – you can update your goal any time.")
+                Text("What changes when you optimize meal timing")
                     .font(.system(size: 17))
                     .foregroundColor(.white.opacity(0.6))
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 20)
                     .padding(.bottom, 40)
-                
-                // Visual element
-                Image(systemName: "target")
-                    .font(.system(size: 80))
-                    .foregroundColor(.white)
-                    .padding(.bottom, 40)
-                
-                // Information text
-                Text("Your goal will help us:")
-                    .font(.system(size: 18, weight: .medium))
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 20)
-                
-                VStack(alignment: .leading, spacing: 16) {
-                    HStack(alignment: .top, spacing: 12) {
-                        Text("•")
-                            .foregroundColor(.white)
-                        Text("Calculate your optimal calorie intake")
-                            .foregroundColor(.white.opacity(0.8))
-                    }
-                    HStack(alignment: .top, spacing: 12) {
-                        Text("•")
-                            .foregroundColor(.white)
-                        Text("Design your meal window schedule")
-                            .foregroundColor(.white.opacity(0.8))
-                    }
-                    HStack(alignment: .top, spacing: 12) {
-                        Text("•")
-                            .foregroundColor(.white)
-                        Text("Optimize your macro distribution")
-                            .foregroundColor(.white.opacity(0.8))
-                    }
+
+                // Week-by-week breakdown
+                VStack(spacing: 24) {
+                    TransformationPhase(
+                        weeks: "Week 1-2: Foundation",
+                        benefits: [
+                            "No more \"what should I eat now?\" decisions",
+                            "Energy stabilizes throughout the day",
+                            "Sleep quality improves (better timing = better recovery)"
+                        ]
+                    )
+
+                    TransformationPhase(
+                        weeks: "Week 3-6: Momentum",
+                        benefits: [
+                            "Cravings decrease (your body knows when food is coming)",
+                            "Progress stays consistent without extreme hunger",
+                            "Workouts feel stronger (nutrition timed right)"
+                        ],
+                        isHighlighted: true
+                    )
+
+                    TransformationPhase(
+                        weeks: "Week 7-12: Transformation",
+                        benefits: [
+                            "Reach your goals while maintaining muscle",
+                            "Eating feels effortless, not restrictive",
+                            "Habits locked in - no more yo-yo dieting"
+                        ]
+                    )
                 }
-                .font(.system(size: 17))
-                .padding(.horizontal, 30)
-                
-                Spacer(minLength: 80) // Space for navigation buttons
+                .padding(.horizontal, 20)
+                .padding(.bottom, 30)
+
+                // Science note
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "chart.line.uptrend.xyaxis")
+                            .font(.system(size: 16))
+                            .foregroundColor(.nutriSyncAccent)
+
+                        Text("The Science")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.nutriSyncAccent)
+                    }
+
+                    Text("Studies show circadian-aligned nutrition can improve results by 30% compared to random eating patterns, while preserving muscle mass.")
+                        .font(.system(size: 14))
+                        .foregroundColor(.white.opacity(0.7))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(16)
+                .background(Color.nutriSyncAccent.opacity(0.1))
+                .cornerRadius(12)
+                .padding(.horizontal, 20)
+
+                Spacer(minLength: 80)
+            }
+        }
+        .opacity(showContent ? 1 : 0)
+        .onAppear {
+            withAnimation(.easeOut(duration: 0.6).delay(0.2)) {
+                showContent = true
             }
         }
     }
 }
+
+struct TransformationPhase: View {
+    let weeks: String
+    let benefits: [String]
+    var isHighlighted: Bool = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(weeks)
+                .font(.system(size: 20, weight: .bold))
+                .foregroundColor(isHighlighted ? .nutriSyncAccent : .white)
+
+            VStack(alignment: .leading, spacing: 10) {
+                ForEach(benefits, id: \.self) { benefit in
+                    HStack(alignment: .top, spacing: 10) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 14))
+                            .foregroundColor(isHighlighted ? .nutriSyncAccent : .white.opacity(0.8))
+                            .padding(.top, 2)
+
+                        Text(benefit)
+                            .font(.system(size: 15))
+                            .foregroundColor(.white.opacity(0.8))
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        Spacer()
+                    }
+                }
+            }
+        }
+        .padding(16)
+        .background(isHighlighted ? Color.nutriSyncAccent.opacity(0.08) : Color.white.opacity(0.03))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(isHighlighted ? Color.nutriSyncAccent.opacity(0.3) : Color.clear, lineWidth: 1)
+        )
+        .cornerRadius(12)
+    }
+}
+
+// Keep old view name for backward compatibility during transition
+typealias GoalSettingIntroContentView = YourTransformationContentView
 
 struct GoalSelectionContentView: View {
     @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
@@ -2507,7 +3257,10 @@ struct MealFrequencyContentView: View {
                         ], id: \.0) { meals, style in
                             Button(action: {
                                 selectedMealCount = meals
-                                coordinator.mealFrequency = meals
+                                // Extract numeric value from "2 Meals" → "2"
+                                let numericValue = meals.components(separatedBy: " ").first ?? meals
+                                coordinator.mealFrequency = numericValue
+                                print("[MealFrequencyContentView] ✅ Set mealFrequency to: \(numericValue) from selection '\(meals)'")
                             }) {
                                 VStack(spacing: 8) {
                                     Text(meals)
@@ -2772,7 +3525,116 @@ struct DietaryRestrictionsContentView: View {
     }
 }
 
-// MARK: - Finish Section Content Views (Placeholders)
+// MARK: - Finish Section Content Views
+
+struct YourPlanIsReadyContentView: View {
+    @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
+    @State private var loadingStep = 0
+    @State private var autoAdvanced = false
+
+    let loadingSteps = [
+        ("chart.bar.fill", "Analyzing your metabolism..."),
+        ("clock.fill", "Optimizing meal windows..."),
+        ("fork.knife", "Calibrating macro distribution..."),
+        ("sparkles", "Personalizing your program...")
+    ]
+
+    var body: some View {
+        ZStack {
+            Color.nutriSyncBackground
+                .ignoresSafeArea()
+
+            VStack(spacing: 40) {
+                Spacer()
+
+                // Title
+                Text("Creating Your Plan")
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.center)
+
+                // Loading animation
+                ZStack {
+                    // Pulsing circle
+                    Circle()
+                        .stroke(Color.nutriSyncAccent.opacity(0.2), lineWidth: 3)
+                        .frame(width: 100, height: 100)
+
+                    Circle()
+                        .trim(from: 0, to: 0.7)
+                        .stroke(
+                            Color.nutriSyncAccent,
+                            style: StrokeStyle(lineWidth: 3, lineCap: .round)
+                        )
+                        .frame(width: 100, height: 100)
+                        .rotationEffect(.degrees(-90))
+                        .rotationEffect(.degrees(Double(loadingStep) * 90))
+                        .animation(.linear(duration: 0.5).repeatForever(autoreverses: false), value: loadingStep)
+
+                    // Current step icon
+                    if loadingStep < loadingSteps.count {
+                        Image(systemName: loadingSteps[loadingStep].0)
+                            .font(.system(size: 32))
+                            .foregroundColor(.nutriSyncAccent)
+                    }
+                }
+                .padding(.vertical, 20)
+
+                // Loading steps with checkmarks
+                VStack(alignment: .leading, spacing: 16) {
+                    ForEach(0..<loadingSteps.count, id: \.self) { index in
+                        HStack(spacing: 12) {
+                            if index < loadingStep {
+                                // Completed
+                                Image(systemName: "checkmark.circle.fill")
+                                    .font(.system(size: 16))
+                                    .foregroundColor(.nutriSyncAccent)
+                            } else if index == loadingStep {
+                                // Current
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .nutriSyncAccent))
+                                    .scaleEffect(0.7)
+                                    .frame(width: 16, height: 16)
+                            } else {
+                                // Pending
+                                Circle()
+                                    .stroke(Color.white.opacity(0.3), lineWidth: 2)
+                                    .frame(width: 16, height: 16)
+                            }
+
+                            Text(loadingSteps[index].1)
+                                .font(.system(size: 15))
+                                .foregroundColor(index <= loadingStep ? .white : .white.opacity(0.5))
+
+                            Spacer()
+                        }
+                    }
+                }
+                .padding(.horizontal, 40)
+
+                Spacer()
+            }
+        }
+        .onAppear {
+            // Auto-advance through steps
+            let timer = Timer.scheduledTimer(withTimeInterval: 0.8, repeats: true) { timer in
+                if loadingStep < loadingSteps.count - 1 {
+                    withAnimation {
+                        loadingStep += 1
+                    }
+                } else if !autoAdvanced {
+                    // Wait a bit on the last step, then auto-advance
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        autoAdvanced = true
+                        coordinator.nextScreen()
+                    }
+                    timer.invalidate()
+                }
+            }
+            RunLoop.current.add(timer, forMode: .common)
+        }
+    }
+}
 
 struct ReviewProgramContentView: View {
     @Environment(NutriSyncOnboardingViewModel.self) private var coordinator

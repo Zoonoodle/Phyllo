@@ -119,11 +119,16 @@ struct MealFrequencyView: View {
                             switch frequency {
                             case .twoToThree:
                                 coordinator.mealFrequency = "3"
+                                print("[MealFrequencyView] ✅ Set mealFrequency to: 3 (2-3 meals)")
                             case .fourToFive:
                                 coordinator.mealFrequency = "4"
+                                print("[MealFrequencyView] ✅ Set mealFrequency to: 4 (4-5 meals)")
                             case .sixPlus:
                                 coordinator.mealFrequency = "6"
+                                print("[MealFrequencyView] ✅ Set mealFrequency to: 6 (6+ meals)")
                             }
+                        } else {
+                            print("[MealFrequencyView] ⚠️ No frequency selected, mealFrequency not set")
                         }
                         coordinator.nextScreen()
                     } label: {

@@ -235,6 +235,9 @@ struct UserProfile: Codable, Identifiable {
         }
         if let mealsPerDay = mealsPerDay {
             data["mealsPerDay"] = mealsPerDay
+            print("[UserProfile] ✅ Saving to Firebase - mealsPerDay: \(mealsPerDay)")
+        } else {
+            print("[UserProfile] ⚠️ Saving to Firebase - mealsPerDay is nil (will not be saved)")
         }
         
         // Safely convert dates to Firebase Timestamps
@@ -337,6 +340,8 @@ struct UserProfile: Codable, Identifiable {
         profile.lastBulkLogDate = lastBulkLogDate
         profile.firstDayCompleted = firstDayCompleted
         profile.onboardingCompletedAt = onboardingCompletedAt
+
+        print("[UserProfile] ✅ Loaded from Firebase - mealsPerDay: \(mealsPerDay?.description ?? "nil")")
 
         return profile
     }
