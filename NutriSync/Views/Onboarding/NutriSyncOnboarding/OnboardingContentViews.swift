@@ -1107,8 +1107,159 @@ struct ComparisonRow: View {
     }
 }
 
+// MARK: - Personalized Windows Preview View Model
+
+@MainActor
+class PersonalizedWindowsPreviewViewModel: ObservableObject {
+    @Published var previewWindows: [MealWindow] = []
+    @Published var previewMeals: [LoggedMeal] = []
+
+    // Create a mock ScheduleViewModel for ExpandableWindowBanner
+    let scheduleViewModel = ScheduleViewModel()
+
+    init() {
+        generatePreviewData()
+    }
+
+    deinit {
+        // Reset time simulation when view model is destroyed
+        Task { @MainActor in
+            TimeProvider.shared.resetToRealTime()
+        }
+    }
+
+    private func generatePreviewData() {
+        let calendar = Calendar.current
+        let now = Date()
+
+        // Simulate current time as 2:30 PM today for preview purposes
+        var components = calendar.dateComponents([.year, .month, .day], from: now)
+        components.hour = 14
+        components.minute = 30
+        let simulatedNow = calendar.date(from: components)!
+
+        // Set simulated time so ExpandableWindowBanner shows correct states
+        TimeProvider.shared.setSimulatedTime(simulatedNow)
+
+        // 1. Completed Breakfast Window (7:00-8:30 AM) - Past, with meals
+        components.hour = 7
+        components.minute = 0
+        let breakfastStart = calendar.date(from: components)!
+        components.hour = 8
+        components.minute = 30
+        let breakfastEnd = calendar.date(from: components)!
+
+        var breakfastWindow = MealWindow(
+            name: "Breakfast",
+            startTime: breakfastStart,
+            endTime: breakfastEnd,
+            targetCalories: 450,
+            targetProtein: 35,
+            targetCarbs: 45,
+            targetFat: 12,
+            purpose: .sustainedEnergy,
+            flexibility: .moderate,
+            type: .regular,
+            foodSuggestions: ["Oatmeal", "Greek Yogurt", "Berries"],
+            micronutrientFocus: ["Fiber", "Vitamin B"],
+            rationale: "Start your day with sustained energy"
+        )
+
+        // Mark breakfast as consumed
+        breakfastWindow.consumed = MealWindow.ConsumedMacros(
+            calories: 420,
+            protein: 32,
+            carbs: 48,
+            fat: 10
+        )
+
+        // Create a meal for breakfast
+        components.hour = 7
+        components.minute = 15
+        let breakfastMealTime = calendar.date(from: components)!
+
+        let breakfastMeal = LoggedMeal(
+            name: "Oatmeal with berries and almonds",
+            calories: 420,
+            protein: 32,
+            carbs: 48,
+            fat: 10,
+            timestamp: breakfastMealTime,
+            windowId: UUID(uuidString: breakfastWindow.id)
+        )
+
+        // 2. Missed Lunch Window (12:30-1:30 PM) - Past, no meals, with redistribution
+        components.hour = 12
+        components.minute = 30
+        let lunchStart = calendar.date(from: components)!
+        components.hour = 13
+        components.minute = 30
+        let lunchEnd = calendar.date(from: components)!
+
+        var lunchWindow = MealWindow(
+            name: "Lunch",
+            startTime: lunchStart,
+            endTime: lunchEnd,
+            targetCalories: 550,
+            targetProtein: 40,
+            targetCarbs: 60,
+            targetFat: 15,
+            purpose: .preWorkout,
+            flexibility: .moderate,
+            type: .regular,
+            foodSuggestions: ["Grilled Chicken", "Sweet Potato", "Vegetables"],
+            micronutrientFocus: ["Protein", "Complex Carbs"],
+            rationale: "Fuel up before afternoon workout"
+        )
+
+        // Mark as having redistribution
+        lunchWindow.redistributionReason = .missedWindow
+
+        // 3. Upcoming Afternoon Window (3:00-4:00 PM) - Active/Upcoming
+        components.hour = 15
+        components.minute = 0
+        let afternoonStart = calendar.date(from: components)!
+        components.hour = 16
+        components.minute = 0
+        let afternoonEnd = calendar.date(from: components)!
+
+        let afternoonWindow = MealWindow(
+            name: "Afternoon Snack",
+            startTime: afternoonStart,
+            endTime: afternoonEnd,
+            targetCalories: 350,
+            targetProtein: 25,
+            targetCarbs: 35,
+            targetFat: 12,
+            purpose: .focusBoost,
+            flexibility: .flexible,
+            type: .snack,
+            foodSuggestions: ["Protein Shake", "Nuts", "Fruit"],
+            micronutrientFocus: ["Quick Energy"],
+            rationale: "Light snack to maintain focus"
+        )
+
+        previewWindows = [breakfastWindow, lunchWindow, afternoonWindow]
+        previewMeals = [breakfastMeal]
+
+        // Set the windows in the schedule view model for proper rendering
+        scheduleViewModel.mealWindows = previewWindows
+        scheduleViewModel.todaysMeals = previewMeals
+    }
+
+    func mealsForWindow(_ window: MealWindow) -> [LoggedMeal] {
+        previewMeals.filter { meal in
+            meal.timestamp >= window.startTime && meal.timestamp <= window.endTime
+        }
+    }
+}
+
 struct YourDayOptimizedContentView: View {
     @State private var showContent = false
+    @StateObject private var mockViewModel = PersonalizedWindowsPreviewViewModel()
+    @Namespace private var animationNamespace
+    @State private var selectedWindow: MealWindow?
+    @State private var showWindowDetail = false
 
     var body: some View {
         ScrollView {
@@ -1119,114 +1270,92 @@ struct YourDayOptimizedContentView: View {
                     .foregroundColor(.white)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 20)
-                    .padding(.bottom, 12)
+                    .padding(.bottom, 8)
                     .opacity(showContent ? 1 : 0)
 
-                // Subtitle
-                Text("Tailored to YOUR schedule and goals")
+                // Subtitle with time context
+                Text("Here's what your day looks like")
                     .font(.system(size: 17))
                     .foregroundColor(.white.opacity(0.85))
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 20)
-                    .padding(.bottom, 32)
+                    .padding(.bottom, 6)
                     .opacity(showContent ? 1 : 0)
 
-                // Example day with 2 windows
-                VStack(spacing: 12) {
-                    CompactWindowCard(
-                        time: "7:00 AM",
-                        calories: 450,
-                        protein: 35,
-                        carbs: 45,
-                        icon: "sunrise.fill",
-                        color: .orange,
-                        label: "Breakfast"
-                    )
-
-                    CompactWindowCard(
-                        time: "12:30 PM",
-                        calories: 650,
-                        protein: 45,
-                        carbs: 70,
-                        icon: "figure.run",
-                        color: .blue,
-                        label: "Pre-workout"
-                    )
+                // Current time indicator
+                HStack(spacing: 6) {
+                    Image(systemName: "clock.fill")
+                        .font(.system(size: 12))
+                    Text("Current time: 2:30 PM")
+                        .font(.system(size: 14, weight: .medium))
                 }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 28)
+                .foregroundColor(.nutriSyncAccent)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(Color.nutriSyncAccent.opacity(0.15))
+                .cornerRadius(20)
+                .padding(.bottom, 24)
                 .opacity(showContent ? 1 : 0)
 
-                // Smart Redistribution Feature
-                VStack(alignment: .leading, spacing: 16) {
-                    HStack(spacing: 12) {
-                        Image(systemName: "arrow.triangle.2.circlepath")
-                            .font(.system(size: 22))
-                            .foregroundColor(.nutriSyncAccent)
-
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Never Fall Behind")
-                                .font(.system(size: 18, weight: .bold))
-                                .foregroundColor(.white)
-
-                            Text("Missed a window? We redistribute")
-                                .font(.system(size: 14))
-                                .foregroundColor(.white.opacity(0.7))
-                        }
-                    }
-
-                    // Visual redistribution example
-                    VStack(spacing: 8) {
-                        HStack(spacing: 8) {
-                            Text("Missed 450 cal")
-                                .font(.system(size: 13, weight: .medium))
-                                .foregroundColor(.red.opacity(0.9))
-
-                            Image(systemName: "arrow.right")
-                                .font(.system(size: 12))
-                                .foregroundColor(.nutriSyncAccent)
-
-                            Text("Split to later windows")
-                                .font(.system(size: 13, weight: .medium))
-                                .foregroundColor(.nutriSyncAccent)
-
-                            Spacer()
-                        }
-                        .padding(12)
-                        .background(Color.white.opacity(0.03))
-                        .cornerRadius(10)
-
-                        Text("Stays on track for daily targets automatically")
-                            .font(.system(size: 12))
-                            .foregroundColor(.white.opacity(0.6))
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                // Real window previews using ExpandableWindowBanner
+                VStack(spacing: 12) {
+                    ForEach(mockViewModel.previewWindows) { window in
+                        ExpandableWindowBanner(
+                            window: window,
+                            meals: mockViewModel.mealsForWindow(window),
+                            selectedWindow: $selectedWindow,
+                            showWindowDetail: $showWindowDetail,
+                            animationNamespace: animationNamespace,
+                            viewModel: mockViewModel.scheduleViewModel,
+                            bannerHeight: nil
+                        )
                     }
                 }
-                .padding(16)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 24)
+                .opacity(showContent ? 1 : 0)
+
+                // Simplified "Never Fall Behind" callout
+                HStack(spacing: 12) {
+                    Image(systemName: "arrow.triangle.2.circlepath")
+                        .font(.system(size: 20))
+                        .foregroundColor(.nutriSyncAccent)
+
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("Never Fall Behind")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(.white)
+
+                        Text("Missed calories automatically redistribute to keep you on track")
+                            .font(.system(size: 13))
+                            .foregroundColor(.white.opacity(0.7))
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(14)
                 .background(Color.nutriSyncAccent.opacity(0.08))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 14)
-                        .stroke(Color.nutriSyncAccent.opacity(0.3), lineWidth: 1.5)
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.nutriSyncAccent.opacity(0.25), lineWidth: 1.5)
                 )
-                .cornerRadius(14)
+                .cornerRadius(12)
                 .padding(.horizontal, 20)
-                .padding(.bottom, 28)
+                .padding(.bottom, 24)
                 .opacity(showContent ? 1 : 0)
 
-                // Benefits Grid
+                // Optimized For - simplified
                 Text("Optimized For")
                     .font(.system(size: 18, weight: .bold))
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, 20)
-                    .padding(.bottom, 16)
+                    .padding(.bottom, 14)
                     .opacity(showContent ? 1 : 0)
 
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
                     BenefitCard(icon: "bolt.fill", title: "Energy", description: "Sustained throughout day", color: .yellow)
                     BenefitCard(icon: "figure.arms.open", title: "Weight", description: "Steady progress", color: .green)
-                    BenefitCard(icon: "flame.fill", title: "Performance", description: "Peak workout fuel", color: .orange)
-                    BenefitCard(icon: "moon.stars.fill", title: "Sleep", description: "Better recovery", color: .purple)
                 }
                 .padding(.horizontal, 20)
                 .padding(.bottom, 20)
