@@ -775,6 +775,7 @@ struct PlanAdvantageContentView: View {
                 }
                 .padding(20)
                 .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.red.opacity(0.06))
                 .overlay(
                     RoundedRectangle(cornerRadius: 16)
                         .stroke(Color.red.opacity(0.5), lineWidth: 2)
@@ -864,6 +865,7 @@ struct PlanAdvantageContentView: View {
                 }
                 .padding(20)
                 .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.nutriSyncAccent.opacity(0.05))
                 .overlay(
                     RoundedRectangle(cornerRadius: 16)
                         .stroke(Color.nutriSyncAccent, lineWidth: 2)
