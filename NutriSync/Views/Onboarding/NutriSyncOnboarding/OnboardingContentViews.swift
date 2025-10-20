@@ -1525,7 +1525,7 @@ struct YourTransformationContentView: View {
 
                 // Week-by-week breakdown
                 VStack(spacing: 24) {
-                    TransformationPhase(
+                    OnboardingTransformationPhase(
                         weeks: "Week 1-2: Foundation",
                         benefits: [
                             "No more \"what should I eat now?\" decisions",
@@ -1534,7 +1534,7 @@ struct YourTransformationContentView: View {
                         ]
                     )
 
-                    TransformationPhase(
+                    OnboardingTransformationPhase(
                         weeks: "Week 3-6: Momentum",
                         benefits: [
                             "Cravings decrease (your body knows when food is coming)",
@@ -1544,7 +1544,7 @@ struct YourTransformationContentView: View {
                         isHighlighted: true
                     )
 
-                    TransformationPhase(
+                    OnboardingTransformationPhase(
                         weeks: "Week 7-12: Transformation",
                         benefits: [
                             "Reach your goals while maintaining muscle",
@@ -1590,7 +1590,7 @@ struct YourTransformationContentView: View {
     }
 }
 
-struct TransformationPhase: View {
+struct OnboardingTransformationPhase: View {
     let weeks: String
     let benefits: [String]
     var isHighlighted: Bool = false
