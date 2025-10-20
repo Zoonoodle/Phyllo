@@ -735,34 +735,49 @@ struct PlanAdvantageContentView: View {
                 VStack(alignment: .leading, spacing: 16) {
                     HStack(spacing: 12) {
                         Image(systemName: "questionmark.circle.fill")
-                            .font(.system(size: 24))
-                            .foregroundColor(.red.opacity(0.8))
+                            .font(.system(size: 28))
+                            .foregroundColor(.red.opacity(0.85))
 
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Other Apps")
-                                .font(.system(size: 16, weight: .semibold))
-                                .foregroundColor(.white.opacity(0.75))
+                                .font(.system(size: 19, weight: .bold))
+                                .foregroundColor(.white.opacity(0.9))
 
                             Text("\"Hit 2,500 calories today\"")
-                                .font(.system(size: 15))
-                                .foregroundColor(.white.opacity(0.65))
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundColor(.white.opacity(0.75))
                         }
                     }
 
-                    VStack(alignment: .leading, spacing: 10) {
-                        QuestionRow(text: "But when should I eat?")
-                        QuestionRow(text: "How much per meal?")
-                        QuestionRow(text: "What if I get hungry between meals?")
-                        QuestionRow(text: "Should I eat before or after my workout?")
+                    VStack(alignment: .leading, spacing: 12) {
+                        PainPointQuestionRow(
+                            prefix: "But ",
+                            painpoint: "when",
+                            suffix: " should I eat?"
+                        )
+                        PainPointQuestionRow(
+                            prefix: "",
+                            painpoint: "How much",
+                            suffix: " per meal?"
+                        )
+                        PainPointQuestionRow(
+                            prefix: "What if I get ",
+                            painpoint: "hungry",
+                            suffix: " between meals?"
+                        )
+                        PainPointQuestionRow(
+                            prefix: "Should I eat ",
+                            painpoint: "before or after",
+                            suffix: " my workout?"
+                        )
                     }
-                    .padding(.leading, 36)
+                    .padding(.leading, 40)
                 }
                 .padding(20)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color.red.opacity(0.12))
                 .overlay(
                     RoundedRectangle(cornerRadius: 16)
-                        .stroke(Color.red.opacity(0.4), lineWidth: 1.5)
+                        .stroke(Color.red.opacity(0.5), lineWidth: 2)
                 )
                 .cornerRadius(16)
                 .padding(.horizontal, 20)
@@ -849,18 +864,11 @@ struct PlanAdvantageContentView: View {
                 }
                 .padding(20)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(
-                    RoundedRectangle(cornerRadius: 16)
-                        .fill(Color.white.opacity(0.03))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 16)
-                                .fill(Color.nutriSyncAccent.opacity(0.08))
-                        )
-                )
                 .overlay(
                     RoundedRectangle(cornerRadius: 16)
                         .stroke(Color.nutriSyncAccent, lineWidth: 2)
                 )
+                .cornerRadius(16)
                 .padding(.horizontal, 20)
                 .padding(.bottom, 30)
                 .opacity(showContent ? 1 : 0)
@@ -961,6 +969,33 @@ struct QuestionRow: View {
                 .font(.system(size: 14, weight: .medium))
                 .foregroundColor(.white.opacity(0.65))
                 .italic()
+        }
+    }
+}
+
+// Painpoint question row with red highlighted keywords
+struct PainPointQuestionRow: View {
+    let prefix: String
+    let painpoint: String
+    let suffix: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: "circle.fill")
+                .font(.system(size: 7))
+                .foregroundColor(.white.opacity(0.6))
+                .padding(.top, 5)
+
+            (Text(prefix)
+                .foregroundColor(.white.opacity(0.75))
+             + Text(painpoint)
+                .foregroundColor(.red.opacity(0.9))
+                .bold()
+             + Text(suffix)
+                .foregroundColor(.white.opacity(0.75))
+            )
+            .font(.system(size: 16, weight: .medium))
+            .italic()
         }
     }
 }
