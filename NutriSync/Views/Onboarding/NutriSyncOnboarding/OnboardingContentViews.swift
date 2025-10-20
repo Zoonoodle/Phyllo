@@ -626,23 +626,22 @@ struct WelcomeToNutriSyncContentView: View {
                         .fill(
                             RadialGradient(
                                 gradient: Gradient(colors: [
-                                    Color.nutriSyncAccent.opacity(0.15),
-                                    Color.nutriSyncAccent.opacity(0.05),
+                                    Color.nutriSyncAccent.opacity(0.2),
+                                    Color.nutriSyncAccent.opacity(0.08),
                                     Color.clear
                                 ]),
                                 center: .center,
-                                startRadius: 20,
-                                endRadius: 100
+                                startRadius: 30,
+                                endRadius: 120
                             )
                         )
-                        .frame(width: 200, height: 200)
+                        .frame(width: 240, height: 240)
 
-                    // Use SF Symbol for logo placeholder
-                    Image(systemName: "leaf.fill")
+                    // Use actual app logo
+                    Image("appLogo")
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 100, height: 100)
-                        .foregroundColor(.nutriSyncAccent)
+                        .frame(width: 140, height: 140)
                 }
                 .scaleEffect(showContent ? 1 : 0.8)
                 .opacity(showContent ? 1 : 0)
@@ -726,7 +725,7 @@ struct PlanAdvantageContentView: View {
                 // Subtitle
                 Text("More than a calorie target")
                     .font(.system(size: 17))
-                    .foregroundColor(.white.opacity(0.7))
+                    .foregroundColor(.white.opacity(0.85))
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 20)
                     .padding(.bottom, 40)
@@ -737,20 +736,20 @@ struct PlanAdvantageContentView: View {
                     HStack(spacing: 12) {
                         Image(systemName: "questionmark.circle.fill")
                             .font(.system(size: 24))
-                            .foregroundColor(.red.opacity(0.7))
+                            .foregroundColor(.red.opacity(0.8))
 
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Other Apps")
                                 .font(.system(size: 16, weight: .semibold))
-                                .foregroundColor(.white.opacity(0.6))
+                                .foregroundColor(.white.opacity(0.75))
 
                             Text("\"Hit 2,500 calories today\"")
                                 .font(.system(size: 15))
-                                .foregroundColor(.white.opacity(0.5))
+                                .foregroundColor(.white.opacity(0.65))
                         }
                     }
 
-                    VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: 10) {
                         QuestionRow(text: "But when should I eat?")
                         QuestionRow(text: "How much per meal?")
                         QuestionRow(text: "What if I get hungry between meals?")
@@ -760,10 +759,10 @@ struct PlanAdvantageContentView: View {
                 }
                 .padding(20)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color.red.opacity(0.08))
+                .background(Color.red.opacity(0.12))
                 .overlay(
                     RoundedRectangle(cornerRadius: 16)
-                        .stroke(Color.red.opacity(0.3), lineWidth: 1)
+                        .stroke(Color.red.opacity(0.4), lineWidth: 1.5)
                 )
                 .cornerRadius(16)
                 .padding(.horizontal, 20)
@@ -777,7 +776,7 @@ struct PlanAdvantageContentView: View {
                     .padding(.bottom, 24)
                     .opacity(showContent ? 1 : 0)
 
-                // Solution section - NutriSync
+                // Solution section - NutriSync (mimics actual app components)
                 VStack(alignment: .leading, spacing: 16) {
                     HStack(spacing: 12) {
                         Image(systemName: "checkmark.circle.fill")
@@ -791,25 +790,57 @@ struct PlanAdvantageContentView: View {
 
                             Text("Your complete daily plan")
                                 .font(.system(size: 15, weight: .medium))
-                                .foregroundColor(.white)
+                                .foregroundColor(.white.opacity(0.9))
                         }
                     }
 
-                    VStack(alignment: .leading, spacing: 10) {
-                        PlanDetailRow(time: "7:00 AM", calories: "450 cal", label: "Breakfast", description: "Kickstart metabolism")
-                        PlanDetailRow(time: "12:30 PM", calories: "650 cal", label: "Pre-workout", description: "Fuel performance")
-                        PlanDetailRow(time: "6:00 PM", calories: "850 cal", label: "Dinner", description: "Recovery & repair")
-                        PlanDetailRow(time: "8:30 PM", calories: "400 cal", label: "Evening", description: "Light & satisfying")
+                    // Mini schedule preview (mimics actual app window cards)
+                    VStack(spacing: 8) {
+                        MiniWindowCard(
+                            time: "7:00 AM",
+                            calories: 450,
+                            label: "Breakfast",
+                            purpose: "Kickstart metabolism",
+                            icon: "sunrise.fill",
+                            color: .orange
+                        )
+
+                        MiniWindowCard(
+                            time: "12:30 PM",
+                            calories: 650,
+                            label: "Pre-workout",
+                            purpose: "Fuel performance",
+                            icon: "figure.run",
+                            color: .blue
+                        )
+
+                        MiniWindowCard(
+                            time: "6:00 PM",
+                            calories: 850,
+                            label: "Dinner",
+                            purpose: "Recovery & repair",
+                            icon: "moon.stars.fill",
+                            color: .purple
+                        )
+
+                        MiniWindowCard(
+                            time: "8:30 PM",
+                            calories: 400,
+                            label: "Evening",
+                            purpose: "Light & satisfying",
+                            icon: "sparkles",
+                            color: Color.nutriSyncAccent
+                        )
                     }
 
                     Divider()
-                        .background(Color.nutriSyncAccent.opacity(0.3))
+                        .background(Color.nutriSyncAccent.opacity(0.4))
                         .padding(.vertical, 8)
 
                     HStack {
                         Text("Total:")
                             .font(.system(size: 15, weight: .semibold))
-                            .foregroundColor(.white.opacity(0.7))
+                            .foregroundColor(.white.opacity(0.85))
                         Spacer()
                         Text("2,350 calories")
                             .font(.system(size: 16, weight: .bold))
@@ -818,12 +849,18 @@ struct PlanAdvantageContentView: View {
                 }
                 .padding(20)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color.nutriSyncAccent.opacity(0.12))
+                .background(
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(Color.white.opacity(0.03))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(Color.nutriSyncAccent.opacity(0.08))
+                        )
+                )
                 .overlay(
                     RoundedRectangle(cornerRadius: 16)
                         .stroke(Color.nutriSyncAccent, lineWidth: 2)
                 )
-                .cornerRadius(16)
                 .padding(.horizontal, 20)
                 .padding(.bottom, 30)
                 .opacity(showContent ? 1 : 0)
@@ -849,6 +886,67 @@ struct PlanAdvantageContentView: View {
     }
 }
 
+// Mini window card that mimics the actual app's window component design
+struct MiniWindowCard: View {
+    let time: String
+    let calories: Int
+    let label: String
+    let purpose: String
+    let icon: String
+    let color: Color
+
+    var body: some View {
+        HStack(spacing: 12) {
+            // Icon circle (like the real app)
+            ZStack {
+                Circle()
+                    .fill(color.opacity(0.15))
+                    .frame(width: 40, height: 40)
+
+                Image(systemName: icon)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(color)
+            }
+
+            // Content
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: 8) {
+                    Text(time)
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundColor(.white)
+
+                    Text("\(calories) cal")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(.nutriSyncAccent)
+
+                    Text("•")
+                        .font(.system(size: 12))
+                        .foregroundColor(.white.opacity(0.4))
+
+                    Text(label)
+                        .font(.system(size: 13))
+                        .foregroundColor(.white.opacity(0.7))
+                }
+
+                Text(purpose)
+                    .font(.system(size: 12))
+                    .foregroundColor(.white.opacity(0.55))
+            }
+
+            Spacer()
+        }
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.white.opacity(0.02))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .strokeBorder(Color.white.opacity(0.08), lineWidth: 1)
+                )
+        )
+    }
+}
+
 // New helper views for redesigned screen
 struct QuestionRow: View {
     let text: String
@@ -857,11 +955,11 @@ struct QuestionRow: View {
         HStack(spacing: 8) {
             Image(systemName: "circle.fill")
                 .font(.system(size: 6))
-                .foregroundColor(.white.opacity(0.4))
+                .foregroundColor(.white.opacity(0.5))
 
             Text(text)
                 .font(.system(size: 14, weight: .medium))
-                .foregroundColor(.white.opacity(0.5))
+                .foregroundColor(.white.opacity(0.65))
                 .italic()
         }
     }
@@ -918,7 +1016,7 @@ struct PlanBenefitRow: View {
 
             Text(text)
                 .font(.system(size: 15, weight: .medium))
-                .foregroundColor(.white.opacity(0.8))
+                .foregroundColor(.white.opacity(0.9))
 
             Spacer()
         }
