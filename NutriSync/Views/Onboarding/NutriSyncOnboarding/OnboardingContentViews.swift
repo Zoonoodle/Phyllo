@@ -830,9 +830,9 @@ struct PlanAdvantageContentView: View {
 
                 // Key benefits
                 VStack(spacing: 16) {
-                    BenefitRow(icon: "brain.head.profile", text: "No more decision fatigue")
-                    BenefitRow(icon: "chart.line.uptrend.xyaxis", text: "Optimized for your goals")
-                    BenefitRow(icon: "sparkles", text: "AI adapts to your life")
+                    PlanBenefitRow(icon: "brain.head.profile", text: "No more decision fatigue")
+                    PlanBenefitRow(icon: "chart.line.uptrend.xyaxis", text: "Optimized for your goals")
+                    PlanBenefitRow(icon: "sparkles", text: "AI adapts to your life")
                 }
                 .padding(.horizontal, 30)
                 .padding(.bottom, 20)
@@ -905,7 +905,7 @@ struct PlanDetailRow: View {
     }
 }
 
-struct BenefitRow: View {
+struct PlanBenefitRow: View {
     let icon: String
     let text: String
 
