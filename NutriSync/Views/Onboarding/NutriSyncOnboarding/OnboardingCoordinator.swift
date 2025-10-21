@@ -21,10 +21,10 @@ extension Date {
 @MainActor
 class NutriSyncOnboardingViewModel {
     // Navigation state
-    var currentSection: NutriSyncOnboardingSection = .story
+    var currentSection: NutriSyncOnboardingSection = .basics
     var currentScreenIndex: Int = 0
     var completedSections: Set<NutriSyncOnboardingSection> = []
-    var showingSectionIntro: Bool = false  // Start directly at story content, skip section intro
+    var showingSectionIntro: Bool = true  // Show section intro for basics
     var navigationDirection: NavigationDirection = .forward
     var shouldReturnToGetStarted: Bool = false
     
@@ -188,8 +188,8 @@ class NutriSyncOnboardingViewModel {
     
     func goToPreviousSection() {
         navigationDirection = .backward
-        // If we're at the first section (Story), signal to return to GetStartedView
-        if currentSection == .story {
+        // If we're at the first section (Basics), signal to return to GetStartedView
+        if currentSection == .basics {
             shouldReturnToGetStarted = true
         } else {
             // Navigate to the last screen of the previous section
