@@ -2217,11 +2217,12 @@ struct GoalSelectionContentView: View {
                             }
                             .padding(.horizontal, 20)
                             .padding(.vertical, 24)
-                            .background(Color.clear)
+                            .background(Color.white.opacity(0.05))
                             .overlay(
                                 RoundedRectangle(cornerRadius: 16)
-                                    .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                                    .stroke(selectedGoal == goal ? Color.white : Color.white.opacity(0.2), lineWidth: selectedGoal == goal ? 2 : 1)
                             )
+                            .cornerRadius(16)
                         }
                     }
                 }
