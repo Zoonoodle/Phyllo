@@ -20,7 +20,7 @@ struct SettingsMenuView: View {
             }
             .listStyle(InsetGroupedListStyle())
             .scrollContentBackground(.hidden)
-            .background(Color("nutriSyncBackground"))
+            .background(Color.nutriSyncBackground)
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -263,7 +263,7 @@ struct SettingsMenuView: View {
         }
         .padding(.vertical, 20)
         .frame(maxWidth: .infinity)
-        .background(Color("nutriSyncBackground"))
+        .background(Color.nutriSyncBackground)
     }
     
     private var appVersion: String {
