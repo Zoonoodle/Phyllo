@@ -1916,7 +1916,7 @@ extension FirebaseDataProvider {
         }
 
         // Terminate Firestore to close all connections
-        db.terminate()
+        try await db.terminate()
 
         // Clear the persistence
         try await db.clearPersistence()
