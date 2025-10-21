@@ -10,24 +10,24 @@ import SwiftUI
 struct SectionNavigationView: View {
     let currentSection: NutriSyncOnboardingSection
     let completedSections: Set<NutriSyncOnboardingSection>
-    
+
     var body: some View {
         HStack(spacing: 0) {
             ForEach(NutriSyncOnboardingSection.allCases, id: \.self) { section in
                 if section != NutriSyncOnboardingSection.allCases.first {
-                    // Connection line
+                    // Connection line with proportional width based on previous section's screen count
                     Rectangle()
                         .fill(lineColor(for: section))
                         .frame(height: 2)
-                        .frame(maxWidth: 40)
+                        .frame(width: lineWidth(for: section))
                 }
-                
+
                 // Section icon
                 ZStack {
                     Circle()
                         .fill(backgroundColor(for: section))
                         .frame(width: 44, height: 44)
-                    
+
                     Image(systemName: section.icon)
                         .font(.system(size: 20, weight: .semibold))
                         .foregroundColor(iconColor(for: section))
@@ -59,12 +59,31 @@ struct SectionNavigationView: View {
         let previousSection = NutriSyncOnboardingSection.allCases[
             NutriSyncOnboardingSection.allCases.firstIndex(of: section)! - 1
         ]
-        
+
         if completedSections.contains(previousSection) {
             return Color.white.opacity(0.5)
         } else {
             return Color.white.opacity(0.2)
         }
+    }
+
+    private func lineWidth(for section: NutriSyncOnboardingSection) -> CGFloat {
+        // Get the previous section (the line connects from previous to current)
+        guard let sectionIndex = NutriSyncOnboardingSection.allCases.firstIndex(of: section),
+              sectionIndex > 0 else {
+            return 40 // Fallback width
+        }
+
+        let previousSection = NutriSyncOnboardingSection.allCases[sectionIndex - 1]
+
+        // Get screen count for previous section
+        let screenCount = NutriSyncOnboardingFlow.sections[previousSection]?.count ?? 1
+
+        // Calculate proportional width
+        // Base width of 8 points per screen, minimum 16, maximum 80
+        let baseWidthPerScreen: CGFloat = 8
+        let calculatedWidth = CGFloat(screenCount) * baseWidthPerScreen
+        return min(max(calculatedWidth, 16), 80)
     }
 }
 
@@ -99,27 +118,32 @@ struct SectionIntroView: View {
                 Text(section == .basics ? "Welcome" : section.rawValue)
                     .font(.system(size: 42, weight: .bold))
                     .foregroundColor(.white)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 32)
                     .padding(.top, 32)
-                
+
                 // Navigation dots
                 SectionNavigationView(
                     currentSection: section,
                     completedSections: completedSections
                 )
                 .padding(.top, 40)
-                
+
                 // Section subtitle
                 Text(section.rawValue)
                     .font(.system(size: 24, weight: .medium))
                     .foregroundColor(.white)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 32)
                     .padding(.top, 48)
-                
+
                 // Description
                 Text(section.description)
                     .font(.system(size: 18))
                     .foregroundColor(.white.opacity(0.7))
-                    .multilineTextAlignment(.center)
+                    .multilineTextAlignment(.leading)
                     .lineSpacing(6)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, 32)
                     .padding(.top, 24)
                     .fixedSize(horizontal: false, vertical: true)
