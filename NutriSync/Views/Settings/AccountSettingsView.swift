@@ -138,26 +138,31 @@ struct AccountSettingsView: View {
     @MainActor
     private func deleteAccount() async {
         isDeleting = true
-        
+
         do {
             // Delete user data from Firestore first
             if let userId = Auth.auth().currentUser?.uid {
                 try await FirebaseDataProvider.shared.deleteAllUserData(userId: userId)
             }
-            
+
             // Then delete the auth account
             try await Auth.auth().currentUser?.delete()
-            
+
+            // CRITICAL: Clear Firestore offline cache to prevent old data from appearing
+            // when a new anonymous user is created. Without this, cached profile data
+            // would make the app think the new user has completed onboarding.
+            try await FirebaseDataProvider.shared.clearLocalCache()
+
             // Clear ALL UserDefaults to ensure complete reset
             clearAllUserDefaults()
-            
+
             // The auth state listener will handle navigation back to onboarding
-            
+
         } catch {
             errorMessage = "Failed to delete account: \(error.localizedDescription)"
             showError = true
         }
-        
+
         isDeleting = false
     }
     
@@ -168,7 +173,12 @@ struct AccountSettingsView: View {
             "hasCompletedOnboarding",
             "notificationPreferences",
             "hasShownVoiceInputTips",
-            "lastMorningNudgeDate"
+            "lastMorningNudgeDate",
+            "hasSeenGetStarted",
+            "onboardingResetFlag",
+            "hasSeenNotificationOnboarding",
+            "lastNotificationPromptDate",
+            "lastBackgroundTimestamp"
         ]
         
         for key in keysToRemove {

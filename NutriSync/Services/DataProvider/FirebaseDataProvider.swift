@@ -1908,6 +1908,26 @@ extension FirebaseDataProvider {
             DebugLogger.shared.success("   All Firestore data has been permanently deleted")
         }
     }
+
+    /// Clear local Firestore cache - call this after account deletion to prevent cached data from persisting
+    func clearLocalCache() async throws {
+        Task { @MainActor in
+            DebugLogger.shared.warning("Clearing Firestore local cache...")
+        }
+
+        // Terminate Firestore to close all connections
+        db.terminate()
+
+        // Clear the persistence
+        try await db.clearPersistence()
+
+        // Re-enable Firestore
+        db = Firestore.firestore()
+
+        Task { @MainActor in
+            DebugLogger.shared.success("✅ Firestore cache cleared successfully")
+        }
+    }
     
     // MARK: - Weight Tracking Operations
     
