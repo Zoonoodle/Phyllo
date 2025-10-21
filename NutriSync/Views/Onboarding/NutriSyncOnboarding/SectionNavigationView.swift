@@ -39,7 +39,7 @@ struct SectionNavigationView: View {
                 }
             }
         }
-        .padding(.horizontal, 24)
+        .padding(.horizontal, 48)
     }
     
     private func backgroundColor(for section: NutriSyncOnboardingSection) -> Color {
@@ -117,7 +117,7 @@ struct SectionIntroView: View {
                             .frame(width: 44, height: 44)
                     }
                 }
-                .padding(.horizontal, 8)
+                .padding(.horizontal, 40)
                 
                 // Section title
                 Text(section == .basics ? "Welcome" : section.rawValue)
