@@ -1006,7 +1006,7 @@ struct NutriSyncOnboardingCoordinator: View {
             } else {
                 Text("Skipping metabolic preferences")
                     .foregroundColor(.white)
-                    .onAppear { self.nextScreen() }
+                    .onAppear { viewModel.nextScreen() }
             }
         case "Goal Impact Preview":
             GoalImpactPreviewView()
