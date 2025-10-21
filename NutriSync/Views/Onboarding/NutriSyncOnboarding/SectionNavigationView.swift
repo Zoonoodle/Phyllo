@@ -39,7 +39,7 @@ struct SectionNavigationView: View {
                 }
             }
         }
-        .padding(.horizontal, 48)
+        .padding(.horizontal, 40)
     }
     
     private func backgroundColor(for section: NutriSyncOnboardingSection) -> Color {
@@ -124,7 +124,7 @@ struct SectionIntroView: View {
                     .font(.system(size: 42, weight: .bold))
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 48)
+                    .padding(.horizontal, 56)
                     .padding(.top, 32)
 
                 // Navigation dots
@@ -139,7 +139,7 @@ struct SectionIntroView: View {
                     .font(.system(size: 24, weight: .medium))
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 48)
+                    .padding(.horizontal, 56)
                     .padding(.top, 48)
 
                 // Description
@@ -149,7 +149,7 @@ struct SectionIntroView: View {
                     .multilineTextAlignment(.leading)
                     .lineSpacing(6)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 48)
+                    .padding(.horizontal, 56)
                     .padding(.top, 24)
                     .fixedSize(horizontal: false, vertical: true)
                 
@@ -171,7 +171,7 @@ struct SectionIntroView: View {
                         )
                         .cornerRadius(16)
                 }
-                .padding(.horizontal, 40)
+                .padding(.horizontal, 48)
                 .padding(.bottom, 40)
             }
         }
