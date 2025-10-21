@@ -831,29 +831,10 @@ class FirebaseDataProvider: @preconcurrency DataProvider, ObservableObject {
             return UserProfile.fromFirestore(data)
         } else {
             Task { @MainActor in
-                DebugLogger.shared.warning("No user profile in Firebase, creating default profile")
+                DebugLogger.shared.warning("No user profile found - user needs to complete onboarding")
             }
-            // Create and save a default profile
-            let defaultProfile = UserProfile(
-                id: UUID(),
-                name: "User",
-                age: 30,
-                gender: .male,
-                height: 70, // inches
-                weight: 170, // lbs
-                activityLevel: .moderatelyActive,
-                primaryGoal: .performanceFocus,
-                dietaryPreferences: [],
-                dietaryRestrictions: [],
-                dailyCalorieTarget: 2400,
-                dailyProteinTarget: 110,
-                dailyCarbTarget: 270,
-                dailyFatTarget: 85,
-                preferredMealTimes: [],
-                micronutrientPriorities: ["Vitamin D", "Magnesium", "Omega-3"]
-            )
-            try await saveUserProfile(defaultProfile)
-            return defaultProfile
+            // Return nil if no profile exists - user must complete onboarding first
+            return nil
         }
     }
     
