@@ -11,10 +11,15 @@ struct SectionNavigationView: View {
     let currentSection: NutriSyncOnboardingSection
     let completedSections: Set<NutriSyncOnboardingSection>
 
+    // Filter out story section from checkpoint display
+    private var visibleSections: [NutriSyncOnboardingSection] {
+        NutriSyncOnboardingSection.allCases.filter { $0 != .story }
+    }
+
     var body: some View {
         HStack(spacing: 0) {
-            ForEach(NutriSyncOnboardingSection.allCases, id: \.self) { section in
-                if section != NutriSyncOnboardingSection.allCases.first {
+            ForEach(visibleSections, id: \.self) { section in
+                if section != visibleSections.first {
                     // Connection line with proportional width based on previous section's screen count
                     Rectangle()
                         .fill(lineColor(for: section))
