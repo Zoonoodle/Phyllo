@@ -621,27 +621,27 @@ struct WelcomeToNutriSyncContentView: View {
 
                 // Large logo visual
                 ZStack {
-                    // Subtle radial gradient background
+                    // Subtle radial gradient background (reduced glow)
                     Circle()
                         .fill(
                             RadialGradient(
                                 gradient: Gradient(colors: [
-                                    Color.nutriSyncAccent.opacity(0.2),
-                                    Color.nutriSyncAccent.opacity(0.08),
+                                    Color.nutriSyncAccent.opacity(0.12),
+                                    Color.nutriSyncAccent.opacity(0.04),
                                     Color.clear
                                 ]),
                                 center: .center,
-                                startRadius: 30,
-                                endRadius: 120
+                                startRadius: 40,
+                                endRadius: 80
                             )
                         )
-                        .frame(width: 240, height: 240)
+                        .frame(width: 180, height: 180)
 
-                    // Use actual app logo
+                    // Use actual app logo (bigger)
                     Image("appLogo")
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 140, height: 140)
+                        .frame(width: 180, height: 180)
                 }
                 .scaleEffect(showContent ? 1 : 0.8)
                 .opacity(showContent ? 1 : 0)
