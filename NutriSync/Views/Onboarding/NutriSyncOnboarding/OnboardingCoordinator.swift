@@ -788,15 +788,18 @@ struct NutriSyncOnboardingCoordinator: View {
                         let termsAccepted = viewModel.acceptHealthDisclaimer && viewModel.acceptPrivacyNotice && viewModel.acceptAIConsent
                         let isGoalSelection = viewModel.currentScreen == "Goal Selection"
                         let goalSelected = !viewModel.goal.isEmpty
+                        let isSpecificGoals = viewModel.currentScreen == "Specific Goals"
+                        let specificGoalsSelected = !viewModel.selectedSpecificGoals.isEmpty
                         let isTrainingPlan = viewModel.currentScreen == "Training Plan"
                         let trainingPlanSelected = viewModel.trainingFrequency != nil && viewModel.trainingTime != nil
                         let isDietPreference = viewModel.currentScreen == "Diet Preference"
                         let dietSelected = !viewModel.dietPreference.isEmpty
                         let isMealFrequency = viewModel.currentScreen == "Meal Frequency"
                         let mealFrequencySelected = !viewModel.mealFrequency.isEmpty
-                        
-                        let isDisabled = (isHealthDisclaimer && !termsAccepted) || 
+
+                        let isDisabled = (isHealthDisclaimer && !termsAccepted) ||
                                        (isGoalSelection && !goalSelected) ||
+                                       (isSpecificGoals && !specificGoalsSelected) ||
                                        (isTrainingPlan && !trainingPlanSelected) ||
                                        (isDietPreference && !dietSelected) ||
                                        (isMealFrequency && !mealFrequencySelected)

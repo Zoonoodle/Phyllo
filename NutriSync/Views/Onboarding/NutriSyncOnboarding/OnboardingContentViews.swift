@@ -3992,52 +3992,46 @@ struct SpecificGoalsSelectionView: View {
     ]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 24) {
-            // Header
-            VStack(alignment: .leading, spacing: 8) {
+        ScrollView {
+            VStack(spacing: 0) {
+                // Title
                 Text("What are your specific nutrition goals?")
-                    .font(.title2)
-                    .fontWeight(.bold)
+                    .font(.system(size: 28, weight: .bold))
                     .foregroundColor(.white)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 12)
 
+                // Subtitle
                 Text("Select all that apply - we'll customize your plan")
-                    .font(.subheadline)
-                    .foregroundColor(.white.opacity(0.7))
-            }
+                    .font(.system(size: 17))
+                    .foregroundColor(.white.opacity(0.6))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 40)
 
-            // Goal Cards Grid
-            LazyVGrid(columns: columns, spacing: 16) {
-                ForEach(SpecificGoal.allCases) { goal in
-                    GoalCard(
-                        goal: goal,
-                        isSelected: coordinator.selectedSpecificGoals.contains(goal)
-                    ) {
-                        toggleGoal(goal)
+                // Goal Cards Grid
+                LazyVGrid(columns: columns, spacing: 16) {
+                    ForEach(SpecificGoal.allCases) { goal in
+                        GoalCard(
+                            goal: goal,
+                            isSelected: coordinator.selectedSpecificGoals.contains(goal)
+                        ) {
+                            toggleGoal(goal)
+                        }
                     }
                 }
+                .padding(.horizontal, 20)
             }
-
-            Spacer()
-
-            // Continue Button
-            Button(action: {
-                // Convert selected goals to ranked goals with initial ranking
+        }
+        .onDisappear {
+            // Convert selected goals to ranked goals when leaving screen
+            if !coordinator.selectedSpecificGoals.isEmpty {
                 coordinator.rankedGoals = Array(coordinator.selectedSpecificGoals.enumerated().map { index, goal in
                     RankedGoal(goal: goal, rank: index)
                 })
-                coordinator.nextScreen()
-            }) {
-                Text("Continue")
-                    .font(.headline)
-                    .foregroundColor(.black)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(coordinator.selectedSpecificGoals.isEmpty ? Color.gray : Color.nutriSyncAccent)
-                    .cornerRadius(12)
             }
-            .disabled(coordinator.selectedSpecificGoals.isEmpty)
         }
-        .padding(24)
     }
 
     private func toggleGoal(_ goal: SpecificGoal) {
@@ -4118,26 +4112,33 @@ struct GoalRankingView: View {
 
     var body: some View {
         @Bindable var coordinator = coordinator
-        VStack(alignment: .leading, spacing: 24) {
-            // Header
-            VStack(alignment: .leading, spacing: 8) {
+        ScrollView {
+            VStack(spacing: 0) {
+                // Title
                 Text("Rank Your Goals")
-                    .font(.title2)
-                    .fontWeight(.bold)
+                    .font(.system(size: 28, weight: .bold))
                     .foregroundColor(.white)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 12)
 
+                // Subtitle
                 Text("Drag to reorder by priority")
-                    .font(.subheadline)
-                    .foregroundColor(.white.opacity(0.7))
-
-                Text("Your #1 goal will have the most influence on your meal windows")
-                    .font(.caption)
+                    .font(.system(size: 17))
                     .foregroundColor(.white.opacity(0.6))
-                    .padding(.top, 4)
-            }
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 8)
 
-            // Ranked Goals List
-            ScrollView {
+                // Additional info
+                Text("Your #1 goal will have the most influence on your meal windows")
+                    .font(.system(size: 15))
+                    .foregroundColor(.white.opacity(0.5))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 40)
+
+                // Ranked Goals List
                 VStack(spacing: 12) {
                     ForEach(Array(coordinator.rankedGoals.enumerated()), id: \.element.id) { index, rankedGoal in
                         RankedGoalRow(
@@ -4154,28 +4155,15 @@ struct GoalRankingView: View {
                         ))
                     }
                 }
-            }
-
-            Spacer()
-
-            // Continue Button
-            Button(action: {
-                // Update ranks based on position in array
-                for (index, _) in coordinator.rankedGoals.enumerated() {
-                    coordinator.rankedGoals[index].rank = index
-                }
-                coordinator.nextScreen()
-            }) {
-                Text("Continue")
-                    .font(.headline)
-                    .foregroundColor(.black)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color.nutriSyncAccent)
-                    .cornerRadius(12)
+                .padding(.horizontal, 20)
             }
         }
-        .padding(24)
+        .onDisappear {
+            // Update ranks based on position in array when leaving screen
+            for (index, _) in coordinator.rankedGoals.enumerated() {
+                coordinator.rankedGoals[index].rank = index
+            }
+        }
     }
 }
 
@@ -4286,23 +4274,30 @@ struct SleepPreferencesView: View {
 
     var body: some View {
         @Bindable var coordinator = coordinator
-        VStack(alignment: .leading, spacing: 24) {
-            VStack(alignment: .leading, spacing: 8) {
+        ScrollView {
+            VStack(spacing: 0) {
+                // Title
                 Text("Sleep Optimization")
-                    .font(.title2)
-                    .fontWeight(.bold)
+                    .font(.system(size: 28, weight: .bold))
                     .foregroundColor(.white)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 12)
 
+                // Subtitle
                 Text("Help us time your meals for better rest")
-                    .font(.subheadline)
-                    .foregroundColor(.white.opacity(0.7))
-            }
+                    .font(.system(size: 17))
+                    .foregroundColor(.white.opacity(0.6))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 40)
 
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
+                // Form content
+                VStack(alignment: .leading, spacing: 24) {
                     // Bedtime picker
                     VStack(alignment: .leading, spacing: 8) {
                         Text("What time do you typically go to bed?")
+                            .font(.system(size: 17))
                             .foregroundColor(.white)
                         DatePicker("", selection: $coordinator.sleepBedtime, displayedComponents: .hourAndMinute)
                             .datePickerStyle(.compact)
@@ -4312,6 +4307,7 @@ struct SleepPreferencesView: View {
                     // Hours before bed
                     VStack(alignment: .leading, spacing: 8) {
                         Text("How many hours before bed should your last meal end?")
+                            .font(.system(size: 17))
                             .foregroundColor(.white)
                         Picker("", selection: $coordinator.sleepHoursBeforeBed) {
                             Text("2 hours (flexible)").tag(2)
@@ -4323,11 +4319,13 @@ struct SleepPreferencesView: View {
 
                     // Avoid late carbs toggle
                     Toggle("Avoid high-carb foods in evening", isOn: $coordinator.sleepAvoidLateCarbs)
+                        .font(.system(size: 17))
                         .foregroundColor(.white)
 
                     // Sleep sensitivity
                     VStack(alignment: .leading, spacing: 8) {
                         Text("How sensitive is your sleep to food timing?")
+                            .font(.system(size: 17))
                             .foregroundColor(.white)
                         Picker("", selection: $coordinator.sleepQualitySensitivity) {
                             Text("Low").tag("Low")
@@ -4337,34 +4335,9 @@ struct SleepPreferencesView: View {
                         .pickerStyle(.segmented)
                     }
                 }
-            }
-
-            Spacer()
-
-            HStack {
-                Button("Skip") {
-                    coordinator.sleepBedtime = Date.from(hour: 22, minute: 0)
-                    coordinator.sleepHoursBeforeBed = 3
-                    coordinator.sleepAvoidLateCarbs = true
-                    coordinator.sleepQualitySensitivity = "Medium"
-                    coordinator.nextScreen()
-                }
-                .foregroundColor(.white.opacity(0.7))
-
-                Spacer()
-
-                Button("Continue") {
-                    coordinator.nextScreen()
-                }
-                .font(.headline)
-                .foregroundColor(.black)
-                .padding(.horizontal, 32)
-                .padding(.vertical, 12)
-                .background(Color.nutriSyncAccent)
-                .cornerRadius(12)
+                .padding(.horizontal, 20)
             }
         }
-        .padding(24)
     }
 }
 
@@ -4375,34 +4348,46 @@ struct EnergyPreferencesView: View {
 
     var body: some View {
         @Bindable var coordinator = coordinator
-        VStack(alignment: .leading, spacing: 24) {
-            VStack(alignment: .leading, spacing: 8) {
+        ScrollView {
+            VStack(spacing: 0) {
+                // Title
                 Text("Energy Management")
-                    .font(.title2)
-                    .fontWeight(.bold)
+                    .font(.system(size: 28, weight: .bold))
                     .foregroundColor(.white)
-                Text("Let's prevent those energy crashes")
-                    .font(.subheadline)
-                    .foregroundColor(.white.opacity(0.7))
-            }
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 12)
 
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    Text("When do you typically experience energy crashes?")
-                        .foregroundColor(.white)
-                    ForEach(EnergyManagementPreferences.CrashTime.allCases, id: \.self) { time in
-                        Toggle(time.rawValue, isOn: Binding(
-                            get: { coordinator.energyCrashTimes.contains(time) },
-                            set: { isOn in
-                                if isOn { coordinator.energyCrashTimes.insert(time) }
-                                else { coordinator.energyCrashTimes.remove(time) }
-                            }
-                        ))
-                        .foregroundColor(.white)
+                // Subtitle
+                Text("Let's prevent those energy crashes")
+                    .font(.system(size: 17))
+                    .foregroundColor(.white.opacity(0.6))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 40)
+
+                // Form content
+                VStack(alignment: .leading, spacing: 24) {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("When do you typically experience energy crashes?")
+                            .font(.system(size: 17))
+                            .foregroundColor(.white)
+                        ForEach(EnergyManagementPreferences.CrashTime.allCases, id: \.self) { time in
+                            Toggle(time.rawValue, isOn: Binding(
+                                get: { coordinator.energyCrashTimes.contains(time) },
+                                set: { isOn in
+                                    if isOn { coordinator.energyCrashTimes.insert(time) }
+                                    else { coordinator.energyCrashTimes.remove(time) }
+                                }
+                            ))
+                            .font(.system(size: 17))
+                            .foregroundColor(.white)
+                        }
                     }
 
                     VStack(alignment: .leading, spacing: 8) {
                         Text("How many meals per day do you prefer?")
+                            .font(.system(size: 17))
                             .foregroundColor(.white)
                         Picker("", selection: $coordinator.energyMealFrequency) {
                             ForEach([3, 4, 5, 6], id: \.self) { Text("\($0) meals").tag($0) }
@@ -4412,6 +4397,7 @@ struct EnergyPreferencesView: View {
 
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Caffeine sensitivity?")
+                            .font(.system(size: 17))
                             .foregroundColor(.white)
                         Picker("", selection: $coordinator.energyCaffeineSensitivity) {
                             Text("Low").tag("Low")
@@ -4421,31 +4407,9 @@ struct EnergyPreferencesView: View {
                         .pickerStyle(.segmented)
                     }
                 }
-            }
-
-            Spacer()
-
-            HStack {
-                Button("Skip") {
-                    coordinator.energyCrashTimes = [.afternoon]
-                    coordinator.energyMealFrequency = 4
-                    coordinator.energyCaffeineSensitivity = "Medium"
-                    coordinator.nextScreen()
-                }
-                .foregroundColor(.white.opacity(0.7))
-
-                Spacer()
-
-                Button("Continue") { coordinator.nextScreen() }
-                    .font(.headline)
-                    .foregroundColor(.black)
-                    .padding(.horizontal, 32)
-                    .padding(.vertical, 12)
-                    .background(Color.nutriSyncAccent)
-                    .cornerRadius(12)
+                .padding(.horizontal, 20)
             }
         }
-        .padding(24)
     }
 }
 
@@ -4454,21 +4418,29 @@ struct MusclePreferencesView: View {
 
     var body: some View {
         @Bindable var coordinator = coordinator
-        VStack(alignment: .leading, spacing: 24) {
-            VStack(alignment: .leading, spacing: 8) {
+        ScrollView {
+            VStack(spacing: 0) {
+                // Title
                 Text("Muscle Building & Recovery")
-                    .font(.title2)
-                    .fontWeight(.bold)
+                    .font(.system(size: 28, weight: .bold))
                     .foregroundColor(.white)
-                Text("Optimize your protein timing")
-                    .font(.subheadline)
-                    .foregroundColor(.white.opacity(0.7))
-            }
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 12)
 
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
+                // Subtitle
+                Text("Optimize your protein timing")
+                    .font(.system(size: 17))
+                    .foregroundColor(.white.opacity(0.6))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 40)
+
+                // Form content
+                VStack(alignment: .leading, spacing: 24) {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("How many days per week do you train?")
+                            .font(.system(size: 17))
                             .foregroundColor(.white)
                         Stepper("\(coordinator.muscleTrainingDays) days", value: $coordinator.muscleTrainingDays, in: 3...7)
                             .foregroundColor(.white)
@@ -4476,6 +4448,7 @@ struct MusclePreferencesView: View {
 
                     VStack(alignment: .leading, spacing: 8) {
                         Text("What's your primary training style?")
+                            .font(.system(size: 17))
                             .foregroundColor(.white)
                         Picker("", selection: $coordinator.muscleTrainingStyle) {
                             ForEach(MuscleGainPreferences.TrainingStyle.allCases, id: \.self) {
@@ -4487,6 +4460,7 @@ struct MusclePreferencesView: View {
 
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Protein distribution preference?")
+                            .font(.system(size: 17))
                             .foregroundColor(.white)
                         Picker("", selection: $coordinator.muscleProteinDistribution) {
                             Text("Even throughout day").tag("Even")
@@ -4497,34 +4471,12 @@ struct MusclePreferencesView: View {
                     }
 
                     Toggle("I use protein supplements", isOn: $coordinator.muscleSupplementProtein)
+                        .font(.system(size: 17))
                         .foregroundColor(.white)
                 }
-            }
-
-            Spacer()
-
-            HStack {
-                Button("Skip") {
-                    coordinator.muscleTrainingDays = 4
-                    coordinator.muscleTrainingStyle = .generalFitness
-                    coordinator.muscleProteinDistribution = "Even"
-                    coordinator.muscleSupplementProtein = false
-                    coordinator.nextScreen()
-                }
-                .foregroundColor(.white.opacity(0.7))
-
-                Spacer()
-
-                Button("Continue") { coordinator.nextScreen() }
-                    .font(.headline)
-                    .foregroundColor(.black)
-                    .padding(.horizontal, 32)
-                    .padding(.vertical, 12)
-                    .background(Color.nutriSyncAccent)
-                    .cornerRadius(12)
+                .padding(.horizontal, 20)
             }
         }
-        .padding(24)
     }
 }
 
@@ -4533,21 +4485,29 @@ struct PerformancePreferencesView: View {
 
     var body: some View {
         @Bindable var coordinator = coordinator
-        VStack(alignment: .leading, spacing: 24) {
-            VStack(alignment: .leading, spacing: 8) {
+        ScrollView {
+            VStack(spacing: 0) {
+                // Title
                 Text("Athletic Performance")
-                    .font(.title2)
-                    .fontWeight(.bold)
+                    .font(.system(size: 28, weight: .bold))
                     .foregroundColor(.white)
-                Text("Fuel your workouts effectively")
-                    .font(.subheadline)
-                    .foregroundColor(.white.opacity(0.7))
-            }
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 12)
 
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
+                // Subtitle
+                Text("Fuel your workouts effectively")
+                    .font(.system(size: 17))
+                    .foregroundColor(.white.opacity(0.6))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 40)
+
+                // Form content
+                VStack(alignment: .leading, spacing: 24) {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("When do you typically work out?")
+                            .font(.system(size: 17))
                             .foregroundColor(.white)
                         DatePicker("", selection: $coordinator.performanceWorkoutTime, displayedComponents: .hourAndMinute)
                             .datePickerStyle(.compact)
@@ -4556,6 +4516,7 @@ struct PerformancePreferencesView: View {
 
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Average workout duration?")
+                            .font(.system(size: 17))
                             .foregroundColor(.white)
                         Picker("", selection: $coordinator.performanceWorkoutDuration) {
                             Text("30 min").tag(30)
@@ -4567,13 +4528,16 @@ struct PerformancePreferencesView: View {
                     }
 
                     Toggle("Want a pre-workout meal?", isOn: $coordinator.performancePreworkoutMeal)
+                        .font(.system(size: 17))
                         .foregroundColor(.white)
 
                     Toggle("Want a post-workout meal?", isOn: $coordinator.performancePostworkoutMeal)
+                        .font(.system(size: 17))
                         .foregroundColor(.white)
 
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Workout intensity?")
+                            .font(.system(size: 17))
                             .foregroundColor(.white)
                         Picker("", selection: $coordinator.performanceWorkoutIntensity) {
                             Text("Light").tag("Light")
@@ -4583,33 +4547,9 @@ struct PerformancePreferencesView: View {
                         .pickerStyle(.segmented)
                     }
                 }
-            }
-
-            Spacer()
-
-            HStack {
-                Button("Skip") {
-                    coordinator.performanceWorkoutTime = Date.from(hour: 17, minute: 0)
-                    coordinator.performanceWorkoutDuration = 60
-                    coordinator.performancePreworkoutMeal = true
-                    coordinator.performancePostworkoutMeal = true
-                    coordinator.performanceWorkoutIntensity = "Moderate"
-                    coordinator.nextScreen()
-                }
-                .foregroundColor(.white.opacity(0.7))
-
-                Spacer()
-
-                Button("Continue") { coordinator.nextScreen() }
-                    .font(.headline)
-                    .foregroundColor(.black)
-                    .padding(.horizontal, 32)
-                    .padding(.vertical, 12)
-                    .background(Color.nutriSyncAccent)
-                    .cornerRadius(12)
+                .padding(.horizontal, 20)
             }
         }
-        .padding(24)
     }
 }
 
@@ -4618,21 +4558,29 @@ struct MetabolicPreferencesView: View {
 
     var body: some View {
         @Bindable var coordinator = coordinator
-        VStack(alignment: .leading, spacing: 24) {
-            VStack(alignment: .leading, spacing: 8) {
+        ScrollView {
+            VStack(spacing: 0) {
+                // Title
                 Text("Metabolic Health")
-                    .font(.title2)
-                    .fontWeight(.bold)
+                    .font(.system(size: 28, weight: .bold))
                     .foregroundColor(.white)
-                Text("Support blood sugar and metabolism")
-                    .font(.subheadline)
-                    .foregroundColor(.white.opacity(0.7))
-            }
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 12)
 
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
+                // Subtitle
+                Text("Support blood sugar and metabolism")
+                    .font(.system(size: 17))
+                    .foregroundColor(.white.opacity(0.6))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 40)
+
+                // Form content
+                VStack(alignment: .leading, spacing: 24) {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Preferred fasting window?")
+                            .font(.system(size: 17))
                             .foregroundColor(.white)
                         Picker("", selection: $coordinator.metabolicFastingHours) {
                             Text("12 hours").tag(12)
@@ -4644,13 +4592,16 @@ struct MetabolicPreferencesView: View {
                     }
 
                     Toggle("Blood sugar concerns?", isOn: $coordinator.metabolicBloodSugarConcern)
+                        .font(.system(size: 17))
                         .foregroundColor(.white)
 
                     Toggle("Prefer lower-carb approach?", isOn: $coordinator.metabolicPreferLowerCarbs)
+                        .font(.system(size: 17))
                         .foregroundColor(.white)
 
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Meal timing consistency preference?")
+                            .font(.system(size: 17))
                             .foregroundColor(.white)
                         Picker("", selection: $coordinator.metabolicMealTimingConsistency) {
                             Text("Flexible").tag("Flexible")
@@ -4660,32 +4611,9 @@ struct MetabolicPreferencesView: View {
                         .pickerStyle(.segmented)
                     }
                 }
-            }
-
-            Spacer()
-
-            HStack {
-                Button("Skip") {
-                    coordinator.metabolicFastingHours = 14
-                    coordinator.metabolicBloodSugarConcern = false
-                    coordinator.metabolicPreferLowerCarbs = false
-                    coordinator.metabolicMealTimingConsistency = "Consistent"
-                    coordinator.nextScreen()
-                }
-                .foregroundColor(.white.opacity(0.7))
-
-                Spacer()
-
-                Button("Continue") { coordinator.nextScreen() }
-                    .font(.headline)
-                    .foregroundColor(.black)
-                    .padding(.horizontal, 32)
-                    .padding(.vertical, 12)
-                    .background(Color.nutriSyncAccent)
-                    .cornerRadius(12)
+                .padding(.horizontal, 20)
             }
         }
-        .padding(24)
     }
 }
 
