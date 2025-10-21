@@ -667,7 +667,7 @@ class NutriSyncOnboardingViewModel {
     }
 
     /// Check if preference screen should be shown (rank 1-2 only)
-    private func shouldShowPreferences(for goal: SpecificGoal) -> Bool {
+    func shouldShowPreferences(for goal: SpecificGoal) -> Bool {
         guard let rank = rankedGoals.firstIndex(where: { $0.goal == goal }) else {
             return false
         }
