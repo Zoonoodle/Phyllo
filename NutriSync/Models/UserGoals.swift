@@ -19,7 +19,17 @@ struct UserGoals: Codable {
     var dailyFat: Int?
     var targetWeight: Double?
     var timeline: Int? // weeks
-    
+
+    // NEW: Specific goals with priority ranking
+    var rankedSpecificGoals: [RankedGoal]?
+
+    // NEW: Goal-specific preferences (only for rank 1-2)
+    var sleepPreferences: SleepOptimizationPreferences?
+    var energyPreferences: EnergyManagementPreferences?
+    var musclePreferences: MuscleGainPreferences?
+    var performancePreferences: PerformancePreferences?
+    var metabolicPreferences: MetabolicHealthPreferences?
+
     enum Goal: String, CaseIterable, Codable {
         case loseWeight = "Weight Loss"
         case buildMuscle = "Build Muscle"
@@ -28,14 +38,14 @@ struct UserGoals: Codable {
         case betterSleep = "Better Sleep"
         case overallHealth = "Overall Health"
     }
-    
+
     enum ActivityLevel: String, CaseIterable, Codable {
         case sedentary = "Sedentary"
         case lightlyActive = "Lightly Active"
         case moderatelyActive = "Moderately Active"
         case veryActive = "Very Active"
         case athlete = "Athlete"
-        
+
         var multiplier: Double {
             switch self {
             case .sedentary: return 1.2
@@ -46,7 +56,20 @@ struct UserGoals: Codable {
             }
         }
     }
-    
+
+    // COMPUTED PROPERTIES
+    var topPriorityGoal: SpecificGoal? {
+        rankedSpecificGoals?.first?.goal
+    }
+
+    var hasMultipleGoals: Bool {
+        (rankedSpecificGoals?.count ?? 0) > 1
+    }
+
+    func priorityRank(for goal: SpecificGoal) -> Int? {
+        rankedSpecificGoals?.firstIndex(where: { $0.goal == goal })
+    }
+
     // Default goals for new users
     static let defaultGoals = UserGoals(
         primaryGoal: .overallHealth,
@@ -56,7 +79,160 @@ struct UserGoals: Codable {
         dailyCarbs: 250,
         dailyFat: 67,
         targetWeight: nil,
-        timeline: nil
+        timeline: nil,
+        rankedSpecificGoals: nil,
+        sleepPreferences: nil,
+        energyPreferences: nil,
+        musclePreferences: nil,
+        performancePreferences: nil,
+        metabolicPreferences: nil
+    )
+}
+
+// MARK: - Ranked Goal & Specific Goals
+
+/// Ranked goal wrapper - tracks priority order
+struct RankedGoal: Codable, Identifiable, Hashable {
+    let id: UUID
+    let goal: SpecificGoal
+    var rank: Int  // 0 = highest priority
+
+    init(goal: SpecificGoal, rank: Int) {
+        self.id = UUID()
+        self.goal = goal
+        self.rank = rank
+    }
+}
+
+/// Specific nutrition goals
+enum SpecificGoal: String, CaseIterable, Codable, Identifiable, Hashable {
+    case muscleGain = "Build Muscle & Recover"
+    case steadyEnergy = "Steady Energy Levels"
+    case betterSleep = "Better Sleep Quality"
+    case athleticPerformance = "Athletic Performance"
+    case metabolicHealth = "Metabolic Health"
+
+    var id: String { rawValue }
+
+    var icon: String {
+        switch self {
+        case .muscleGain: return "💪"
+        case .steadyEnergy: return "⚡️"
+        case .betterSleep: return "😴"
+        case .athleticPerformance: return "🏃"
+        case .metabolicHealth: return "🧬"
+        }
+    }
+
+    var subtitle: String {
+        switch self {
+        case .muscleGain: return "Optimize protein timing and recovery windows"
+        case .steadyEnergy: return "Avoid crashes and stay energized all day"
+        case .betterSleep: return "Optimize meal timing for better rest"
+        case .athleticPerformance: return "Fuel your workouts effectively"
+        case .metabolicHealth: return "Support blood sugar and metabolic function"
+        }
+    }
+
+    var primaryWindowPurposes: [MealWindow.WindowPurpose] {
+        switch self {
+        case .muscleGain: return [.recovery, .postWorkout]
+        case .steadyEnergy: return [.sustainedEnergy, .focusBoost]
+        case .betterSleep: return [.sleepOptimization]
+        case .athleticPerformance: return [.preWorkout, .postWorkout]
+        case .metabolicHealth: return [.metabolicBoost]
+        }
+    }
+}
+
+// MARK: - Preference Structures
+
+/// Sleep optimization preferences (for Rank 1-2 only)
+struct SleepOptimizationPreferences: Codable, Hashable {
+    var typicalBedtime: Date  // Time component only
+    var hoursBeforeBed: Int  // 2, 3, or 4 hours
+    var avoidLateCarbs: Bool
+    var sleepQualitySensitivity: String  // "Low", "Medium", "High"
+
+    static let defaultForRank3Plus = SleepOptimizationPreferences(
+        typicalBedtime: Date.from(hour: 22, minute: 0),  // 10 PM default
+        hoursBeforeBed: 3,
+        avoidLateCarbs: true,
+        sleepQualitySensitivity: "Medium"
+    )
+}
+
+/// Energy management preferences (for Rank 1-2 only)
+struct EnergyManagementPreferences: Codable, Hashable {
+    var crashTimes: [CrashTime]  // When user experiences crashes
+    var preferredMealFrequency: Int  // 3, 4, 5, or 6 meals
+    var caffeineSensitivity: String  // "Low", "Medium", "High"
+
+    enum CrashTime: String, CaseIterable, Codable, Hashable {
+        case midMorning = "Mid-Morning (9-11 AM)"
+        case afternoon = "Afternoon (2-4 PM)"
+        case evening = "Evening (6-8 PM)"
+        case none = "No specific pattern"
+    }
+
+    static let defaultForRank3Plus = EnergyManagementPreferences(
+        crashTimes: [.afternoon],
+        preferredMealFrequency: 4,
+        caffeineSensitivity: "Medium"
+    )
+}
+
+/// Muscle gain preferences (for Rank 1-2 only)
+struct MuscleGainPreferences: Codable, Hashable {
+    var trainingDaysPerWeek: Int  // 3-7
+    var trainingStyle: TrainingStyle
+    var proteinDistribution: String  // "Even", "Post-Workout Focus", "Maximum"
+    var supplementProtein: Bool  // Do they use protein powder?
+
+    enum TrainingStyle: String, CaseIterable, Codable, Hashable {
+        case strength = "Strength Training"
+        case hypertrophy = "Hypertrophy/Bodybuilding"
+        case powerlifting = "Powerlifting"
+        case generalFitness = "General Fitness"
+    }
+
+    static let defaultForRank3Plus = MuscleGainPreferences(
+        trainingDaysPerWeek: 4,
+        trainingStyle: .generalFitness,
+        proteinDistribution: "Even",
+        supplementProtein: false
+    )
+}
+
+/// Performance preferences (for Rank 1-2 only)
+struct PerformancePreferences: Codable, Hashable {
+    var typicalWorkoutTime: Date  // Time component only
+    var workoutDuration: Int  // Minutes (30, 45, 60, 90, 120)
+    var preworkoutMealDesired: Bool
+    var postworkoutMealDesired: Bool
+    var workoutIntensity: String  // "Light", "Moderate", "Intense"
+
+    static let defaultForRank3Plus = PerformancePreferences(
+        typicalWorkoutTime: Date.from(hour: 17, minute: 0),  // 5 PM default
+        workoutDuration: 60,
+        preworkoutMealDesired: true,
+        postworkoutMealDesired: true,
+        workoutIntensity: "Moderate"
+    )
+}
+
+/// Metabolic health preferences (for Rank 1-2 only)
+struct MetabolicHealthPreferences: Codable, Hashable {
+    var fastingWindowHours: Int  // 12, 14, 16, 18
+    var bloodSugarConcern: Bool
+    var preferLowerCarbs: Bool
+    var mealTimingConsistency: String  // "Flexible", "Consistent", "Very Strict"
+
+    static let defaultForRank3Plus = MetabolicHealthPreferences(
+        fastingWindowHours: 14,
+        bloodSugarConcern: false,
+        preferLowerCarbs: false,
+        mealTimingConsistency: "Consistent"
     )
 }
 

@@ -117,10 +117,40 @@ class NutriSyncOnboardingViewModel {
         }
     }
     
-    // Workout data
+    // NEW: Specific goals and ranking
+    var selectedSpecificGoals: Set<SpecificGoal> = []
+    var rankedGoals: [RankedGoal] = []
+
+    // NEW: Goal-specific preference storage
+    var sleepBedtime: Date = Date.from(hour: 22, minute: 0)
+    var sleepHoursBeforeBed: Int = 3
+    var sleepAvoidLateCarbs: Bool = true
+    var sleepQualitySensitivity: String = "Medium"
+
+    var energyCrashTimes: Set<EnergyManagementPreferences.CrashTime> = []
+    var energyMealFrequency: Int = 4
+    var energyCaffeineSensitivity: String = "Medium"
+
+    var muscleTrainingDays: Int = 4
+    var muscleTrainingStyle: MuscleGainPreferences.TrainingStyle = .generalFitness
+    var muscleProteinDistribution: String = "Even"
+    var muscleSupplementProtein: Bool = false
+
+    var performanceWorkoutTime: Date = Date.from(hour: 17, minute: 0)
+    var performanceWorkoutDuration: Int = 60
+    var performancePreworkoutMeal: Bool = true
+    var performancePostworkoutMeal: Bool = true
+    var performanceWorkoutIntensity: String = "Moderate"
+
+    var metabolicFastingHours: Int = 14
+    var metabolicBloodSugarConcern: Bool = false
+    var metabolicPreferLowerCarbs: Bool = false
+    var metabolicMealTimingConsistency: String = "Consistent"
+
+    // Workout nutrition timing
     var preworkoutTiming: String = ""
     var postworkoutTiming: String = ""
-    
+
     // Nutrition preferences
     var dietaryRestrictions: Set<String> = []
     var largerMealPreference: String = ""
@@ -542,10 +572,108 @@ class NutriSyncOnboardingViewModel {
             dailyCarbs: macros.carbs,      // Use MacroProfile calculation
             dailyFat: macros.fat,          // Use MacroProfile calculation
             targetWeight: targetWeight.map { $0 * 2.20462 }, // Convert to pounds safely
-            timeline: 12 // Default 12 weeks
+            timeline: 12, // Default 12 weeks
+            rankedSpecificGoals: rankedGoals.isEmpty ? nil : rankedGoals,
+            sleepPreferences: buildSleepPreferences(),
+            energyPreferences: buildEnergyPreferences(),
+            musclePreferences: buildMusclePreferences(),
+            performancePreferences: buildPerformancePreferences(),
+            metabolicPreferences: buildMetabolicPreferences()
         )
     }
-    
+
+    // MARK: - Preference Builder Methods
+
+    private func buildSleepPreferences() -> SleepOptimizationPreferences? {
+        guard rankedGoals.contains(where: { $0.goal == .betterSleep }) else { return nil }
+
+        let rank = rankedGoals.firstIndex(where: { $0.goal == .betterSleep }) ?? 99
+        if rank >= 2 {
+            // Rank 3+: Use defaults
+            return SleepOptimizationPreferences.defaultForRank3Plus
+        }
+
+        // Rank 1-2: Use collected data
+        return SleepOptimizationPreferences(
+            typicalBedtime: sleepBedtime,
+            hoursBeforeBed: sleepHoursBeforeBed,
+            avoidLateCarbs: sleepAvoidLateCarbs,
+            sleepQualitySensitivity: sleepQualitySensitivity
+        )
+    }
+
+    private func buildEnergyPreferences() -> EnergyManagementPreferences? {
+        guard rankedGoals.contains(where: { $0.goal == .steadyEnergy }) else { return nil }
+
+        let rank = rankedGoals.firstIndex(where: { $0.goal == .steadyEnergy }) ?? 99
+        if rank >= 2 {
+            return EnergyManagementPreferences.defaultForRank3Plus
+        }
+
+        return EnergyManagementPreferences(
+            crashTimes: Array(energyCrashTimes),
+            preferredMealFrequency: energyMealFrequency,
+            caffeineSensitivity: energyCaffeineSensitivity
+        )
+    }
+
+    private func buildMusclePreferences() -> MuscleGainPreferences? {
+        guard rankedGoals.contains(where: { $0.goal == .muscleGain }) else { return nil }
+
+        let rank = rankedGoals.firstIndex(where: { $0.goal == .muscleGain }) ?? 99
+        if rank >= 2 {
+            return MuscleGainPreferences.defaultForRank3Plus
+        }
+
+        return MuscleGainPreferences(
+            trainingDaysPerWeek: muscleTrainingDays,
+            trainingStyle: muscleTrainingStyle,
+            proteinDistribution: muscleProteinDistribution,
+            supplementProtein: muscleSupplementProtein
+        )
+    }
+
+    private func buildPerformancePreferences() -> PerformancePreferences? {
+        guard rankedGoals.contains(where: { $0.goal == .athleticPerformance }) else { return nil }
+
+        let rank = rankedGoals.firstIndex(where: { $0.goal == .athleticPerformance }) ?? 99
+        if rank >= 2 {
+            return PerformancePreferences.defaultForRank3Plus
+        }
+
+        return PerformancePreferences(
+            typicalWorkoutTime: performanceWorkoutTime,
+            workoutDuration: performanceWorkoutDuration,
+            preworkoutMealDesired: performancePreworkoutMeal,
+            postworkoutMealDesired: performancePostworkoutMeal,
+            workoutIntensity: performanceWorkoutIntensity
+        )
+    }
+
+    private func buildMetabolicPreferences() -> MetabolicHealthPreferences? {
+        guard rankedGoals.contains(where: { $0.goal == .metabolicHealth }) else { return nil }
+
+        let rank = rankedGoals.firstIndex(where: { $0.goal == .metabolicHealth }) ?? 99
+        if rank >= 2 {
+            return MetabolicHealthPreferences.defaultForRank3Plus
+        }
+
+        return MetabolicHealthPreferences(
+            fastingWindowHours: metabolicFastingHours,
+            bloodSugarConcern: metabolicBloodSugarConcern,
+            preferLowerCarbs: metabolicPreferLowerCarbs,
+            mealTimingConsistency: metabolicMealTimingConsistency
+        )
+    }
+
+    /// Check if preference screen should be shown (rank 1-2 only)
+    private func shouldShowPreferences(for goal: SpecificGoal) -> Bool {
+        guard let rank = rankedGoals.firstIndex(where: { $0.goal == goal }) else {
+            return false
+        }
+        return rank < 2  // Only show for rank 1-2 (indices 0 and 1)
+    }
+
     /// Calculate carbs based on calories and goal
     private func calculateCarbs(calories: Int, goal: NutritionGoal) -> Int {
         let carbCalorieRatio: Double
@@ -827,10 +955,61 @@ struct NutriSyncOnboardingCoordinator: View {
         case "Workout Schedule":
             Text("Workout Schedule screen removed")
                 .foregroundColor(.white)
-        case "Pre-Workout Nutrition":
-            PreWorkoutNutritionContentView()
-        case "Post-Workout Nutrition":
-            PostWorkoutNutritionContentView()
+        // NEW: Specific Goals & Preferences Screens
+        case "Specific Goals":
+            SpecificGoalsSelectionView()
+        case "Goal Ranking":
+            // Conditional: only shown if 2+ goals selected
+            if viewModel.selectedSpecificGoals.count > 1 {
+                GoalRankingView()
+            } else {
+                Text("Skipping ranking (only 1 goal selected)")
+                    .foregroundColor(.white)
+                    .onAppear { viewModel.nextScreen() }
+            }
+        case "Sleep Preferences":
+            // Conditional: only shown if betterSleep in rank 1-2
+            if viewModel.shouldShowPreferences(for: .betterSleep) {
+                SleepPreferencesView()
+            } else {
+                Text("Skipping sleep preferences")
+                    .foregroundColor(.white)
+                    .onAppear { viewModel.nextScreen() }
+            }
+        case "Energy Preferences":
+            if viewModel.shouldShowPreferences(for: .steadyEnergy) {
+                EnergyPreferencesView()
+            } else {
+                Text("Skipping energy preferences")
+                    .foregroundColor(.white)
+                    .onAppear { viewModel.nextScreen() }
+            }
+        case "Muscle Preferences":
+            if viewModel.shouldShowPreferences(for: .muscleGain) {
+                MusclePreferencesView()
+            } else {
+                Text("Skipping muscle preferences")
+                    .foregroundColor(.white)
+                    .onAppear { viewModel.nextScreen() }
+            }
+        case "Performance Preferences":
+            if viewModel.shouldShowPreferences(for: .athleticPerformance) {
+                PerformancePreferencesView()
+            } else {
+                Text("Skipping performance preferences")
+                    .foregroundColor(.white)
+                    .onAppear { viewModel.nextScreen() }
+            }
+        case "Metabolic Preferences":
+            if viewModel.shouldShowPreferences(for: .metabolicHealth) {
+                MetabolicPreferencesView()
+            } else {
+                Text("Skipping metabolic preferences")
+                    .foregroundColor(.white)
+                    .onAppear { self.nextScreen() }
+            }
+        case "Goal Impact Preview":
+            GoalImpactPreviewView()
 
         // Program Section
         case "Diet Preference":

@@ -3154,186 +3154,6 @@ struct WeightGoalContentView: View {
     }
 }
 
-struct PreWorkoutNutritionContentView: View {
-    @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
-    @State private var selectedTiming = ""
-    @State private var isInitialized = false
-    
-    let timings = [
-        ("30 minutes before", "Quick energy boost"),
-        ("1 hour before", "Optimal for most workouts"),
-        ("2 hours before", "For larger meals"),
-        ("No pre-workout meal", "I prefer fasted training")
-    ]
-    
-    var body: some View {
-        ScrollView {
-            VStack(spacing: 0) {
-                // Title
-                Text("Pre-Workout Nutrition")
-                    .font(.system(size: 28, weight: .bold))
-                    .foregroundColor(.white)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 12)
-                
-                // Subtitle
-                Text("When do you prefer to eat before exercising?")
-                    .font(.system(size: 17))
-                    .foregroundColor(.white.opacity(0.6))
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 40)
-                
-                // Timing options
-                VStack(spacing: 16) {
-                    ForEach(timings, id: \.0) { timing, description in
-                        Button {
-                            selectedTiming = timing
-                            coordinator.preworkoutTiming = timing
-                        } label: {
-                            HStack {
-                                VStack(alignment: .leading, spacing: 6) {
-                                    Text(timing)
-                                        .font(.system(size: 18, weight: .semibold))
-                                        .foregroundColor(.white)
-                                    
-                                    Text(description)
-                                        .font(.system(size: 14))
-                                        .foregroundColor(.white.opacity(0.6))
-                                }
-                                
-                                Spacer()
-                                
-                                if selectedTiming == timing {
-                                    Image(systemName: "checkmark.circle.fill")
-                                        .font(.system(size: 24))
-                                        .foregroundColor(.white)
-                                }
-                            }
-                            .padding(20)
-                            .background(Color.white.opacity(0.03))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 16)
-                                    .stroke(selectedTiming == timing ? Color.white : Color.white.opacity(0.2), lineWidth: selectedTiming == timing ? 3 : 1)
-                            )
-                            .cornerRadius(16)
-                        }
-                    }
-                }
-                .padding(.horizontal, 20)
-                
-                Spacer(minLength: 80) // Space for navigation buttons
-            }
-        }
-        .onAppear {
-            loadDataFromCoordinator()
-        }
-    }
-    
-    private func loadDataFromCoordinator() {
-        guard !isInitialized else { return }
-        isInitialized = true
-        
-        if !coordinator.preworkoutTiming.isEmpty {
-            selectedTiming = coordinator.preworkoutTiming
-        } else {
-            selectedTiming = "1 hour before" // Default
-            coordinator.preworkoutTiming = selectedTiming
-        }
-    }
-}
-
-struct PostWorkoutNutritionContentView: View {
-    @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
-    @State private var selectedTiming = ""
-    @State private var isInitialized = false
-    
-    let timings = [
-        ("Within 30 minutes", "Maximize recovery window"),
-        ("Within 1 hour", "Good for muscle recovery"),
-        ("Within 2 hours", "Flexible timing"),
-        ("No specific timing", "I eat when convenient")
-    ]
-    
-    var body: some View {
-        ScrollView {
-            VStack(spacing: 0) {
-                // Title
-                Text("Post-Workout Nutrition")
-                    .font(.system(size: 28, weight: .bold))
-                    .foregroundColor(.white)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 12)
-                
-                // Subtitle
-                Text("When do you prefer to eat after exercising?")
-                    .font(.system(size: 17))
-                    .foregroundColor(.white.opacity(0.6))
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 40)
-                
-                // Timing options
-                VStack(spacing: 16) {
-                    ForEach(timings, id: \.0) { timing, description in
-                        Button {
-                            selectedTiming = timing
-                            coordinator.postworkoutTiming = timing
-                        } label: {
-                            HStack {
-                                VStack(alignment: .leading, spacing: 6) {
-                                    Text(timing)
-                                        .font(.system(size: 18, weight: .semibold))
-                                        .foregroundColor(.white)
-                                    
-                                    Text(description)
-                                        .font(.system(size: 14))
-                                        .foregroundColor(.white.opacity(0.6))
-                                }
-                                
-                                Spacer()
-                                
-                                if selectedTiming == timing {
-                                    Image(systemName: "checkmark.circle.fill")
-                                        .font(.system(size: 24))
-                                        .foregroundColor(.white)
-                                }
-                            }
-                            .padding(20)
-                            .background(Color.white.opacity(0.03))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 16)
-                                    .stroke(selectedTiming == timing ? Color.white : Color.white.opacity(0.2), lineWidth: selectedTiming == timing ? 3 : 1)
-                            )
-                            .cornerRadius(16)
-                        }
-                    }
-                }
-                .padding(.horizontal, 20)
-                
-                Spacer(minLength: 80) // Space for navigation buttons
-            }
-        }
-        .onAppear {
-            loadDataFromCoordinator()
-        }
-    }
-    
-    private func loadDataFromCoordinator() {
-        guard !isInitialized else { return }
-        isInitialized = true
-        
-        if !coordinator.postworkoutTiming.isEmpty {
-            selectedTiming = coordinator.postworkoutTiming
-        } else {
-            selectedTiming = "Within 1 hour" // Default
-            coordinator.postworkoutTiming = selectedTiming
-        }
-    }
-}
-
 // MARK: - Program Section Content Views (Placeholders)
 
 struct DietPreferenceContentView: View {
@@ -4158,6 +3978,952 @@ struct YourPlanIsReadyContentView: View {
             }
             RunLoop.current.add(timer, forMode: .common)
         }
+    }
+}
+
+// MARK: - Specific Goals Selection View
+
+struct SpecificGoalsSelectionView: View {
+    @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
+
+    let columns = [
+        GridItem(.flexible(), spacing: 16),
+        GridItem(.flexible(), spacing: 16)
+    ]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 24) {
+            // Header
+            VStack(alignment: .leading, spacing: 8) {
+                Text("What are your specific nutrition goals?")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundColor(.white)
+
+                Text("Select all that apply - we'll customize your plan")
+                    .font(.subheadline)
+                    .foregroundColor(.white.opacity(0.7))
+            }
+
+            // Goal Cards Grid
+            LazyVGrid(columns: columns, spacing: 16) {
+                ForEach(SpecificGoal.allCases) { goal in
+                    GoalCard(
+                        goal: goal,
+                        isSelected: coordinator.selectedSpecificGoals.contains(goal)
+                    ) {
+                        toggleGoal(goal)
+                    }
+                }
+            }
+
+            Spacer()
+
+            // Continue Button
+            Button(action: {
+                // Convert selected goals to ranked goals with initial ranking
+                coordinator.rankedGoals = Array(coordinator.selectedSpecificGoals.enumerated().map { index, goal in
+                    RankedGoal(goal: goal, rank: index)
+                })
+                coordinator.nextScreen()
+            }) {
+                Text("Continue")
+                    .font(.headline)
+                    .foregroundColor(.black)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(coordinator.selectedSpecificGoals.isEmpty ? Color.gray : Color.nutriSyncAccent)
+                    .cornerRadius(12)
+            }
+            .disabled(coordinator.selectedSpecificGoals.isEmpty)
+        }
+        .padding(24)
+    }
+
+    private func toggleGoal(_ goal: SpecificGoal) {
+        if coordinator.selectedSpecificGoals.contains(goal) {
+            coordinator.selectedSpecificGoals.remove(goal)
+        } else {
+            coordinator.selectedSpecificGoals.insert(goal)
+        }
+    }
+}
+
+// MARK: - Goal Card Component
+
+struct GoalCard: View {
+    let goal: SpecificGoal
+    let isSelected: Bool
+    let onTap: () -> Void
+
+    var body: some View {
+        Button(action: onTap) {
+            VStack(spacing: 12) {
+                // Icon
+                Text(goal.icon)
+                    .font(.system(size: 40))
+
+                // Goal Name
+                Text(goal.rawValue)
+                    .font(.headline)
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.8)
+
+                // Subtitle
+                Text(goal.subtitle)
+                    .font(.caption)
+                    .foregroundColor(.white.opacity(0.6))
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.8)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(16)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color.white.opacity(0.03))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(isSelected ? Color.nutriSyncAccent : Color.white.opacity(0.1), lineWidth: isSelected ? 2 : 1)
+                    )
+            )
+            .overlay(
+                // Checkmark overlay when selected
+                Group {
+                    if isSelected {
+                        VStack {
+                            HStack {
+                                Spacer()
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundColor(.nutriSyncAccent)
+                                    .font(.title3)
+                                    .padding(8)
+                            }
+                            Spacer()
+                        }
+                    }
+                }
+            )
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+}
+
+// MARK: - Goal Ranking View
+
+struct GoalRankingView: View {
+    @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
+
+    var body: some View {
+        @Bindable var coordinator = coordinator
+        VStack(alignment: .leading, spacing: 24) {
+            // Header
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Rank Your Goals")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundColor(.white)
+
+                Text("Drag to reorder by priority")
+                    .font(.subheadline)
+                    .foregroundColor(.white.opacity(0.7))
+
+                Text("Your #1 goal will have the most influence on your meal windows")
+                    .font(.caption)
+                    .foregroundColor(.white.opacity(0.6))
+                    .padding(.top, 4)
+            }
+
+            // Ranked Goals List
+            ScrollView {
+                VStack(spacing: 12) {
+                    ForEach(Array(coordinator.rankedGoals.enumerated()), id: \.element.id) { index, rankedGoal in
+                        RankedGoalRow(
+                            rankedGoal: rankedGoal,
+                            rank: index
+                        )
+                        .onDrag {
+                            NSItemProvider(object: rankedGoal.id.uuidString as NSString)
+                        }
+                        .onDrop(of: [.text], delegate: DropViewDelegate(
+                            currentItem: rankedGoal,
+                            items: $coordinator.rankedGoals,
+                            draggedItem: .constant(nil)
+                        ))
+                    }
+                }
+            }
+
+            Spacer()
+
+            // Continue Button
+            Button(action: {
+                // Update ranks based on position in array
+                for (index, _) in coordinator.rankedGoals.enumerated() {
+                    coordinator.rankedGoals[index].rank = index
+                }
+                coordinator.nextScreen()
+            }) {
+                Text("Continue")
+                    .font(.headline)
+                    .foregroundColor(.black)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.nutriSyncAccent)
+                    .cornerRadius(12)
+            }
+        }
+        .padding(24)
+    }
+}
+
+// MARK: - Ranked Goal Row
+
+struct RankedGoalRow: View {
+    let rankedGoal: RankedGoal
+    let rank: Int
+
+    private var rankLabel: String {
+        switch rank {
+        case 0: return "1st"
+        case 1: return "2nd"
+        case 2: return "3rd"
+        case 3: return "4th"
+        case 4: return "5th"
+        default: return "\(rank + 1)th"
+        }
+    }
+
+    private var detailText: String {
+        rank < 2 ? "We'll ask detailed questions" : "We'll use smart defaults"
+    }
+
+    private var accentColor: Color {
+        rank < 2 ? Color.nutriSyncAccent : Color.white.opacity(0.4)
+    }
+
+    var body: some View {
+        HStack(spacing: 16) {
+            // Rank Badge
+            Text(rankLabel)
+                .font(.headline)
+                .foregroundColor(rank < 2 ? .black : .white.opacity(0.7))
+                .frame(width: 50, height: 50)
+                .background(
+                    Circle()
+                        .fill(accentColor)
+                )
+
+            // Goal Info
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 8) {
+                    Text(rankedGoal.goal.icon)
+                        .font(.title3)
+
+                    Text(rankedGoal.goal.rawValue)
+                        .font(.headline)
+                        .foregroundColor(.white)
+                }
+
+                Text(detailText)
+                    .font(.caption)
+                    .foregroundColor(.white.opacity(0.6))
+            }
+
+            Spacer()
+
+            // Drag Handle
+            Image(systemName: "line.3.horizontal")
+                .foregroundColor(.white.opacity(0.4))
+                .font(.title3)
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.white.opacity(0.03))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(accentColor, lineWidth: rank < 2 ? 2 : 1)
+                )
+        )
+    }
+}
+
+// MARK: - Drop Delegate for Reordering
+
+struct DropViewDelegate: DropDelegate {
+    let currentItem: RankedGoal
+    @Binding var items: [RankedGoal]
+    @Binding var draggedItem: RankedGoal?
+
+    func performDrop(info: DropInfo) -> Bool {
+        return true
+    }
+
+    func dropEntered(info: DropInfo) {
+        guard let fromIndex = items.firstIndex(where: { $0.id == currentItem.id }) else { return }
+
+        if let draggedItem = draggedItem,
+           let toIndex = items.firstIndex(where: { $0.id == draggedItem.id }),
+           fromIndex != toIndex {
+            withAnimation {
+                items.move(fromOffsets: IndexSet(integer: toIndex), toOffset: fromIndex > toIndex ? fromIndex + 1 : fromIndex)
+            }
+        }
+    }
+
+    func dropUpdated(info: DropInfo) -> DropProposal? {
+        return DropProposal(operation: .move)
+    }
+}
+
+// MARK: - Sleep Preferences View
+
+struct SleepPreferencesView: View {
+    @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
+
+    var body: some View {
+        @Bindable var coordinator = coordinator
+        VStack(alignment: .leading, spacing: 24) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Sleep Optimization")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundColor(.white)
+
+                Text("Help us time your meals for better rest")
+                    .font(.subheadline)
+                    .foregroundColor(.white.opacity(0.7))
+            }
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    // Bedtime picker
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("What time do you typically go to bed?")
+                            .foregroundColor(.white)
+                        DatePicker("", selection: $coordinator.sleepBedtime, displayedComponents: .hourAndMinute)
+                            .datePickerStyle(.compact)
+                            .labelsHidden()
+                    }
+
+                    // Hours before bed
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("How many hours before bed should your last meal end?")
+                            .foregroundColor(.white)
+                        Picker("", selection: $coordinator.sleepHoursBeforeBed) {
+                            Text("2 hours (flexible)").tag(2)
+                            Text("3 hours (recommended)").tag(3)
+                            Text("4 hours (strict)").tag(4)
+                        }
+                        .pickerStyle(.segmented)
+                    }
+
+                    // Avoid late carbs toggle
+                    Toggle("Avoid high-carb foods in evening", isOn: $coordinator.sleepAvoidLateCarbs)
+                        .foregroundColor(.white)
+
+                    // Sleep sensitivity
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("How sensitive is your sleep to food timing?")
+                            .foregroundColor(.white)
+                        Picker("", selection: $coordinator.sleepQualitySensitivity) {
+                            Text("Low").tag("Low")
+                            Text("Medium").tag("Medium")
+                            Text("High").tag("High")
+                        }
+                        .pickerStyle(.segmented)
+                    }
+                }
+            }
+
+            Spacer()
+
+            HStack {
+                Button("Skip") {
+                    coordinator.sleepBedtime = Date.from(hour: 22, minute: 0)
+                    coordinator.sleepHoursBeforeBed = 3
+                    coordinator.sleepAvoidLateCarbs = true
+                    coordinator.sleepQualitySensitivity = "Medium"
+                    coordinator.nextScreen()
+                }
+                .foregroundColor(.white.opacity(0.7))
+
+                Spacer()
+
+                Button("Continue") {
+                    coordinator.nextScreen()
+                }
+                .font(.headline)
+                .foregroundColor(.black)
+                .padding(.horizontal, 32)
+                .padding(.vertical, 12)
+                .background(Color.nutriSyncAccent)
+                .cornerRadius(12)
+            }
+        }
+        .padding(24)
+    }
+}
+
+// MARK: - Energy, Muscle, Performance, Metabolic Preferences Views
+
+struct EnergyPreferencesView: View {
+    @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
+
+    var body: some View {
+        @Bindable var coordinator = coordinator
+        VStack(alignment: .leading, spacing: 24) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Energy Management")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundColor(.white)
+                Text("Let's prevent those energy crashes")
+                    .font(.subheadline)
+                    .foregroundColor(.white.opacity(0.7))
+            }
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    Text("When do you typically experience energy crashes?")
+                        .foregroundColor(.white)
+                    ForEach(EnergyManagementPreferences.CrashTime.allCases, id: \.self) { time in
+                        Toggle(time.rawValue, isOn: Binding(
+                            get: { coordinator.energyCrashTimes.contains(time) },
+                            set: { isOn in
+                                if isOn { coordinator.energyCrashTimes.insert(time) }
+                                else { coordinator.energyCrashTimes.remove(time) }
+                            }
+                        ))
+                        .foregroundColor(.white)
+                    }
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("How many meals per day do you prefer?")
+                            .foregroundColor(.white)
+                        Picker("", selection: $coordinator.energyMealFrequency) {
+                            ForEach([3, 4, 5, 6], id: \.self) { Text("\($0) meals").tag($0) }
+                        }
+                        .pickerStyle(.segmented)
+                    }
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Caffeine sensitivity?")
+                            .foregroundColor(.white)
+                        Picker("", selection: $coordinator.energyCaffeineSensitivity) {
+                            Text("Low").tag("Low")
+                            Text("Medium").tag("Medium")
+                            Text("High").tag("High")
+                        }
+                        .pickerStyle(.segmented)
+                    }
+                }
+            }
+
+            Spacer()
+
+            HStack {
+                Button("Skip") {
+                    coordinator.energyCrashTimes = [.afternoon]
+                    coordinator.energyMealFrequency = 4
+                    coordinator.energyCaffeineSensitivity = "Medium"
+                    coordinator.nextScreen()
+                }
+                .foregroundColor(.white.opacity(0.7))
+
+                Spacer()
+
+                Button("Continue") { coordinator.nextScreen() }
+                    .font(.headline)
+                    .foregroundColor(.black)
+                    .padding(.horizontal, 32)
+                    .padding(.vertical, 12)
+                    .background(Color.nutriSyncAccent)
+                    .cornerRadius(12)
+            }
+        }
+        .padding(24)
+    }
+}
+
+struct MusclePreferencesView: View {
+    @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
+
+    var body: some View {
+        @Bindable var coordinator = coordinator
+        VStack(alignment: .leading, spacing: 24) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Muscle Building & Recovery")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundColor(.white)
+                Text("Optimize your protein timing")
+                    .font(.subheadline)
+                    .foregroundColor(.white.opacity(0.7))
+            }
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("How many days per week do you train?")
+                            .foregroundColor(.white)
+                        Stepper("\(coordinator.muscleTrainingDays) days", value: $coordinator.muscleTrainingDays, in: 3...7)
+                            .foregroundColor(.white)
+                    }
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("What's your primary training style?")
+                            .foregroundColor(.white)
+                        Picker("", selection: $coordinator.muscleTrainingStyle) {
+                            ForEach(MuscleGainPreferences.TrainingStyle.allCases, id: \.self) {
+                                Text($0.rawValue).tag($0)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                    }
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Protein distribution preference?")
+                            .foregroundColor(.white)
+                        Picker("", selection: $coordinator.muscleProteinDistribution) {
+                            Text("Even throughout day").tag("Even")
+                            Text("Post-Workout Focus").tag("Post-Workout Focus")
+                            Text("Maximum (6 meals)").tag("Maximum")
+                        }
+                        .pickerStyle(.menu)
+                    }
+
+                    Toggle("I use protein supplements", isOn: $coordinator.muscleSupplementProtein)
+                        .foregroundColor(.white)
+                }
+            }
+
+            Spacer()
+
+            HStack {
+                Button("Skip") {
+                    coordinator.muscleTrainingDays = 4
+                    coordinator.muscleTrainingStyle = .generalFitness
+                    coordinator.muscleProteinDistribution = "Even"
+                    coordinator.muscleSupplementProtein = false
+                    coordinator.nextScreen()
+                }
+                .foregroundColor(.white.opacity(0.7))
+
+                Spacer()
+
+                Button("Continue") { coordinator.nextScreen() }
+                    .font(.headline)
+                    .foregroundColor(.black)
+                    .padding(.horizontal, 32)
+                    .padding(.vertical, 12)
+                    .background(Color.nutriSyncAccent)
+                    .cornerRadius(12)
+            }
+        }
+        .padding(24)
+    }
+}
+
+struct PerformancePreferencesView: View {
+    @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
+
+    var body: some View {
+        @Bindable var coordinator = coordinator
+        VStack(alignment: .leading, spacing: 24) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Athletic Performance")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundColor(.white)
+                Text("Fuel your workouts effectively")
+                    .font(.subheadline)
+                    .foregroundColor(.white.opacity(0.7))
+            }
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("When do you typically work out?")
+                            .foregroundColor(.white)
+                        DatePicker("", selection: $coordinator.performanceWorkoutTime, displayedComponents: .hourAndMinute)
+                            .datePickerStyle(.compact)
+                            .labelsHidden()
+                    }
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Average workout duration?")
+                            .foregroundColor(.white)
+                        Picker("", selection: $coordinator.performanceWorkoutDuration) {
+                            Text("30 min").tag(30)
+                            Text("60 min").tag(60)
+                            Text("90 min").tag(90)
+                            Text("2 hrs").tag(120)
+                        }
+                        .pickerStyle(.segmented)
+                    }
+
+                    Toggle("Want a pre-workout meal?", isOn: $coordinator.performancePreworkoutMeal)
+                        .foregroundColor(.white)
+
+                    Toggle("Want a post-workout meal?", isOn: $coordinator.performancePostworkoutMeal)
+                        .foregroundColor(.white)
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Workout intensity?")
+                            .foregroundColor(.white)
+                        Picker("", selection: $coordinator.performanceWorkoutIntensity) {
+                            Text("Light").tag("Light")
+                            Text("Moderate").tag("Moderate")
+                            Text("Intense").tag("Intense")
+                        }
+                        .pickerStyle(.segmented)
+                    }
+                }
+            }
+
+            Spacer()
+
+            HStack {
+                Button("Skip") {
+                    coordinator.performanceWorkoutTime = Date.from(hour: 17, minute: 0)
+                    coordinator.performanceWorkoutDuration = 60
+                    coordinator.performancePreworkoutMeal = true
+                    coordinator.performancePostworkoutMeal = true
+                    coordinator.performanceWorkoutIntensity = "Moderate"
+                    coordinator.nextScreen()
+                }
+                .foregroundColor(.white.opacity(0.7))
+
+                Spacer()
+
+                Button("Continue") { coordinator.nextScreen() }
+                    .font(.headline)
+                    .foregroundColor(.black)
+                    .padding(.horizontal, 32)
+                    .padding(.vertical, 12)
+                    .background(Color.nutriSyncAccent)
+                    .cornerRadius(12)
+            }
+        }
+        .padding(24)
+    }
+}
+
+struct MetabolicPreferencesView: View {
+    @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
+
+    var body: some View {
+        @Bindable var coordinator = coordinator
+        VStack(alignment: .leading, spacing: 24) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Metabolic Health")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundColor(.white)
+                Text("Support blood sugar and metabolism")
+                    .font(.subheadline)
+                    .foregroundColor(.white.opacity(0.7))
+            }
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Preferred fasting window?")
+                            .foregroundColor(.white)
+                        Picker("", selection: $coordinator.metabolicFastingHours) {
+                            Text("12 hours").tag(12)
+                            Text("14 hours").tag(14)
+                            Text("16 hours").tag(16)
+                            Text("18 hours").tag(18)
+                        }
+                        .pickerStyle(.segmented)
+                    }
+
+                    Toggle("Blood sugar concerns?", isOn: $coordinator.metabolicBloodSugarConcern)
+                        .foregroundColor(.white)
+
+                    Toggle("Prefer lower-carb approach?", isOn: $coordinator.metabolicPreferLowerCarbs)
+                        .foregroundColor(.white)
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Meal timing consistency preference?")
+                            .foregroundColor(.white)
+                        Picker("", selection: $coordinator.metabolicMealTimingConsistency) {
+                            Text("Flexible").tag("Flexible")
+                            Text("Consistent").tag("Consistent")
+                            Text("Very Strict").tag("Very Strict")
+                        }
+                        .pickerStyle(.segmented)
+                    }
+                }
+            }
+
+            Spacer()
+
+            HStack {
+                Button("Skip") {
+                    coordinator.metabolicFastingHours = 14
+                    coordinator.metabolicBloodSugarConcern = false
+                    coordinator.metabolicPreferLowerCarbs = false
+                    coordinator.metabolicMealTimingConsistency = "Consistent"
+                    coordinator.nextScreen()
+                }
+                .foregroundColor(.white.opacity(0.7))
+
+                Spacer()
+
+                Button("Continue") { coordinator.nextScreen() }
+                    .font(.headline)
+                    .foregroundColor(.black)
+                    .padding(.horizontal, 32)
+                    .padding(.vertical, 12)
+                    .background(Color.nutriSyncAccent)
+                    .cornerRadius(12)
+            }
+        }
+        .padding(24)
+    }
+}
+
+// MARK: - Goal Impact Preview View
+
+struct GoalImpactPreviewView: View {
+    @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 32) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Your Personalized Plan Preview")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
+
+                    Text("Here's how your goals will shape your meal windows")
+                        .font(.subheadline)
+                        .foregroundColor(.white.opacity(0.7))
+                }
+
+                // Mock Timeline
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("📅 Tomorrow's Meal Windows")
+                        .font(.headline)
+                        .foregroundColor(.white)
+
+                    ForEach(mockWindows, id: \.time) { window in
+                        HStack(spacing: 12) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(window.time)
+                                    .font(.subheadline)
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(Color.nutriSyncAccent)
+
+                                Text(window.title)
+                                    .font(.headline)
+                                    .foregroundColor(.white)
+
+                                Text(window.purpose)
+                                    .font(.caption)
+                                    .foregroundColor(.white.opacity(0.6))
+
+                                Text(window.description)
+                                    .font(.caption2)
+                                    .foregroundColor(.white.opacity(0.5))
+                            }
+
+                            Spacer()
+                        }
+                        .padding()
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color.white.opacity(0.03))
+                        )
+                    }
+                }
+
+                // Goal Impact Cards
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("🎯 How Your Goals Shape Your Plan")
+                        .font(.headline)
+                        .foregroundColor(.white)
+
+                    ForEach(Array(coordinator.rankedGoals.prefix(3).enumerated()), id: \.element.id) { index, rankedGoal in
+                        GoalImpactCard(goal: rankedGoal.goal, rank: index)
+                    }
+                }
+
+                Spacer(minLength: 20)
+
+                // Action Buttons
+                HStack(spacing: 16) {
+                    Button("Adjust") {
+                        // Go back to ranking screen
+                        coordinator.currentScreenIndex = max(0, coordinator.currentScreenIndex - (coordinator.rankedGoals.count > 1 ? 7 : 6))
+                    }
+                    .font(.headline)
+                    .foregroundColor(.white.opacity(0.7))
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.white.opacity(0.1))
+                    .cornerRadius(12)
+
+                    Button("Looks Good!") {
+                        coordinator.nextScreen()
+                    }
+                    .font(.headline)
+                    .foregroundColor(.black)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.nutriSyncAccent)
+                    .cornerRadius(12)
+                }
+            }
+            .padding(24)
+        }
+    }
+
+    private var mockWindows: [(time: String, title: String, purpose: String, description: String)] {
+        guard let topGoal = coordinator.rankedGoals.first?.goal else {
+            return [
+                ("7:00 AM - 8:30 AM", "Breakfast Window", "Balanced Start", "Energizing first meal"),
+                ("12:00 PM - 1:30 PM", "Lunch Window", "Sustained Energy", "Keep you going all afternoon"),
+                ("6:00 PM - 7:30 PM", "Dinner Window", "Recovery & Rest", "Light evening meal")
+            ]
+        }
+
+        switch topGoal {
+        case .muscleGain:
+            return [
+                ("7:00 AM - 8:30 AM", "Breakfast", "Muscle Recovery (#1)", "High protein, optimal timing"),
+                ("12:00 PM - 1:30 PM", "Lunch", "Sustained Energy", "Balanced macros"),
+                ("4:00 PM - 5:00 PM", "Pre-Workout", "Performance Fuel", "Light carbs for energy"),
+                ("6:30 PM - 7:30 PM", "Post-Workout", "Muscle Recovery (#1)", "High protein + carbs"),
+                ("9:00 PM", "Fasting Begins", "", "Recovery overnight")
+            ]
+        case .betterSleep:
+            let bedtime = coordinator.sleepBedtime
+            let hours = coordinator.sleepHoursBeforeBed
+            return [
+                ("7:00 AM - 8:30 AM", "Breakfast", "Morning Energy", "Balanced start"),
+                ("12:00 PM - 1:30 PM", "Lunch", "Sustained Energy", "Keep you alert"),
+                ("5:00 PM - 6:00 PM", "Dinner", "Sleep Optimization (#1)", "Ends \(hours) hrs before bed"),
+                ("10:00 PM", "Bedtime", "Fasting Window", "Optimized for sleep quality")
+            ]
+        case .steadyEnergy:
+            return [
+                ("7:00 AM - 8:30 AM", "Breakfast", "Morning Energy", "Balanced start"),
+                ("10:00 AM - 11:00 AM", "Mid-Morning Snack", "Energy Boost (#1)", "Prevent morning crash"),
+                ("1:00 PM - 2:00 PM", "Lunch", "Sustained Energy (#1)", "Balanced macros"),
+                ("3:30 PM - 4:30 PM", "Afternoon Snack", "Energy Boost (#1)", "Avoid afternoon crash"),
+                ("7:00 PM - 8:00 PM", "Dinner", "Evening Meal", "Light and satisfying")
+            ]
+        case .athleticPerformance:
+            return [
+                ("7:00 AM - 8:30 AM", "Breakfast", "Morning Fuel", "Energizing start"),
+                ("11:30 AM - 12:30 PM", "Pre-Workout", "Performance (#1)", "Carb-focused fuel"),
+                ("2:00 PM - 3:00 PM", "Post-Workout", "Recovery (#1)", "High protein + carbs"),
+                ("7:00 PM - 8:00 PM", "Dinner", "Recovery", "Complete nutrition")
+            ]
+        case .metabolicHealth:
+            return [
+                ("10:00 AM - 11:00 AM", "Breakfast", "Break Fast", "\(coordinator.metabolicFastingHours)hr fast complete"),
+                ("2:00 PM - 3:00 PM", "Lunch", "Metabolic Boost (#1)", "Blood sugar stable"),
+                ("6:00 PM - 7:00 PM", "Dinner", "Final Meal", "Prepare for fast"),
+                ("8:00 PM", "Fasting Begins", "Metabolic Health (#1)", "\(coordinator.metabolicFastingHours) hour window")
+            ]
+        }
+    }
+}
+
+struct GoalImpactCard: View {
+    let goal: SpecificGoal
+    let rank: Int
+
+    private var rankLabel: String {
+        switch rank {
+        case 0: return "#1 Priority"
+        case 1: return "#2 Priority"
+        case 2: return "#3 Priority"
+        default: return "#\(rank + 1)"
+        }
+    }
+
+    private var impacts: [String] {
+        switch goal {
+        case .muscleGain:
+            return [
+                "✓ 5 eating windows for optimal protein intake",
+                "✓ Post-workout window within 1 hour",
+                "✓ Protein distributed for recovery"
+            ]
+        case .betterSleep:
+            return [
+                "✓ Last meal ends 3 hours before bed",
+                "✓ Lower carbs in evening meals",
+                "✓ Lighter portions for better rest"
+            ]
+        case .steadyEnergy:
+            return [
+                "✓ 4-5 balanced meals throughout day",
+                "✓ Timed windows to prevent crashes",
+                "✓ Steady macro distribution"
+            ]
+        case .athleticPerformance:
+            return [
+                "✓ Pre-workout meal for fuel",
+                "✓ Post-workout for recovery",
+                "✓ Timing optimized around training"
+            ]
+        case .metabolicHealth:
+            return [
+                "✓ 14-hour fasting window",
+                "✓ Blood sugar stability focus",
+                "✓ Consistent meal timing"
+            ]
+        }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text(goal.icon)
+                    .font(.title3)
+
+                Text(goal.rawValue)
+                    .font(.headline)
+                    .foregroundColor(.white)
+
+                Spacer()
+
+                Text(rankLabel)
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundColor(rank == 0 ? .black : .white)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(rank == 0 ? Color.nutriSyncAccent : Color.white.opacity(0.2))
+                    .cornerRadius(8)
+            }
+
+            ForEach(impacts, id: \.self) { impact in
+                Text(impact)
+                    .font(.caption)
+                    .foregroundColor(.white.opacity(0.7))
+            }
+        }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.white.opacity(0.03))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(rank == 0 ? Color.nutriSyncAccent : Color.white.opacity(0.1), lineWidth: rank == 0 ? 2 : 1)
+                )
+        )
     }
 }
 

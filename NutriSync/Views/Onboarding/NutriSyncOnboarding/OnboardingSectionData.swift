@@ -84,8 +84,14 @@ struct NutriSyncOnboardingFlow {
             "Trend Weight",  // This will be dynamically shown/hidden
             "Weight Goal",    // This will be dynamically shown/hidden
             "Goal Summary",
-            "Pre-Workout Nutrition",
-            "Post-Workout Nutrition"
+            "Specific Goals",  // NEW: Multi-select specific goals
+            "Goal Ranking",  // NEW: Conditional - shown if 2+ goals selected
+            "Sleep Preferences",  // NEW: Conditional - shown if betterSleep in rank 1-2
+            "Energy Preferences",  // NEW: Conditional - shown if steadyEnergy in rank 1-2
+            "Muscle Preferences",  // NEW: Conditional - shown if muscleGain in rank 1-2
+            "Performance Preferences",  // NEW: Conditional - shown if athleticPerformance in rank 1-2
+            "Metabolic Preferences",  // NEW: Conditional - shown if metabolicHealth in rank 1-2
+            "Goal Impact Preview"  // NEW: Preview of how goals will shape meal plan
         ],
         .program: [
             "Diet Preference",
