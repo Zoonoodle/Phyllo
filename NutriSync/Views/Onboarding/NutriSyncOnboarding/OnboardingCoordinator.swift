@@ -888,13 +888,21 @@ struct NutriSyncOnboardingCoordinator: View {
             // Don't navigate - user must accept all terms including AI consent
             return
         }
-        
+
         // Check if on Goal Selection screen and no goal is selected
         if viewModel.currentScreen == "Goal Selection" && viewModel.goal.isEmpty {
             // Don't navigate - user must select a goal
             return
         }
-        
+
+        // Handle Specific Goals screen - convert selected goals to ranked goals
+        if viewModel.currentScreen == "Specific Goals" && !viewModel.selectedSpecificGoals.isEmpty {
+            // Convert Set to Array and create RankedGoal objects with initial ranking
+            viewModel.rankedGoals = Array(viewModel.selectedSpecificGoals.enumerated().map { index, goal in
+                RankedGoal(goal: goal, rank: index)
+            })
+        }
+
         // Screen-specific data saving will be handled by the screen's onDisappear
         // Just navigate to next
         viewModel.nextScreen()

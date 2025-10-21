@@ -4024,14 +4024,6 @@ struct SpecificGoalsSelectionView: View {
                 .padding(.horizontal, 20)
             }
         }
-        .onDisappear {
-            // Convert selected goals to ranked goals when leaving screen
-            if !coordinator.selectedSpecificGoals.isEmpty {
-                coordinator.rankedGoals = Array(coordinator.selectedSpecificGoals.enumerated().map { index, goal in
-                    RankedGoal(goal: goal, rank: index)
-                })
-            }
-        }
     }
 
     private func toggleGoal(_ goal: SpecificGoal) {
