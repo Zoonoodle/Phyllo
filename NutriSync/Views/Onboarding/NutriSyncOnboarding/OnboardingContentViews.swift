@@ -4102,6 +4102,7 @@ struct GoalCard: View {
 struct GoalRankingView: View {
     @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
     @State private var draggingItem: RankedGoal?
+    @State private var dragTimeoutTask: Task<Void, Never>?
 
     var body: some View {
         @Bindable var coordinator = coordinator
@@ -4142,6 +4143,20 @@ struct GoalRankingView: View {
                         .onDrag {
                             self.draggingItem = rankedGoal
                             coordinator.isGoalDragging = true
+
+                            // Safety timeout: clear dragging state after 0.5 seconds if not cleared
+                            // This matches the animation duration (0.3s) with a small buffer
+                            dragTimeoutTask?.cancel()
+                            dragTimeoutTask = Task {
+                                try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+                                if !Task.isCancelled {
+                                    await MainActor.run {
+                                        self.draggingItem = nil
+                                        coordinator.isGoalDragging = false
+                                    }
+                                }
+                            }
+
                             return NSItemProvider(object: rankedGoal.id.uuidString as NSString)
                         }
                         .onDrop(of: [.text], delegate: GoalDropDelegate(
@@ -4159,13 +4174,21 @@ struct GoalRankingView: View {
         .contentShape(Rectangle())
         .allowsHitTesting(true)
         .zIndex(1)
+        .onChange(of: draggingItem) { oldValue, newValue in
+            // When dragging stops, cancel timeout
+            if newValue == nil {
+                dragTimeoutTask?.cancel()
+            }
+        }
         .onDisappear {
             // Update ranks based on position in array when leaving screen
             for (index, _) in coordinator.rankedGoals.enumerated() {
                 coordinator.rankedGoals[index].rank = index
             }
-            // Reset dragging state
+            // Reset dragging state and cancel any pending timeouts
+            dragTimeoutTask?.cancel()
             coordinator.isGoalDragging = false
+            draggingItem = nil
         }
     }
 }
@@ -4251,6 +4274,7 @@ struct GoalDropDelegate: DropDelegate {
     @Binding var isDragging: Bool
 
     func performDrop(info: DropInfo) -> Bool {
+        // Clear dragging state when drop completes
         draggingItem = nil
         isDragging = false
         return true
@@ -4271,10 +4295,6 @@ struct GoalDropDelegate: DropDelegate {
 
     func dropUpdated(info: DropInfo) -> DropProposal? {
         return DropProposal(operation: .move)
-    }
-
-    func dropExited(info: DropInfo) {
-        // Keep dragging state true until performDrop is called
     }
 }
 
