@@ -4101,6 +4101,7 @@ struct GoalCard: View {
 
 struct GoalRankingView: View {
     @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
+    @State private var draggingItem: RankedGoal?
 
     var body: some View {
         @Bindable var coordinator = coordinator
@@ -4137,13 +4138,15 @@ struct GoalRankingView: View {
                             rankedGoal: rankedGoal,
                             rank: index
                         )
+                        .opacity(draggingItem?.id == rankedGoal.id ? 0.5 : 1.0)
                         .onDrag {
-                            NSItemProvider(object: rankedGoal.id.uuidString as NSString)
+                            self.draggingItem = rankedGoal
+                            return NSItemProvider(object: rankedGoal.id.uuidString as NSString)
                         }
-                        .onDrop(of: [.text], delegate: DropViewDelegate(
+                        .onDrop(of: [.text], delegate: GoalDropDelegate(
                             currentItem: rankedGoal,
                             items: $coordinator.rankedGoals,
-                            draggedItem: .constant(nil)
+                            draggingItem: $draggingItem
                         ))
                     }
                 }
@@ -4233,23 +4236,25 @@ struct RankedGoalRow: View {
 
 // MARK: - Drop Delegate for Reordering
 
-struct DropViewDelegate: DropDelegate {
+struct GoalDropDelegate: DropDelegate {
     let currentItem: RankedGoal
     @Binding var items: [RankedGoal]
-    @Binding var draggedItem: RankedGoal?
+    @Binding var draggingItem: RankedGoal?
 
     func performDrop(info: DropInfo) -> Bool {
+        draggingItem = nil
         return true
     }
 
     func dropEntered(info: DropInfo) {
-        guard let fromIndex = items.firstIndex(where: { $0.id == currentItem.id }) else { return }
+        guard let draggingItem = draggingItem else { return }
 
-        if let draggedItem = draggedItem,
-           let toIndex = items.firstIndex(where: { $0.id == draggedItem.id }),
-           fromIndex != toIndex {
-            withAnimation {
-                items.move(fromOffsets: IndexSet(integer: toIndex), toOffset: fromIndex > toIndex ? fromIndex + 1 : fromIndex)
+        guard let fromIndex = items.firstIndex(where: { $0.id == draggingItem.id }),
+              let toIndex = items.firstIndex(where: { $0.id == currentItem.id }) else { return }
+
+        if fromIndex != toIndex {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                items.move(fromOffsets: IndexSet(integer: fromIndex), toOffset: toIndex > fromIndex ? toIndex + 1 : toIndex)
             }
         }
     }
