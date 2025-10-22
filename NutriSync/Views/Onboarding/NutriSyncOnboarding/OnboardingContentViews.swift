@@ -4105,7 +4105,7 @@ struct GoalRankingView: View {
 
     var body: some View {
         @Bindable var coordinator = coordinator
-        ScrollView {
+        ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: 0) {
                 // Title
                 Text("Rank Your Goals")
