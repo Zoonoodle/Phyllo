@@ -27,6 +27,7 @@ class NutriSyncOnboardingViewModel {
     var showingSectionIntro: Bool = false  // Start directly at story content, skip section intro
     var navigationDirection: NavigationDirection = .forward
     var shouldReturnToGetStarted: Bool = false
+    var isGoalDragging: Bool = false  // Tracks if user is currently dragging goals in ranking view
     
     init() {
         print("[NutriSyncOnboardingViewModel] INIT - Creating new coordinator instance")
@@ -802,9 +803,10 @@ struct NutriSyncOnboardingCoordinator: View {
                                        (isSpecificGoals && !specificGoalsSelected) ||
                                        (isTrainingPlan && !trainingPlanSelected) ||
                                        (isDietPreference && !dietSelected) ||
-                                       (isMealFrequency && !mealFrequencySelected)
+                                       (isMealFrequency && !mealFrequencySelected) ||
+                                       viewModel.isGoalDragging  // Disable during goal drag-and-drop
                         let isLastScreenInSection = viewModel.isLastScreenInSection
-                        
+
                         Button {
                             handleNextAction()
                         } label: {
@@ -821,6 +823,7 @@ struct NutriSyncOnboardingCoordinator: View {
                             .cornerRadius(22)
                         }
                         .disabled(isDisabled)
+                        .allowsHitTesting(!viewModel.isGoalDragging)  // Prevent touch events during drag
                     }
                         .padding(.horizontal, 20)
                         .padding(.bottom, 34)

@@ -4141,12 +4141,14 @@ struct GoalRankingView: View {
                         .opacity(draggingItem?.id == rankedGoal.id ? 0.5 : 1.0)
                         .onDrag {
                             self.draggingItem = rankedGoal
+                            coordinator.isGoalDragging = true
                             return NSItemProvider(object: rankedGoal.id.uuidString as NSString)
                         }
                         .onDrop(of: [.text], delegate: GoalDropDelegate(
                             currentItem: rankedGoal,
                             items: $coordinator.rankedGoals,
-                            draggingItem: $draggingItem
+                            draggingItem: $draggingItem,
+                            isDragging: $coordinator.isGoalDragging
                         ))
                     }
                 }
@@ -4155,11 +4157,15 @@ struct GoalRankingView: View {
         }
         .scrollDisabled(false)
         .contentShape(Rectangle())
+        .allowsHitTesting(true)
+        .zIndex(1)
         .onDisappear {
             // Update ranks based on position in array when leaving screen
             for (index, _) in coordinator.rankedGoals.enumerated() {
                 coordinator.rankedGoals[index].rank = index
             }
+            // Reset dragging state
+            coordinator.isGoalDragging = false
         }
     }
 }
@@ -4242,9 +4248,11 @@ struct GoalDropDelegate: DropDelegate {
     let currentItem: RankedGoal
     @Binding var items: [RankedGoal]
     @Binding var draggingItem: RankedGoal?
+    @Binding var isDragging: Bool
 
     func performDrop(info: DropInfo) -> Bool {
         draggingItem = nil
+        isDragging = false
         return true
     }
 
@@ -4263,6 +4271,10 @@ struct GoalDropDelegate: DropDelegate {
 
     func dropUpdated(info: DropInfo) -> DropProposal? {
         return DropProposal(operation: .move)
+    }
+
+    func dropExited(info: DropInfo) {
+        // Keep dragging state true until performDrop is called
     }
 }
 
