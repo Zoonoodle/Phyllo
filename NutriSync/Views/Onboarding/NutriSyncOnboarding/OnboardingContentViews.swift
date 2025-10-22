@@ -4153,6 +4153,8 @@ struct GoalRankingView: View {
                 .padding(.horizontal, 20)
             }
         }
+        .scrollDisabled(false)
+        .contentShape(Rectangle())
         .onDisappear {
             // Update ranks based on position in array when leaving screen
             for (index, _) in coordinator.rankedGoals.enumerated() {
