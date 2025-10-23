@@ -4274,9 +4274,18 @@ struct GoalDropDelegate: DropDelegate {
     @Binding var isDragging: Bool
 
     func performDrop(info: DropInfo) -> Bool {
-        // Clear dragging state when drop completes
+        // Clear draggingItem immediately for visual feedback
         draggingItem = nil
-        isDragging = false
+
+        // Delay clearing isDragging to prevent touch-up events from triggering Next button
+        // This ensures all touch events complete before the button becomes active
+        Task {
+            try? await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
+            await MainActor.run {
+                isDragging = false
+            }
+        }
+
         return true
     }
 
