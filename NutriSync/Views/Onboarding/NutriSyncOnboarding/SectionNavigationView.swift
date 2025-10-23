@@ -31,15 +31,15 @@ struct SectionNavigationView: View {
                 ZStack {
                     Circle()
                         .fill(backgroundColor(for: section))
-                        .frame(width: 44, height: 44)
+                        .frame(width: 32, height: 32)
 
                     Image(systemName: section.icon)
-                        .font(.system(size: 20, weight: .semibold))
+                        .font(.system(size: 16, weight: .semibold))
                         .foregroundColor(iconColor(for: section))
                 }
             }
         }
-        .padding(.horizontal, 40)
+        .padding(.horizontal, 16)
     }
     
     private func backgroundColor(for section: NutriSyncOnboardingSection) -> Color {
@@ -85,10 +85,10 @@ struct SectionNavigationView: View {
         let screenCount = NutriSyncOnboardingFlow.sections[previousSection]?.count ?? 1
 
         // Calculate proportional width
-        // Base width of 8 points per screen, minimum 16, maximum 80
-        let baseWidthPerScreen: CGFloat = 8
+        // Base width of 6 points per screen, minimum 12, maximum 40
+        let baseWidthPerScreen: CGFloat = 6
         let calculatedWidth = CGFloat(screenCount) * baseWidthPerScreen
-        return min(max(calculatedWidth, 16), 80)
+        return min(max(calculatedWidth, 12), 40)
     }
 }
 
