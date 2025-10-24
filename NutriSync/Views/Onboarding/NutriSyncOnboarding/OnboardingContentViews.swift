@@ -4099,11 +4099,9 @@ struct GoalCard: View {
 
 // MARK: - Goal Ranking View
 
-struct GoalRankingView: View {
+// MARK: - Option 1: Button-Based Reordering
+struct GoalRankingWithButtonsView: View {
     @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
-    @State private var draggingItem: RankedGoal?
-    @State private var dragOffset: CGFloat = 0
-    @State private var hasReordered = false
 
     var body: some View {
         @Bindable var coordinator = coordinator
@@ -4118,7 +4116,7 @@ struct GoalRankingView: View {
                     .padding(.bottom, 12)
 
                 // Subtitle
-                Text("Swipe to reorder by priority")
+                Text("Tap arrows to reorder by priority")
                     .font(.system(size: 17))
                     .foregroundColor(.white.opacity(0.6))
                     .multilineTextAlignment(.center)
@@ -4136,61 +4134,27 @@ struct GoalRankingView: View {
                 // Ranked Goals List
                 VStack(spacing: 12) {
                     ForEach(Array(coordinator.rankedGoals.enumerated()), id: \.element.id) { index, rankedGoal in
-                        RankedGoalRow(
+                        RankedGoalRowWithButtons(
                             rankedGoal: rankedGoal,
-                            rank: index
-                        )
-                        .offset(y: draggingItem?.id == rankedGoal.id ? dragOffset : 0)
-                        .zIndex(draggingItem?.id == rankedGoal.id ? 1 : 0)
-                        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: coordinator.rankedGoals)
-                        .gesture(
-                            DragGesture()
-                                .onChanged { value in
-                                    if draggingItem == nil {
-                                        draggingItem = rankedGoal
-                                        coordinator.isGoalDragging = true
-                                        hasReordered = false
-                                    }
-
-                                    dragOffset = value.translation.height
-
-                                    // Calculate target index based on drag distance
-                                    // Each row is ~90pt (including spacing)
-                                    let targetOffset = Int(round(dragOffset / 90))
-                                    var targetIndex = index + targetOffset
-
-                                    // Clamp to valid range
-                                    targetIndex = max(0, min(coordinator.rankedGoals.count - 1, targetIndex))
-
-                                    // Reorder if target changed
-                                    if targetIndex != index && !hasReordered {
-                                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                                            coordinator.rankedGoals.move(
-                                                fromOffsets: IndexSet(integer: index),
-                                                toOffset: targetIndex > index ? targetIndex + 1 : targetIndex
-                                            )
-                                        }
-                                        hasReordered = true
-                                    } else if targetIndex == index {
-                                        hasReordered = false
-                                    }
+                            rank: index,
+                            canMoveUp: index > 0,
+                            canMoveDown: index < coordinator.rankedGoals.count - 1,
+                            onMoveUp: {
+                                withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                                    coordinator.rankedGoals.move(
+                                        fromOffsets: IndexSet(integer: index),
+                                        toOffset: index - 1
+                                    )
                                 }
-                                .onEnded { _ in
-                                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                                        dragOffset = 0
-                                        draggingItem = nil
-                                        hasReordered = false
-                                    }
-
-                                    // Delay clearing isGoalDragging to prevent Next button from being
-                                    // activated by touch-up events when releasing drag near bottom
-                                    Task {
-                                        try? await Task.sleep(nanoseconds: 300_000_000) // 0.3 seconds
-                                        await MainActor.run {
-                                            coordinator.isGoalDragging = false
-                                        }
-                                    }
+                            },
+                            onMoveDown: {
+                                withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                                    coordinator.rankedGoals.move(
+                                        fromOffsets: IndexSet(integer: index),
+                                        toOffset: index + 2
+                                    )
                                 }
+                            }
                         )
                     }
                 }
@@ -4203,11 +4167,73 @@ struct GoalRankingView: View {
             for (index, _) in coordinator.rankedGoals.enumerated() {
                 coordinator.rankedGoals[index].rank = index
             }
-            coordinator.isGoalDragging = false
-            draggingItem = nil
         }
     }
 }
+
+// MARK: - Option 3: Native List with EditMode
+struct GoalRankingWithListView: View {
+    @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
+    @Environment(\.editMode) private var editMode
+
+    var body: some View {
+        @Bindable var coordinator = coordinator
+        VStack(spacing: 0) {
+            // Title
+            Text("Rank Your Goals")
+                .font(.system(size: 28, weight: .bold))
+                .foregroundColor(.white)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 12)
+                .padding(.top, 20)
+
+            // Subtitle
+            Text("Drag handles to reorder by priority")
+                .font(.system(size: 17))
+                .foregroundColor(.white.opacity(0.6))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 8)
+
+            // Additional info
+            Text("Your #1 goal will have the most influence on your meal windows")
+                .font(.system(size: 15))
+                .foregroundColor(.white.opacity(0.5))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 24)
+
+            // Native List with reordering
+            List {
+                ForEach(Array(coordinator.rankedGoals.enumerated()), id: \.element.id) { index, rankedGoal in
+                    RankedGoalRowForList(
+                        rankedGoal: rankedGoal,
+                        rank: index
+                    )
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+                    .listRowInsets(EdgeInsets(top: 6, leading: 20, bottom: 6, trailing: 20))
+                }
+                .onMove { from, to in
+                    coordinator.rankedGoals.move(fromOffsets: from, toOffset: to)
+                }
+            }
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
+            .environment(\.editMode, .constant(.active))
+        }
+        .onDisappear {
+            // Update ranks based on position in array when leaving screen
+            for (index, _) in coordinator.rankedGoals.enumerated() {
+                coordinator.rankedGoals[index].rank = index
+            }
+        }
+    }
+}
+
+// Default to button-based for now - can switch to test the other
+typealias GoalRankingView = GoalRankingWithButtonsView
 
 // MARK: - Ranked Goal Row
 
@@ -4268,6 +4294,175 @@ struct RankedGoalRow: View {
             Image(systemName: "line.3.horizontal")
                 .foregroundColor(.white.opacity(0.4))
                 .font(.title3)
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.white.opacity(0.03))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(accentColor, lineWidth: rank < 2 ? 2 : 1)
+                )
+        )
+    }
+}
+
+// MARK: - Ranked Goal Row with Buttons
+
+struct RankedGoalRowWithButtons: View {
+    let rankedGoal: RankedGoal
+    let rank: Int
+    let canMoveUp: Bool
+    let canMoveDown: Bool
+    let onMoveUp: () -> Void
+    let onMoveDown: () -> Void
+
+    private var rankLabel: String {
+        switch rank {
+        case 0: return "1st"
+        case 1: return "2nd"
+        case 2: return "3rd"
+        case 3: return "4th"
+        case 4: return "5th"
+        default: return "\(rank + 1)th"
+        }
+    }
+
+    private var detailText: String {
+        rank < 2 ? "We'll ask detailed questions" : "We'll use smart defaults"
+    }
+
+    private var accentColor: Color {
+        rank < 2 ? Color.nutriSyncAccent : Color.white.opacity(0.4)
+    }
+
+    var body: some View {
+        HStack(spacing: 16) {
+            // Rank Badge
+            Text(rankLabel)
+                .font(.headline)
+                .foregroundColor(rank < 2 ? .black : .white.opacity(0.7))
+                .frame(width: 50, height: 50)
+                .background(
+                    Circle()
+                        .fill(accentColor)
+                )
+
+            // Goal Info
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 8) {
+                    Text(rankedGoal.goal.icon)
+                        .font(.title3)
+
+                    Text(rankedGoal.goal.rawValue)
+                        .font(.headline)
+                        .foregroundColor(.white)
+                }
+
+                Text(detailText)
+                    .font(.caption)
+                    .foregroundColor(.white.opacity(0.6))
+            }
+
+            Spacer()
+
+            // Up/Down Arrows
+            VStack(spacing: 8) {
+                Button {
+                    onMoveUp()
+                } label: {
+                    Image(systemName: "chevron.up")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(canMoveUp ? .white : .white.opacity(0.2))
+                        .frame(width: 32, height: 32)
+                        .background(
+                            Circle()
+                                .fill(canMoveUp ? Color.white.opacity(0.1) : Color.clear)
+                        )
+                }
+                .disabled(!canMoveUp)
+
+                Button {
+                    onMoveDown()
+                } label: {
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(canMoveDown ? .white : .white.opacity(0.2))
+                        .frame(width: 32, height: 32)
+                        .background(
+                            Circle()
+                                .fill(canMoveDown ? Color.white.opacity(0.1) : Color.clear)
+                        )
+                }
+                .disabled(!canMoveDown)
+            }
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.white.opacity(0.03))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(accentColor, lineWidth: rank < 2 ? 2 : 1)
+                )
+        )
+    }
+}
+
+// MARK: - Ranked Goal Row for List
+
+struct RankedGoalRowForList: View {
+    let rankedGoal: RankedGoal
+    let rank: Int
+
+    private var rankLabel: String {
+        switch rank {
+        case 0: return "1st"
+        case 1: return "2nd"
+        case 2: return "3rd"
+        case 3: return "4th"
+        case 4: return "5th"
+        default: return "\(rank + 1)th"
+        }
+    }
+
+    private var detailText: String {
+        rank < 2 ? "We'll ask detailed questions" : "We'll use smart defaults"
+    }
+
+    private var accentColor: Color {
+        rank < 2 ? Color.nutriSyncAccent : Color.white.opacity(0.4)
+    }
+
+    var body: some View {
+        HStack(spacing: 16) {
+            // Rank Badge
+            Text(rankLabel)
+                .font(.headline)
+                .foregroundColor(rank < 2 ? .black : .white.opacity(0.7))
+                .frame(width: 50, height: 50)
+                .background(
+                    Circle()
+                        .fill(accentColor)
+                )
+
+            // Goal Info
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 8) {
+                    Text(rankedGoal.goal.icon)
+                        .font(.title3)
+
+                    Text(rankedGoal.goal.rawValue)
+                        .font(.headline)
+                        .foregroundColor(.white)
+                }
+
+                Text(detailText)
+                    .font(.caption)
+                    .foregroundColor(.white.opacity(0.6))
+            }
+
+            Spacer()
         }
         .padding(16)
         .background(

@@ -6,25 +6,40 @@
 ## 📹 VIDEO METADATA
 
 ### Title Options (A/B Test These):
-1. **"I Built an AI That Knows WHEN You Should Eat (Not What)"** ⭐ RECOMMENDED
-2. "Why Every Meal Timing App Gets It Wrong (So I Built My Own)"
-3. "I'm Building an AI Nutrition Coach That Tells You WHEN to Eat"
-4. "16:8 Fasting Made Me Fail. So I Built This AI App."
+1. **"I Fixed My Energy Crashes by Changing WHEN I Eat (Not What)"** ⭐ RECOMMENDED
+2. "I Couldn't Gain Muscle Until I Fixed My Meal Timing"
+3. "Why I Built an AI App That Tells You WHEN to Eat"
+4. "I Used to Crash at 2pm Every Day. Here's What I Built to Fix It."
+5. "My Sleep Was Broken Until I Changed When I Ate (AI App Demo)"
 
 ### Thumbnail Design:
 **Layout:**
 ```
 ┌─────────────────────────────────────┐
 │                                     │
-│    [YOUR FACE - thoughtful/coding]  │
+│    [YOUR FACE - energized/focused]  │
 │    (left 40% of frame)              │
 │                                     │
-│    [PHONE MOCKUP]    ❌ WHAT        │
-│    (showing NutriSync) ✅ WHEN      │
+│    [PHONE MOCKUP]    ⚡ 2PM CRASH   │
+│    (showing NutriSync) ❌ → ✅ FIXED│
 │    (right 60%)                      │
 │                                     │
 │    LARGE TEXT: "WHEN > WHAT"        │
 │    Small text: "AI Meal Timing"    │
+└─────────────────────────────────────┘
+```
+
+**Alternative Layout for Muscle Gain Angle:**
+```
+┌─────────────────────────────────────┐
+│  💪 CAN'T GAIN MUSCLE?              │
+│                                     │
+│  [PHONE MOCKUP showing meal windows]│
+│                                     │
+│  "I ATE 3000 CALORIES..."          │
+│  "...AT THE WRONG TIMES"           │
+│                                     │
+│  Fix: MEAL TIMING AI ⚡            │
 └─────────────────────────────────────┘
 ```
 
@@ -63,13 +78,13 @@
 **[Camera: Close-up of your face, energetic]**
 
 **YOU:**
-*"I tracked every meal I ate for 90 days. Same calories. Same macros. But I changed WHEN I ate—and lost 15 pounds without trying. Here's why every nutrition app is tracking the wrong thing."*
+*"I used to crash so hard at 2pm that I needed a nap just to function. I couldn't fall asleep at night. And no matter how much I ate, I couldn't gain muscle. Turns out—I was eating at the wrong times. Here's what happened when I fixed that."*
 
 **[B-roll: Quick cuts of]**
-- Calendar with meal times circled
-- MyFitnessPal/LoseIt app screenshots (blurred)
-- Before/after photos (if comfortable)
-- NutriSync app appearing on screen
+- You looking exhausted at desk (acting out the crash)
+- Clock showing 2pm
+- Frustrated trying to sleep at night (tossing)
+- You now energized, working out, looking at phone with NutriSync
 
 ---
 
@@ -77,19 +92,25 @@
 **[Camera: Medium shot, sitting at desk with laptop visible]**
 
 **YOU:**
-*"Hey, I'm Brennen. I'm a developer and I've been obsessed with nutrition for years. I tried every app—MyFitnessPal, Lose It, Noom—you name it. And I was doing everything 'right.' Hitting my macros, staying under calories, meal prepping on Sundays.*
+*"Hey, I'm Brennen. I'm a developer, and for years I had this problem: I was the classic 'hard gainer.' I'd eat a ton, hit my calories, track everything in MyFitnessPal—and still couldn't put on muscle.*
 
-*But I'd still hit this 2pm energy crash. I'd be starving at night. My workouts felt terrible. And then I stumbled on research about circadian rhythms and nutrient timing...*
+*But worse than that? My energy was all over the place. I'd be fine in the morning, then completely crash at 2pm—like, I HAD to take a nap or I couldn't function. And then at night when I actually wanted to sleep? Wide awake. Couldn't fall asleep until midnight or later.*
+
+*I thought it was just me. Bad genetics or something.*
 
 *[lean in closer to camera]*
 
-*...and I realized: every single nutrition app is focused on WHAT you eat and HOW MUCH. But almost nobody is tracking WHEN. And that's the variable that changed everything for me."*
+*And then I stumbled on research about meal timing and circadian rhythms... and realized: I was eating at the WORST possible times for my body. My meals were sabotaging my energy, my sleep, AND my muscle gains.*
+
+*So I started experimenting with WHEN I ate—not what or how much. Just... timing. And everything changed."*
 
 **[B-roll overlay while you talk:]**
-- Screenshots of popular nutrition apps
-- You logging meals in MyFitnessPal
-- Research papers flashing on screen (show titles about circadian rhythms)
-- Graph showing energy levels throughout the day
+- You looking exhausted, head on desk
+- Setting an alarm, taking a nap
+- Lying awake in bed at night (phone showing late time)
+- Screenshots of MyFitnessPal showing high calorie days
+- Research papers flashing on screen (circadian rhythms, nutrient timing)
+- "After" shots: you energized, working out, sleeping well
 
 ---
 
@@ -99,27 +120,32 @@
 **YOU:**
 *"Here's the thing about current nutrition apps: they're basically glorified spreadsheets. You log your food, it tells you if you hit your numbers, and that's it.*
 
-*But your body doesn't work like a spreadsheet. Your metabolism changes throughout the day. Insulin sensitivity is highest in the morning. Your body processes carbs differently at 8am versus 8pm. You're way more likely to store fat if you eat late at night.*
+*But your body doesn't work like a spreadsheet. Your metabolism changes throughout the day. Your digestion is primed in the morning and slows down at night. Eating too close to bedtime? That's why you can't sleep. Eating too late in the day when you're trying to build muscle? You're missing the optimal anabolic windows.*
 
 *[show phone screen]*
 
-*And yet, every app treats a 200-calorie snack at noon the same as a 200-calorie snack at midnight. That's insane!*
+*And yet, every app treats a meal at 10am the same as a meal at 10pm. Same calories, same macros—but your body processes them completely differently.*
 
-*So I started tracking WHEN I ate, not just what. And I manually planned meal windows around my sleep schedule, my workouts, and the research. And it worked.*
+*So I started tracking WHEN I ate, not just what. I manually planned meal windows around my sleep schedule, my workouts, the research. And it worked—*
+
+*[show results]*
+
+*—my energy crashes disappeared. I started falling asleep easier. And I finally started gaining muscle.*
 
 *[pause]*
 
-*But it took hours every week. Spreadsheets, timers, constant adjustments. I thought: 'Why isn't there an app for this?'*
+*But it took hours every week. Spreadsheets, timers, constant adjustments. I thought: 'This is insane. Why isn't there an app for this?'*
 
 *[smile]*
 
 *So... I built one."*
 
 **[B-roll:]**
-- Confusion/frustration montage (you staring at spreadsheets)
+- You frustrated, staring at spreadsheets
+- Calendar/planner with meal times written in
 - Clock/time-lapse showing day passing
 - Research tabs open in browser
-- "Before" version of your manual tracking system (messy spreadsheet)
+- Before/after: messy spreadsheet → clean app interface
 
 ---
 
@@ -137,16 +163,16 @@
 *"Your body is 25% more insulin-sensitive in the morning than at night. That means the same meal will spike your blood sugar more if you eat it at dinner versus breakfast."*
 **[Show graph: insulin sensitivity curve throughout day]**
 
-**FINDING 2: Circadian Rhythm**
-*"Your digestive system has its own internal clock. It's primed for food in the morning and starts shutting down at night. Eating late disrupts this rhythm—even if you're hitting your calories."*
-**[Show circadian rhythm diagram]**
+**FINDING 2: Circadian Rhythm & Sleep**
+*"Your digestive system has its own internal clock. It's primed for food in the morning and starts shutting down at night. When you eat late—even if it's healthy food—your body has to keep digesting when it should be preparing for sleep. That's why you can't fall asleep. And when you DO sleep, it's lower quality, which tanks your recovery and muscle growth."*
+**[Show circadian rhythm diagram + sleep quality graph]**
 
-**FINDING 3: Workout Timing**
-*"There's a 3-hour post-workout window where your body shuttles nutrients differently. Most apps ignore this completely."*
-**[Show muscle protein synthesis timeline]**
+**FINDING 3: Protein Distribution & Muscle Growth**
+*"If you're trying to build muscle, you need protein distributed throughout the day—not all at once. But WHEN you have those protein-rich meals matters. There's an optimal window post-workout where muscle protein synthesis is elevated. And if you're eating all your calories late at night? Your body's in rest mode, not build mode. Most apps ignore this completely."*
+**[Show muscle protein synthesis timeline + protein distribution graph]**
 
 **YOU:**
-*"So I thought: what if an app could take all this into account? Your sleep schedule, your workouts, your goals—and tell you the OPTIMAL TIMES to eat each day?"*
+*"So I thought: what if an app could take all this into account? Your sleep schedule, your workouts, your goals—whether you're trying to gain muscle, lose fat, optimize energy, or just sleep better—and tell you the OPTIMAL TIMES to eat each day?"*
 
 *That's NutriSync."*
 
@@ -189,19 +215,20 @@
 
 *For example, here's what it gave me for weight loss:*
 
-**[Show Focus tab with 3 meal windows:]**
+**[Show Focus tab with 4 meal windows (muscle gain example):]**
 - **Window 1:** 7:00 AM - 8:00 AM (Pre-Workout Energy Boost)
-- **Window 2:** 12:00 PM - 1:00 PM (Sustained Energy & Focus)
-- **Window 3:** 5:30 PM - 6:30 PM (Recovery & Satiety)
+- **Window 2:** 10:00 AM - 11:00 AM (Post-Workout Recovery)
+- **Window 3:** 2:00 PM - 3:00 PM (Sustained Energy & Protein)
+- **Window 4:** 6:00 PM - 7:00 PM (Final Protein Dose)
 
 **YOU:**
-*"Notice how it's not just random times. The first window is timed right before my morning workout. The last window is at least 3 hours before bed—because late eating messes with sleep quality.*
+*"Notice how it's not just random times. The first window is right before my morning workout. The second is within that post-workout anabolic window for recovery. And the last meal is at 7pm—at least 3-4 hours before bed—so I can actually fall asleep and get quality rest for recovery.*
 
-*And each window has a PURPOSE. It's not just 'eat lunch now'—it's 'this window is for sustained energy and focus,' so the AI will adjust the macro recommendations based on that.*
+*And each window has a PURPOSE. It's not just 'eat lunch now'—it's 'this window is for post-workout recovery,' so the AI will recommend high protein and carbs here for muscle repair.*
 
 *[show the macro breakdown for Window 2]*
 
-*See? Higher protein and healthy fats for sustained energy. If this was the pre-workout window, it'd recommend more carbs."*
+*See? 35g protein, moderate carbs to replenish glycogen. If this was the evening window, it'd be lighter—just enough to hit your protein target without disrupting sleep."*
 
 ---
 
@@ -303,7 +330,7 @@ Confidence: 87%
 
 *I'm opening up TestFlight beta this week. I'm looking for 100 people who want to try this out and give me brutally honest feedback.*
 
-*If you've ever struggled with meal timing, energy crashes, late-night snacking, or just feeling 'off' even when you're eating healthy—this app is for you.*
+*If you've ever struggled with any of this—energy crashes during the day, trouble sleeping at night, trying to gain muscle but it's not happening, or just feeling 'off' even when you're eating healthy—this app is for you.*
 
 *[hold up phone with QR code or point to screen]*
 
@@ -382,15 +409,15 @@ Confidence: 87%
 ### YouTube SEO:
 **Description Template:**
 ```
-I spent 3 months building an AI app that tells you WHEN to eat—not what or how much. Here's why meal timing matters more than calories for weight loss, energy, and performance.
+I used to crash at 2pm every day, couldn't sleep at night, and couldn't gain muscle no matter how much I ate. Then I changed WHEN I ate—not what or how much—and everything changed. So I built an AI app to help others do the same.
 
 🔗 JOIN TESTFLIGHT (100 spots): [link]
 🐦 FOLLOW THE BUILD: @NutriSyncApp
 
 TIMESTAMPS:
-0:00 - The 90-day experiment that changed everything
+0:00 - My energy crash problem (and why meal timing matters)
 0:45 - Why nutrition apps are tracking the wrong thing
-2:00 - The science of meal timing (chrononutrition)
+2:00 - The science of meal timing, sleep, and muscle growth
 3:30 - Full app demo and AI features
 6:30 - Behind the scenes: tech stack breakdown
 7:45 - Join the beta (TestFlight link)
@@ -409,7 +436,7 @@ RESEARCH REFERENCES:
 
 **Tags:** (max 500 characters)
 ```
-nutrition app, meal timing, intermittent fasting, AI nutrition, iOS development, SwiftUI, indie developer, build in public, chrononutrition, weight loss app, fitness app, health tech, solo developer, app demo, testflight beta
+nutrition app, meal timing, muscle gain, energy crashes, sleep optimization, AI nutrition, iOS development, SwiftUI, indie developer, build in public, chrononutrition, fitness app, health tech, solo developer, app demo, testflight beta, hard gainer
 ```
 
 ---
@@ -449,16 +476,16 @@ nutrition app, meal timing, intermittent fasting, AI nutrition, iOS development,
 ## 💡 PRO TIPS
 
 ### Hooks That Work:
-- Start with a surprising result ("I lost 15 pounds without changing what I ate")
-- Use pattern interrupt ("Everything you know about nutrition is wrong")
+- Start with a surprising result ("I fixed my energy crashes without changing what I ate")
+- Use pattern interrupt ("I couldn't gain muscle until I stopped eating at night")
 - Ask provocative question ("What if you're eating healthy... at the wrong time?")
-- Share personal failure ("I wasted 6 months tracking calories for nothing")
+- Share personal struggle ("I tracked every calorie for 6 months and still couldn't gain weight")
 
 ### Engagement Tactics:
-- Ask viewers to comment their biggest meal timing struggle
-- Pin your own comment asking "What feature should I build next?"
+- Ask viewers to comment: "Do you get afternoon energy crashes? What time do they hit?"
+- Pin your own comment: "Are you trying to gain muscle or lose fat? Reply and I'll share your ideal meal window strategy"
 - Reply to every comment in first 24 hours (boosts algorithm)
-- Create controversy: "MyFitnessPal is making you fail" (but stay respectful)
+- Ask: "What time do you eat your last meal? You might be sabotaging your sleep."
 
 ### Common Mistakes to Avoid:
 - ❌ Don't apologize for video quality (viewers don't care if you mention it)
