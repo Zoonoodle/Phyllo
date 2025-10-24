@@ -4180,10 +4180,13 @@ struct GoalRankingWithButtonsView: View {
         }
         .scrollDisabled(false)
         .onDisappear {
+            print("[GoalRankingView] 🔄 onDisappear called - updating ranks")
             // Update ranks based on position in array when leaving screen
             for (index, _) in coordinator.rankedGoals.enumerated() {
+                print("[GoalRankingView]   Setting rank \(index) for: \(coordinator.rankedGoals[index].goal.rawValue)")
                 coordinator.rankedGoals[index].rank = index
             }
+            print("[GoalRankingView] ✅ Ranks updated successfully")
         }
     }
 }
