@@ -106,6 +106,7 @@ struct RankedGoal: Codable, Identifiable, Hashable {
 
 /// Specific nutrition goals
 enum SpecificGoal: String, CaseIterable, Codable, Identifiable, Hashable {
+    case weightManagement = "Weight Management"
     case muscleGain = "Build Muscle & Recover"
     case steadyEnergy = "Steady Energy Levels"
     case betterSleep = "Better Sleep Quality"
@@ -114,18 +115,21 @@ enum SpecificGoal: String, CaseIterable, Codable, Identifiable, Hashable {
 
     var id: String { rawValue }
 
+    // SF Symbol icon names (professional, no emojis)
     var icon: String {
         switch self {
-        case .muscleGain: return "💪"
-        case .steadyEnergy: return "⚡️"
-        case .betterSleep: return "😴"
-        case .athleticPerformance: return "🏃"
-        case .metabolicHealth: return "🧬"
+        case .weightManagement: return "figure.cooldown"
+        case .muscleGain: return "figure.strengthtraining.traditional"
+        case .steadyEnergy: return "bolt.fill"
+        case .betterSleep: return "moon.stars.fill"
+        case .athleticPerformance: return "figure.run"
+        case .metabolicHealth: return "heart.text.square.fill"
         }
     }
 
     var subtitle: String {
         switch self {
+        case .weightManagement: return "Reach and maintain your target weight"
         case .muscleGain: return "Optimize protein timing and recovery windows"
         case .steadyEnergy: return "Avoid crashes and stay energized all day"
         case .betterSleep: return "Optimize meal timing for better rest"
@@ -136,6 +140,7 @@ enum SpecificGoal: String, CaseIterable, Codable, Identifiable, Hashable {
 
     var primaryWindowPurposes: [MealWindow.WindowPurpose] {
         switch self {
+        case .weightManagement: return [.sustainedEnergy, .metabolicBoost]
         case .muscleGain: return [.recovery, .postWorkout]
         case .steadyEnergy: return [.sustainedEnergy, .focusBoost]
         case .betterSleep: return [.sleepOptimization]

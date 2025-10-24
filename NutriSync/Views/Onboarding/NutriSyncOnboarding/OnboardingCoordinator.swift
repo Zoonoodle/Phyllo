@@ -121,6 +121,7 @@ class NutriSyncOnboardingViewModel {
     // NEW: Specific goals and ranking
     var selectedSpecificGoals: Set<SpecificGoal> = []
     var rankedGoals: [RankedGoal] = []
+    var hasCompletedSpecificGoals: Bool = false  // Triggers dynamic screen recalculation
 
     // NEW: Goal-specific preference storage
     var sleepBedtime: Date = Date.from(hour: 22, minute: 0)
@@ -169,7 +170,13 @@ class NutriSyncOnboardingViewModel {
     
     // Computed properties
     var currentSectionScreens: [String] {
-        NutriSyncOnboardingFlow.screens(for: currentSection, goal: goal)
+        NutriSyncOnboardingFlow.screens(
+            for: currentSection,
+            goal: goal,
+            selectedSpecificGoals: selectedSpecificGoals,
+            rankedGoals: rankedGoals,
+            hasCompletedSpecificGoals: hasCompletedSpecificGoals
+        )
     }
     
     var currentScreen: String? {
@@ -808,8 +815,7 @@ struct NutriSyncOnboardingCoordinator: View {
                                        (isSpecificGoals && !specificGoalsSelected) ||
                                        (isTrainingPlan && !trainingPlanSelected) ||
                                        (isDietPreference && !dietSelected) ||
-                                       (isMealFrequency && !mealFrequencySelected) ||
-                                       viewModel.isGoalDragging  // Disable during goal drag-and-drop
+                                       (isMealFrequency && !mealFrequencySelected)
                         let isLastScreenInSection = viewModel.isLastScreenInSection
 
                         Button {
@@ -828,7 +834,6 @@ struct NutriSyncOnboardingCoordinator: View {
                             .cornerRadius(22)
                         }
                         .disabled(isDisabled)
-                        .allowsHitTesting(!viewModel.isGoalDragging)  // Prevent touch events during drag
                     }
                         .padding(.horizontal, 20)
                         .padding(.bottom, 34)
@@ -903,12 +908,18 @@ struct NutriSyncOnboardingCoordinator: View {
             return
         }
 
-        // Handle Specific Goals screen - convert selected goals to ranked goals
+        // Handle Specific Goals screen - trigger dynamic flow update
         if viewModel.currentScreen == "Specific Goals" && !viewModel.selectedSpecificGoals.isEmpty {
+            // Mark as completed to trigger dynamic screen recalculation
+            viewModel.hasCompletedSpecificGoals = true
+
             // Convert Set to Array and create RankedGoal objects with initial ranking
             viewModel.rankedGoals = Array(viewModel.selectedSpecificGoals.enumerated().map { index, goal in
                 RankedGoal(goal: goal, rank: index)
             })
+
+            print("[OnboardingCoordinator] Specific goals saved: \(viewModel.selectedSpecificGoals.count) goals selected")
+            print("[OnboardingCoordinator] Dynamic flow updated - next screens: \(viewModel.currentSectionScreens)")
         }
 
         // Screen-specific data saving will be handled by the screen's onDisappear
@@ -974,59 +985,27 @@ struct NutriSyncOnboardingCoordinator: View {
         case "Workout Schedule":
             Text("Workout Schedule screen removed")
                 .foregroundColor(.white)
-        // NEW: Specific Goals & Preferences Screens
+
+        // NEW: Specific Goals Screen (ACTIVE)
         case "Specific Goals":
             SpecificGoalsSelectionView()
+
+        // NEW: Goal Ranking Screen (ACTIVE)
         case "Goal Ranking":
-            // Conditional: only shown if 2+ goals selected
-            if viewModel.selectedSpecificGoals.count > 1 {
-                GoalRankingView()
-            } else {
-                Text("Skipping ranking (only 1 goal selected)")
-                    .foregroundColor(.white)
-                    .onAppear { viewModel.nextScreen() }
-            }
+            GoalRankingView()
+
+        // NEW: Adaptive preference screens (ACTIVE - only shown for rank 1-2)
+        // These screens are dynamically added by OnboardingSectionData based on goal ranking
         case "Sleep Preferences":
-            // Conditional: only shown if betterSleep in rank 1-2
-            if viewModel.shouldShowPreferences(for: .betterSleep) {
-                SleepPreferencesView()
-            } else {
-                Text("Skipping sleep preferences")
-                    .foregroundColor(.white)
-                    .onAppear { viewModel.nextScreen() }
-            }
+            SleepPreferencesView()
         case "Energy Preferences":
-            if viewModel.shouldShowPreferences(for: .steadyEnergy) {
-                EnergyPreferencesView()
-            } else {
-                Text("Skipping energy preferences")
-                    .foregroundColor(.white)
-                    .onAppear { viewModel.nextScreen() }
-            }
+            EnergyPreferencesView()
         case "Muscle Preferences":
-            if viewModel.shouldShowPreferences(for: .muscleGain) {
-                MusclePreferencesView()
-            } else {
-                Text("Skipping muscle preferences")
-                    .foregroundColor(.white)
-                    .onAppear { viewModel.nextScreen() }
-            }
+            MusclePreferencesView()
         case "Performance Preferences":
-            if viewModel.shouldShowPreferences(for: .athleticPerformance) {
-                PerformancePreferencesView()
-            } else {
-                Text("Skipping performance preferences")
-                    .foregroundColor(.white)
-                    .onAppear { viewModel.nextScreen() }
-            }
+            PerformancePreferencesView()
         case "Metabolic Preferences":
-            if viewModel.shouldShowPreferences(for: .metabolicHealth) {
-                MetabolicPreferencesView()
-            } else {
-                Text("Skipping metabolic preferences")
-                    .foregroundColor(.white)
-                    .onAppear { viewModel.nextScreen() }
-            }
+            MetabolicPreferencesView()
         case "Goal Impact Preview":
             GoalImpactPreviewView()
 

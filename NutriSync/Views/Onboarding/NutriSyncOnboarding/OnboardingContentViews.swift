@@ -2171,7 +2171,7 @@ struct GoalSelectionContentView: View {
         ScrollView {
             VStack(spacing: 0) {
                 // Title
-                Text("What is your goal?")
+                Text("What are your weight goals?")
                     .font(.system(size: 28, weight: .bold))
                     .foregroundColor(.white)
                     .multilineTextAlignment(.center)
@@ -3992,37 +3992,37 @@ struct SpecificGoalsSelectionView: View {
     ]
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 0) {
-                // Title
-                Text("What are your specific nutrition goals?")
-                    .font(.system(size: 28, weight: .bold))
-                    .foregroundColor(.white)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 12)
+        VStack(spacing: 0) {
+            // Title
+            Text("What are your specific nutrition goals?")
+                .font(.system(size: 26, weight: .bold))
+                .foregroundColor(.white)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 8)
 
-                // Subtitle
-                Text("Select all that apply - we'll customize your plan")
-                    .font(.system(size: 17))
-                    .foregroundColor(.white.opacity(0.6))
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 40)
+            // Subtitle
+            Text("Select all that apply - we'll customize your plan")
+                .font(.system(size: 16))
+                .foregroundColor(.white.opacity(0.6))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 24)
 
-                // Goal Cards Grid
-                LazyVGrid(columns: columns, spacing: 16) {
-                    ForEach(SpecificGoal.allCases) { goal in
-                        GoalCard(
-                            goal: goal,
-                            isSelected: coordinator.selectedSpecificGoals.contains(goal)
-                        ) {
-                            toggleGoal(goal)
-                        }
+            // Goal Cards Grid
+            LazyVGrid(columns: columns, spacing: 12) {
+                ForEach(SpecificGoal.allCases) { goal in
+                    GoalCard(
+                        goal: goal,
+                        isSelected: coordinator.selectedSpecificGoals.contains(goal)
+                    ) {
+                        toggleGoal(goal)
                     }
                 }
-                .padding(.horizontal, 20)
             }
+            .padding(.horizontal, 20)
+
+            Spacer()
         }
     }
 
@@ -4045,28 +4045,23 @@ struct GoalCard: View {
     var body: some View {
         Button(action: onTap) {
             VStack(spacing: 12) {
-                // Icon
-                Text(goal.icon)
-                    .font(.system(size: 40))
+                // Icon (SF Symbol) - turns green when selected
+                Image(systemName: goal.icon)
+                    .font(.system(size: 36, weight: .medium))
+                    .foregroundColor(isSelected ? .nutriSyncAccent : .white)
+                    .frame(height: 44)
 
-                // Goal Name
+                // Goal Name - turns green when selected
                 Text(goal.rawValue)
                     .font(.headline)
-                    .foregroundColor(.white)
-                    .multilineTextAlignment(.center)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.8)
-
-                // Subtitle
-                Text(goal.subtitle)
-                    .font(.caption)
-                    .foregroundColor(.white.opacity(0.6))
+                    .foregroundColor(isSelected ? .nutriSyncAccent : .white)
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
                     .minimumScaleFactor(0.8)
             }
-            .frame(maxWidth: .infinity)
-            .padding(16)
+            .frame(maxWidth: .infinity, minHeight: 135, maxHeight: 135)  // Fixed height for consistency
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
             .background(
                 RoundedRectangle(cornerRadius: 16)
                     .fill(Color.white.opacity(0.03))
@@ -4297,8 +4292,11 @@ struct RankedGoalRow: View {
             // Goal Info
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 8) {
-                    Text(rankedGoal.goal.icon)
-                        .font(.title3)
+                    // SF Symbol Icon (matches Specific Goals screen)
+                    Image(systemName: rankedGoal.goal.icon)
+                        .font(.system(size: 20, weight: .medium))
+                        .foregroundColor(.white)
+                        .frame(width: 24)
 
                     Text(rankedGoal.goal.rawValue)
                         .font(.headline)
@@ -4360,25 +4358,25 @@ struct RankedGoalRowWithButtons: View {
 
     var body: some View {
         HStack(spacing: 16) {
-            // Rank Badge
-            Text(rankLabel)
-                .font(.headline)
-                .foregroundColor(rank < 2 ? .black : .white.opacity(0.7))
-                .frame(width: 50, height: 50)
-                .background(
-                    Circle()
-                        .fill(accentColor)
-                )
+            // Goal Info with integrated ranking
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 10) {
+                    // SF Symbol Icon (matches Specific Goals screen)
+                    Image(systemName: rankedGoal.goal.icon)
+                        .font(.system(size: 24, weight: .medium))
+                        .foregroundColor(rank < 2 ? .nutriSyncAccent : .white)
+                        .frame(width: 28)
 
-            // Goal Info
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 8) {
-                    Text(rankedGoal.goal.icon)
-                        .font(.title3)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(rankedGoal.goal.rawValue)
+                            .font(.system(size: 17, weight: .semibold))
+                            .foregroundColor(.white)
 
-                    Text(rankedGoal.goal.rawValue)
-                        .font(.headline)
-                        .foregroundColor(.white)
+                        // Subtle rank indicator
+                        Text("#\(rank + 1) Priority")
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundColor(rank < 2 ? .nutriSyncAccent : .white.opacity(0.5))
+                    }
                 }
 
                 Text(detailText)
@@ -4463,25 +4461,25 @@ struct RankedGoalRowForList: View {
 
     var body: some View {
         HStack(spacing: 16) {
-            // Rank Badge
-            Text(rankLabel)
-                .font(.headline)
-                .foregroundColor(rank < 2 ? .black : .white.opacity(0.7))
-                .frame(width: 50, height: 50)
-                .background(
-                    Circle()
-                        .fill(accentColor)
-                )
+            // Goal Info with integrated ranking
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 10) {
+                    // SF Symbol Icon (matches Specific Goals screen)
+                    Image(systemName: rankedGoal.goal.icon)
+                        .font(.system(size: 24, weight: .medium))
+                        .foregroundColor(rank < 2 ? .nutriSyncAccent : .white)
+                        .frame(width: 28)
 
-            // Goal Info
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 8) {
-                    Text(rankedGoal.goal.icon)
-                        .font(.title3)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(rankedGoal.goal.rawValue)
+                            .font(.system(size: 17, weight: .semibold))
+                            .foregroundColor(.white)
 
-                    Text(rankedGoal.goal.rawValue)
-                        .font(.headline)
-                        .foregroundColor(.white)
+                        // Subtle rank indicator
+                        Text("#\(rank + 1) Priority")
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundColor(rank < 2 ? .nutriSyncAccent : .white.opacity(0.5))
+                    }
                 }
 
                 Text(detailText)
@@ -4961,6 +4959,14 @@ struct GoalImpactPreviewView: View {
         }
 
         switch topGoal {
+        case .weightManagement:
+            return [
+                ("7:00 AM - 8:30 AM", "Breakfast", "Weight Management (#1)", "Balanced macros, portion controlled"),
+                ("12:00 PM - 1:30 PM", "Lunch", "Sustained Energy", "Nutrient-dense, satisfying"),
+                ("3:00 PM - 4:00 PM", "Snack", "Metabolism Boost", "Keep energy stable"),
+                ("6:30 PM - 7:30 PM", "Dinner", "Light Evening", "Portion controlled, early timing"),
+                ("10:00 PM", "Fasting Begins", "", "14-hour fasting window")
+            ]
         case .muscleGain:
             return [
                 ("7:00 AM - 8:30 AM", "Breakfast", "Muscle Recovery (#1)", "High protein, optimal timing"),
@@ -4970,7 +4976,7 @@ struct GoalImpactPreviewView: View {
                 ("9:00 PM", "Fasting Begins", "", "Recovery overnight")
             ]
         case .betterSleep:
-            let bedtime = coordinator.sleepBedtime
+            let _ = coordinator.sleepBedtime
             let hours = coordinator.sleepHoursBeforeBed
             return [
                 ("7:00 AM - 8:30 AM", "Breakfast", "Morning Energy", "Balanced start"),
@@ -5019,6 +5025,12 @@ struct GoalImpactCard: View {
 
     private var impacts: [String] {
         switch goal {
+        case .weightManagement:
+            return [
+                "✓ Portion-controlled meal windows",
+                "✓ 14-hour fasting window for metabolism",
+                "✓ Balanced macros to reach target weight"
+            ]
         case .muscleGain:
             return [
                 "✓ 5 eating windows for optimal protein intake",

@@ -80,18 +80,22 @@ struct NutriSyncOnboardingFlow {
         ],
         .goalSetting: [
             "Your Transformation",
-            "Goal Selection",
-            "Trend Weight",  // This will be dynamically shown/hidden
-            "Weight Goal",    // This will be dynamically shown/hidden
-            "Goal Summary",
-            "Specific Goals",  // NEW: Multi-select specific goals
-            "Goal Ranking",  // NEW: Conditional - shown if 2+ goals selected
-            "Sleep Preferences",  // NEW: Conditional - shown if betterSleep in rank 1-2
-            "Energy Preferences",  // NEW: Conditional - shown if steadyEnergy in rank 1-2
-            "Muscle Preferences",  // NEW: Conditional - shown if muscleGain in rank 1-2
-            "Performance Preferences",  // NEW: Conditional - shown if athleticPerformance in rank 1-2
-            "Metabolic Preferences",  // NEW: Conditional - shown if metabolicHealth in rank 1-2
-            "Goal Impact Preview"  // NEW: Preview of how goals will shape meal plan
+            "Specific Goals",  // NEW: Multi-select specific goals (shown FIRST)
+            "Goal Selection",  // Traditional goal selection (conditional based on weight goal)
+            "Trend Weight",  // Conditional: shown if weightManagement selected
+            "Weight Goal",   // Conditional: shown if weightManagement selected
+            "Goal Summary"
+            // ========== TEMPORARILY DISABLED - Remaining Goal Setting Refactor Screens ==========
+            // These screens are fully implemented but temporarily removed from flow
+            // To re-enable: uncomment the lines below
+            // "Goal Ranking",  // NEW: Conditional - shown if 2+ goals selected
+            // "Sleep Preferences",  // NEW: Conditional - shown if betterSleep in rank 1-2
+            // "Energy Preferences",  // NEW: Conditional - shown if steadyEnergy in rank 1-2
+            // "Muscle Preferences",  // NEW: Conditional - shown if muscleGain in rank 1-2
+            // "Performance Preferences",  // NEW: Conditional - shown if athleticPerformance in rank 1-2
+            // "Metabolic Preferences",  // NEW: Conditional - shown if metabolicHealth in rank 1-2
+            // "Goal Impact Preview"  // NEW: Preview of how goals will shape meal plan
+            // ====================================================================================
         ],
         .program: [
             "Diet Preference",
@@ -106,20 +110,78 @@ struct NutriSyncOnboardingFlow {
         ]
     ]
     
-    static func screens(for section: NutriSyncOnboardingSection, goal: String? = nil) -> [String] {
+    static func screens(
+        for section: NutriSyncOnboardingSection,
+        goal: String? = nil,
+        selectedSpecificGoals: Set<SpecificGoal> = [],
+        rankedGoals: [RankedGoal] = [],
+        hasCompletedSpecificGoals: Bool = false
+    ) -> [String] {
         var screens = sections[section] ?? []
-        
-        // Dynamically filter screens based on goal for goalSetting section
-        if section == .goalSetting, let goal = goal?.lowercased() {
-            if goal == "maintain weight" {
-                // Remove "Weight Goal" for maintenance
-                screens = screens.filter { $0 != "Weight Goal" }
-            } else if goal == "lose weight" || goal == "gain weight" {
-                // Remove "Trend Weight" for lose/gain
-                screens = screens.filter { $0 != "Trend Weight" }
+
+        // Dynamic goal setting flow based on specific goals selection
+        if section == .goalSetting {
+            // BEFORE specific goals selected: show minimal initial flow
+            if !hasCompletedSpecificGoals {
+                return ["Your Transformation", "Specific Goals"]
             }
+
+            // AFTER specific goals selected: build complete dynamic flow
+            screens = ["Your Transformation", "Specific Goals"]
+
+            // Add Goal Ranking if 2+ goals selected
+            if selectedSpecificGoals.count >= 2 {
+                screens.append("Goal Ranking")
+            }
+
+            // IMPORTANT: Weight Management is ALWAYS shown if selected (regardless of rank)
+            if selectedSpecificGoals.contains(.weightManagement) {
+                screens.append("Goal Selection")
+
+                // Further conditional based on traditional goal choice
+                if let goal = goal?.lowercased() {
+                    if goal == "maintain weight" {
+                        screens.append("Trend Weight")
+                    } else if goal == "lose weight" || goal == "gain weight" {
+                        screens.append("Weight Goal")
+                    }
+                }
+            }
+
+            // ADAPTIVE FLOW: Add preference screens for rank 1-2 goals only
+            // Note: Weight Management handled separately above (always shown if selected)
+
+            // Use ranked goals if available (after ranking screen)
+            if !rankedGoals.isEmpty {
+                // Sort by rank to ensure correct order
+                let sortedGoals = rankedGoals.sorted { $0.rank < $1.rank }
+
+                // Add preference screens for top 2 ranked goals only
+                for rankedGoal in sortedGoals where rankedGoal.rank < 2 {
+                    switch rankedGoal.goal {
+                    case .betterSleep:
+                        screens.append("Sleep Preferences")
+                    case .steadyEnergy:
+                        screens.append("Energy Preferences")
+                    case .muscleGain:
+                        screens.append("Muscle Preferences")
+                    case .athleticPerformance:
+                        screens.append("Performance Preferences")
+                    case .metabolicHealth:
+                        screens.append("Metabolic Preferences")
+                    case .weightManagement:
+                        // Already handled above - weight management always shown
+                        break
+                    }
+                }
+            }
+
+            // Always end with Goal Summary
+            screens.append("Goal Summary")
+
+            return screens
         }
-        
+
         return screens
     }
     
