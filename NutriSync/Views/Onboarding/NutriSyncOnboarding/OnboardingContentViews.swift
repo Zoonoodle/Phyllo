@@ -4140,19 +4140,41 @@ struct GoalRankingWithButtonsView: View {
                             canMoveUp: index > 0,
                             canMoveDown: index < coordinator.rankedGoals.count - 1,
                             onMoveUp: {
+                                // Block Next button during reorder
+                                coordinator.isGoalDragging = true
+
                                 withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
                                     coordinator.rankedGoals.move(
                                         fromOffsets: IndexSet(integer: index),
                                         toOffset: index - 1
                                     )
                                 }
+
+                                // Re-enable Next button after animation + buffer
+                                Task {
+                                    try? await Task.sleep(nanoseconds: 600_000_000) // 0.6 seconds
+                                    await MainActor.run {
+                                        coordinator.isGoalDragging = false
+                                    }
+                                }
                             },
                             onMoveDown: {
+                                // Block Next button during reorder
+                                coordinator.isGoalDragging = true
+
                                 withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
                                     coordinator.rankedGoals.move(
                                         fromOffsets: IndexSet(integer: index),
                                         toOffset: index + 2
                                     )
+                                }
+
+                                // Re-enable Next button after animation + buffer
+                                Task {
+                                    try? await Task.sleep(nanoseconds: 600_000_000) // 0.6 seconds
+                                    await MainActor.run {
+                                        coordinator.isGoalDragging = false
+                                    }
                                 }
                             }
                         )
@@ -4375,11 +4397,13 @@ struct RankedGoalRowWithButtons: View {
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundColor(canMoveUp ? .white : .white.opacity(0.2))
                         .frame(width: 32, height: 32)
+                        .contentShape(Rectangle())
                         .background(
                             Circle()
                                 .fill(canMoveUp ? Color.white.opacity(0.1) : Color.clear)
                         )
                 }
+                .buttonStyle(.plain)
                 .disabled(!canMoveUp)
 
                 Button {
@@ -4389,13 +4413,16 @@ struct RankedGoalRowWithButtons: View {
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundColor(canMoveDown ? .white : .white.opacity(0.2))
                         .frame(width: 32, height: 32)
+                        .contentShape(Rectangle())
                         .background(
                             Circle()
                                 .fill(canMoveDown ? Color.white.opacity(0.1) : Color.clear)
                         )
                 }
+                .buttonStyle(.plain)
                 .disabled(!canMoveDown)
             }
+            .allowsHitTesting(true)
         }
         .padding(16)
         .background(

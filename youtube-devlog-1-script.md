@@ -6,10 +6,10 @@
 ## 📹 VIDEO METADATA
 
 ### Title Options (A/B Test These):
-1. **"I Fixed My Energy Crashes by Changing WHEN I Eat (Not What)"** ⭐ RECOMMENDED
+1. **"I Fixed My Energy Crashes by Changing WHEN I Eat (Not Just What)"** ⭐ RECOMMENDED
 2. "I Couldn't Gain Muscle Until I Fixed My Meal Timing"
 3. "Why I Built an AI App That Tells You WHEN to Eat"
-4. "I Used to Crash at 2pm Every Day. Here's What I Built to Fix It."
+4. "I Used to Crash at 3pm Every Day. Here's What I Built to Fix It."
 5. "My Sleep Was Broken Until I Changed When I Ate (AI App Demo)"
 
 ### Thumbnail Design:
@@ -78,7 +78,7 @@
 **[Camera: Close-up of your face, energetic]**
 
 **YOU:**
-*"I used to crash so hard at 2pm that I needed a nap just to function. I couldn't fall asleep at night. And no matter how much I ate, I couldn't gain muscle. Turns out—I was eating at the wrong times. Here's what happened when I fixed that."*
+*"I used to crash so hard at 3pm that I needed a nap just to function. I couldn't fall asleep at night. And no matter how much I ate, I couldn't seem to gain weight. Turns out—I was eating at the wrong times, with no real clear plan. Here's what happened when I fixed that."*
 
 **[B-roll: Quick cuts of]**
 - You looking exhausted at desk (acting out the crash)
