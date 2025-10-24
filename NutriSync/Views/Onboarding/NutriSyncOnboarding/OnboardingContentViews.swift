@@ -4179,8 +4179,16 @@ struct GoalRankingView: View {
                                     withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
                                         dragOffset = 0
                                         draggingItem = nil
-                                        coordinator.isGoalDragging = false
                                         hasReordered = false
+                                    }
+
+                                    // Delay clearing isGoalDragging to prevent Next button from being
+                                    // activated by touch-up events when releasing drag near bottom
+                                    Task {
+                                        try? await Task.sleep(nanoseconds: 300_000_000) // 0.3 seconds
+                                        await MainActor.run {
+                                            coordinator.isGoalDragging = false
+                                        }
                                     }
                                 }
                         )
