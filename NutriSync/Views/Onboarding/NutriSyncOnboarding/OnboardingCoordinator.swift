@@ -237,23 +237,28 @@ class NutriSyncOnboardingViewModel {
     
     private func completeSection() {
         completedSections.insert(currentSection)
-        
-        // Save progress after each section completion
+
+        // Save progress, then transition to next section
+        // IMPORTANT: Save must complete BEFORE section transition to avoid race condition
         Task {
+            // Save current state first (captures completed section)
             await saveProgressToFirebase()
-        }
-        
-        // Show account creation prompt after Section 1 (basics) if still anonymous
-        if currentSection == .basics && shouldShowAccountPrompt() {
-            showAccountCreation = true
-        }
-        
-        // Move to next section
-        if let currentIndex = NutriSyncOnboardingSection.allCases.firstIndex(of: currentSection),
-           currentIndex < NutriSyncOnboardingSection.allCases.count - 1 {
-            currentSection = NutriSyncOnboardingSection.allCases[currentIndex + 1]
-            showingSectionIntro = true
-            currentScreenIndex = 0
+
+            // Then transition to next section on main actor
+            await MainActor.run {
+                // Show account creation prompt after Section 1 (basics) if still anonymous
+                if self.currentSection == .basics && self.shouldShowAccountPrompt() {
+                    self.showAccountCreation = true
+                }
+
+                // Move to next section
+                if let currentIndex = NutriSyncOnboardingSection.allCases.firstIndex(of: self.currentSection),
+                   currentIndex < NutriSyncOnboardingSection.allCases.count - 1 {
+                    self.currentSection = NutriSyncOnboardingSection.allCases[currentIndex + 1]
+                    self.showingSectionIntro = true
+                    self.currentScreenIndex = 0
+                }
+            }
         }
     }
     
