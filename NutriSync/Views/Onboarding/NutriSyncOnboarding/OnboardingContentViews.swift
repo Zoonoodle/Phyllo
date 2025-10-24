@@ -4140,7 +4140,7 @@ struct GoalRankingWithButtonsView: View {
                             canMoveUp: index > 0,
                             canMoveDown: index < coordinator.rankedGoals.count - 1,
                             onMoveUp: {
-                                // Block Next button during reorder
+                                // Block Next button during reorder - AGGRESSIVE blocking
                                 coordinator.isGoalDragging = true
 
                                 withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
@@ -4150,16 +4150,16 @@ struct GoalRankingWithButtonsView: View {
                                     )
                                 }
 
-                                // Re-enable Next button after animation + buffer
+                                // Re-enable Next button after LONG delay to prevent any navigation
                                 Task {
-                                    try? await Task.sleep(nanoseconds: 600_000_000) // 0.6 seconds
+                                    try? await Task.sleep(nanoseconds: 1_500_000_000) // 1.5 seconds
                                     await MainActor.run {
                                         coordinator.isGoalDragging = false
                                     }
                                 }
                             },
                             onMoveDown: {
-                                // Block Next button during reorder
+                                // Block Next button during reorder - AGGRESSIVE blocking
                                 coordinator.isGoalDragging = true
 
                                 withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
@@ -4169,9 +4169,9 @@ struct GoalRankingWithButtonsView: View {
                                     )
                                 }
 
-                                // Re-enable Next button after animation + buffer
+                                // Re-enable Next button after LONG delay to prevent any navigation
                                 Task {
-                                    try? await Task.sleep(nanoseconds: 600_000_000) // 0.6 seconds
+                                    try? await Task.sleep(nanoseconds: 1_500_000_000) // 1.5 seconds
                                     await MainActor.run {
                                         coordinator.isGoalDragging = false
                                     }
