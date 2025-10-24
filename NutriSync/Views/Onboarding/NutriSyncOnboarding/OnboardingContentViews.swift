@@ -4102,7 +4102,8 @@ struct GoalCard: View {
 struct GoalRankingView: View {
     @Environment(NutriSyncOnboardingViewModel.self) private var coordinator
     @State private var draggingItem: RankedGoal?
-    @State private var dragTimeoutTask: Task<Void, Never>?
+    @State private var dragOffset: CGFloat = 0
+    @State private var hasReordered = false
 
     var body: some View {
         @Bindable var coordinator = coordinator
@@ -4117,7 +4118,7 @@ struct GoalRankingView: View {
                     .padding(.bottom, 12)
 
                 // Subtitle
-                Text("Drag to reorder by priority")
+                Text("Swipe to reorder by priority")
                     .font(.system(size: 17))
                     .foregroundColor(.white.opacity(0.6))
                     .multilineTextAlignment(.center)
@@ -4139,54 +4140,61 @@ struct GoalRankingView: View {
                             rankedGoal: rankedGoal,
                             rank: index
                         )
-                        .opacity(draggingItem?.id == rankedGoal.id ? 0.5 : 1.0)
-                        .onDrag {
-                            self.draggingItem = rankedGoal
-                            coordinator.isGoalDragging = true
+                        .offset(y: draggingItem?.id == rankedGoal.id ? dragOffset : 0)
+                        .zIndex(draggingItem?.id == rankedGoal.id ? 1 : 0)
+                        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: coordinator.rankedGoals)
+                        .gesture(
+                            DragGesture()
+                                .onChanged { value in
+                                    if draggingItem == nil {
+                                        draggingItem = rankedGoal
+                                        coordinator.isGoalDragging = true
+                                        hasReordered = false
+                                    }
 
-                            // Safety timeout: clear dragging state after 0.5 seconds if not cleared
-                            // This matches the animation duration (0.3s) with a small buffer
-                            dragTimeoutTask?.cancel()
-                            dragTimeoutTask = Task {
-                                try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
-                                if !Task.isCancelled {
-                                    await MainActor.run {
-                                        self.draggingItem = nil
-                                        coordinator.isGoalDragging = false
+                                    dragOffset = value.translation.height
+
+                                    // Calculate target index based on drag distance
+                                    // Each row is ~90pt (including spacing)
+                                    let targetOffset = Int(round(dragOffset / 90))
+                                    var targetIndex = index + targetOffset
+
+                                    // Clamp to valid range
+                                    targetIndex = max(0, min(coordinator.rankedGoals.count - 1, targetIndex))
+
+                                    // Reorder if target changed
+                                    if targetIndex != index && !hasReordered {
+                                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                            coordinator.rankedGoals.move(
+                                                fromOffsets: IndexSet(integer: index),
+                                                toOffset: targetIndex > index ? targetIndex + 1 : targetIndex
+                                            )
+                                        }
+                                        hasReordered = true
+                                    } else if targetIndex == index {
+                                        hasReordered = false
                                     }
                                 }
-                            }
-
-                            return NSItemProvider(object: rankedGoal.id.uuidString as NSString)
-                        }
-                        .onDrop(of: [.text], delegate: GoalDropDelegate(
-                            currentItem: rankedGoal,
-                            items: $coordinator.rankedGoals,
-                            draggingItem: $draggingItem,
-                            isDragging: $coordinator.isGoalDragging
-                        ))
+                                .onEnded { _ in
+                                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                                        dragOffset = 0
+                                        draggingItem = nil
+                                        coordinator.isGoalDragging = false
+                                        hasReordered = false
+                                    }
+                                }
+                        )
                     }
                 }
                 .padding(.horizontal, 20)
             }
         }
         .scrollDisabled(false)
-        .contentShape(Rectangle())
-        .allowsHitTesting(true)
-        .zIndex(1)
-        .onChange(of: draggingItem) { oldValue, newValue in
-            // When dragging stops, cancel timeout
-            if newValue == nil {
-                dragTimeoutTask?.cancel()
-            }
-        }
         .onDisappear {
             // Update ranks based on position in array when leaving screen
             for (index, _) in coordinator.rankedGoals.enumerated() {
                 coordinator.rankedGoals[index].rank = index
             }
-            // Reset dragging state and cancel any pending timeouts
-            dragTimeoutTask?.cancel()
             coordinator.isGoalDragging = false
             draggingItem = nil
         }
@@ -4265,47 +4273,6 @@ struct RankedGoalRow: View {
     }
 }
 
-// MARK: - Drop Delegate for Reordering
-
-struct GoalDropDelegate: DropDelegate {
-    let currentItem: RankedGoal
-    @Binding var items: [RankedGoal]
-    @Binding var draggingItem: RankedGoal?
-    @Binding var isDragging: Bool
-
-    func performDrop(info: DropInfo) -> Bool {
-        // Clear draggingItem immediately for visual feedback
-        draggingItem = nil
-
-        // Delay clearing isDragging to prevent touch-up events from triggering Next button
-        // This ensures all touch events complete before the button becomes active
-        Task {
-            try? await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
-            await MainActor.run {
-                isDragging = false
-            }
-        }
-
-        return true
-    }
-
-    func dropEntered(info: DropInfo) {
-        guard let draggingItem = draggingItem else { return }
-
-        guard let fromIndex = items.firstIndex(where: { $0.id == draggingItem.id }),
-              let toIndex = items.firstIndex(where: { $0.id == currentItem.id }) else { return }
-
-        if fromIndex != toIndex {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                items.move(fromOffsets: IndexSet(integer: fromIndex), toOffset: toIndex > fromIndex ? toIndex + 1 : toIndex)
-            }
-        }
-    }
-
-    func dropUpdated(info: DropInfo) -> DropProposal? {
-        return DropProposal(operation: .move)
-    }
-}
 
 // MARK: - Sleep Preferences View
 
