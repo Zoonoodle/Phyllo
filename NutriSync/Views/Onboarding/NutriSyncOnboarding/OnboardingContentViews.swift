@@ -4145,6 +4145,15 @@ struct GoalRankingWithButtonsView: View {
                                     )
                                 }
 
+                                // IMMEDIATELY update all ranks based on new positions
+                                for (newIndex, _) in coordinator.rankedGoals.enumerated() {
+                                    coordinator.rankedGoals[newIndex].rank = newIndex
+                                }
+                                print("[GoalRankingView] ⬆️ Moved up - Updated ranks:")
+                                for (i, rg) in coordinator.rankedGoals.enumerated() {
+                                    print("[GoalRankingView]   [\(i)] \(rg.goal.rawValue) - rank: \(rg.rank)")
+                                }
+
                                 // Re-enable Next button after LONG delay to prevent any navigation
                                 Task {
                                     try? await Task.sleep(nanoseconds: 1_500_000_000) // 1.5 seconds
@@ -4162,6 +4171,15 @@ struct GoalRankingWithButtonsView: View {
                                         fromOffsets: IndexSet(integer: index),
                                         toOffset: index + 2
                                     )
+                                }
+
+                                // IMMEDIATELY update all ranks based on new positions
+                                for (newIndex, _) in coordinator.rankedGoals.enumerated() {
+                                    coordinator.rankedGoals[newIndex].rank = newIndex
+                                }
+                                print("[GoalRankingView] ⬇️ Moved down - Updated ranks:")
+                                for (i, rg) in coordinator.rankedGoals.enumerated() {
+                                    print("[GoalRankingView]   [\(i)] \(rg.goal.rawValue) - rank: \(rg.rank)")
                                 }
 
                                 // Re-enable Next button after LONG delay to prevent any navigation
