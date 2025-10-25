@@ -4623,48 +4623,185 @@ struct EnergyPreferencesView: View {
                     .padding(.bottom, 40)
 
                 // Form content
-                VStack(alignment: .leading, spacing: 24) {
-                    VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: 32) {
+                    // Energy Crash Times
+                    VStack(alignment: .leading, spacing: 16) {
                         Text("When do you typically experience energy crashes?")
-                            .font(.system(size: 17))
+                            .font(.system(size: 17, weight: .semibold))
                             .foregroundColor(.white)
-                        ForEach(EnergyManagementPreferences.CrashTime.allCases, id: \.self) { time in
-                            Toggle(time.rawValue, isOn: Binding(
-                                get: { coordinator.energyCrashTimes.contains(time) },
-                                set: { isOn in
-                                    if isOn { coordinator.energyCrashTimes.insert(time) }
-                                    else { coordinator.energyCrashTimes.remove(time) }
-                                }
-                            ))
-                            .font(.system(size: 17))
-                            .foregroundColor(.white)
+
+                        VStack(spacing: 12) {
+                            ForEach(EnergyManagementPreferences.CrashTime.allCases, id: \.self) { time in
+                                EnergyCrashTimeButton(
+                                    time: time,
+                                    isSelected: coordinator.energyCrashTimes.contains(time),
+                                    action: {
+                                        if coordinator.energyCrashTimes.contains(time) {
+                                            coordinator.energyCrashTimes.remove(time)
+                                        } else {
+                                            coordinator.energyCrashTimes.insert(time)
+                                        }
+                                    }
+                                )
+                            }
                         }
                     }
 
-                    VStack(alignment: .leading, spacing: 8) {
+                    // Meal Frequency
+                    VStack(alignment: .leading, spacing: 16) {
                         Text("How many meals per day do you prefer?")
-                            .font(.system(size: 17))
+                            .font(.system(size: 17, weight: .semibold))
                             .foregroundColor(.white)
-                        Picker("", selection: $coordinator.energyMealFrequency) {
-                            ForEach([3, 4, 5, 6], id: \.self) { Text("\($0) meals").tag($0) }
+
+                        HStack(spacing: 12) {
+                            ForEach([3, 4, 5, 6], id: \.self) { count in
+                                MealCountButton(
+                                    count: count,
+                                    isSelected: coordinator.energyMealFrequency == count,
+                                    action: { coordinator.energyMealFrequency = count }
+                                )
+                            }
                         }
-                        .pickerStyle(.segmented)
                     }
 
-                    VStack(alignment: .leading, spacing: 8) {
+                    // Caffeine Sensitivity
+                    VStack(alignment: .leading, spacing: 16) {
                         Text("Caffeine sensitivity?")
-                            .font(.system(size: 17))
+                            .font(.system(size: 17, weight: .semibold))
                             .foregroundColor(.white)
-                        Picker("", selection: $coordinator.energyCaffeineSensitivity) {
-                            Text("Low").tag("Low")
-                            Text("Medium").tag("Medium")
-                            Text("High").tag("High")
+
+                        HStack(spacing: 12) {
+                            ForEach(["Low", "Medium", "High"], id: \.self) { sensitivity in
+                                CaffeineSensitivityButton(
+                                    sensitivity: sensitivity,
+                                    isSelected: coordinator.energyCaffeineSensitivity == sensitivity,
+                                    action: { coordinator.energyCaffeineSensitivity = sensitivity }
+                                )
+                            }
                         }
-                        .pickerStyle(.segmented)
                     }
                 }
                 .padding(.horizontal, 20)
+                .padding(.bottom, 100)
             }
+        }
+    }
+}
+
+// MARK: - Energy Preferences Components
+
+struct EnergyCrashTimeButton: View {
+    let time: EnergyManagementPreferences.CrashTime
+    let isSelected: Bool
+    let action: () -> Void
+
+    private var icon: String {
+        switch time {
+        case .midMorning: return "sunrise.fill"
+        case .afternoon: return "sun.max.fill"
+        case .evening: return "sunset.fill"
+        case .none: return "checkmark.circle.fill"
+        }
+    }
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 16) {
+                Image(systemName: icon)
+                    .font(.system(size: 22))
+                    .foregroundColor(isSelected ? .nutriSyncAccent : .white.opacity(0.5))
+                    .frame(width: 28)
+
+                Text(time.rawValue)
+                    .font(.system(size: 17))
+                    .foregroundColor(.white)
+
+                Spacer()
+
+                ZStack {
+                    Circle()
+                        .stroke(isSelected ? Color.nutriSyncAccent : Color.white.opacity(0.3), lineWidth: 2)
+                        .frame(width: 24, height: 24)
+
+                    if isSelected {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundColor(.nutriSyncAccent)
+                    }
+                }
+            }
+            .padding(20)
+            .background(Color.white.opacity(0.03))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(isSelected ? Color.nutriSyncAccent : Color.white.opacity(0.2), lineWidth: isSelected ? 2 : 1)
+            )
+            .cornerRadius(16)
+        }
+    }
+}
+
+struct MealCountButton: View {
+    let count: Int
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 8) {
+                Text("\(count)")
+                    .font(.system(size: 24, weight: .bold))
+                    .foregroundColor(isSelected ? .nutriSyncAccent : .white)
+
+                Text("meals")
+                    .font(.system(size: 13))
+                    .foregroundColor(isSelected ? .nutriSyncAccent : .white.opacity(0.6))
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 20)
+            .background(isSelected ? Color.nutriSyncAccent.opacity(0.1) : Color.white.opacity(0.03))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(isSelected ? Color.nutriSyncAccent : Color.white.opacity(0.2), lineWidth: isSelected ? 2 : 1)
+            )
+            .cornerRadius(12)
+        }
+    }
+}
+
+struct CaffeineSensitivityButton: View {
+    let sensitivity: String
+    let isSelected: Bool
+    let action: () -> Void
+
+    private var icon: String {
+        switch sensitivity {
+        case "Low": return "cup.and.saucer.fill"
+        case "Medium": return "mug.fill"
+        case "High": return "bolt.fill"
+        default: return "mug.fill"
+        }
+    }
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 10) {
+                Image(systemName: icon)
+                    .font(.system(size: 24))
+                    .foregroundColor(isSelected ? .nutriSyncAccent : .white.opacity(0.5))
+
+                Text(sensitivity)
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundColor(isSelected ? .nutriSyncAccent : .white)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 20)
+            .background(isSelected ? Color.nutriSyncAccent.opacity(0.1) : Color.white.opacity(0.03))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(isSelected ? Color.nutriSyncAccent : Color.white.opacity(0.2), lineWidth: isSelected ? 2 : 1)
+            )
+            .cornerRadius(12)
         }
     }
 }
@@ -4693,45 +4830,262 @@ struct MusclePreferencesView: View {
                     .padding(.bottom, 40)
 
                 // Form content
-                VStack(alignment: .leading, spacing: 24) {
-                    VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: 32) {
+                    // Training Days
+                    VStack(alignment: .leading, spacing: 16) {
                         Text("How many days per week do you train?")
-                            .font(.system(size: 17))
+                            .font(.system(size: 17, weight: .semibold))
                             .foregroundColor(.white)
-                        Stepper("\(coordinator.muscleTrainingDays) days", value: $coordinator.muscleTrainingDays, in: 3...7)
-                            .foregroundColor(.white)
+
+                        TrainingDaysSelector(
+                            days: coordinator.muscleTrainingDays,
+                            onDecrement: {
+                                if coordinator.muscleTrainingDays > 3 {
+                                    coordinator.muscleTrainingDays -= 1
+                                }
+                            },
+                            onIncrement: {
+                                if coordinator.muscleTrainingDays < 7 {
+                                    coordinator.muscleTrainingDays += 1
+                                }
+                            }
+                        )
                     }
 
-                    VStack(alignment: .leading, spacing: 8) {
+                    // Training Style
+                    VStack(alignment: .leading, spacing: 16) {
                         Text("What's your primary training style?")
-                            .font(.system(size: 17))
+                            .font(.system(size: 17, weight: .semibold))
                             .foregroundColor(.white)
-                        Picker("", selection: $coordinator.muscleTrainingStyle) {
-                            ForEach(MuscleGainPreferences.TrainingStyle.allCases, id: \.self) {
-                                Text($0.rawValue).tag($0)
+
+                        VStack(spacing: 12) {
+                            ForEach(MuscleGainPreferences.TrainingStyle.allCases, id: \.self) { style in
+                                TrainingStyleButton(
+                                    style: style,
+                                    isSelected: coordinator.muscleTrainingStyle == style,
+                                    action: { coordinator.muscleTrainingStyle = style }
+                                )
                             }
                         }
-                        .pickerStyle(.menu)
                     }
 
-                    VStack(alignment: .leading, spacing: 8) {
+                    // Protein Distribution
+                    VStack(alignment: .leading, spacing: 16) {
                         Text("Protein distribution preference?")
-                            .font(.system(size: 17))
+                            .font(.system(size: 17, weight: .semibold))
                             .foregroundColor(.white)
-                        Picker("", selection: $coordinator.muscleProteinDistribution) {
-                            Text("Even throughout day").tag("Even")
-                            Text("Post-Workout Focus").tag("Post-Workout Focus")
-                            Text("Maximum (6 meals)").tag("Maximum")
+
+                        VStack(spacing: 12) {
+                            ProteinDistributionButton(
+                                title: "Even throughout day",
+                                subtitle: "Consistent protein every meal",
+                                icon: "clock.fill",
+                                isSelected: coordinator.muscleProteinDistribution == "Even",
+                                action: { coordinator.muscleProteinDistribution = "Even" }
+                            )
+
+                            ProteinDistributionButton(
+                                title: "Post-Workout Focus",
+                                subtitle: "Higher protein after training",
+                                icon: "figure.strengthtraining.traditional",
+                                isSelected: coordinator.muscleProteinDistribution == "Post-Workout Focus",
+                                action: { coordinator.muscleProteinDistribution = "Post-Workout Focus" }
+                            )
+
+                            ProteinDistributionButton(
+                                title: "Maximum (6 meals)",
+                                subtitle: "Frequent protein doses",
+                                icon: "chart.line.uptrend.xyaxis",
+                                isSelected: coordinator.muscleProteinDistribution == "Maximum",
+                                action: { coordinator.muscleProteinDistribution = "Maximum" }
+                            )
                         }
-                        .pickerStyle(.menu)
                     }
 
-                    Toggle("I use protein supplements", isOn: $coordinator.muscleSupplementProtein)
-                        .font(.system(size: 17))
-                        .foregroundColor(.white)
+                    // Protein Supplements
+                    Button(action: {
+                        coordinator.muscleSupplementProtein.toggle()
+                    }) {
+                        HStack(spacing: 16) {
+                            Image(systemName: "leaf.fill")
+                                .font(.system(size: 22))
+                                .foregroundColor(coordinator.muscleSupplementProtein ? .nutriSyncAccent : .white.opacity(0.5))
+                                .frame(width: 28)
+
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("I use protein supplements")
+                                    .font(.system(size: 17, weight: .medium))
+                                    .foregroundColor(.white)
+
+                                Text("Powder, shakes, bars, etc.")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.white.opacity(0.6))
+                            }
+
+                            Spacer()
+
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 16)
+                                    .fill(coordinator.muscleSupplementProtein ? Color.nutriSyncAccent : Color.white.opacity(0.2))
+                                    .frame(width: 51, height: 31)
+
+                                Circle()
+                                    .fill(.white)
+                                    .frame(width: 27, height: 27)
+                                    .offset(x: coordinator.muscleSupplementProtein ? 10 : -10)
+                            }
+                        }
+                        .padding(20)
+                        .background(Color.white.opacity(0.03))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16)
+                                .stroke(coordinator.muscleSupplementProtein ? Color.nutriSyncAccent : Color.white.opacity(0.2), lineWidth: coordinator.muscleSupplementProtein ? 2 : 1)
+                        )
+                        .cornerRadius(16)
+                    }
                 }
                 .padding(.horizontal, 20)
+                .padding(.bottom, 100)
             }
+        }
+    }
+}
+
+// MARK: - Muscle Preferences Components
+
+struct TrainingDaysSelector: View {
+    let days: Int
+    let onDecrement: () -> Void
+    let onIncrement: () -> Void
+
+    var body: some View {
+        HStack(spacing: 16) {
+            Button(action: onDecrement) {
+                Image(systemName: "minus")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(days > 3 ? .white : .white.opacity(0.3))
+                    .frame(width: 50, height: 50)
+                    .background(Color.white.opacity(0.1))
+                    .cornerRadius(12)
+            }
+            .disabled(days <= 3)
+
+            VStack(spacing: 4) {
+                Text("\(days)")
+                    .font(.system(size: 36, weight: .bold))
+                    .foregroundColor(.nutriSyncAccent)
+
+                Text("days")
+                    .font(.system(size: 15))
+                    .foregroundColor(.white.opacity(0.6))
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 16)
+            .background(Color.white.opacity(0.03))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(Color.nutriSyncAccent, lineWidth: 2)
+            )
+            .cornerRadius(16)
+
+            Button(action: onIncrement) {
+                Image(systemName: "plus")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(days < 7 ? .white : .white.opacity(0.3))
+                    .frame(width: 50, height: 50)
+                    .background(Color.white.opacity(0.1))
+                    .cornerRadius(12)
+            }
+            .disabled(days >= 7)
+        }
+    }
+}
+
+struct TrainingStyleButton: View {
+    let style: MuscleGainPreferences.TrainingStyle
+    let isSelected: Bool
+    let action: () -> Void
+
+    private var icon: String {
+        switch style {
+        case .strength: return "dumbbell.fill"
+        case .hypertrophy: return "figure.strengthtraining.traditional"
+        case .powerlifting: return "figure.strengthtraining.functional"
+        case .generalFitness: return "figure.mixed.cardio"
+        }
+    }
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 16) {
+                Image(systemName: icon)
+                    .font(.system(size: 22))
+                    .foregroundColor(isSelected ? .nutriSyncAccent : .white.opacity(0.5))
+                    .frame(width: 28)
+
+                Text(style.rawValue)
+                    .font(.system(size: 17))
+                    .foregroundColor(.white)
+
+                Spacer()
+
+                if isSelected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 22))
+                        .foregroundColor(.nutriSyncAccent)
+                }
+            }
+            .padding(20)
+            .background(isSelected ? Color.nutriSyncAccent.opacity(0.1) : Color.white.opacity(0.03))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(isSelected ? Color.nutriSyncAccent : Color.white.opacity(0.2), lineWidth: isSelected ? 2 : 1)
+            )
+            .cornerRadius(16)
+        }
+    }
+}
+
+struct ProteinDistributionButton: View {
+    let title: String
+    let subtitle: String
+    let icon: String
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 16) {
+                Image(systemName: icon)
+                    .font(.system(size: 22))
+                    .foregroundColor(isSelected ? .nutriSyncAccent : .white.opacity(0.5))
+                    .frame(width: 28)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title)
+                        .font(.system(size: 17, weight: .medium))
+                        .foregroundColor(.white)
+
+                    Text(subtitle)
+                        .font(.system(size: 14))
+                        .foregroundColor(.white.opacity(0.6))
+                }
+
+                Spacer()
+
+                if isSelected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 22))
+                        .foregroundColor(.nutriSyncAccent)
+                }
+            }
+            .padding(20)
+            .background(isSelected ? Color.nutriSyncAccent.opacity(0.1) : Color.white.opacity(0.03))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(isSelected ? Color.nutriSyncAccent : Color.white.opacity(0.2), lineWidth: isSelected ? 2 : 1)
+            )
+            .cornerRadius(16)
         }
     }
 }
