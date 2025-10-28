@@ -13,41 +13,41 @@ struct MealFrequencyView: View {
     
     enum MealFrequency: String, CaseIterable {
         case twoToThree = "2-3 meals"
-        case fourToFive = "4-5 meals"
-        case sixPlus = "6+ meals"
-        
+        case threeToFour = "3-4 meals"
+        case fiveToSix = "5-6 meals"
+
         var title: String {
             switch self {
             case .twoToThree: return "2-3 Meals"
-            case .fourToFive: return "4-5 Meals"
-            case .sixPlus: return "6+ Meals"
+            case .threeToFour: return "3-4 Meals"
+            case .fiveToSix: return "5-6 Meals"
             }
         }
-        
+
         var description: String {
             switch self {
             case .twoToThree:
-                return "Recommended • Longer fasting periods between meals improve metabolic health"
-            case .fourToFive:
-                return "Moderate frequency • Balanced approach for active individuals"
-            case .sixPlus:
-                return "High frequency • May increase inflammation and metabolic stress"
+                return "Intermittent fasting style • Longer periods between meals"
+            case .threeToFour:
+                return "Recommended • Balanced approach for most goals"
+            case .fiveToSix:
+                return "Frequent feeding • Ideal for muscle gain and active lifestyles"
             }
         }
-        
+
         var icon: String {
             switch self {
-            case .twoToThree: return "star.fill"
-            case .fourToFive: return "circle.fill"
-            case .sixPlus: return "exclamationmark.triangle.fill"
+            case .twoToThree: return "moon.stars.fill"
+            case .threeToFour: return "sun.max.fill"
+            case .fiveToSix: return "flame.fill"
             }
         }
-        
+
         var iconColor: Color {
             switch self {
-            case .twoToThree: return .nutriSyncAccent
-            case .fourToFive: return .white.opacity(0.7)
-            case .sixPlus: return .orange
+            case .twoToThree: return .blue
+            case .threeToFour: return .nutriSyncAccent
+            case .fiveToSix: return .orange
             }
         }
     }
@@ -120,12 +120,12 @@ struct MealFrequencyView: View {
                             case .twoToThree:
                                 coordinator.mealFrequency = "3"
                                 print("[MealFrequencyView] ✅ Set mealFrequency to: 3 (2-3 meals)")
-                            case .fourToFive:
+                            case .threeToFour:
                                 coordinator.mealFrequency = "4"
-                                print("[MealFrequencyView] ✅ Set mealFrequency to: 4 (4-5 meals)")
-                            case .sixPlus:
+                                print("[MealFrequencyView] ✅ Set mealFrequency to: 4 (3-4 meals)")
+                            case .fiveToSix:
                                 coordinator.mealFrequency = "6"
-                                print("[MealFrequencyView] ✅ Set mealFrequency to: 6 (6+ meals)")
+                                print("[MealFrequencyView] ✅ Set mealFrequency to: 6 (5-6 meals)")
                             }
                         } else {
                             print("[MealFrequencyView] ⚠️ No frequency selected, mealFrequency not set")

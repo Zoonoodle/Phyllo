@@ -4647,18 +4647,18 @@ struct EnergyPreferencesView: View {
                         }
                     }
 
-                    // Meal Frequency
+                    // Snacking Preference
                     VStack(alignment: .leading, spacing: 16) {
-                        Text("How many meals per day do you prefer?")
+                        Text("How do you prefer to handle snacking?")
                             .font(.system(size: 17, weight: .semibold))
                             .foregroundColor(.white)
 
-                        HStack(spacing: 12) {
-                            ForEach([3, 4, 5, 6], id: \.self) { count in
-                                MealCountButton(
-                                    count: count,
-                                    isSelected: coordinator.energyMealFrequency == count,
-                                    action: { coordinator.energyMealFrequency = count }
+                        VStack(spacing: 12) {
+                            ForEach(EnergyManagementPreferences.SnackingPreference.allCases, id: \.self) { preference in
+                                SnackingPreferenceButton(
+                                    preference: preference,
+                                    isSelected: coordinator.energySnackingPreference == preference,
+                                    action: { coordinator.energySnackingPreference = preference }
                                 )
                             }
                         }
@@ -4741,30 +4741,58 @@ struct EnergyCrashTimeButton: View {
     }
 }
 
-struct MealCountButton: View {
-    let count: Int
+struct SnackingPreferenceButton: View {
+    let preference: EnergyManagementPreferences.SnackingPreference
     let isSelected: Bool
     let action: () -> Void
 
+    private var icon: String {
+        switch preference {
+        case .noSnacks: return "xmark.circle.fill"
+        case .lightSnacks: return "leaf.fill"
+        case .frequentSnacks: return "chart.bar.fill"
+        }
+    }
+
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 8) {
-                Text("\(count)")
-                    .font(.system(size: 24, weight: .bold))
-                    .foregroundColor(isSelected ? .nutriSyncAccent : .white)
+            HStack(spacing: 16) {
+                Image(systemName: icon)
+                    .font(.system(size: 22))
+                    .foregroundColor(isSelected ? .nutriSyncAccent : .white.opacity(0.5))
+                    .frame(width: 28)
 
-                Text("meals")
-                    .font(.system(size: 13))
-                    .foregroundColor(isSelected ? .nutriSyncAccent : .white.opacity(0.6))
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(preference.displayName)
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundColor(.white)
+
+                    Text(preference.description)
+                        .font(.system(size: 14))
+                        .foregroundColor(.white.opacity(0.6))
+                }
+
+                Spacer()
+
+                ZStack {
+                    Circle()
+                        .stroke(isSelected ? Color.nutriSyncAccent : Color.white.opacity(0.3), lineWidth: 2)
+                        .frame(width: 24, height: 24)
+
+                    if isSelected {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundColor(.nutriSyncAccent)
+                    }
+                }
             }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 20)
-            .background(isSelected ? Color.nutriSyncAccent.opacity(0.1) : Color.white.opacity(0.03))
+            .padding(20)
+            .background(Color.white.opacity(0.03))
             .overlay(
-                RoundedRectangle(cornerRadius: 12)
+                RoundedRectangle(cornerRadius: 16)
                     .stroke(isSelected ? Color.nutriSyncAccent : Color.white.opacity(0.2), lineWidth: isSelected ? 2 : 1)
             )
-            .cornerRadius(12)
+            .cornerRadius(16)
         }
     }
 }

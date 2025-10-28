@@ -130,7 +130,7 @@ class NutriSyncOnboardingViewModel {
     var sleepQualitySensitivity: String = "Medium"
 
     var energyCrashTimes: Set<EnergyManagementPreferences.CrashTime> = []
-    var energyMealFrequency: Int = 4
+    var energySnackingPreference: EnergyManagementPreferences.SnackingPreference = .lightSnacks
     var energyCaffeineSensitivity: String = "Medium"
 
     var muscleTrainingDays: Int = 4
@@ -625,7 +625,7 @@ class NutriSyncOnboardingViewModel {
 
         return EnergyManagementPreferences(
             crashTimes: Array(energyCrashTimes),
-            preferredMealFrequency: energyMealFrequency,
+            snackingPreference: energySnackingPreference,
             caffeineSensitivity: energyCaffeineSensitivity
         )
     }

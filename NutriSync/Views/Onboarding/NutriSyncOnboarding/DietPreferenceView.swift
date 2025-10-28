@@ -104,41 +104,55 @@ struct DietOption: View {
     let description: String
     let isSelected: Bool
     let action: () -> Void
-    
+
     var body: some View {
         Button(action: action) {
-            HStack(alignment: .top, spacing: 16) {
-                // Icon
-                Image(systemName: icon)
-                    .font(.system(size: 24))
-                    .foregroundColor(.nutriSyncAccent) // Lime green accent
-                    .frame(width: 30, height: 30)
-                    .padding(.top, 20)
-                
-                // Text content
+            HStack(spacing: 16) {
+                // Radio button (left side)
+                ZStack {
+                    Circle()
+                        .stroke(isSelected ? Color.nutriSyncAccent : Color.white.opacity(0.3), lineWidth: 2)
+                        .frame(width: 24, height: 24)
+
+                    if isSelected {
+                        Circle()
+                            .fill(Color.nutriSyncAccent) // Lime green accent when selected
+                            .frame(width: 12, height: 12)
+                    }
+                }
+
+                // Content
                 VStack(alignment: .leading, spacing: 8) {
-                    Text(title)
-                        .font(.system(size: 20, weight: .semibold))
-                        .foregroundColor(.white)
-                    
+                    HStack(spacing: 8) {
+                        Text(title)
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundColor(.white)
+
+                        Image(systemName: icon)
+                            .font(.system(size: 14))
+                            .foregroundColor(.nutriSyncAccent)
+                    }
+
                     Text(description)
-                        .font(.system(size: 15))
-                        .foregroundColor(.white.opacity(0.6))
+                        .font(.system(size: 14))
+                        .foregroundColor(.white.opacity(0.7))
                         .multilineTextAlignment(.leading)
                 }
-                .padding(.top, 16)
-                .padding(.bottom, 20)
-                
+
                 Spacer()
             }
-            .padding(.horizontal, 20)
-            .background(Color.white.opacity(0.03))
+            .padding(20)
+            .frame(maxWidth: .infinity)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(isSelected ? Color.white.opacity(0.1) : Color.white.opacity(0.05))
+            )
             .overlay(
                 RoundedRectangle(cornerRadius: 16)
-                    .stroke(isSelected ? Color.white : Color.white.opacity(0.2), lineWidth: isSelected ? 3 : 1)
+                    .stroke(isSelected ? Color.nutriSyncAccent.opacity(0.5) : Color.clear, lineWidth: 1.5)
             )
-            .cornerRadius(16)
         }
+        .buttonStyle(PlainButtonStyle())
     }
 }
 

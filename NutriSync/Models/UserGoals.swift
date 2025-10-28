@@ -170,7 +170,7 @@ struct SleepOptimizationPreferences: Codable, Hashable {
 /// Energy management preferences (for Rank 1-2 only)
 struct EnergyManagementPreferences: Codable, Hashable {
     var crashTimes: [CrashTime]  // When user experiences crashes
-    var preferredMealFrequency: Int  // 3, 4, 5, or 6 meals
+    var snackingPreference: SnackingPreference  // How they prefer to handle snacking
     var caffeineSensitivity: String  // "Low", "Medium", "High"
 
     enum CrashTime: String, CaseIterable, Codable, Hashable {
@@ -180,9 +180,31 @@ struct EnergyManagementPreferences: Codable, Hashable {
         case none = "No specific pattern"
     }
 
+    enum SnackingPreference: String, CaseIterable, Codable, Hashable {
+        case noSnacks = "No snacks - structured meals only"
+        case lightSnacks = "Light snacks between meals"
+        case frequentSnacks = "Frequent small snacks throughout day"
+
+        var displayName: String {
+            switch self {
+            case .noSnacks: return "No Snacks"
+            case .lightSnacks: return "Light Snacking"
+            case .frequentSnacks: return "Frequent Snacking"
+            }
+        }
+
+        var description: String {
+            switch self {
+            case .noSnacks: return "Prefer structured meals without snacking"
+            case .lightSnacks: return "Occasional healthy snacks between meals"
+            case .frequentSnacks: return "Grazing pattern with frequent small bites"
+            }
+        }
+    }
+
     static let defaultForRank3Plus = EnergyManagementPreferences(
         crashTimes: [.afternoon],
-        preferredMealFrequency: 4,
+        snackingPreference: .lightSnacks,
         caffeineSensitivity: "Medium"
     )
 }
