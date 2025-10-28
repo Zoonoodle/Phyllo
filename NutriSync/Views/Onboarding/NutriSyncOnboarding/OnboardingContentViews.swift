@@ -3195,31 +3195,45 @@ struct DietPreferenceContentView: View {
                             coordinator.dietPreference = diet
                         }) {
                             HStack(spacing: 16) {
-                                // Icon
-                                Image(systemName: icon)
-                                    .font(.system(size: 20))
-                                    .foregroundColor(Color(hex: "C0FF73"))
-                                    .frame(width: 24, height: 24)
-                                
+                                // Radio button (left side)
+                                ZStack {
+                                    Circle()
+                                        .stroke(selectedDiet == diet ? Color(hex: "C0FF73") : Color.white.opacity(0.3), lineWidth: 2)
+                                        .frame(width: 24, height: 24)
+
+                                    if selectedDiet == diet {
+                                        Circle()
+                                            .fill(Color(hex: "C0FF73"))
+                                            .frame(width: 12, height: 12)
+                                    }
+                                }
+
+                                // Content
                                 VStack(alignment: .leading, spacing: 4) {
-                                    Text(diet)
-                                        .font(.system(size: 17, weight: .semibold))
-                                        .foregroundColor(.white)
+                                    HStack(spacing: 8) {
+                                        Text(diet)
+                                            .font(.system(size: 17, weight: .semibold))
+                                            .foregroundColor(.white)
+
+                                        Image(systemName: icon)
+                                            .font(.system(size: 14))
+                                            .foregroundColor(Color(hex: "C0FF73"))
+                                    }
+
                                     Text(description)
                                         .font(.system(size: 14))
                                         .foregroundColor(.white.opacity(0.6))
+                                        .multilineTextAlignment(.leading)
                                 }
+
                                 Spacer()
-                                Image(systemName: selectedDiet == diet ? "checkmark.circle.fill" : "circle")
-                                    .font(.system(size: 22))
-                                    .foregroundColor(selectedDiet == diet ? .white : .white.opacity(0.3))
                             }
                             .padding(16)
-                            .background(Color.white.opacity(selectedDiet == diet ? 0.08 : 0.05))
+                            .background(selectedDiet == diet ? Color.white.opacity(0.1) : Color.white.opacity(0.05))
                             .cornerRadius(12)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 12)
-                                    .stroke(selectedDiet == diet ? Color.white.opacity(0.3) : Color.clear, lineWidth: 1.5)
+                                    .stroke(selectedDiet == diet ? Color(hex: "C0FF73").opacity(0.5) : Color.clear, lineWidth: 1.5)
                             )
                         }
                         .buttonStyle(PlainButtonStyle())
@@ -3589,45 +3603,63 @@ struct MealFrequencyContentView: View {
                     .padding(.bottom, 40)
                 
                 // Main content - Meal frequency options
-                VStack(spacing: 20) {
-                    // Meal frequency grid
-                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                        ForEach([
-                            ("2 Meals", "Intermittent fasting"),
-                            ("3 Meals", "Traditional approach"),
-                            ("4 Meals", "Balanced frequency"),
-                            ("5 Meals", "Frequent feeding"),
-                            ("6 Meals", "Bodybuilder style"),
-                            ("Flexible", "Varies by day")
-                        ], id: \.0) { meals, style in
-                            Button(action: {
-                                selectedMealCount = meals
-                                // Extract numeric value from "2 Meals" → "2"
-                                let numericValue = meals.components(separatedBy: " ").first ?? meals
-                                coordinator.mealFrequency = numericValue
-                                print("[MealFrequencyContentView] ✅ Set mealFrequency to: \(numericValue) from selection '\(meals)'")
-                            }) {
-                                VStack(spacing: 8) {
-                                    Text(meals)
-                                        .font(.system(size: 18, weight: .semibold))
-                                        .foregroundColor(.white)
-                                    Text(style)
-                                        .font(.system(size: 12))
-                                        .foregroundColor(.white.opacity(0.5))
+                VStack(spacing: 16) {
+                    // Meal frequency cards with icons
+                    ForEach([
+                        ("2-3 Meals", "3", "Intermittent fasting style • Longer periods between meals", "moon.stars.fill", Color.blue),
+                        ("3-4 Meals", "4", "Recommended • Balanced approach for most goals", "sun.max.fill", Color(hex: "C0FF73")),
+                        ("5-6 Meals", "6", "Frequent feeding • Ideal for muscle gain and active lifestyles", "flame.fill", Color.orange)
+                    ], id: \.0) { display, value, description, icon, iconColor in
+                        Button(action: {
+                            selectedMealCount = display
+                            coordinator.mealFrequency = value
+                            print("[MealFrequencyContentView] ✅ Set mealFrequency to: \(value) from selection '\(display)'")
+                        }) {
+                            HStack(spacing: 16) {
+                                // Radio button (left side)
+                                ZStack {
+                                    Circle()
+                                        .stroke(selectedMealCount == display ? Color(hex: "C0FF73") : Color.white.opacity(0.3), lineWidth: 2)
+                                        .frame(width: 24, height: 24)
+
+                                    if selectedMealCount == display {
+                                        Circle()
+                                            .fill(Color(hex: "C0FF73"))
+                                            .frame(width: 12, height: 12)
+                                    }
                                 }
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 80)
-                                .background(Color.white.opacity(selectedMealCount == meals ? 0.08 : 0.05))
-                                .cornerRadius(12)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .stroke(selectedMealCount == meals ? Color.white.opacity(0.3) : Color.white.opacity(0.1), lineWidth: selectedMealCount == meals ? 2 : 1)
-                                )
+
+                                // Content
+                                VStack(alignment: .leading, spacing: 8) {
+                                    HStack(spacing: 8) {
+                                        Text(display)
+                                            .font(.system(size: 18, weight: .semibold))
+                                            .foregroundColor(.white)
+
+                                        Image(systemName: icon)
+                                            .font(.system(size: 16))
+                                            .foregroundColor(iconColor)
+                                    }
+
+                                    Text(description)
+                                        .font(.system(size: 14))
+                                        .foregroundColor(.white.opacity(0.7))
+                                        .multilineTextAlignment(.leading)
+                                }
+
+                                Spacer()
                             }
-                            .buttonStyle(PlainButtonStyle())
+                            .padding(20)
+                            .background(selectedMealCount == display ? Color.white.opacity(0.1) : Color.white.opacity(0.05))
+                            .cornerRadius(16)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .stroke(selectedMealCount == display ? Color(hex: "C0FF73").opacity(0.5) : Color.clear, lineWidth: 1.5)
+                            )
                         }
+                        .buttonStyle(PlainButtonStyle())
                     }
-                    
+
                     // Info section
                     VStack(spacing: 12) {
                         Text("Consider your schedule")
@@ -3638,7 +3670,7 @@ struct MealFrequencyContentView: View {
                             .foregroundColor(.white.opacity(0.5))
                             .multilineTextAlignment(.center)
                     }
-                    .padding(.top, 20)
+                    .padding(.top, 8)
                 }
                 .padding(.horizontal, 20)
                 
