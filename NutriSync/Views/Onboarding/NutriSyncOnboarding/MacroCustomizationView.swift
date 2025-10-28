@@ -191,6 +191,23 @@ struct MacroCustomizationContentView: View {
     }
 
     private func calculateGrams(percentage: Double, isFat: Bool) -> Int {
+        // Use ADJUSTED daily calories (same as what will be shown in final program)
+        let adjustedCalories = calculateDailyCalories()
+
+        // Calculate calories from percentage
+        let caloriesFromPercentage = Double(adjustedCalories) * (percentage / 100.0)
+
+        // Convert to grams based on macro type
+        // Protein and Carbs: 4 calories per gram
+        // Fat: 9 calories per gram
+        let grams = isFat ? caloriesFromPercentage / 9.0 : caloriesFromPercentage / 4.0
+
+        let result = Int(round(grams))
+        print("[MacroCustomization] Calculate: \(Int(percentage))% of \(adjustedCalories) cal = \(Int(caloriesFromPercentage)) cal = \(result)g (isFat: \(isFat))")
+        return result
+    }
+
+    private func calculateDailyCalories() -> Int {
         // Get TDEE - either from viewModel or calculate it
         let tdee: Double
         if let existingTDEE = viewModel.tdee, existingTDEE > 0 {
@@ -201,17 +218,34 @@ struct MacroCustomizationContentView: View {
             print("[MacroCustomization] Using fallback TDEE calculation: \(Int(tdee)) cal")
         }
 
-        // Calculate calories from percentage
-        let caloriesFromPercentage = tdee * (percentage / 100.0)
+        // Apply goal-based adjustments (SAME LOGIC as OnboardingCompletionViewModel)
+        // This ensures the gram amounts shown here match the final program screen
+        if let weeklyRate = viewModel.weightLossRate {
+            let dailyAdjustment = Int((weeklyRate * 3500) / 7)
 
-        // Convert to grams based on macro type
-        // Protein and Carbs: 4 calories per gram
-        // Fat: 9 calories per gram
-        let grams = isFat ? caloriesFromPercentage / 9.0 : caloriesFromPercentage / 4.0
-
-        let result = Int(round(grams))
-        print("[MacroCustomization] Calculate: \(Int(percentage))% of \(Int(tdee)) cal = \(Int(caloriesFromPercentage)) cal = \(result)g (isFat: \(isFat))")
-        return result
+            switch viewModel.goal.lowercased() {
+            case let goal where goal.contains("lose") || goal.contains("weight loss"):
+                return Int(tdee) - dailyAdjustment // Deficit for weight loss
+            case let goal where goal.contains("gain") || goal.contains("muscle") || goal.contains("build"):
+                return Int(tdee) + dailyAdjustment // Surplus for weight/muscle gain
+            case let goal where goal.contains("performance"):
+                return Int(tdee) + (dailyAdjustment / 2) // Small surplus for performance
+            default:
+                return Int(tdee)
+            }
+        } else {
+            // Fallback to fixed adjustments if rate wasn't specified
+            switch viewModel.goal.lowercased() {
+            case let goal where goal.contains("lose") || goal.contains("weight loss"):
+                return Int(tdee) - 500
+            case let goal where goal.contains("gain") || goal.contains("muscle") || goal.contains("build"):
+                return Int(tdee) + 250
+            case let goal where goal.contains("performance"):
+                return Int(tdee) + 100
+            default:
+                return Int(tdee)
+            }
+        }
     }
 
     private func calculateFallbackTDEE() -> Double {
