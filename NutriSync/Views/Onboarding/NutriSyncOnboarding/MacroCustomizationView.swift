@@ -163,6 +163,13 @@ struct MacroCustomizationContentView: View {
         }
         .background(Color.nutriSyncBackground)
         .onAppear {
+            // Calculate TDEE if not available (fallback for resumed onboarding)
+            if viewModel.tdee == nil || viewModel.tdee == 0 {
+                let calculated = calculateFallbackTDEE()
+                viewModel.tdee = calculated
+                print("[MacroCustomization] Calculated and saved TDEE: \(Int(calculated)) cal")
+            }
+
             // Initialize with recommended values for goal
             if let recommended = getRecommendedProfile() {
                 proteinPercentage = Double(recommended.proteinPercentageInt)
@@ -184,9 +191,14 @@ struct MacroCustomizationContentView: View {
     }
 
     private func calculateGrams(percentage: Double, isFat: Bool) -> Int {
-        guard let tdee = viewModel.tdee, tdee > 0 else {
-            print("[MacroCustomization] Warning: TDEE is nil or 0, returning 0g")
-            return 0
+        // Get TDEE - either from viewModel or calculate it
+        let tdee: Double
+        if let existingTDEE = viewModel.tdee, existingTDEE > 0 {
+            tdee = existingTDEE
+        } else {
+            // Calculate TDEE on the fly if not available
+            tdee = calculateFallbackTDEE()
+            print("[MacroCustomization] Using fallback TDEE calculation: \(Int(tdee)) cal")
         }
 
         // Calculate calories from percentage
@@ -202,6 +214,55 @@ struct MacroCustomizationContentView: View {
         return result
     }
 
+    private func calculateFallbackTDEE() -> Double {
+        // Use TDEECalculator to compute TDEE from user's basic info
+        let gender: TDEECalculator.Gender = viewModel.gender.lowercased() == "female" ? .female : .male
+
+        // Determine activity level from exercise frequency and daily activity
+        let activityLevel = determineActivityLevel()
+
+        return TDEECalculator.calculate(
+            weight: viewModel.weight,
+            height: viewModel.height,
+            age: viewModel.age,
+            gender: gender,
+            activityLevel: activityLevel
+        )
+    }
+
+    private func determineActivityLevel() -> TDEECalculator.ActivityLevel {
+        // Map exercise frequency and daily activity to TDEE activity level
+        let exerciseSessions: Int
+        if let freq = Int(viewModel.exerciseFrequency) {
+            exerciseSessions = freq
+        } else if viewModel.exerciseFrequency.contains("0") {
+            exerciseSessions = 0
+        } else if viewModel.exerciseFrequency.contains("1-2") {
+            exerciseSessions = 2
+        } else if viewModel.exerciseFrequency.contains("3-4") {
+            exerciseSessions = 4
+        } else if viewModel.exerciseFrequency.contains("5-6") {
+            exerciseSessions = 6
+        } else if viewModel.exerciseFrequency.contains("7") {
+            exerciseSessions = 7
+        } else {
+            exerciseSessions = 0
+        }
+
+        // Combine exercise and daily activity
+        if exerciseSessions >= 6 || viewModel.dailyActivity == "Very Active" {
+            return .veryActive
+        } else if exerciseSessions >= 4 || viewModel.dailyActivity == "Moderately Active" {
+            return .moderatelyActive
+        } else if exerciseSessions >= 2 {
+            return .lightlyActive
+        } else if viewModel.dailyActivity == "Mostly Sedentary" && exerciseSessions == 0 {
+            return .sedentary
+        } else {
+            return .lightlyActive
+        }
+    }
+
     private func applyPreset(_ preset: (protein: Double, carbs: Double, fat: Double)) {
         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
             proteinPercentage = preset.protein * 100
@@ -213,6 +274,12 @@ struct MacroCustomizationContentView: View {
     private func saveMacroProfile() {
         guard let goal = UserGoals.Goal(rawValue: viewModel.goal) else { return }
 
+        print("[MacroCustomization] ========== SAVING MACRO PROFILE ==========")
+        print("[MacroCustomization] Current slider values:")
+        print("[MacroCustomization]   proteinPercentage: \(proteinPercentage)%")
+        print("[MacroCustomization]   carbPercentage: \(carbPercentage)%")
+        print("[MacroCustomization]   fatPercentage: \(fatPercentage)%")
+
         let profile = MacroProfile(
             proteinPercentage: proteinPercentage / 100,
             carbPercentage: carbPercentage / 100,
@@ -221,17 +288,24 @@ struct MacroCustomizationContentView: View {
             isCustomized: true
         )
 
+        print("[MacroCustomization] Created profile object:")
+        print("[MacroCustomization]   proteinPercentage: \(profile.proteinPercentage) (\(profile.proteinPercentageInt)%)")
+        print("[MacroCustomization]   carbPercentage: \(profile.carbPercentage) (\(profile.carbPercentageInt)%)")
+        print("[MacroCustomization]   fatPercentage: \(profile.fatPercentage) (\(profile.fatPercentageInt)%)")
+
         // Validate before saving
         let validation = MacroCalculationService.validate(profile: profile)
         switch validation {
         case .success:
             viewModel.macroProfile = profile
-            print("[MacroCustomization] Saved profile: P:\(Int(proteinPercentage))% C:\(Int(carbPercentage))% F:\(Int(fatPercentage))%")
+            print("[MacroCustomization] ✅ Profile saved to viewModel.macroProfile")
+            print("[MacroCustomization] Total: \(profile.totalPercentage * 100)%")
         case .failure(let error):
             showValidationError = true
             validationMessage = error.localizedDescription
-            print("[MacroCustomization] Validation error: \(error.localizedDescription)")
+            print("[MacroCustomization] ❌ Validation error: \(error.localizedDescription)")
         }
+        print("[MacroCustomization] ================================================")
     }
 
     private func getEducationalTip() -> String {

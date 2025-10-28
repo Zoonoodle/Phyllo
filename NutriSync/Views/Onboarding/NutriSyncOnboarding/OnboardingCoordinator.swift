@@ -462,6 +462,10 @@ class NutriSyncOnboardingViewModel {
         let finalMacroProfile: MacroProfile
         if let customProfile = macroProfile {
             // User customized their macros during onboarding
+            print("[OnboardingCoordinator] Using CUSTOM macro profile from user:")
+            print("[OnboardingCoordinator]   Protein: \(customProfile.proteinPercentageInt)%")
+            print("[OnboardingCoordinator]   Carbs: \(customProfile.carbPercentageInt)%")
+            print("[OnboardingCoordinator]   Fat: \(customProfile.fatPercentageInt)%")
             finalMacroProfile = customProfile
         } else {
             // Use recommended profile for goal
@@ -474,10 +478,18 @@ class NutriSyncOnboardingViewModel {
                 default: .overallHealth
             }
             finalMacroProfile = MacroCalculationService.getProfile(for: userGoal)
+            print("[OnboardingCoordinator] Using DEFAULT macro profile for goal: \(userGoal.displayName)")
+            print("[OnboardingCoordinator]   Protein: \(finalMacroProfile.proteinPercentageInt)%")
+            print("[OnboardingCoordinator]   Carbs: \(finalMacroProfile.carbPercentageInt)%")
+            print("[OnboardingCoordinator]   Fat: \(finalMacroProfile.fatPercentageInt)%")
         }
 
         // Calculate macros using the profile
         let macros = finalMacroProfile.calculateGrams(calories: adjustedCalorieTarget)
+        print("[OnboardingCoordinator] Calculated macro grams for \(adjustedCalorieTarget) calories:")
+        print("[OnboardingCoordinator]   Protein: \(macros.protein)g")
+        print("[OnboardingCoordinator]   Carbs: \(macros.carbs)g")
+        print("[OnboardingCoordinator]   Fat: \(macros.fat)g")
 
         // Parse mealsPerDay with proper fallback
         let mealsPerDayValue: Int?
