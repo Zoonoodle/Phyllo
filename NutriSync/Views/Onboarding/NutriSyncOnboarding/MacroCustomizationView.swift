@@ -78,6 +78,10 @@ struct MacroCustomizationContentView: View {
                         color: .blue,
                         range: 15...50
                     )
+                    .onChange(of: proteinPercentage) { _, _ in
+                        // Auto-save when slider changes to prevent race conditions
+                        saveMacroProfile()
+                    }
 
                     MacroSlider(
                         label: "Carbs",
@@ -86,6 +90,10 @@ struct MacroCustomizationContentView: View {
                         color: .orange,
                         range: 15...60
                     )
+                    .onChange(of: carbPercentage) { _, _ in
+                        // Auto-save when slider changes to prevent race conditions
+                        saveMacroProfile()
+                    }
 
                     MacroSlider(
                         label: "Fat",
@@ -94,6 +102,10 @@ struct MacroCustomizationContentView: View {
                         color: .purple,
                         range: 15...50
                     )
+                    .onChange(of: fatPercentage) { _, _ in
+                        // Auto-save when slider changes to prevent race conditions
+                        saveMacroProfile()
+                    }
                 }
 
                 // Total Validation
