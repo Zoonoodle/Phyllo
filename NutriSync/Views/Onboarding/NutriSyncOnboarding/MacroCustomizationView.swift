@@ -298,7 +298,15 @@ struct MacroCustomizationContentView: View {
         switch validation {
         case .success:
             viewModel.macroProfile = profile
-            print("[MacroCustomization] ✅ Profile saved to viewModel.macroProfile")
+
+            // ALSO save to UserDefaults for persistence across app restarts during onboarding
+            if let encoded = try? JSONEncoder().encode(profile) {
+                UserDefaults.standard.set(encoded, forKey: "onboarding_macro_profile")
+                print("[MacroCustomization] ✅ Profile saved to viewModel.macroProfile AND UserDefaults")
+            } else {
+                print("[MacroCustomization] ⚠️ Failed to encode profile to UserDefaults, but saved to viewModel")
+            }
+
             print("[MacroCustomization] Total: \(profile.totalPercentage * 100)%")
         case .failure(let error):
             showValidationError = true

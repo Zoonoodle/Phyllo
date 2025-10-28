@@ -295,14 +295,33 @@ class OnboardingCompletionViewModel {
     private func calculateMacros(_ coordinator: NutriSyncOnboardingViewModel) async -> OnboardingMacroTargets {
         let calories = calculateDailyCalories(coordinator)
 
+        print("[OnboardingCompletion] ========== CALCULATING MACROS ==========")
+        print("[OnboardingCompletion] Target calories: \(calories)")
+        print("[OnboardingCompletion] coordinator.macroProfile: \(coordinator.macroProfile != nil ? "EXISTS" : "NIL")")
+
         // Use user's chosen macro profile or get recommended profile for goal
         let macroProfile: MacroProfile = {
             // First, check if user customized their macros
             if let customProfile = coordinator.macroProfile {
+                print("[OnboardingCompletion] ✅ Using CUSTOM macro profile:")
+                print("[OnboardingCompletion]   Protein: \(customProfile.proteinPercentageInt)%")
+                print("[OnboardingCompletion]   Carbs: \(customProfile.carbPercentageInt)%")
+                print("[OnboardingCompletion]   Fat: \(customProfile.fatPercentageInt)%")
                 return customProfile
             }
 
+            // Try to load from UserDefaults (persisted during onboarding)
+            if let savedProfileData = UserDefaults.standard.data(forKey: "onboarding_macro_profile"),
+               let savedProfile = try? JSONDecoder().decode(MacroProfile.self, from: savedProfileData) {
+                print("[OnboardingCompletion] ✅ Loaded SAVED macro profile from UserDefaults:")
+                print("[OnboardingCompletion]   Protein: \(savedProfile.proteinPercentageInt)%")
+                print("[OnboardingCompletion]   Carbs: \(savedProfile.carbPercentageInt)%")
+                print("[OnboardingCompletion]   Fat: \(savedProfile.fatPercentageInt)%")
+                return savedProfile
+            }
+
             // Otherwise, get recommended profile based on goal
+            print("[OnboardingCompletion] ⚠️ Using DEFAULT macro profile for goal: \(coordinator.goal)")
             let goal: UserGoals.Goal = switch coordinator.goal.lowercased() {
                 case let g where g.contains("lose") || g.contains("weight loss"): .loseWeight
                 case let g where g.contains("build") || g.contains("muscle"): .buildMuscle
@@ -312,10 +331,21 @@ class OnboardingCompletionViewModel {
                 default: .overallHealth
             }
 
-            return MacroCalculationService.getProfile(for: goal)
+            let defaultProfile = MacroCalculationService.getProfile(for: goal)
+            print("[OnboardingCompletion]   Protein: \(defaultProfile.proteinPercentageInt)%")
+            print("[OnboardingCompletion]   Carbs: \(defaultProfile.carbPercentageInt)%")
+            print("[OnboardingCompletion]   Fat: \(defaultProfile.fatPercentageInt)%")
+            return defaultProfile
         }()
 
         let macros = macroProfile.calculateGrams(calories: calories)
+
+        print("[OnboardingCompletion] Final macro targets:")
+        print("[OnboardingCompletion]   Calories: \(calories)")
+        print("[OnboardingCompletion]   Protein: \(macros.protein)g")
+        print("[OnboardingCompletion]   Carbs: \(macros.carbs)g")
+        print("[OnboardingCompletion]   Fat: \(macros.fat)g")
+        print("[OnboardingCompletion] ============================================")
 
         return OnboardingMacroTargets(
             calories: calories,

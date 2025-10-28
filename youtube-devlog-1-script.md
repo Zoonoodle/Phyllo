@@ -78,7 +78,7 @@
 **[Camera: Close-up of your face, energetic]**
 
 **YOU:**
-*"I used to crash so hard at 3pm that I needed a nap just to function. I couldn't fall asleep at night. And no matter how much I ate, I couldn't seem to gain weight. Turns out—I was eating at the wrong times, with no real clear plan. Here's what happened when I fixed that."*
+*"I used to crash so hard at 3pm that I needed a nap just to function. I couldn't fall asleep at night. And no matter how much I ate, I couldn't seem to gain weight. Turns out—I was eating at the wrong times, with no real plan. Here's what happened when I fixed that."*
 
 **[B-roll: Quick cuts of]**
 - You looking exhausted at desk (acting out the crash)
@@ -92,7 +92,7 @@
 **[Camera: Medium shot, sitting at desk with laptop visible]**
 
 **YOU:**
-*"Hey, I'm Brennen. I'm a developer, and for years I had this problem: I was the classic 'hard gainer.' I'd eat a ton, hit my calories, track everything in MyFitnessPal—and still couldn't put on muscle.*
+*"Hey, I'm Brennen. I'm a developer, and for years I had this problem: I was the  I'd eat a ton, hit my calories, track everything in MyFitnessPal—and still couldn't put on muscle.*
 
 *But worse than that? My energy was all over the place. I'd be fine in the morning, then completely crash at 2pm—like, I HAD to take a nap or I couldn't function. And then at night when I actually wanted to sleep? Wide awake. Couldn't fall asleep until midnight or later.*
 
