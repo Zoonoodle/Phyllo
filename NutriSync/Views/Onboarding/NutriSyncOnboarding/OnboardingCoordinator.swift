@@ -478,7 +478,7 @@ class NutriSyncOnboardingViewModel {
                 default: .overallHealth
             }
             finalMacroProfile = MacroCalculationService.getProfile(for: userGoal)
-            print("[OnboardingCoordinator] Using DEFAULT macro profile for goal: \(userGoal.displayName)")
+            print("[OnboardingCoordinator] Using DEFAULT macro profile for goal: \(userGoal.rawValue)")
             print("[OnboardingCoordinator]   Protein: \(finalMacroProfile.proteinPercentageInt)%")
             print("[OnboardingCoordinator]   Carbs: \(finalMacroProfile.carbPercentageInt)%")
             print("[OnboardingCoordinator]   Fat: \(finalMacroProfile.fatPercentageInt)%")
