@@ -74,7 +74,7 @@ struct MacroCustomizationContentView: View {
                     MacroSlider(
                         label: "Protein",
                         percentage: $proteinPercentage,
-                        grams: calculateGrams(percentage: proteinPercentage),
+                        grams: calculateGrams(percentage: proteinPercentage, isFat: false),
                         color: .blue,
                         range: 15...50
                     )
@@ -82,7 +82,7 @@ struct MacroCustomizationContentView: View {
                     MacroSlider(
                         label: "Carbs",
                         percentage: $carbPercentage,
-                        grams: calculateGrams(percentage: carbPercentage),
+                        grams: calculateGrams(percentage: carbPercentage, isFat: false),
                         color: .orange,
                         range: 15...60
                     )
@@ -90,7 +90,7 @@ struct MacroCustomizationContentView: View {
                     MacroSlider(
                         label: "Fat",
                         percentage: $fatPercentage,
-                        grams: calculateGrams(percentage: fatPercentage),
+                        grams: calculateGrams(percentage: fatPercentage, isFat: true),
                         color: .purple,
                         range: 15...50
                     )
@@ -183,15 +183,23 @@ struct MacroCustomizationContentView: View {
         return MacroCalculationService.getProfile(for: goal)
     }
 
-    private func calculateGrams(percentage: Double) -> Int {
-        guard let tdee = viewModel.tdee else { return 0 }
+    private func calculateGrams(percentage: Double, isFat: Bool) -> Int {
+        guard let tdee = viewModel.tdee, tdee > 0 else {
+            print("[MacroCustomization] Warning: TDEE is nil or 0, returning 0g")
+            return 0
+        }
 
         // Calculate calories from percentage
-        let calories = Int(tdee) * Int(percentage) / 100
+        let caloriesFromPercentage = tdee * (percentage / 100.0)
 
-        // Convert to grams (4 cal/g for protein and carbs, 9 cal/g for fat)
-        // This is approximate for display purposes
-        return calories / 4
+        // Convert to grams based on macro type
+        // Protein and Carbs: 4 calories per gram
+        // Fat: 9 calories per gram
+        let grams = isFat ? caloriesFromPercentage / 9.0 : caloriesFromPercentage / 4.0
+
+        let result = Int(round(grams))
+        print("[MacroCustomization] Calculate: \(Int(percentage))% of \(Int(tdee)) cal = \(Int(caloriesFromPercentage)) cal = \(result)g (isFat: \(isFat))")
+        return result
     }
 
     private func applyPreset(_ preset: (protein: Double, carbs: Double, fat: Double)) {
