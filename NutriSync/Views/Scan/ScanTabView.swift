@@ -28,7 +28,10 @@ struct ScanTabView: View {
     @State private var recentMeals: [LoggedMeal] = []
     @StateObject private var clarificationManager = ClarificationManager.shared
     @StateObject private var mealCaptureService = MealCaptureService.shared
-    
+    @State private var hasWindowsForToday = true
+    @State private var showDailySync = false
+    @State private var isCheckingWindows = true
+
     private let dataProvider = DataSourceProvider.shared.provider
     
     enum ScanMode: String, CaseIterable {
@@ -47,116 +50,19 @@ struct ScanTabView: View {
     
     var body: some View {
         NavigationStack {
-            ZStack {
-                // Dark background
-                Color.black.ignoresSafeArea()
-                
-                // Camera preview layer
-                CameraView(
-                    capturedImage: $capturedImage,
-                    capturePhoto: $capturePhotoTrigger
-                )
-                .ignoresSafeArea()
-                
-                // Scanner overlay
-                ScannerOverlayView()
-                    .ignoresSafeArea()
-                
-                // Main UI layer
-                VStack(spacing: 0) {
-                    // Top navigation bar - simplified
-                    VStack(spacing: 0) {
-                        VStack(spacing: 8) {
-                            // Title centered
-                            Text("Scan")
-                                .font(.system(size: 24, weight: .bold))
-                                .foregroundColor(.white)
-                                .padding(.horizontal, 24)
-                        }
-                        .padding(.vertical, 6)
-                        
-                        // Separator line
-                        Divider()
-                            .background(Color.white.opacity(0.1))
-                    }
-                    
-                    Spacer()
-                    
-                    // Bottom controls
-                    VStack(spacing: 24) {
-                        // Mode selector
-                        ScanModeSelector(selectedMode: $selectedMode)
-                            .padding(.horizontal, 20)
-                        
-                        // Capture button with photo library option
-                        HStack(spacing: 40) {
-                            // Photo library button (smaller)
-                            if selectedMode == .photo {
-                                Button(action: {
-                                    showImagePicker = true
-                                }) {
-                                    VStack(spacing: 8) {
-                                        Circle()
-                                            .fill(Color.white.opacity(0.1))
-                                            .frame(width: 50, height: 50)
-                                            .overlay(
-                                                Image(systemName: "photo.stack")
-                                                    .font(.system(size: 20, weight: .medium))
-                                                    .foregroundColor(.white.opacity(0.8))
-                                            )
-                                        Text("Library")
-                                            .font(.system(size: 12, weight: .medium))
-                                            .foregroundColor(.white.opacity(0.6))
-                                    }
-                                }
-                            } else {
-                                // Spacer to maintain layout
-                                Color.clear
-                                    .frame(width: 50, height: 50)
-                            }
-                            
-                            // Main capture button
-                            CaptureButton(
-                                mode: selectedMode,
-                                isAnimating: $captureAnimation,
-                                onCapture: {
-                                    performCapture()
-                                }
-                            )
-                            
-                            // Recents button (right side)
-                            if selectedMode == .photo {
-                                Button(action: {
-                                    showRecents = true
-                                    Task {
-                                        await loadRecentMeals()
-                                    }
-                                }) {
-                                    VStack(spacing: 8) {
-                                        Circle()
-                                            .fill(Color.white.opacity(0.1))
-                                            .frame(width: 50, height: 50)
-                                            .overlay(
-                                                Image(systemName: "clock.arrow.circlepath")
-                                                    .font(.system(size: 20, weight: .medium))
-                                                    .foregroundColor(.white.opacity(0.8))
-                                            )
-                                        Text("Recents")
-                                            .font(.system(size: 12, weight: .medium))
-                                            .foregroundColor(.white.opacity(0.6))
-                                    }
-                                }
-                            } else {
-                                // Spacer to maintain layout
-                                Color.clear
-                                    .frame(width: 50, height: 50)
-                            }
-                        }
-                        .padding(.bottom, 40)
-                    }
-                    .padding(.bottom, 30)
+            Group {
+                if isCheckingWindows {
+                    // Show loading state while checking
+                    Color.black.ignoresSafeArea()
+                } else if !hasWindowsForToday {
+                    // Show no windows prompt
+                    NoWindowsForScanView(onStartDailySync: {
+                        showDailySync = true
+                    })
+                } else {
+                    // Show regular scan interface
+                    scanInterfaceView
                 }
-                .ignoresSafeArea(.keyboard)
             }
             .fullScreenCover(isPresented: $showVoiceInput) {
                 VoiceInputView(capturedImage: capturedImage) { transcript in
@@ -246,11 +152,26 @@ struct ScanTabView: View {
                         }
                     }
             }
+            .sheet(isPresented: $showDailySync) {
+                DailySyncCoordinator(isMandatory: !hasWindowsForToday)
+                    .interactiveDismissDisabled(!hasWindowsForToday)
+                    .onDisappear {
+                        // Recheck windows after dailySync completes
+                        Task {
+                            await checkForWindows()
+                        }
+                    }
+            }
         }
         .preferredColorScheme(.dark)
         .onAppear {
             // Pre-warm camera session to prevent black screen on first capture
             RealCameraPreviewView.sharedCameraSession.preWarmSession()
+
+            // Check if windows exist for today
+            Task {
+                await checkForWindows()
+            }
         }
         .onReceive(NotificationCenter.default.publisher(for: .mealAnalysisCompleted)) { notification in
             Task { @MainActor in
@@ -297,7 +218,141 @@ struct ScanTabView: View {
             }
         }
     }
-    
+
+    // MARK: - View Components
+
+    private var scanInterfaceView: some View {
+        ZStack {
+            // Dark background
+            Color.black.ignoresSafeArea()
+
+            // Camera preview layer
+            CameraView(
+                capturedImage: $capturedImage,
+                capturePhoto: $capturePhotoTrigger
+            )
+            .ignoresSafeArea()
+
+            // Scanner overlay
+            ScannerOverlayView()
+                .ignoresSafeArea()
+
+            // Main UI layer
+            VStack(spacing: 0) {
+                // Top navigation bar - simplified
+                VStack(spacing: 0) {
+                    VStack(spacing: 8) {
+                        // Title centered
+                        Text("Scan")
+                            .font(.system(size: 24, weight: .bold))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 24)
+                    }
+                    .padding(.vertical, 6)
+
+                    // Separator line
+                    Divider()
+                        .background(Color.white.opacity(0.1))
+                }
+
+                Spacer()
+
+                // Bottom controls
+                VStack(spacing: 24) {
+                    // Mode selector
+                    ScanModeSelector(selectedMode: $selectedMode)
+                        .padding(.horizontal, 20)
+
+                    // Capture button with photo library option
+                    HStack(spacing: 40) {
+                        // Photo library button (smaller)
+                        if selectedMode == .photo {
+                            Button(action: {
+                                showImagePicker = true
+                            }) {
+                                VStack(spacing: 8) {
+                                    Circle()
+                                        .fill(Color.white.opacity(0.1))
+                                        .frame(width: 50, height: 50)
+                                        .overlay(
+                                            Image(systemName: "photo.stack")
+                                                .font(.system(size: 20, weight: .medium))
+                                                .foregroundColor(.white.opacity(0.8))
+                                        )
+                                    Text("Library")
+                                        .font(.system(size: 12, weight: .medium))
+                                        .foregroundColor(.white.opacity(0.6))
+                                }
+                            }
+                        } else {
+                            // Spacer to maintain layout
+                            Color.clear
+                                .frame(width: 50, height: 50)
+                        }
+
+                        // Main capture button
+                        CaptureButton(
+                            mode: selectedMode,
+                            isAnimating: $captureAnimation,
+                            onCapture: {
+                                performCapture()
+                            }
+                        )
+
+                        // Recents button (right side)
+                        if selectedMode == .photo {
+                            Button(action: {
+                                showRecents = true
+                                Task {
+                                    await loadRecentMeals()
+                                }
+                            }) {
+                                VStack(spacing: 8) {
+                                    Circle()
+                                        .fill(Color.white.opacity(0.1))
+                                        .frame(width: 50, height: 50)
+                                        .overlay(
+                                            Image(systemName: "clock.arrow.circlepath")
+                                                .font(.system(size: 20, weight: .medium))
+                                                .foregroundColor(.white.opacity(0.8))
+                                        )
+                                    Text("Recents")
+                                        .font(.system(size: 12, weight: .medium))
+                                        .foregroundColor(.white.opacity(0.6))
+                                }
+                            }
+                        } else {
+                            // Spacer to maintain layout
+                            Color.clear
+                                .frame(width: 50, height: 50)
+                        }
+                    }
+                    .padding(.bottom, 40)
+                }
+                .padding(.bottom, 30)
+            }
+            .ignoresSafeArea(.keyboard)
+        }
+    }
+
+    // MARK: - Helper Functions
+
+    private func checkForWindows() async {
+        do {
+            let windows = try await dataProvider.getWindows(for: Date())
+            await MainActor.run {
+                hasWindowsForToday = !windows.isEmpty
+                isCheckingWindows = false
+            }
+        } catch {
+            // On error, assume windows exist to prevent blocking user
+            await MainActor.run {
+                hasWindowsForToday = true
+                isCheckingWindows = false
+            }
+        }
+    }
+
     private func performCapture() {
         Task { @MainActor in
             DebugLogger.shared.ui("Capture button pressed - Mode: \(selectedMode.rawValue)")
