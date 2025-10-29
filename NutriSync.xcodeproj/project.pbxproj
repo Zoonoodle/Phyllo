@@ -14,6 +14,8 @@
 		4CE40C402E41689C0018C722 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = 4CE40C3F2E41689C0018C722 /* FirebaseStorage */; };
 		4CF19D7C2EB259E800AB0244 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = 4CF19D7B2EB259E800AB0244 /* GoogleSignIn */; };
 		4CF19D7E2EB259E800AB0244 /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 4CF19D7D2EB259E800AB0244 /* GoogleSignInSwift */; };
+		4CF19D882EB2602D00AB0244 /* SuperwallKit in Frameworks */ = {isa = PBXBuildFile; productRef = 4CF19D872EB2602D00AB0244 /* SuperwallKit */; };
+		4CF19D8B2EB2612900AB0244 /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = 4CF19D8A2EB2612900AB0244 /* RevenueCat */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -65,7 +67,9 @@
 				4CE40C3A2E41689C0018C722 /* FirebaseAppCheck in Frameworks */,
 				4CE40C362E41689C0018C722 /* FirebaseAI in Frameworks */,
 				4CF19D7E2EB259E800AB0244 /* GoogleSignInSwift in Frameworks */,
+				4CF19D882EB2602D00AB0244 /* SuperwallKit in Frameworks */,
 				4CE40C3E2E41689C0018C722 /* FirebaseFirestore in Frameworks */,
+				4CF19D8B2EB2612900AB0244 /* RevenueCat in Frameworks */,
 				4CE40C3C2E41689C0018C722 /* FirebaseAuth in Frameworks */,
 				4CE40C402E41689C0018C722 /* FirebaseStorage in Frameworks */,
 				4CF19D7C2EB259E800AB0244 /* GoogleSignIn in Frameworks */,
@@ -136,6 +140,8 @@
 				4CE40C3F2E41689C0018C722 /* FirebaseStorage */,
 				4CF19D7B2EB259E800AB0244 /* GoogleSignIn */,
 				4CF19D7D2EB259E800AB0244 /* GoogleSignInSwift */,
+				4CF19D872EB2602D00AB0244 /* SuperwallKit */,
+				4CF19D8A2EB2612900AB0244 /* RevenueCat */,
 			);
 			productName = NutriSync;
 			productReference = 4C8D97A92E36A90500B61676 /* NutriSync.app */;
@@ -222,6 +228,8 @@
 			packageReferences = (
 				4CE40C342E41689C0018C722 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 				4CF19D7A2EB259E800AB0244 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
+				4CF19D862EB2602D00AB0244 /* XCRemoteSwiftPackageReference "Superwall-iOS" */,
+				4CF19D892EB2612900AB0244 /* XCRemoteSwiftPackageReference "purchases-ios" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 4C8D97AA2E36A90500B61676 /* Products */;
@@ -637,6 +645,22 @@
 				minimumVersion = 9.0.0;
 			};
 		};
+		4CF19D862EB2602D00AB0244 /* XCRemoteSwiftPackageReference "Superwall-iOS" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/superwall/Superwall-iOS";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 4.9.3;
+			};
+		};
+		4CF19D892EB2612900AB0244 /* XCRemoteSwiftPackageReference "purchases-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/RevenueCat/purchases-ios";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.45.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -674,6 +698,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 4CF19D7A2EB259E800AB0244 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
 			productName = GoogleSignInSwift;
+		};
+		4CF19D872EB2602D00AB0244 /* SuperwallKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4CF19D862EB2602D00AB0244 /* XCRemoteSwiftPackageReference "Superwall-iOS" */;
+			productName = SuperwallKit;
+		};
+		4CF19D8A2EB2612900AB0244 /* RevenueCat */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4CF19D892EB2612900AB0244 /* XCRemoteSwiftPackageReference "purchases-ios" */;
+			productName = RevenueCat;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

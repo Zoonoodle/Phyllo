@@ -1,5 +1,5 @@
 {
-  "originHash" : "f26605caa55796c1b4a99e3dbcab289f7c209dffab4b967ad87d3789c478f7ee",
+  "originHash" : "03d4b0dfef0b793aaee2293be3f920049519cfa00c996271b4c65bccab5e7eec",
   "pins" : [
     {
       "identity" : "abseil-cpp-binary",
@@ -143,6 +143,33 @@
       "state" : {
         "revision" : "540318ecedd63d883069ae7f1ed811a2df00b6ac",
         "version" : "2.4.0"
+      }
+    },
+    {
+      "identity" : "purchases-ios",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/RevenueCat/purchases-ios",
+      "state" : {
+        "revision" : "5a0985f297ccd8870c85d86fde97695ca466ff99",
+        "version" : "5.45.0"
+      }
+    },
+    {
+      "identity" : "superscript-ios",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/superwall/Superscript-iOS",
+      "state" : {
+        "revision" : "f02ecb3129f99e6ed6ecdf8f01908444e49956a4",
+        "version" : "1.0.4"
+      }
+    },
+    {
+      "identity" : "superwall-ios",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/superwall/Superwall-iOS",
+      "state" : {
+        "revision" : "ead33423721fe425ef785bd8425ee27170e2ab36",
+        "version" : "4.9.3"
       }
     },
     {

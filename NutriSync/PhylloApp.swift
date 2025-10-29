@@ -7,6 +7,8 @@
 
 import SwiftUI
 import UserNotifications
+import RevenueCat
+import SuperwallKit
 
 @main
 struct NutriSyncApp: App {
@@ -20,14 +22,28 @@ struct NutriSyncApp: App {
     @StateObject private var vertexAIService = VertexAIService.shared
     @StateObject private var mealCaptureService = MealCaptureService.shared
     @StateObject private var notificationManager = NotificationManager.shared
+    @StateObject private var gracePeriodManager = GracePeriodManager.shared
+    @StateObject private var subscriptionManager = SubscriptionManager.shared
     
     init() {
         // Configure Firebase FIRST before anything else
         FirebaseConfig.shared.configure()
-        
+
+        // Configure RevenueCat for subscription management
+        Purchases.logLevel = .debug  // Change to .warn in production
+        Purchases.configure(withAPIKey: "YOUR_REVENUECAT_PUBLIC_API_KEY")
+        print("💳 RevenueCat configured")
+
+        // Configure Superwall for paywall presentation
+        Superwall.configure(
+            apiKey: "YOUR_SUPERWALL_PUBLIC_API_KEY",
+            purchaseController: RevenueCatPurchaseController()
+        )
+        print("🎨 Superwall configured")
+
         // Configure data provider after Firebase is ready
         configureDataProvider()
-        
+
         // Configure notifications
         configureNotifications()
     }
@@ -43,8 +59,31 @@ struct NutriSyncApp: App {
                 .environmentObject(vertexAIService)
                 .environmentObject(mealCaptureService)
                 .environmentObject(notificationManager)
+                .environmentObject(gracePeriodManager)
+                .environmentObject(subscriptionManager)
                 .task {
+                    // Initialize Firebase auth first
                     await firebaseConfig.initializeAuth()
+
+                    // After auth, set up user identity for subscriptions
+                    if let userId = firebaseConfig.currentUser?.uid {
+                        // Identify user in RevenueCat
+                        do {
+                            _ = try await Purchases.shared.logIn(userId)
+                            print("✅ RevenueCat user identity set: \(userId)")
+                        } catch {
+                            print("❌ RevenueCat login failed: \(error)")
+                        }
+
+                        // Identify user in Superwall
+                        Superwall.shared.identify(userId: userId)
+                        print("✅ Superwall user identity set: \(userId)")
+
+                        // Initialize subscription and grace period managers
+                        await subscriptionManager.initialize()
+                        await gracePeriodManager.initialize()
+                        print("✅ Managers initialized")
+                    }
                 }
         }
     }
