@@ -10,14 +10,13 @@ import Foundation
 import RevenueCat
 
 @MainActor
-@Observable
-class SubscriptionManager {
+class SubscriptionManager: NSObject, ObservableObject {
     static let shared = SubscriptionManager()
 
     // MARK: - Published Properties
-    var isSubscribed: Bool = false
-    var subscriptionStatus: SubscriptionStatus = .unknown
-    var customerInfo: CustomerInfo?
+    @Published var isSubscribed: Bool = false
+    @Published var subscriptionStatus: SubscriptionStatus = .unknown
+    @Published var customerInfo: CustomerInfo?
 
     // MARK: - Subscription Status
     enum SubscriptionStatus {
@@ -32,7 +31,9 @@ class SubscriptionManager {
     private let entitlementID = "premium"
 
     // MARK: - Initialization
-    private init() {}
+    private override init() {
+        super.init()
+    }
 
     func initialize() async {
         await checkSubscriptionStatus()

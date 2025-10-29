@@ -1944,11 +1944,27 @@ extension AIWindowGenerationService {
 
 // MARK: - Error Types
 
-enum WindowGenerationError: Error {
+enum WindowGenerationError: Error, LocalizedError {
     case noResponse
     case invalidJSON
     case decodingError
     case invalidConfiguration
+    case generationLimitReached
+
+    var errorDescription: String? {
+        switch self {
+        case .noResponse:
+            return "No response from AI service"
+        case .invalidJSON:
+            return "Invalid JSON response"
+        case .decodingError:
+            return "Failed to decode response"
+        case .invalidConfiguration:
+            return "Invalid configuration"
+        case .generationLimitReached:
+            return "You've used your free window generation. Upgrade to continue!"
+        }
+    }
 }
 
 // MARK: - Response Types
@@ -1972,17 +1988,4 @@ struct GeneratedWindow: Decodable {
     let micronutrientFocus: [String]
     let rationale: String?
     let activityLinked: String?
-}
-
-// MARK: - Error Types
-
-enum WindowGenerationError: Error, LocalizedError {
-    case generationLimitReached
-
-    var errorDescription: String? {
-        switch self {
-        case .generationLimitReached:
-            return "You've used your free window generation. Upgrade to continue!"
-        }
-    }
 }

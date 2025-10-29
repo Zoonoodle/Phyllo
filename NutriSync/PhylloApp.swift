@@ -37,7 +37,7 @@ struct NutriSyncApp: App {
         // Configure Superwall for paywall presentation
         Superwall.configure(
             apiKey: "YOUR_SUPERWALL_PUBLIC_API_KEY",
-            purchaseController: RevenueCatPurchaseController()
+            purchaseController: RCPurchaseController()
         )
         print("🎨 Superwall configured")
 

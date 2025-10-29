@@ -12,16 +12,15 @@ import FirebaseFirestore
 import UIKit
 
 @MainActor
-@Observable
-class GracePeriodManager {
+class GracePeriodManager: ObservableObject {
     static let shared = GracePeriodManager()
 
     // MARK: - Published Properties
-    var isInGracePeriod: Bool = false
-    var remainingScans: Int = 4
-    var remainingWindowGens: Int = 1
-    var gracePeriodEndDate: Date?
-    var hasSeenPaywallOnce: Bool = false
+    @Published var isInGracePeriod: Bool = false
+    @Published var remainingScans: Int = 4
+    @Published var remainingWindowGens: Int = 1
+    @Published var gracePeriodEndDate: Date?
+    @Published var hasSeenPaywallOnce: Bool = false
 
     // MARK: - Private Properties
     private let db = Firestore.firestore()

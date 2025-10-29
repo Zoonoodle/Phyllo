@@ -148,14 +148,14 @@ struct ContentView: View {
             .sheet(isPresented: $showingPaywall) {
                 PaywallView(
                     placement: paywallPlacement,
+                    onDismiss: {
+                        showingPaywall = false
+                    },
                     onSubscribe: {
                         showingPaywall = false
                         Task {
                             await subscriptionManager.checkSubscriptionStatus()
                         }
-                    },
-                    onDismiss: {
-                        showingPaywall = false
                     }
                 )
             }
