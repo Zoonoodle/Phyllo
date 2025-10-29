@@ -363,7 +363,9 @@ struct WorkoutParser {
 class AIWindowGenerationService {
     static let shared = AIWindowGenerationService()
     private let model: GenerativeModel
-    
+    private let gracePeriodManager = GracePeriodManager.shared
+    private let subscriptionManager = SubscriptionManager.shared
+
     private init() {
         // Initialize Firebase AI service
         let ai = FirebaseAI.firebaseAI()
@@ -396,7 +398,14 @@ class AIWindowGenerationService {
         dailySync: DailySync? = nil,
         date: Date
     ) async throws -> (windows: [MealWindow], dayPurpose: DayPurpose?, contextInsights: [String]?) {
-        
+
+        // NEW: Check if user can generate windows (grace period or subscription required)
+        guard subscriptionManager.isSubscribed || gracePeriodManager.canGenerateWindows() else {
+            // Show hard paywall
+            await gracePeriodManager.showLimitReachedPaywall(type: .windowGeneration)
+            throw WindowGenerationError.generationLimitReached
+        }
+
         // Determine actual date for windows based on check-in time
         let actualDate = determineWindowDate(checkIn: checkIn, requestedDate: date)
         
@@ -1490,6 +1499,20 @@ class AIWindowGenerationService {
                 }
             }
 
+            // NEW: Record window generation usage (only if not subscribed)
+            if !subscriptionManager.isSubscribed {
+                do {
+                    try await gracePeriodManager.recordWindowGeneration()
+                    Task { @MainActor in
+                        DebugLogger.shared.success("Window gen recorded: \(gracePeriodManager.remainingWindowGens) remaining")
+                    }
+                } catch {
+                    Task { @MainActor in
+                        DebugLogger.shared.error("Failed to record window gen: \(error)")
+                    }
+                }
+            }
+
             // Return windows, day purpose, and context insights
             return (windows: windows, dayPurpose: aiResponse.dayPurpose, contextInsights: aiResponse.contextInsights)
             
@@ -1949,4 +1972,17 @@ struct GeneratedWindow: Decodable {
     let micronutrientFocus: [String]
     let rationale: String?
     let activityLinked: String?
+}
+
+// MARK: - Error Types
+
+enum WindowGenerationError: Error, LocalizedError {
+    case generationLimitReached
+
+    var errorDescription: String? {
+        switch self {
+        case .generationLimitReached:
+            return "You've used your free window generation. Upgrade to continue!"
+        }
+    }
 }

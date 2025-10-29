@@ -1,6 +1,8 @@
 import SwiftUI
 import AuthenticationServices
 import FirebaseAuth
+import GoogleSignIn
+import GoogleSignInSwift
 
 struct AccountCreationView: View {
     @Environment(\.dismiss) private var dismiss
@@ -73,7 +75,23 @@ struct AccountCreationView: View {
                     .signInWithAppleButtonStyle(.white)
                     .frame(height: 50)
                     .cornerRadius(12)
-                    
+
+                    // Google Sign In
+                    Button(action: handleGoogleSignInTap) {
+                        HStack(spacing: 12) {
+                            Image(systemName: "globe")
+                                .resizable()
+                                .frame(width: 20, height: 20)
+                            Text("Continue with Google")
+                                .font(.system(size: 16, weight: .semibold))
+                        }
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 50)
+                        .background(Color.white)
+                        .foregroundColor(.black)
+                        .cornerRadius(12)
+                    }
+
                     // Email option
                     Button(action: { selectedMethod = .email }) {
                         HStack {
@@ -85,12 +103,6 @@ struct AccountCreationView: View {
                         .background(Color.green.opacity(0.1))
                         .foregroundColor(.green)
                         .cornerRadius(12)
-                    }
-                    
-                    // Skip option
-                    Button(action: skipAccountCreation) {
-                        Text("Skip for Now")
-                            .foregroundColor(.secondary)
                     }
                 }
                 .padding(.horizontal)
@@ -199,10 +211,40 @@ struct AccountCreationView: View {
         isCreating = false
     }
     
-    private func skipAccountCreation() {
-        // Track skip event
-        UserDefaults.standard.set(true, forKey: "skippedAccountCreation")
-        dismiss()
+    // MARK: - Google Sign In
+
+    private func handleGoogleSignInTap() {
+        guard let presentingViewController = UIApplication.shared.windows.first?.rootViewController else {
+            errorMessage = "Unable to present sign in"
+            showError = true
+            return
+        }
+
+        GIDSignIn.sharedInstance.signIn(
+            withPresenting: presentingViewController
+        ) { result, error in
+            if let error = error {
+                errorMessage = error.localizedDescription
+                showError = true
+                return
+            }
+
+            guard let user = result?.user,
+                  let idToken = user.idToken?.tokenString else {
+                errorMessage = "Failed to get Google credentials"
+                showError = true
+                return
+            }
+
+            let credential = GoogleAuthProvider.credential(
+                withIDToken: idToken,
+                accessToken: user.accessToken.tokenString
+            )
+
+            Task {
+                await linkAccount(with: credential)
+            }
+        }
     }
 }
 

@@ -12,6 +12,8 @@ struct ContentView: View {
     @EnvironmentObject private var firebaseConfig: FirebaseConfig
     @EnvironmentObject private var dataProvider: FirebaseDataProvider
     @EnvironmentObject private var notificationManager: NotificationManager
+    @EnvironmentObject private var gracePeriodManager: GracePeriodManager
+    @EnvironmentObject private var subscriptionManager: SubscriptionManager
 
     @State private var hasProfile = false
     @State private var isCheckingProfile = true
@@ -42,6 +44,10 @@ struct ContentView: View {
     @Environment(\.scenePhase) private var scenePhase
     @AppStorage("lastBackgroundTimestamp") private var lastBackgroundTimestamp: Double = 0
     @State private var shouldRefreshData = false
+
+    // Paywall state
+    @State private var showingPaywall = false
+    @State private var paywallPlacement = ""
 
     // Refresh threshold: 20 minutes in seconds
     private let refreshThreshold: TimeInterval = 20 * 60
@@ -114,7 +120,19 @@ struct ContentView: View {
                 hasInitializedGetStarted: $hasInitializedGetStarted,
                 onboardingResetFlag: onboardingResetFlag
             )
+        } else if !subscriptionManager.isSubscribed && !gracePeriodManager.isInGracePeriod {
+            // Grace period expired and not subscribed - HARD PAYWALL (blocking)
+            PaywallView(
+                placement: "grace_period_expired",
+                onSubscribe: {
+                    // Subscription successful - refresh subscription status
+                    Task {
+                        await subscriptionManager.checkSubscriptionStatus()
+                    }
+                }
+            )
         } else {
+            // Either subscribed OR in grace period - show app
             MainAppView(
                 showNotificationOnboarding: $showNotificationOnboarding,
                 showWelcomeBanner: $showWelcomeBanner,
@@ -127,6 +145,26 @@ struct ContentView: View {
                 refreshAppData: refreshAppData
             )
             .environmentObject(notificationManager)
+            .sheet(isPresented: $showingPaywall) {
+                PaywallView(
+                    placement: paywallPlacement,
+                    onSubscribe: {
+                        showingPaywall = false
+                        Task {
+                            await subscriptionManager.checkSubscriptionStatus()
+                        }
+                    },
+                    onDismiss: {
+                        showingPaywall = false
+                    }
+                )
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .showPaywall)) { notification in
+                if let placement = notification.object as? String {
+                    paywallPlacement = placement
+                    showingPaywall = true
+                }
+            }
         }
     }
     

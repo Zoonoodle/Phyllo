@@ -9,6 +9,7 @@ import SwiftUI
 
 struct MainAppView: View {
     @EnvironmentObject private var notificationManager: NotificationManager
+    @EnvironmentObject private var gracePeriodManager: GracePeriodManager
 
     @Binding var showNotificationOnboarding: Bool
     @Binding var showWelcomeBanner: Bool
@@ -30,24 +31,31 @@ struct MainAppView: View {
     }
 
     private var mainTabView: some View {
-        MainTabView()
-            .fullScreenCover(isPresented: $showNotificationOnboarding) {
-                NotificationOnboardingView(isPresented: $showNotificationOnboarding)
-                    .environmentObject(notificationManager)
+        VStack(spacing: 0) {
+            // Grace period banner at top
+            GracePeriodBanner()
+                .environmentObject(gracePeriodManager)
+
+            // Main tab view
+            MainTabView()
+        }
+        .fullScreenCover(isPresented: $showNotificationOnboarding) {
+            NotificationOnboardingView(isPresented: $showNotificationOnboarding)
+                .environmentObject(notificationManager)
+        }
+        .task {
+            await checkNotificationOnboarding()
+            await checkFirstDayWindows()
+        }
+        .onChange(of: scenePhase) { oldPhase, newPhase in
+            handleScenePhaseChange(oldPhase, newPhase)
+        }
+        .task(id: shouldRefreshData) {
+            if shouldRefreshData {
+                await refreshAppData()
+                shouldRefreshData = false
             }
-            .task {
-                await checkNotificationOnboarding()
-                await checkFirstDayWindows()
-            }
-            .onChange(of: scenePhase) { oldPhase, newPhase in
-                handleScenePhaseChange(oldPhase, newPhase)
-            }
-            .task(id: shouldRefreshData) {
-                if shouldRefreshData {
-                    await refreshAppData()
-                    shouldRefreshData = false
-                }
-            }
+        }
     }
 
     @ViewBuilder

@@ -20,6 +20,8 @@ class MealCaptureService: ObservableObject {
     private let agent = MealAnalysisAgent.shared
     private let timeProvider = TimeProvider.shared
     private let notificationManager = NotificationManager.shared
+    private let gracePeriodManager = GracePeriodManager.shared
+    private let subscriptionManager = SubscriptionManager.shared
     private var cancellables = Set<AnyCancellable>()
     
     private init() {
@@ -38,10 +40,20 @@ class MealCaptureService: ObservableObject {
         barcode: String? = nil,
         timestamp: Date? = nil
     ) async throws -> AnalyzingMeal {
+        // NEW: Check if user can scan (grace period or subscription required)
+        guard subscriptionManager.isSubscribed || gracePeriodManager.canScanMeal() else {
+            Task { @MainActor in
+                DebugLogger.shared.error("Scan limit reached - showing paywall")
+            }
+            // Show hard paywall
+            await gracePeriodManager.showLimitReachedPaywall(type: .scans)
+            throw MealCaptureError.scanLimitReached
+        }
+
         Task { @MainActor in
             DebugLogger.shared.mealAnalysis("Starting meal analysis - Image: \(image != nil), Voice: \(voiceTranscript != nil), Barcode: \(barcode != nil)")
         }
-        
+
         // Validate that we have at least one input
         let hasImage = image != nil
         let hasVoice = voiceTranscript != nil && !voiceTranscript!.isEmpty
@@ -163,7 +175,21 @@ class MealCaptureService: ObservableObject {
             DebugLogger.shared.dataProvider("Starting analyzing meal in data provider")
         }
         try await dataProvider.startAnalyzingMeal(analyzingMeal)
-        
+
+        // NEW: Record scan usage (only if not subscribed)
+        if !subscriptionManager.isSubscribed {
+            do {
+                try await gracePeriodManager.recordMealScan()
+                Task { @MainActor in
+                    DebugLogger.shared.success("Scan recorded: \(gracePeriodManager.remainingScans) remaining")
+                }
+            } catch {
+                Task { @MainActor in
+                    DebugLogger.shared.error("Failed to record scan: \(error)")
+                }
+            }
+        }
+
         // Perform analysis in background
         Task {
             do {
@@ -776,6 +802,19 @@ extension MealCaptureService {
             if let oldestKey = sortedKeys.first {
                 lastAnalysisMetadata.removeValue(forKey: oldestKey)
             }
+        }
+    }
+}
+
+// MARK: - Error Types
+
+enum MealCaptureError: Error, LocalizedError {
+    case scanLimitReached
+
+    var errorDescription: String? {
+        switch self {
+        case .scanLimitReached:
+            return "You've used all 4 free scans. Upgrade to continue!"
         }
     }
 }

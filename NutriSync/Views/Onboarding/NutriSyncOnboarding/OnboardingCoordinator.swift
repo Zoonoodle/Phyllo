@@ -411,7 +411,24 @@ class NutriSyncOnboardingViewModel {
 
         // Generate initial windows
         try await dataProvider.generateInitialWindows()
-        
+
+        // NEW: Start grace period (24-hour trial with usage limits)
+        do {
+            try await GracePeriodManager.shared.startGracePeriod()
+            print("[OnboardingCoordinator] ✅ Grace period started")
+
+            // Show soft paywall (first time, skippable)
+            await MainActor.run {
+                NotificationCenter.default.post(
+                    name: .showPaywall,
+                    object: "onboarding_complete"
+                )
+            }
+        } catch {
+            print("[OnboardingCoordinator] ❌ Failed to start grace period: \(error)")
+            // Don't fail onboarding if grace period fails - just log it
+        }
+
         print("[OnboardingCoordinator] Onboarding completed successfully")
     }
     
