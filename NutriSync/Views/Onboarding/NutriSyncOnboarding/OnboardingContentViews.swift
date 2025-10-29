@@ -540,7 +540,7 @@ struct ExpenditureContentView: View {
     
     private func determineActivityLevel() -> TDEECalculator.ActivityLevel {
         print("[ActivityLevel] Starting determination...")
-        
+
         // Exercise frequency scoring (0-3 points)
         let exerciseScore: Int
         switch coordinator.exerciseFrequency {
@@ -555,56 +555,56 @@ struct ExpenditureContentView: View {
         default:
             exerciseScore = 0
         }
-        
+
         print("[ActivityLevel] Exercise frequency: '\(coordinator.exerciseFrequency)' = score \(exerciseScore)")
-        
-        // Daily activity scoring (0-2 points)
+
+        // Daily activity scoring (0-4 points, WEIGHTED MORE HEAVILY)
+        // Rationale: Daily activity is 24/7 (~168 hrs/week) while exercise is only a few hours/week
+        // Someone sedentary all day shouldn't be "moderately active" just from 5 hours of weekly exercise
         let activityScore: Int
         // Check dailyActivity first, then fall back to activityLevel if needed for migration
-        let dailyActivityValue = !coordinator.dailyActivity.isEmpty ? coordinator.dailyActivity : 
-                                 (coordinator.activityLevel == "Mostly Sedentary" || 
-                                  coordinator.activityLevel == "Moderately Active" || 
+        let dailyActivityValue = !coordinator.dailyActivity.isEmpty ? coordinator.dailyActivity :
+                                 (coordinator.activityLevel == "Mostly Sedentary" ||
+                                  coordinator.activityLevel == "Moderately Active" ||
                                   coordinator.activityLevel == "Very Active") ? coordinator.activityLevel : "Mostly Sedentary"
-        
+
         print("[ActivityLevel] Daily activity value: '\(dailyActivityValue)'")
-        
+
         if dailyActivityValue.contains("Very Active") {
-            activityScore = 2
+            activityScore = 4  // Weighted double (was 2) - standing/moving most of the day
         } else if dailyActivityValue.contains("Moderately Active") {
-            activityScore = 1
+            activityScore = 2  // Weighted double (was 1) - mix of sitting and movement
         } else {
-            activityScore = 0  // Mostly Sedentary
+            activityScore = 0  // Mostly Sedentary - desk job, minimal movement
         }
-        
-        print("[ActivityLevel] Daily activity score: \(activityScore)")
-        
-        // Combine scores (max 5 points)
+
+        print("[ActivityLevel] Daily activity score: \(activityScore) (weighted)")
+
+        // Combine scores (max 7 points now)
         let totalScore = exerciseScore + activityScore
-        
-        print("[ActivityLevel] Total score: \(totalScore) (\(exerciseScore) + \(activityScore))")
-        
+
+        print("[ActivityLevel] Total score: \(totalScore) (\(exerciseScore) exercise + \(activityScore) daily activity)")
+
         // Map total score to activity level
-        // This ensures proper progression based on both factors
+        // Daily activity weight reflects that it affects calorie burn more than occasional exercise
         let combinedLevel: TDEECalculator.ActivityLevel
         switch totalScore {
         case 0:
             combinedLevel = .sedentary           // No exercise + sedentary
-        case 1:
-            combinedLevel = .lightlyActive        // Light exercise OR moderate daily activity
-        case 2:
-            combinedLevel = .moderatelyActive     // Moderate exercise OR very active daily
-        case 3:
-            combinedLevel = .moderatelyActive     // Good combination of both
-        case 4:
-            combinedLevel = .veryActive           // High exercise + active daily
-        case 5:
-            combinedLevel = .veryActive           // Maximum regular activity (7+ exercise + very active)
+        case 1...2:
+            combinedLevel = .lightlyActive       // Light-moderate exercise + sedentary, OR light exercise + moderate daily
+        case 3...4:
+            combinedLevel = .moderatelyActive    // Moderate exercise + moderate daily, OR heavy exercise + sedentary
+        case 5...6:
+            combinedLevel = .veryActive          // Heavy exercise + moderate daily, OR moderate exercise + very active daily
+        case 7:
+            combinedLevel = .veryActive          // Maximum (7+ exercise + very active daily)
         default:
-            combinedLevel = .extremelyActive      // 6+ (impossible with current scoring, but future-proof)
+            combinedLevel = .sedentary
         }
-        
-        print("[ActivityLevel] Final result: \(combinedLevel.rawValue)")
-        
+
+        print("[ActivityLevel] Final result: \(combinedLevel.rawValue) (multiplier: \(combinedLevel.multiplier)x)")
+
         return combinedLevel
     }
 }
