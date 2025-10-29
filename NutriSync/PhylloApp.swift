@@ -35,10 +35,8 @@ struct NutriSyncApp: App {
         print("💳 RevenueCat configured")
 
         // Configure Superwall for paywall presentation
-        Superwall.configure(
-            apiKey: "YOUR_SUPERWALL_PUBLIC_API_KEY",
-            purchaseController: RCPurchaseController()
-        )
+        // Note: Superwall automatically integrates with RevenueCat when both SDKs are present
+        Superwall.configure(apiKey: "YOUR_SUPERWALL_PUBLIC_API_KEY")
         print("🎨 Superwall configured")
 
         // Configure data provider after Firebase is ready

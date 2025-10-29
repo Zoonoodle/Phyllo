@@ -400,7 +400,11 @@ class AIWindowGenerationService {
     ) async throws -> (windows: [MealWindow], dayPurpose: DayPurpose?, contextInsights: [String]?) {
 
         // NEW: Check if user can generate windows (grace period or subscription required)
-        guard subscriptionManager.isSubscribed || gracePeriodManager.canGenerateWindows() else {
+        let canGenerate = await Task { @MainActor in
+            subscriptionManager.isSubscribed || gracePeriodManager.canGenerateWindows()
+        }.value
+
+        guard canGenerate else {
             // Show hard paywall
             await gracePeriodManager.showLimitReachedPaywall(type: .windowGeneration)
             throw WindowGenerationError.generationLimitReached
@@ -457,7 +461,24 @@ class AIWindowGenerationService {
         }
 
         // Parse the JSON response with the actual date (returns windows, dayPurpose, and contextInsights)
-        return try parseAIResponse(text, for: actualDate)
+        let result = try parseAIResponse(text, for: actualDate)
+
+        // NEW: Record window generation usage (only if not subscribed)
+        let isSubscribed = await Task { @MainActor in subscriptionManager.isSubscribed }.value
+        if !isSubscribed {
+            do {
+                try await gracePeriodManager.recordWindowGeneration()
+                Task { @MainActor in
+                    DebugLogger.shared.success("Window gen recorded: \(gracePeriodManager.remainingWindowGens) remaining")
+                }
+            } catch {
+                Task { @MainActor in
+                    DebugLogger.shared.error("Failed to record window gen: \(error)")
+                }
+            }
+        }
+
+        return result
     }
     
     /// Determine the correct date for window generation based on check-in time
@@ -1495,20 +1516,6 @@ class AIWindowGenerationService {
                     DebugLogger.shared.success("AI generated \(insights.count) context insights:")
                     for insight in insights {
                         DebugLogger.shared.info("  • \(insight)")
-                    }
-                }
-            }
-
-            // NEW: Record window generation usage (only if not subscribed)
-            if !subscriptionManager.isSubscribed {
-                do {
-                    try await gracePeriodManager.recordWindowGeneration()
-                    Task { @MainActor in
-                        DebugLogger.shared.success("Window gen recorded: \(gracePeriodManager.remainingWindowGens) remaining")
-                    }
-                } catch {
-                    Task { @MainActor in
-                        DebugLogger.shared.error("Failed to record window gen: \(error)")
                     }
                 }
             }

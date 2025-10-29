@@ -48,27 +48,11 @@ struct PaywallView: View {
     private func presentPaywall() {
         isPresenting = true
 
-        // Register Superwall event to trigger paywall
-        Superwall.shared.register(event: placement) { result in
-            switch result {
-            case .presented:
-                print("✅ Paywall presented: \(placement)")
-
-            case .purchased:
-                print("✅ User subscribed!")
-                onSubscribe?()
-                dismiss()
-
-            case .closed:
-                print("ℹ️ Paywall dismissed")
-                onDismiss?()
-                dismiss()
-
-            case .error(let error):
-                print("❌ Paywall error: \(error.localizedDescription)")
-                errorMessage = error.localizedDescription
-                showError = true
-            }
+        // Register Superwall placement to trigger paywall
+        // Note: Superwall handles paywall presentation automatically
+        // We monitor purchase state changes via SubscriptionManager's PurchasesDelegate
+        Superwall.shared.register(placement: placement) {
+            print("✅ Paywall placement registered: \(placement)")
         }
     }
 }
