@@ -1,18 +1,21 @@
 # Dev Log #1 - YouTube Production Guide (V2)
 ## "I Built an App That Fixed My Energy Crashes (Demo + TestFlight)"
 
-**TARGET LENGTH: 5 minutes**
-**FOCUS: Show the app, sell the value, get TestFlight signups**
+**TARGET LENGTH: 7:45 minutes** *(Extended for Congressional App Challenge - comprehensive demo)*
+**FOCUS: Show the complete user journey, demonstrate technical sophistication, get TestFlight signups**
 
 ---
 
-## 🎯 VIDEO STRUCTURE (5 MINUTES)
+## 🎯 VIDEO STRUCTURE (7:45 MINUTES)
 
 **0:00-0:10** → HOOK (Problem + Solution Preview)
 **0:10-0:45** → WHY I BUILT THIS (Your Story - Quick)
-**0:45-3:45** → APP DEMO (The Main Event - 3 FULL MINUTES)
-**3:45-4:30** → WHY YOU NEED THIS (Convince Viewer)
-**4:30-5:00** → CALL TO ACTION (TestFlight Signup)
+**0:45-6:30** → APP DEMO (The Main Event - 5:45 MINUTES)
+  - *Detailed onboarding walkthrough (emphasis on Goals ranking) - 75 sec*
+  - *Comprehensive tech stack breakdown (SwiftUI, SwiftData, Firebase, Vertex AI) - 45 sec*
+  - *Complete user journey: DailySync → Window Generation → Voice Scanning → Micronutrients - 225 sec*
+**6:30-7:15** → WHY YOU NEED THIS (Convince Viewer)
+**7:15-7:45** → CALL TO ACTION (TestFlight Signup)
 
 ---
 
@@ -66,219 +69,449 @@
 
 ---
 
-### [0:45-3:45] APP DEMO - THE MAIN EVENT (3 MINUTES)
+### [0:45-6:30] APP DEMO - THE MAIN EVENT (5:45 MINUTES)
 **FILMING:** 80% screen recording, 20% you narrating on camera
 
 **Structure:**
-1. Onboarding (30 sec)
-2. AI Window Generation (45 sec)
-3. Food Suggestions (30 sec)
-4. Using a Window (30 sec)
-5. Context-Based AI Scanning (45 sec)
-6. Adaptive Intelligence (15 sec)
+1. Onboarding Walkthrough (75 sec) *[Heavy emphasis on Goals ranking system]*
+2. Tech Stack Breakdown (45 sec) *[Comprehensive for Congressional App Challenge]*
+3. DailySync - Adaptive Context Input (35 sec) *[Voice-first daily scheduling]*
+4. AI Analysis & Window Generation (25 sec)
+5. Generated Schedule - The Windows (25 sec)
+6. Window Details - Context-Based Suggestions (25 sec)
+7. Voice-First Food Scanning (50 sec) *[LONGEST SECTION - The money shot]*
+8. Meal Detail View - Micronutrients (25 sec)
+9. Daily Summary - Goals & Strategy (25 sec)
+10. Performance Tab & Wrap (15 sec)
 
 ---
 
-#### **SECTION 1: Onboarding [0:45-1:15]**
+#### **SECTION 1: Onboarding Walkthrough [0:45-2:00]**
+
+**YOU (on camera, intro):**
+*"So let's walk through the onboarding. I'm not going to explain every single screen, but I want to show you the main sections and what data we're collecting—because that's what makes the window generation actually work. The Goals section in particular is really interesting—I'll spend a bit more time there."*
+
+**FILMING:**
+- **A-ROLL:** You introducing this (7 seconds)
+- **SCREEN RECORDING (68 seconds):** Full-screen phone recording showing the full onboarding flow
+
+---
+
+**[SCREEN: GetStarted / Welcome screens]**
+
+**YOU (voiceover):**
+*"First, there's a quick intro—explains the core concept. Meal windows, not meal tracking. Nothing fancy here."*
+
+**FILMING NOTES:**
+- Show GetStarted → Welcome screen transition (3-4 seconds)
+- Keep it quick, don't linger
+
+---
+
+**[SCREEN: Basics section]**
+
+**YOU (voiceover):**
+*"Then we get into the Basics section. This is where the app collects  personal metrics including: age, height, weight, biological sex. This is used for calculating 1 baseline caloric needs and macro targets."*
+
+**FILMING NOTES:**
+- Show scrolling through Basics screens quickly (5-6 seconds)
+- **GRAPHICS:** Highlight one or two fields (like "Weight" or "Age")
+- Don't show every input, just the flow
+
+---
+
+**[SCREEN: Goals section - "Your Transformation"]**
+
+**YOU (voiceover):**
+*"Then we hit the Goals section—this is where it gets interesting. First, there's an intro screen about what optimizing meal timing can actually do for you."*
+
+**FILMING NOTES:**
+- Show "Your Transformation" intro screen briefly (2-3 seconds)
+- Keep moving, don't linger
+
+---
+
+**[SCREEN: Specific Goals - Multi-Select Grid]**
+
+**YOU (voiceover):**
+*"Then you pick your goals. And here's the cool part—you can select multiple. Weight management, build muscle, steady energy, better sleep, athletic performance, metabolic health. Pick as many as you want."*
+
+**FILMING NOTES:**
+- Show the goal grid with all 6 options displayed as cards with SF Symbols
+- Tap to select 2-3 goals (e.g., "Build Muscle & Recover" + "Steady Energy" + "Better Sleep")
+- Show cards lighting up in lime green as selected
+- **GRAPHICS:** Subtle zoom on each selected goal (6-8 seconds total)
+
+---
+
+**[SCREEN: Goal Ranking - The Priority Screen]**
+
+**YOU (voiceover, excited - this is the key feature):**
+*"Now here's where it gets really smart. If you picked multiple goals, it asks you to rank them by priority. Because realistically, you can't optimize for everything equally—so the app asks: what matters most to you?"*
+
+**FILMING NOTES:**
+- Show Goal Ranking screen with 3 ranked goals
+- Demonstrate tapping up/down arrows to reorder goals (show actual reordering animation)
+- **GRAPHICS:** Highlight the rank numbers (1st, 2nd, 3rd) as you talk about priority
+- Show the text: "We'll ask detailed questions" for top 2, "We'll use smart defaults" for 3rd+
+- **PACING:** This is the most important part of Goals—spend 10-12 seconds here
+
+**YOU (voiceover, continued):**
+*"Your top two ranked goals get deep customization—detailed questions about preferences, timing, sensitivity. Goals ranked third or lower? The app uses smart defaults based on research. So you're not answering 50 questions, but you're still getting a personalized plan."*
+
+---
+
+**[SCREEN: Conditional Weight Goal Screens - QUICK]**
+
+**YOU (voiceover):**
+*"And if you selected Weight Management, it asks follow-up questions—lose, maintain, or gain, and by how much. Standard stuff."*
+
+**FILMING NOTES:**
+- Show weight goal selection screen quickly (3-4 seconds)
+- Show weight target input screen (2-3 seconds)
+- Don't dwell—this is less interesting than the ranking system
+
+---
+
+**[SCREEN: Schedule section]**
+
+**YOU (voiceover):**
+*"Then Schedule—this is the most important part. Wake time, sleep time, workout time. This is what the AI uses to actually build your windows. If you work out at 7am, your first window is pre-workout. If you sleep at 10:30pm, your last meal window ends at least 3 hours before that. This is where the magic happens."*
+
+**FILMING NOTES:**
+- Show wake time, sleep time, workout time selections (8-10 seconds)
+- **GRAPHICS:** Highlight each time selection as you mention it
+- Show workout time selection with options visible
+
+---
+
+**[SCREEN: Preferences section]**
+
+**YOU (voiceover):**
+*"Finally, Preferences. Dietary restrictions, allergies, foods you hate. This affects the food suggestions the app gives you later. If you're vegetarian, you're not getting chicken and rice suggestions. If you're lactose intolerant, no dairy."*
+
+**FILMING NOTES:**
+- Show Preferences screen, scroll through options (5-6 seconds)
+- **GRAPHICS:** Highlight "Dietary Restrictions" section
+
+---
+
+**[SCREEN: Confirmation/Summary screen before AI generation]**
+
+**YOU (voiceover):**
+*"That's it. Five sections, maybe two minutes to complete. Now the app has everything it needs to generate your personalized meal windows."*
+
+**FILMING NOTES:**
+- Show final confirmation screen (2-3 seconds)
+- Transition to next section with a tap on "Generate My Windows" button
+
+---
+
+#### **SECTION 2: Tech Stack Breakdown [2:00-2:45]**
+
+**YOU (on camera, excited - this is for Congressional App Challenge judges):**
+*"Alright, quick tech breakdown before we see the windows—because this is actually a pretty sophisticated stack."*
+
+**FILMING:**
+- **A-ROLL:** You on camera (4 seconds)
+- Then cut to **B-ROLL** or **GRAPHICS** while you explain:
+
+**YOU (voiceover):**
+*"The entire app is built with SwiftUI—Apple's modern declarative UI framework. For local data persistence, I'm using SwiftData, which stores all your personal metrics, preferences, and meal logs directly on your device.*
+
+*For cloud services, I'm using Firebase—specifically Firestore for cloud database sync, Firebase Auth for user accounts, and Firebase Storage for meal photos.*
+
+*Authentication is flexible—you can sign in with Apple, Google, or email. I integrated Sign in with Apple and Google Sign-In for a seamless experience.*
+
+*And for AI, I'm using Vertex AI from Google Cloud. That's what powers the meal window generation and the context-based food scanning. When you take a photo of your meal, the app sends the image plus your current window context to Vertex AI, which analyzes it and returns structured nutrition data.*
+
+*So the architecture is: local-first with SwiftData for speed and privacy, Firebase for cloud sync and authentication, and Vertex AI for the intelligent features. Everything sensitive stays on your device unless you explicitly sync it."*
+
+**FILMING NOTES:**
+- **GRAPHICS/B-ROLL (45 seconds):**
+  - [2:04] Text overlay: "Frontend: SwiftUI"
+  - [2:08] Text overlay: "Local Storage: SwiftData"
+  - [2:13] Text overlay: "Cloud: Firebase (Firestore, Auth, Storage)"
+  - [2:19] Text overlay: "Authentication: Sign in with Apple + Google Sign-In"
+  - [2:25] Text overlay: "AI/ML: Vertex AI (Google Cloud)"
+  - [2:31] Architecture diagram showing: Device (SwiftData) ↔ Firebase ↔ Vertex AI
+  - [2:38] Text overlay: "Privacy-First Architecture"
+- **PACING:** Educational but not boring—keep energy up
+- **SUBTITLES:** On voiceover (important for judges to catch all tech terms)
+
+**YOU (on camera, quick):**
+*"Modern stack, privacy-focused architecture. Now let's see what it generated."*
+
+**FILMING:**
+- **A-ROLL:** You on camera, transition line (2-3 seconds)
+
+---
+
+#### **SECTION 3: DailySync - Adaptive Context Input [2:45-3:20]**
+
+**YOU (on camera, excited):**
+*"So here's what makes this different. Every morning, the app asks you: How's your day looking? And you just... talk to it."*
+
+**FILMING:**
+- **A-ROLL:** You introducing DailySync (5 seconds)
+- **SCREEN RECORDING (30 seconds):** Full flow of DailySync voice input
+
+**SCREEN RECORDING SHOWS:**
+- "How's your day looking?" screen with voice input button
+- User taps mic, starts describing their day
+- Transcription appears in real-time: *"Yeah so I'll be working until about 7 AM and then after that I have school until about 12 PM after school I'll be working out at around one to 2 PM after that I will be studying a bit and working on schoolwork then around 6 PM I have robotics then after that I'll just be..."*
+- Mic pulsing, character count showing (315/500)
+
+**YOU (voiceover, while screen recording plays):**
+*"I'm telling it about my workout time, my school schedule, robotics practice. All the stuff that affects when I can actually eat. This isn't just 'when do you wake up'—it's understanding your entire day, in your own words."*
+
+**FILMING NOTES:**
+- **SCREEN RECORDING:** Show the full voice input, keep transcription readable
+- **GRAPHICS:** Highlight key phrases as they appear ("working out at around one to 2 PM", "robotics", "school")
+- **PACING:** Let the voice input play naturally, don't speed it up too much
+
+---
+
+#### **SECTION 4: AI Analysis & Window Generation [3:20-3:45]**
+
+**SCREEN RECORDING SHOWS:**
+- "Analyzing your daily context..." loading screen
+- NutriSync logo (white + lime green)
+- Progress dots animation
+- "DID YOU KNOW?" tips cycling at bottom
+
+**YOU (voiceover):**
+*"Then the AI analyzes everything—your schedule, your workout time, your goals from onboarding—and generates personalized meal windows that actually fit your life."*
+
+**FILMING:**
+- **SCREEN RECORDING:** Full loading animation (show ~15 seconds of it)
+- **A-ROLL (Picture-in-picture, optional):** You watching your phone, anticipating
+
+**FILMING NOTES:**
+- **GRAPHICS:** Add subtle animation emphasis on "Analyzing your daily context..."
+- **PACING:** Show enough of the loading to prove it's real, but don't drag
+- **MUSIC:** Build anticipation here
+
+---
+
+#### **SECTION 5: Generated Schedule - The Windows [3:45-4:10]**
+
+**SCREEN RECORDING SHOWS:**
+- "Today's Schedule" view appears
+- Wednesday, October 29
+- Daily macro targets at top: Calories 0/2,605 | P 0/195 | F 0/72 | C 0/293
+- **Four meal windows on timeline:**
+  - 11:30 AM - 1:00 PM: **Pre-Training Fuel Surge** (600 cal, 30P 13F 90C) - "Soon"
+  - 2:00 - 4:00 PM: **Post-Workout Recovery Feast** (600 cal, 60P 10F 68C) - "Soon"
+  - Plus additional windows (scroll to show more)
+
+**YOU (voiceover):**
+*"And here's what it generated. 'Pre-Training Fuel Surge' right before my workout. 'Post-Workout Recovery Feast' after. Every window has a purpose, custom macro targets, and they're timed around my actual schedule—school, workout, robotics."*
+
+**YOU (on camera, brief):**
+*"This is the schedule. Let's look at what's actually in these windows."*
+
+**FILMING NOTES:**
+- **SCREEN RECORDING:** Slow scroll through the day's timeline
+- **GRAPHICS:** Highlight each window name and its purpose
+- **ZOOM:** Zoom into one window to show macro breakdown clearly
+- **SUBTITLES:** On all narration
+
+---
+
+#### **SECTION 6: Window Details - Context-Based Suggestions [4:10-4:35]**
+
+**YOU (voiceover):**
+*"When you tap into a window, you get tailored suggestions. Look at this breakfast window—'Anabolic Kickstart.' The app knows my goal is muscle building, so it's suggesting high-protein options."*
+
+**SCREEN RECORDING SHOWS:**
+- Tap into "Breakfast Window" (showing Anabolic Kickstart)
+- Window Purpose card with icon: "Jumpstart metabolism and protein synthesis after sleep to set a positive tone for muscle building"
+- **Recommended Foods:**
+  - Protein smoothie with spinach and fruit
+  - Greek yogurt with granola and berries
+  - Scrambled eggs with whole-wheat toast
+- **Micronutrient Focus:** Vitamin D, Calcium, Omega-3S (highlighted in red pills)
+- **Optimization Tips** section
+
+**YOU (voiceover continues):**
+*"Then look at the dinner window—'Evening Growth Window.' It's adjusting recommendations based on my evening activities—robotics, video editing—while still supporting muscle growth. Everything's contextual."*
+
+**SCREEN RECORDING SHOWS:**
+- Swipe/transition to "Dinner Window"
+- Different purpose, different suggestions
+- Micronutrient Focus: Iron, Zinc, Magnesium (highlighted in blue pills)
+
+**FILMING NOTES:**
+- **SCREEN RECORDING:** Smooth transitions between windows
+- **GRAPHICS:** Circle the "Window Purpose" sections, highlight how they differ
+- **PACING:** 25 seconds total, keep it moving
+
+---
+
+#### **SECTION 7: Voice-First Food Scanning [4:35-5:25]**
 
 **YOU (on camera):**
-*"When you first open it, it doesn't ask what you ate. It asks WHEN you live your life."*
-
-**FILMING:**
-- **A-ROLL:** You introducing this (5 seconds)
-- **SCREEN RECORDING (25 seconds):** Full-screen phone recording showing:
-  1. Welcome screen
-  2. "What time do you wake up?" → Select 7:00 AM
-  3. "What time do you sleep?" → Select 10:30 PM
-  4. "When do you work out?" → Select "Morning (7-9am)"
-  5. "What's your goal?" → Select "Build Muscle"
-
-**YOU (voiceover over screen recording):**
-*"Wake time, sleep time, when you work out, and your goal. That's it. Then it generates your personalized meal windows."*
-
-**FILMING NOTES:**
-- Record phone at 60fps if possible (smooth)
-- Keep phone vertical (native aspect ratio)
-- Show smooth transitions between screens
-- Add subtle zoom-in on the "Build Muscle" selection
-- **GRAPHICS:** Circle the selected options as you tap them
-
----
-
-#### **SECTION 2: AI Window Generation [1:15-2:00]**
-
-**FILMING:**
-- **SCREEN RECORDING:** AI generating windows (with loading animation)
-- **A-ROLL (Picture-in-picture):** You watching it generate, excited reaction
-
-**YOU (voiceover):**
-*"It uses AI to create meal windows optimized for your schedule. Here's what it gave me—"*
+*"Now let's actually log a meal. This is where the context-based scanning comes in. Instead of typing everything out, you just... describe it."*
 
 **SCREEN RECORDING SHOWS:**
-```
-🌅 Window 1: 7:00 AM - 8:00 AM
-Purpose: Pre-Workout Energy
-Target: 450 cal | 25g protein | 55g carbs
+1. Tap camera icon (bottom tab bar)
+2. Camera interface opens with scanning frame
+3. Tap "Photo" button at bottom
+4. Photo library appears showing various food photos
+5. Select cereal photo (Honey Bunches of Oats bowl)
+6. "Describe Your Meal" screen appears with tips:
+   - "Mention brand names"
+   - "Include portion sizes"
+   - "List all ingredients you know"
+7. Tap mic to start voice description
+8. **Voice input:** User simply says "Honey bunches of oats"
+9. Transcription appears: "Honey bunches of oats"
+10. "Listening" animation plays
+11. Tap "Analyze Meal" button (lime green)
 
-🏋️ Window 2: 10:00 AM - 11:00 AM
-Purpose: Post-Workout Recovery
-Target: 600 cal | 40g protein | 70g carbs
+**YOU (voiceover during this flow):**
+*"I'm selecting a photo from my library—just a bowl of cereal. Then I describe it. I'm keeping it simple: just 'honey bunches of oats.' I'm not specifying which type, how much, what kind of milk. The AI is going to figure that out and ask me for clarification."*
 
-⚡ Window 3: 2:00 PM - 3:00 PM
-Purpose: Sustained Energy
-Target: 500 cal | 30g protein | 50g carbs
-
-🌙 Window 4: 6:30 PM - 7:30 PM
-Purpose: Final Protein Dose
-Target: 450 cal | 35g protein | 40g carbs
-```
-
-**YOU (on camera, pointing at screen):**
-*"Notice the first window is right before my workout. Second is post-workout for recovery. And the last one is at 6:30pm—three hours before I sleep—so I can actually fall asleep. Every window has a purpose."*
-
-**FILMING NOTES:**
-- **SPLIT SCREEN:** Phone recording on left (60%), you on right (40%)
-- **GRAPHICS:** Highlight each window as you talk about it
-- **ZOOM:** Zoom into macro breakdown to show detail
-- **SUBTITLES:** On your narration
-
----
-
-#### **SECTION 3: Food Suggestions [2:00-2:25]**
-
-**FILMING:**
-- **SCREEN RECORDING:** Window detail view showing food suggestions
-- **A-ROLL (Picture-in-picture):** You nodding, impressed
+**SCREEN RECORDING SHOWS (continued):**
+12. Back to schedule view - meal card appears showing:
+    - "performing initial analysis..." in red text
+    - Loading state
+13. **Clarification questions appear:**
+    - "How many cups of Honey Bunches of Oats with Strawberries cereal are in the bowl?"
+    - Options: 1 cup (~39g), **1.5 cups (~58.5g)** [Assumed default], 2 cups (~78g)
+14. Scroll to next question:
+    - "What type of milk was used?"
+    - Options: Skim milk, 1% milk, **2% milk** [Assumed default], Whole milk, etc.
+15. AI makes smart defaults, user can adjust if needed
 
 **YOU (voiceover):**
-*"And here's the best part—it doesn't just tell me when to eat. It suggests exactly what to eat to hit my targets."*
+*"See that? The AI identified the specific brand—'Honey Bunches of Oats with Strawberries'—and it's asking clarification questions with smart defaults already selected. It knows I probably had 1.5 cups with 2% milk based on typical servings. I can adjust if needed, or just accept the defaults. This is way faster than manual entry."*
 
-**SCREEN RECORDING SHOWS:**
-- Tap into Window 2 (Post-Workout)
-- "Suggested Foods" section appears:
-```
-🥗 Suggested Meals for This Window
-Target: 600 cal | 40g protein | 70g carbs
-
-✓ Grilled chicken (6oz) + brown rice (1 cup) + broccoli
-  → 580 cal | 42g protein | 68g carbs
-
-✓ Protein smoothie + banana + oats
-  → 610 cal | 38g protein | 72g carbs
-
-✓ Greek yogurt bowl + granola + berries
-  → 595 cal | 40g protein | 71g carbs
-```
-
-**YOU (on camera):**
-*"It's like having a meal planner built in. Every window gets custom suggestions based on the macros I need right then."*
+**SCREEN RECORDING SHOWS (continued):**
+16. Analysis completes
+17. Meal appears in schedule: **"Cereal with Milk and Strawberries"** - 315 cal, 11P 7F 57C - logged at 6:16 AM
+18. Breakfast window now shows:
+    - **78% Complete** (red ring, 315/400 cal remaining)
+    - 85 cal remaining
 
 **FILMING NOTES:**
-- **SCREEN RECORDING:** Show smooth scrolling through suggestions
-- **GRAPHICS:** Highlight how suggestions match the macro targets
-- **PACING:** Keep this tight—30 seconds only
+- **SCREEN RECORDING:** This is the money shot—show the FULL flow, don't skip steps
+- **GRAPHICS:** Highlight the clarification questions, show the "Assumed (default)" tags
+- **ZOOM:** Zoom into important UI elements (voice transcription, clarification options)
+- **PACING:** This is 50 seconds—the longest section—but it's worth it
+- **SUBTITLES:** On all voiceover
 
 ---
 
-#### **SECTION 4: Using a Window [2:25-2:50]**
-
-**FILMING:**
-- **SCREEN RECORDING:** Focus tab showing current window
-- **A-ROLL:** You eating a meal, checking phone
+#### **SECTION 8: Meal Detail View - Micronutrients & Intelligence [5:25-5:50]**
 
 **YOU (voiceover):**
-*"Throughout the day, it shows you which window you're in. Right now I'm in my post-workout window."*
+*"Now let's look at what the app actually tracked from that meal."*
 
 **SCREEN RECORDING SHOWS:**
-- Focus tab with "Current Window" highlighted in lime green (#C0FF73)
-- Timer showing time remaining in window
-- Macro targets for this window
-- "Log Meal" button pulsing
-
-**YOU (on camera, casual):**
-*"When I'm in a window, I eat. When I'm not, I don't. It's that simple."*
-
-**FILMING NOTES:**
-- **B-ROLL:** You sitting down to eat, phone on table showing active window
-- **SCREEN RECORDING:** Show the app updating in real-time as time passes
-- **GRAPHICS:** Show time passing with a fast-forward effect
-- Quick cut to phone showing "Window Ending Soon" notification
-
----
-
-#### **SECTION 5: Context-Based AI Scanning [2:50-3:30]**
-
-**FILMING:**
-- **SCREEN RECORDING:** Scan tab camera interface
-- **A-ROLL:** You taking photo of actual meal
-
-**YOU (on camera):**
-*"Here's where it gets interesting. Most AI food scanning is terrible—it guesses wildly. But this uses context-based scanning. It knows which window you're in, what macros you need, and analyzes the photo with that context. Way more accurate."*
-
-**SCREEN RECORDING SHOWS:**
-1. Tap "Log Meal" button
-2. Camera opens (Scan tab)
-3. Point at meal (show real meal on table)
-4. Take photo
-5. AI analyzing (loading animation with progress)
-6. Results appear:
-
-```
-🍗 Grilled Chicken & Rice Bowl
-
-📍 Context: Post-Workout Window
-   Target: 600 cal | 40g protein | 70g carbs
-
-Analysis:
-• 6oz grilled chicken breast
-• 1 cup white rice
-• Mixed vegetables
-• Olive oil drizzle
-
-Macros:
-Calories: 580
-Protein: 42g
-Carbs: 68g
-Fat: 12g
-
-✅ Perfect for This Window
-   (2g under protein, on target for carbs)
-
-Confidence: 94%
-```
+- Tap into the logged meal "Cereal with Milk and Strawberries"
+- **Breakfast Window detail view:**
+  - **NutriSync Ring:** 78% Complete (315/400 cal)
+  - Macro breakdown bars: Protein 11/30g, Fat 7/13g, Carbs 57/45g (carbs slightly over)
+- Scroll to **NutriSync Petals** (micronutrient visualization):
+  - Hexagonal petal display showing 6 nutrient categories
+  - Center: "23% Micros"
+  - Individual nutrients with progress bars:
+    - Vitamin B12: 1.1mg (95% - nearly complete, lime green)
+    - Potassium: 360.0mg (51% - orange)
+    - Riboflavin: 0.4mg (33% - red)
+    - Phosphorus: 218.4mg (31% - red)
+    - Calcium: 271.2mg (27% - red)
+  - Tap on Energy petal (yellow/gold)
+  - **Contributing Micronutrients** card expands showing:
+    - Vitamin B12: 1.1mg (95% of daily target) - orange bar
+    - Riboflavin: 0.4mg (33% of daily target) - orange bar
+- **Logged Foods (1)** section shows:
+  - Cereal with Milk and Strawberries, 315 cal, 6:16 AM, 11P 7F 57C
+  - Bowl emoji icon
+  - "View ingredients" dropdown showing recognized components:
+    - "Honey Bunches of Oats with Strawberries cereal 1.5 cups"
+    - "2% Milk 1 cup"
 
 **YOU (voiceover):**
-*"See how it uses the window context? It knows I need 40g protein post-workout, so it analyzes the photo with that in mind. Way more accurate than generic AI scanning. Takes about 10 seconds. No manual entry."*
+*"This is the NutriSync Petals view—it breaks down micronutrients by category. See how the cereal hit 95% of my vitamin B12 for the day? But only 33% of riboflavin. The app is tracking way more than just calories—it's showing me which micronutrients I'm getting from each meal, so I can see patterns and make better choices later."*
 
 **FILMING NOTES:**
-- **A-ROLL:** Actually take a photo of a real meal (prep this beforehand)
-- **SCREEN RECORDING:** Show full process from camera → results
-- **GRAPHICS:** Highlight the "Fits Your Window Target" checkmark
-- **TIMING:** Show actual loading time (don't speed up) to prove it's fast
+- **SCREEN RECORDING:** Show the full scroll through Petals, tap interaction
+- **GRAPHICS:** Highlight the hexagonal petals, circle high-performing nutrients
+- **ZOOM:** Zoom into the ingredient breakdown to show detail
+- **PACING:** 25 seconds, keep it educational but concise
 
 ---
 
-#### **SECTION 6: Adaptive Intelligence [3:30-3:45]**
-
-**FILMING:**
-- **SCREEN RECORDING:** Missing a window, redistribution animation
+#### **SECTION 9: Daily Summary - Goals & Strategy [5:50-6:15]**
 
 **YOU (voiceover):**
-*"And if I miss a window? It automatically redistributes my macros to the remaining windows. So I'm still hitting my daily targets."*
+*"Now here's where the goal ranking from onboarding actually matters. Let me show you the Daily Summary."*
 
 **SCREEN RECORDING SHOWS:**
-- Window 2 showing "Missed" in gray
-- Remaining macros flowing to Windows 3 & 4 (animated)
-- Updated targets appearing
+- Navigate to Daily Summary view
+- **Daily NutriSync Ring:** 12% of daily goal (315/2,605 cal)
+  - Windows: 1/4
+  - Meals: 1
+  - Macros: Protein 11/195g, Fat 7/72g, Carbs 57/293g
+- Scroll to **"Today's Strategy"** section (Wed, Oct 29):
+  - Three goal pills displayed: **Nutrition** (green, active), **Energy** (gold), **Performance** (orange)
+  - Tap to expand:
+
+**Nutrition goal card:**
+*"To support your muscle gain goal, this plan provides a consistent surplus with strategic protein timing, especially around your workout."*
+- Top Priorities: "protein intake, especially...", "energy levels"
+
+**Energy goal card:**
+*"Energy levels will be managed by providing sustained energy windows throughout the day with balanced macros and strategic carb timing around your workout. Avoid large, heavy meals that could cause energy crashes, especially before school or work."*
+- Top Priorities: "protein intake, especially...", "energy levels"
+
+**YOU (voiceover):**
+*"Remember how I ranked my goals during onboarding? Muscle building was #1, steady energy was #2. This is the plan the app generated based on those priorities. It's not just showing me what to eat—it's explaining WHY each window exists and how it supports my top goals."*
+
+**SCREEN RECORDING SHOWS (continued):**
+- Scroll to **"Today's Meals"** (1 items logged)
+  - 6:16 AM - Cereal with Milk and Strawberries, 315 cal, Anabolic Kickstart window, 11P 57C 7F
+- Scroll to **"Micronutrient Status"** (8 need attention):
+  - Red warning icons for: Niacin (0%), Thiamin (0%), Magnesium (0%), Vitamin C (0%), Iron (0%)
+  - Shows what the user is currently lacking
 
 **FILMING NOTES:**
-- **SCREEN RECORDING:** Capture this redistribution animation (make it smooth)
-- **GRAPHICS:** Arrows showing macros moving between windows
-- **FAST PACING:** This is 15 seconds, keep it tight
+- **SCREEN RECORDING:** Show full scroll through Daily Summary
+- **GRAPHICS:** Highlight the goal pills, circle key phrases in strategy explanation
+- **PACING:** 25 seconds, educational
 
 ---
 
-### [3:45-4:30] WHY YOU NEED THIS - CONVINCE THE VIEWER
+#### **SECTION 10: Performance Tab & Wrap [6:15-6:30]**
+
+**SCREEN RECORDING SHOWS:**
+- Navigate to Performance tab (briefly)
+- **Overall Performance: 34%** (red score - "Room to grow - let's build momentum together")
+- **Today's Micronutrients** petal display (10% Micros)
+  - Individual breakdown: Vitamin B12 (45%), Calcium (27%), Vitamin D (12%), Iron (0%)
+
+**YOU (voiceover):**
+*"There's also a performance tab that tracks adherence over time. Right now I'm at 34%—just getting started. But as you hit your windows consistently, this score builds momentum."*
+
+**SCREEN RECORDING SHOWS:**
+- Brief swipe to Settings (just peek)
+- Schedule Settings, Notification Settings, Account Settings visible
+
+**YOU (on camera, wrapping up demo):**
+*"And that's the full flow. Voice-first, context-aware, goal-driven. From daily context input to personalized windows to intelligent scanning with clarification questions to micronutrient tracking. It's not just tracking what you ate—it's understanding why, when, and how it fits into your actual life."*
+
+**FILMING NOTES:**
+- **SCREEN RECORDING:** Quick peek at Performance + Settings (10 seconds total)
+- **A-ROLL:** You wrapping up, confident
+- **PACING:** Fast, conclusive
+- **TRANSITION:** This leads directly into "Why You Need This"
+
+---
+
+### [6:30-7:15] WHY YOU NEED THIS - CONVINCE THE VIEWER
 **FILMING:** A-roll (you talking) with quick B-roll cuts
 
 **YOU (on camera, direct):**
@@ -298,24 +531,24 @@ Confidence: 94%
 
 **FILMING INSTRUCTIONS:**
 - **A-ROLL (Primary):** You talking, confident and direct
-  - Shot 1: Medium shot (3:45-4:10)
-  - Shot 2: Close-up (4:10-4:25) - more intense, passionate
-  - Shot 3: Pull back (4:25-4:30) - hold up phone
+  - Shot 1: Medium shot (6:30-6:55)
+  - Shot 2: Close-up (6:55-7:10) - more intense, passionate
+  - Shot 3: Pull back (7:10-7:15) - hold up phone
 
 - **B-ROLL (Quick cuts while you talk):**
-  - [3:50] Person sleeping peacefully
-  - [3:55] Someone working out effectively
-  - [4:00] Energy/focus while working
-  - [4:08] Phone showing NutriSync logo
-  - [4:20] Before/after energy comparison
+  - [6:35] Person sleeping peacefully
+  - [6:40] Someone working out effectively
+  - [6:45] Energy/focus while working
+  - [6:53] Phone showing NutriSync logo
+  - [7:05] Before/after energy comparison
 
 - **SUBTITLES:** Full subtitles
 - **MUSIC:** Slightly more inspirational/upbeat track kicks in here
-- **GRAPHICS:** Text overlay: "WHEN > WHAT" appears at 4:15
+- **GRAPHICS:** Text overlay: "WHEN > WHAT" appears at 7:00
 
 ---
 
-### [4:30-5:00] CALL TO ACTION - TESTFLIGHT
+### [7:15-7:45] CALL TO ACTION - TESTFLIGHT
 **FILMING:** A-roll with graphics overlay
 
 **YOU (on camera, enthusiastic):**
@@ -330,12 +563,12 @@ Confidence: 94%
 **FILMING INSTRUCTIONS:**
 - **A-ROLL:** You talking, friendly and approachable
 - **GRAPHICS (overlay):**
-  - [4:35] QR code appears in corner with "TestFlight Beta" label
-  - [4:42] "Link in Description" text appears
-  - [4:48] Subscribe button animation
-  - [4:55] Social handles: @NutriSyncApp
+  - [7:20] QR code appears in corner with "TestFlight Beta" label
+  - [7:27] "Link in Description" text appears
+  - [7:33] Subscribe button animation
+  - [7:40] Social handles: @NutriSyncApp
 
-- **END SCREEN (4:55-5:00):**
+- **END SCREEN (7:40-7:45):**
   - Left: Subscribe button
   - Right: Next video (or your channel)
   - Center: TestFlight QR code
