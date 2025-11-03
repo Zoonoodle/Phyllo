@@ -20,6 +20,11 @@ struct PerformanceHeaderView: View {
     
     var body: some View {
         VStack(spacing: 0) {
+            // Add safe area top padding to avoid Dynamic Island
+            Color.clear
+                .frame(height: 1)
+                .padding(.top, 50)
+
             VStack(spacing: 8) {
                 // Settings button and title in one row
                 ZStack {
