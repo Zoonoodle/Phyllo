@@ -10,6 +10,7 @@ import SwiftUI
 
 struct GracePeriodBanner: View {
     @EnvironmentObject var gracePeriodManager: GracePeriodManager
+    @Binding var isCollapsed: Bool
 
     var hoursRemaining: Int {
         guard let endDate = gracePeriodManager.gracePeriodEndDate else { return 0 }
@@ -20,47 +21,92 @@ struct GracePeriodBanner: View {
     var body: some View {
         if gracePeriodManager.isInGracePeriod {
             VStack(spacing: 0) {
-                HStack(spacing: 12) {
-                    // Info section
-                    VStack(alignment: .leading, spacing: 4) {
+                if isCollapsed {
+                    // Collapsed state - just a small indicator bar
+                    HStack {
                         Text("Free Trial Active")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(.white)
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(.white.opacity(0.8))
 
-                        Text("\(gracePeriodManager.remainingScans) scans • \(hoursRemaining)h remaining")
-                            .font(.system(size: 12))
-                            .foregroundColor(.white.opacity(0.7))
+                        Spacer()
+
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.6))
                     }
-
-                    Spacer()
-
-                    // Upgrade button
-                    Button {
-                        NotificationCenter.default.post(
-                            name: .showPaywall,
-                            object: "grace_period_banner"
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                Color.nutriSyncAccent.opacity(0.15),
+                                Color.nutriSyncAccent.opacity(0.05)
+                            ]),
+                            startPoint: .leading,
+                            endPoint: .trailing
                         )
-                    } label: {
-                        Text("Upgrade")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(Color.phylloBackground)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 8)
-                            .background(Color.nutriSyncAccent)
-                            .cornerRadius(8)
-                    }
-                }
-                .padding(16)
-                .background(
-                    LinearGradient(
-                        gradient: Gradient(colors: [
-                            Color.nutriSyncAccent.opacity(0.15),
-                            Color.nutriSyncAccent.opacity(0.05)
-                        ]),
-                        startPoint: .leading,
-                        endPoint: .trailing
                     )
-                )
+                    .onTapGesture {
+                        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                            isCollapsed = false
+                        }
+                    }
+                } else {
+                    // Expanded state - full banner with info
+                    HStack(spacing: 12) {
+                        // Info section
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Free Trial Active")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundColor(.white)
+
+                            Text("\(gracePeriodManager.remainingScans) scans • \(hoursRemaining)h remaining")
+                                .font(.system(size: 12))
+                                .foregroundColor(.white.opacity(0.7))
+                        }
+
+                        Spacer()
+
+                        // Upgrade button
+                        Button {
+                            NotificationCenter.default.post(
+                                name: .showPaywall,
+                                object: "grace_period_banner"
+                            )
+                        } label: {
+                            Text("Upgrade")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundColor(Color.phylloBackground)
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 8)
+                                .background(Color.nutriSyncAccent)
+                                .cornerRadius(8)
+                        }
+
+                        // Collapse button
+                        Button {
+                            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                                isCollapsed = true
+                            }
+                        } label: {
+                            Image(systemName: "chevron.up")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundColor(.white.opacity(0.6))
+                                .padding(8)
+                        }
+                    }
+                    .padding(16)
+                    .background(
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                Color.nutriSyncAccent.opacity(0.15),
+                                Color.nutriSyncAccent.opacity(0.05)
+                            ]),
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                }
             }
         }
     }
@@ -69,8 +115,10 @@ struct GracePeriodBanner: View {
 // MARK: - Preview
 
 #Preview {
+    @Previewable @State var isCollapsed = false
+
     VStack {
-        GracePeriodBanner()
+        GracePeriodBanner(isCollapsed: $isCollapsed)
             .environmentObject({
                 let manager = GracePeriodManager.shared
                 manager.isInGracePeriod = true

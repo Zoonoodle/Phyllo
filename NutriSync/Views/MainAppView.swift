@@ -22,38 +22,47 @@ struct MainAppView: View {
     let handleScenePhaseChange: (ScenePhase, ScenePhase) -> Void
     let refreshAppData: () async -> Void
 
+    @State private var isGracePeriodBannerCollapsed = false
+
     var body: some View {
         ZStack {
             mainTabView
+            gracePeriodBannerOverlay
             welcomeBannerOverlay
             loadingOverlay
         }
     }
 
     private var mainTabView: some View {
-        VStack(spacing: 0) {
-            // Grace period banner at top
-            GracePeriodBanner()
-                .environmentObject(gracePeriodManager)
+        MainTabView()
+            .fullScreenCover(isPresented: $showNotificationOnboarding) {
+                NotificationOnboardingView(isPresented: $showNotificationOnboarding)
+                    .environmentObject(notificationManager)
+            }
+            .task {
+                await checkNotificationOnboarding()
+                await checkFirstDayWindows()
+            }
+            .onChange(of: scenePhase) { oldPhase, newPhase in
+                handleScenePhaseChange(oldPhase, newPhase)
+            }
+            .task(id: shouldRefreshData) {
+                if shouldRefreshData {
+                    await refreshAppData()
+                    shouldRefreshData = false
+                }
+            }
+    }
 
-            // Main tab view
-            MainTabView()
-        }
-        .fullScreenCover(isPresented: $showNotificationOnboarding) {
-            NotificationOnboardingView(isPresented: $showNotificationOnboarding)
-                .environmentObject(notificationManager)
-        }
-        .task {
-            await checkNotificationOnboarding()
-            await checkFirstDayWindows()
-        }
-        .onChange(of: scenePhase) { oldPhase, newPhase in
-            handleScenePhaseChange(oldPhase, newPhase)
-        }
-        .task(id: shouldRefreshData) {
-            if shouldRefreshData {
-                await refreshAppData()
-                shouldRefreshData = false
+    @ViewBuilder
+    private var gracePeriodBannerOverlay: some View {
+        if gracePeriodManager.isInGracePeriod {
+            VStack {
+                GracePeriodBanner(isCollapsed: $isGracePeriodBannerCollapsed)
+                    .environmentObject(gracePeriodManager)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+
+                Spacer()
             }
         }
     }
