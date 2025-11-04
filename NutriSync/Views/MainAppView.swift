@@ -57,7 +57,7 @@ struct MainAppView: View {
     @ViewBuilder
     private var gracePeriodBannerOverlay: some View {
         if gracePeriodManager.isInGracePeriod {
-            VStack {
+            VStack(spacing: 0) {
                 GracePeriodBanner(isCollapsed: $isGracePeriodBannerCollapsed)
                     .environmentObject(gracePeriodManager)
                     .transition(.move(edge: .top).combined(with: .opacity))
@@ -73,6 +73,8 @@ struct MainAppView: View {
 
                 Spacer()
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .ignoresSafeArea(edges: .top)
         }
     }
 

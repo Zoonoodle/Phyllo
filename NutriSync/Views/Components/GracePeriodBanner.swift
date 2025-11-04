@@ -22,20 +22,27 @@ struct GracePeriodBanner: View {
         if gracePeriodManager.isInGracePeriod {
             VStack(spacing: 0) {
                 if isCollapsed {
-                    // Collapsed state - just a small indicator bar
-                    HStack {
-                        Text("Free Trial Active")
-                            .font(.system(size: 11, weight: .medium))
-                            .foregroundColor(.white.opacity(0.8))
+                    // Collapsed state - moves to top of screen including status bar area
+                    VStack(spacing: 0) {
+                        // Spacer for status bar area
+                        Color.clear
+                            .frame(height: 50) // Approximate status bar height
 
-                        Spacer()
+                        // Collapsed indicator bar
+                        HStack {
+                            Text("Free Trial Active")
+                                .font(.system(size: 11, weight: .medium))
+                                .foregroundColor(.white.opacity(0.8))
 
-                        Image(systemName: "chevron.down")
-                            .font(.system(size: 10, weight: .semibold))
-                            .foregroundColor(.white.opacity(0.6))
+                            Spacer()
+
+                            Image(systemName: "chevron.down")
+                                .font(.system(size: 10, weight: .semibold))
+                                .foregroundColor(.white.opacity(0.6))
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
                     .background(
                         ZStack {
                             // Solid black background to block content underneath
@@ -51,6 +58,7 @@ struct GracePeriodBanner: View {
                                 endPoint: .trailing
                             )
                         }
+                        .ignoresSafeArea(edges: .top)
                     )
                     .onTapGesture {
                         withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
