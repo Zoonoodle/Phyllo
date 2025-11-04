@@ -37,14 +37,20 @@ struct GracePeriodBanner: View {
                     .padding(.horizontal, 16)
                     .padding(.vertical, 8)
                     .background(
-                        LinearGradient(
-                            gradient: Gradient(colors: [
-                                Color.nutriSyncAccent.opacity(0.15),
-                                Color.nutriSyncAccent.opacity(0.05)
-                            ]),
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
+                        ZStack {
+                            // Solid black background to block content underneath
+                            Color.phylloBackground
+
+                            // Subtle accent gradient on top
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    Color.nutriSyncAccent.opacity(0.15),
+                                    Color.nutriSyncAccent.opacity(0.05)
+                                ]),
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        }
                     )
                     .onTapGesture {
                         withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
@@ -97,14 +103,20 @@ struct GracePeriodBanner: View {
                     }
                     .padding(16)
                     .background(
-                        LinearGradient(
-                            gradient: Gradient(colors: [
-                                Color.nutriSyncAccent.opacity(0.15),
-                                Color.nutriSyncAccent.opacity(0.05)
-                            ]),
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
+                        ZStack {
+                            // Solid black background to block content underneath
+                            Color.phylloBackground
+
+                            // Subtle accent gradient on top
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    Color.nutriSyncAccent.opacity(0.15),
+                                    Color.nutriSyncAccent.opacity(0.05)
+                                ]),
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        }
                     )
                 }
             }

@@ -61,6 +61,15 @@ struct MainAppView: View {
                 GracePeriodBanner(isCollapsed: $isGracePeriodBannerCollapsed)
                     .environmentObject(gracePeriodManager)
                     .transition(.move(edge: .top).combined(with: .opacity))
+                    .task(id: isGracePeriodBannerCollapsed) {
+                        // Auto-collapse after 5 seconds if currently expanded
+                        if !isGracePeriodBannerCollapsed {
+                            try? await Task.sleep(nanoseconds: 5_000_000_000) // 5 seconds
+                            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                                isGracePeriodBannerCollapsed = true
+                            }
+                        }
+                    }
 
                 Spacer()
             }
