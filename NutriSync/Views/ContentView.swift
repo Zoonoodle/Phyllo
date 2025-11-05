@@ -120,8 +120,9 @@ struct ContentView: View {
                 hasInitializedGetStarted: $hasInitializedGetStarted,
                 onboardingResetFlag: onboardingResetFlag
             )
-        } else if !subscriptionManager.isSubscribed && !gracePeriodManager.isInGracePeriod {
+        } else if !subscriptionManager.isSubscribed && !gracePeriodManager.isInGracePeriod && gracePeriodManager.gracePeriodEndDate != nil {
             // Grace period expired and not subscribed - HARD PAYWALL (blocking)
+            // Only show if gracePeriodEndDate exists (means grace period was initialized)
             PaywallView(
                 placement: "grace_period_expired",
                 onSubscribe: {

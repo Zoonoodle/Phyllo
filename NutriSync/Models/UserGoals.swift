@@ -423,6 +423,7 @@ enum NutritionGoal: Identifiable, Codable {
             try container.encode("muscleGain", forKey: .type)
             try container.encode(targetPounds, forKey: .targetPounds)
             try container.encode(timeline, forKey: .timeline)
+            
         case .maintainWeight:
             try container.encode("maintainWeight", forKey: .type)
         case .performanceFocus:

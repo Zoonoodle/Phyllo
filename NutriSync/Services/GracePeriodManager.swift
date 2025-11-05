@@ -126,8 +126,9 @@ class GracePeriodManager: ObservableObject {
 
                 print("✅ Loaded grace period: \(remainingScans) scans, \(remainingWindowGens) gens, in grace: \(isInGracePeriod)")
             } else {
-                print("⚠️ No grace period data found")
-                isInGracePeriod = false
+                print("⚠️ No grace period data found - starting grace period for existing user")
+                // Automatically start grace period for existing users who don't have one
+                try? await startGracePeriod()
             }
         } catch {
             print("❌ Failed to load grace period: \(error.localizedDescription)")
