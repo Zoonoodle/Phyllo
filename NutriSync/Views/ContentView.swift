@@ -123,6 +123,27 @@ struct ContentView: View {
         } else if !subscriptionManager.isSubscribed && !gracePeriodManager.isInGracePeriod && gracePeriodManager.gracePeriodEndDate != nil {
             // Grace period expired and not subscribed - HARD PAYWALL (blocking)
             // Only show if gracePeriodEndDate exists (means grace period was initialized)
+
+            // DEVELOPMENT: Allow dismissal for testing (remove in production)
+            #if DEBUG
+            PaywallView(
+                placement: "grace_period_expired",
+                onDismiss: {
+                    // TEMPORARY: Reset grace period for testing
+                    Task {
+                        try? await gracePeriodManager.startGracePeriod()
+                        print("🔧 DEBUG: Grace period reset for testing")
+                    }
+                },
+                onSubscribe: {
+                    // Subscription successful - refresh subscription status
+                    Task {
+                        await subscriptionManager.checkSubscriptionStatus()
+                    }
+                }
+            )
+            #else
+            // PRODUCTION: Hard paywall with no dismiss
             PaywallView(
                 placement: "grace_period_expired",
                 onSubscribe: {
@@ -132,6 +153,7 @@ struct ContentView: View {
                     }
                 }
             )
+            #endif
         } else {
             // Either subscribed OR in grace period - show app
             MainAppView(

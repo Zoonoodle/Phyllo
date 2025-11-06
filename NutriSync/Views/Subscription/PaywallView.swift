@@ -326,10 +326,13 @@ struct PaywallView: View {
             }
 
             isLoading = false
+            print("✅ Offerings loaded successfully: \(offerings?.current?.availablePackages.count ?? 0) packages")
         } catch {
             await MainActor.run {
                 errorMessage = error.localizedDescription
                 isLoading = false
+                print("❌ Failed to load offerings: \(error)")
+                print("   Error details: \(error.localizedDescription)")
             }
         }
     }

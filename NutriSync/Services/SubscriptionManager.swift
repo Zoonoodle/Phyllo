@@ -88,7 +88,18 @@ class SubscriptionManager: NSObject, ObservableObject {
 
     /// Fetch available offerings
     func fetchOfferings() async throws -> Offerings {
-        return try await Purchases.shared.offerings()
+        print("📦 Fetching offerings from RevenueCat...")
+        let offerings = try await Purchases.shared.offerings()
+        print("📦 Offerings response - Current: \(offerings.current?.identifier ?? "nil"), All: \(offerings.all.keys.joined(separator: ", "))")
+        if let current = offerings.current {
+            print("   Available packages: \(current.availablePackages.count)")
+            for package in current.availablePackages {
+                print("   - \(package.identifier): \(package.localizedPriceString)")
+            }
+        } else {
+            print("   ⚠️ No current offering found!")
+        }
+        return offerings
     }
 
     /// Purchase a package
