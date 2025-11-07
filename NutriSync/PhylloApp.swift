@@ -37,7 +37,8 @@ struct NutriSyncApp: App {
         // Configure Superwall for paywall presentation
         // Note: Superwall automatically integrates with RevenueCat when both SDKs are present
         Superwall.configure(apiKey: "pk_a5e497a59d7774228265ff6c58e3204ac77eba91bb4cc695")
-        print("🎨 Superwall configured")
+        Superwall.shared.delegate = SuperwallDelegateHandler.shared
+        print("🎨 Superwall configured with delegate")
 
         // Configure data provider after Firebase is ready
         configureDataProvider()
