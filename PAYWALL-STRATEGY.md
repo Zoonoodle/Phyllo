@@ -20,7 +20,9 @@ NutriSync uses a **4-paywall progressive monetization system** with a transparen
 **Placement**: `trial_welcome`
 **Trigger**: After first successful meal scan OR window generation
 **Type**: Soft (dismissible)
-**Goal**: Convert early subscribers with transparency
+**Goal**: Convert early subscribers with transparency about trial-to-paid model
+
+**Key Messaging**: This is a TRIAL of the full app, not a freemium upgrade
 
 ### 2. **Scan Limit Reached** (`meal_scan_limit_reached`)
 **Placement**: `meal_scan_limit_reached`
@@ -53,10 +55,10 @@ NutriSync uses a **4-paywall progressive monetization system** with a transparen
 │                                              │
 │           ✨ (lime green sparkles)           │
 │                                              │
-│       Welcome to NutriSync Premium!          │
+│         You're trying NutriSync!             │
 │           (28pt, bold, white)                │
 │                                              │
-│     You're on a free 24-hour trial          │
+│      24-hour trial • Full access             │
 │        (17pt, 70% white opacity)             │
 │                                              │
 ├──────────────────────────────────────────────┤
@@ -70,7 +72,7 @@ NutriSync uses a **4-paywall progressive monetization system** with a transparen
 └──────────────────────────────────────────────┘
 
 ┌──────────────────────────────────────────────┐
-│   Subscribe now to unlock unlimited:         │
+│   Subscribe to continue after trial:         │
 │   (17pt, bold, white)                        │
 │                                              │
 │   ✓ Unlimited AI meal analysis               │
@@ -102,14 +104,14 @@ NutriSync uses a **4-paywall progressive monetization system** with a transparen
 
 ┌──────────────────────────────────────────────┐
 │                                              │
-│   [  Subscribe Now - $X.XX/month  ]          │
+│   [  Subscribe to Continue - $X.XX/month  ]  │
 │   (Lime green #C0FF73, black text)           │
 │   (56pt height, rounded corners)             │
 │                                              │
-│          Continue Free Trial                 │
+│          Finish Trial First                  │
 │          (text button, 50% opacity)          │
 │                                              │
-│     No credit card needed for trial          │
+│     Subscribe anytime during your trial      │
 │        (13pt, 50% white opacity)             │
 │                                              │
 │          Restore Purchases                   │
@@ -136,9 +138,12 @@ NutriSync uses a **4-paywall progressive monetization system** with a transparen
 ### Copy Guidelines
 
 #### Headline
-**Primary**: "Welcome to NutriSync Premium!"
-**Secondary**: "You're on a free 24-hour trial"
-**Tone**: Celebratory, welcoming, transparent
+**Primary**: "You're trying NutriSync!"
+**Secondary**: "24-hour trial • Full access"
+**Tone**: Transparent, encouraging, NOT "upgrade to premium"
+
+**IMPORTANT**: Avoid "Premium", "Unlock", "Upgrade" - this implies freemium
+**Instead use**: "Continue", "Keep access", "Subscribe to use NutriSync"
 
 #### Trial Status
 Use **dynamic values** from `GracePeriodManager`:
@@ -146,21 +151,28 @@ Use **dynamic values** from `GracePeriodManager`:
 - `remainingWindowGens` window generation\(s) left
 - `remainingTimeFormatted` to explore
 
+**Frame as**: "This is what you're trying right now"
+
 #### Features List
-Focus on **unlimited** benefits:
-- Unlimited AI meal analysis
-- Daily personalized windows
+Focus on **continuing** what they're experiencing:
+- Unlimited AI meal analysis (vs your 4 trial scans)
+- Daily personalized windows (vs your 1 trial generation)
 - Smart window adjustments
 - Advanced analytics & insights
 - Priority support
 
+**Frame as**: "Subscribe to keep using these features"
+
 #### CTAs
-**Primary**: "Subscribe Now - $X.XX/month" (lime green button)
-**Secondary**: "Continue Free Trial" (text-only, dismisses)
+**Primary**: "Subscribe to Continue - $X.XX/month" (lime green button)
+**Secondary**: "Finish Trial First" (text-only, dismisses)
 **Tertiary**: "Restore Purchases" (small text link)
 
+**AVOID**: "Upgrade Now", "Unlock Premium", "Go Premium"
+**USE**: "Subscribe to Continue", "Keep Your Access", "Subscribe to NutriSync"
+
 #### Fine Print
-"No credit card needed for trial"
+"Subscribe anytime during your trial"
 "Terms • Privacy" (links)
 
 ---
@@ -173,8 +185,8 @@ Focus on **unlimited** benefits:
 2. First window generation creates today's plan
 3. User scans first meal → Success!
 4. [TRIAL WELCOME PAYWALL appears]
-5. User sees: "3 scans left, 23 hours remaining"
-6. User subscribes immediately → Full access unlocked
+5. User sees: "You're trying NutriSync! 3 scans left, 23 hours remaining"
+6. User subscribes immediately → Continues using app indefinitely
 ```
 
 ### Scenario 2: Trial Explorer (Common Case)
@@ -182,10 +194,10 @@ Focus on **unlimited** benefits:
 1. User completes onboarding
 2. First window generation
 3. User scans meal #1 → [TRIAL WELCOME appears]
-4. User clicks "Continue Free Trial" (dismisses)
+4. User clicks "Finish Trial First" (dismisses)
 5. User scans meals #2, #3, #4
 6. User tries scan #5 → [SCAN LIMIT PAYWALL appears]
-7. User subscribes → Full access unlocked
+7. User subscribes → Continues using app indefinitely
 ```
 
 ### Scenario 3: Time Expirer (Edge Case)
@@ -351,9 +363,10 @@ Superwall.shared.setUserAttributes([
 
 ### Maximize Early Conversions
 - Show trial welcome **early** (after first success, not after all limits)
-- Use **celebratory language** ("Welcome to Premium!" not "Trial Started")
-- Emphasize **unlimited** in feature list
-- Make "Continue" button **subtle** (text-only, not competing with Subscribe button)
+- Use **celebratory language** ("You're trying NutriSync!" not "Trial Started")
+- Emphasize **continuing** what they're experiencing (not "unlocking" new things)
+- Make "Finish Trial First" button **subtle** (text-only, not competing with Subscribe button)
+- Frame subscription as **continuation**, not upgrade: "Subscribe to keep using NutriSync"
 
 ### Optimize Copy
 - Use **"remaining"** not "left" (sounds more positive)
@@ -371,22 +384,43 @@ Superwall.shared.setUserAttributes([
 
 ## 📝 Copywriting Examples
 
-### Alternative Headlines
-- "🎉 You're in! Free 24-hour trial started"
-- "✨ Welcome to your nutrition transformation"
-- "🚀 Let's unlock your best nutrition"
+### Alternative Headlines (Trial-to-Paid Framing)
+- "🎉 You're in! Your 24-hour trial started"
+- "✨ Welcome to NutriSync"
+- "🚀 Your nutrition transformation starts now"
 
-### Alternative CTAs
-- "Start Unlimited Access - $X.XX/month"
-- "Subscribe & Save 40%"
-- "Unlock Everything Now"
+**AVOID**: "Welcome to Premium", "Unlock Features", "Try Premium"
+**WHY**: Implies there's a free version - there isn't!
+
+### Alternative CTAs (Subscription Focused)
+- "Subscribe to Continue - $X.XX/month"
+- "Keep Your Access - Subscribe Now"
+- "Subscribe to NutriSync"
+- "Continue After Trial - $X.XX/month"
+
+**AVOID**: "Unlock Everything", "Go Premium", "Upgrade Now"
+**WHY**: User already has everything - they're trialing the FULL app
 
 ### Alternative Trial Status
-- "Your trial includes: [list]"
-- "Try premium free for 24 hours"
-- "No strings attached - explore everything"
+- "Your trial includes everything: [list]"
+- "Try NutriSync free for 24 hours"
+- "Full access - no limits during trial"
 
-Choose what fits your brand voice!
+**AVOID**: "Try premium features", "Preview premium"
+**WHY**: There are no "regular" features - it's all or nothing
+
+### Framing: Trial-to-Paid vs Freemium
+
+**❌ WRONG (Freemium)**: "Upgrade to unlock premium features"
+**✅ RIGHT (Trial)**: "Subscribe to keep using NutriSync"
+
+**❌ WRONG**: "Try our premium tier"
+**✅ RIGHT**: "You're trying NutriSync - full access for 24 hours"
+
+**❌ WRONG**: "Go premium for unlimited scans"
+**✅ RIGHT**: "Subscribe for unlimited scans (you have 3 left in trial)"
+
+Choose what fits your brand voice - but ALWAYS frame as trial-to-paid!
 
 ---
 
