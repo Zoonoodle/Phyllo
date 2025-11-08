@@ -21,6 +21,7 @@ class GracePeriodManager: ObservableObject {
     @Published var remainingWindowGens: Int = 1
     @Published var gracePeriodEndDate: Date?
     @Published var hasSeenPaywallOnce: Bool = false
+    @Published var hasSeenTrialWelcome: Bool = false  // NEW: Trial welcome paywall
 
     // MARK: - Private Properties
     private let db = Firestore.firestore()
@@ -71,6 +72,7 @@ class GracePeriodManager: ObservableObject {
             "remainingScans": MAX_SCANS_IN_GRACE,
             "remainingWindowGens": MAX_WINDOW_GENS_IN_GRACE,
             "hasSeenPaywallOnce": false,
+            "hasSeenTrialWelcome": false,
             "deviceId": deviceId
         ]
 
@@ -115,6 +117,7 @@ class GracePeriodManager: ObservableObject {
                 remainingScans = data["remainingScans"] as? Int ?? 0
                 remainingWindowGens = data["remainingWindowGens"] as? Int ?? 0
                 hasSeenPaywallOnce = data["hasSeenPaywallOnce"] as? Bool ?? false
+                hasSeenTrialWelcome = data["hasSeenTrialWelcome"] as? Bool ?? false
 
                 if let endTimestamp = data["endDate"] as? Timestamp {
                     gracePeriodEndDate = endTimestamp.dateValue()
@@ -151,6 +154,62 @@ class GracePeriodManager: ObservableObject {
             )
 
             print("⏰ Grace period EXPIRED")
+        }
+    }
+
+    /// Show trial welcome paywall after first successful action
+    /// Call this after: first meal scan OR first window generation
+    func showTrialWelcomeIfNeeded() async {
+        // Only show if:
+        // 1. User is in grace period
+        // 2. Haven't seen trial welcome yet
+        // 3. At least one action has been taken (implicit - this is called after an action)
+        guard isInGracePeriod && !hasSeenTrialWelcome else {
+            return
+        }
+
+        // Mark as seen
+        hasSeenTrialWelcome = true
+
+        // Update Firestore
+        if !userId.isEmpty {
+            try? await db.collection("users").document(userId)
+                .collection("subscription").document("gracePeriod")
+                .updateData(["hasSeenTrialWelcome": true])
+        }
+
+        saveToUserDefaults()
+
+        // Show the trial welcome paywall
+        NotificationCenter.default.post(
+            name: .showPaywall,
+            object: "trial_welcome"
+        )
+
+        print("🎉 Showing trial welcome paywall")
+    }
+
+    // MARK: - Computed Grace Period Info
+
+    /// Get remaining time in grace period (for UI display)
+    var remainingTimeFormatted: String {
+        guard let endDate = gracePeriodEndDate, isInGracePeriod else {
+            return "Expired"
+        }
+
+        let now = Date()
+        guard now < endDate else {
+            return "Expired"
+        }
+
+        let remaining = endDate.timeIntervalSince(now)
+        let hours = Int(remaining / 3600)
+        let minutes = Int((remaining.truncatingRemainder(dividingBy: 3600)) / 60)
+
+        if hours > 0 {
+            return "\(hours) hour\(hours == 1 ? "" : "s")"
+        } else {
+            return "\(minutes) minute\(minutes == 1 ? "" : "s")"
         }
     }
 
@@ -275,6 +334,7 @@ class GracePeriodManager: ObservableObject {
         UserDefaults.standard.set(remainingScans, forKey: "gracePeriod_scans")
         UserDefaults.standard.set(remainingWindowGens, forKey: "gracePeriod_gens")
         UserDefaults.standard.set(hasSeenPaywallOnce, forKey: "gracePeriod_seenPaywall")
+        UserDefaults.standard.set(hasSeenTrialWelcome, forKey: "gracePeriod_seenTrialWelcome")
 
         if let endDate = gracePeriodEndDate {
             UserDefaults.standard.set(endDate, forKey: "gracePeriod_endDate")
@@ -286,6 +346,7 @@ class GracePeriodManager: ObservableObject {
         remainingScans = UserDefaults.standard.integer(forKey: "gracePeriod_scans")
         remainingWindowGens = UserDefaults.standard.integer(forKey: "gracePeriod_gens")
         hasSeenPaywallOnce = UserDefaults.standard.bool(forKey: "gracePeriod_seenPaywall")
+        hasSeenTrialWelcome = UserDefaults.standard.bool(forKey: "gracePeriod_seenTrialWelcome")
         gracePeriodEndDate = UserDefaults.standard.object(forKey: "gracePeriod_endDate") as? Date
 
         print("📱 Loaded from UserDefaults: \(remainingScans) scans, \(remainingWindowGens) gens")
