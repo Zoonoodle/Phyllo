@@ -25,9 +25,10 @@ class SuperwallDelegateHandler: SuperwallDelegate {
         case .paywallClose(let paywallInfo):
             print("🎨 Superwall paywall closed: \(paywallInfo.name)")
 
-        case .transactionComplete(let transaction, let product, let paywallInfo):
+        case .transactionComplete(let transaction, let product, let type, let paywallInfo):
             print("✅ Purchase completed!")
-            print("   Product: \(product.productIdentifier)")
+            print("   Product: \(product.id)")
+            print("   Transaction Type: \(type)")
             print("   Paywall: \(paywallInfo.name)")
 
             // Refresh subscription status
@@ -40,8 +41,9 @@ class SuperwallDelegateHandler: SuperwallDelegate {
             print("❌ Purchase failed: \(error.localizedDescription)")
             print("   Paywall: \(paywallInfo.name)")
 
-        case .transactionRestore(let paywallInfo):
+        case .transactionRestore(let restoreType, let paywallInfo):
             print("✅ Purchases restored")
+            print("   Restore Type: \(restoreType)")
             print("   Paywall: \(paywallInfo.name)")
 
             // Refresh subscription status
@@ -52,17 +54,17 @@ class SuperwallDelegateHandler: SuperwallDelegate {
 
         case .subscriptionStart(let product, let paywallInfo):
             print("🎉 Subscription started!")
-            print("   Product: \(product.productIdentifier)")
+            print("   Product: \(product.id)")
             print("   Paywall: \(paywallInfo.name)")
 
         case .freeTrialStart(let product, let paywallInfo):
             print("🎉 Free trial started!")
-            print("   Product: \(product.productIdentifier)")
+            print("   Product: \(product.id)")
             print("   Paywall: \(paywallInfo.name)")
 
         case .nonRecurringProductPurchase(let product, let paywallInfo):
             print("✅ Non-recurring product purchased")
-            print("   Product: \(product.productIdentifier)")
+            print("   Product: \(product.id)")
             print("   Paywall: \(paywallInfo.name)")
 
         case .paywallDecline(let paywallInfo):

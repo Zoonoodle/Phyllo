@@ -52,7 +52,7 @@ Subtitle Text: SF Pro Display Regular, 32pt, White, left-aligned, bottom third
 
 ## 🎞 Complete Script - 5-Minute Cut
 
-### COLD OPEN (0:00-0:08)
+### COLD OPEN (0:00-0:08)q
 **No text, just vibes**
 
 #### Shot 1 (0:00-0:03)
