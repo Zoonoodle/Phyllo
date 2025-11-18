@@ -126,7 +126,7 @@ struct ContentView: View {
 
             // DEVELOPMENT: Allow dismissal for testing (remove in production)
             #if DEBUG
-            SuperwallPaywallView(
+            PaywallView(
                 placement: "grace_period_expired",
                 onDismiss: {
                     // TEMPORARY: Reset grace period for testing
@@ -142,9 +142,11 @@ struct ContentView: View {
                     }
                 }
             )
+            .environmentObject(subscriptionManager)
+            .environmentObject(gracePeriodManager)
             #else
             // PRODUCTION: Hard paywall with no dismiss
-            SuperwallPaywallView(
+            PaywallView(
                 placement: "grace_period_expired",
                 onSubscribe: {
                     // Subscription successful - refresh subscription status
@@ -153,6 +155,8 @@ struct ContentView: View {
                     }
                 }
             )
+            .environmentObject(subscriptionManager)
+            .environmentObject(gracePeriodManager)
             #endif
         } else {
             // Either subscribed OR in grace period - show app
@@ -169,7 +173,7 @@ struct ContentView: View {
             )
             .environmentObject(notificationManager)
             .sheet(isPresented: $showingPaywall) {
-                SuperwallPaywallView(
+                PaywallView(
                     placement: paywallPlacement,
                     onDismiss: {
                         showingPaywall = false
@@ -181,6 +185,8 @@ struct ContentView: View {
                         }
                     }
                 )
+                .environmentObject(subscriptionManager)
+                .environmentObject(gracePeriodManager)
             }
             .onReceive(NotificationCenter.default.publisher(for: .showPaywall)) { notification in
                 if let placement = notification.object as? String {
