@@ -74,14 +74,14 @@ struct GracePeriodBanner: View {
 
                             Spacer()
 
-                            // Upgrade button
+                            // Subscribe button
                             Button {
                                 NotificationCenter.default.post(
                                     name: .showPaywall,
                                     object: "grace_period_banner"
                                 )
                             } label: {
-                                Text("Upgrade")
+                                Text("Subscribe")
                                     .font(.system(size: 14, weight: .semibold))
                                     .foregroundColor(Color.phylloBackground)
                                     .padding(.horizontal, 16)

@@ -160,7 +160,7 @@ struct PaywallView: View {
 
     private var featuresSection: some View {
         VStack(alignment: .leading, spacing: 16) {
-            ForEach(premiumFeatures, id: \.0) { feature in
+            ForEach(appFeatures, id: \.0) { feature in
                 HStack(spacing: 16) {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: 24))
@@ -271,26 +271,26 @@ struct PaywallView: View {
     private var headerTitle: String {
         switch placement {
         case "window_gen_limit_reached":
-            return "Upgrade to Continue"
+            return "Subscribe to Continue"
         case "meal_scan_limit_reached":
-            return "Unlock Unlimited Scans"
+            return "Subscribe for Full Access"
         case "grace_period_expired":
             return "Free Trial Ended"
         default:
-            return "Upgrade to Premium"
+            return "Subscribe for Access"
         }
     }
 
     private var headerSubtitle: String {
         switch placement {
         case "window_gen_limit_reached":
-            return "You've used your free window generation. Upgrade for unlimited personalized meal plans."
+            return "You've reached your trial limit. Subscribe to continue with unlimited personalized meal windows."
         case "meal_scan_limit_reached":
-            return "You've used all your free scans. Get unlimited AI meal analysis."
+            return "You've reached your trial limit. Subscribe to continue with unlimited AI meal analysis."
         case "grace_period_expired":
             return "Your 24-hour trial has ended. Subscribe to continue optimizing your nutrition."
         default:
-            return "Unlock all features and take your nutrition to the next level."
+            return "Continue your nutrition journey with full access to all features."
         }
     }
 
@@ -302,7 +302,7 @@ struct PaywallView: View {
         }
     }
 
-    private var premiumFeatures: [(String, String)] {
+    private var appFeatures: [(String, String)] {
         [
             ("Unlimited AI Meal Analysis", "Scan and analyze unlimited meals with AI-powered nutrition insights"),
             ("Personalized Meal Windows", "Get daily custom meal schedules optimized for your goals"),
