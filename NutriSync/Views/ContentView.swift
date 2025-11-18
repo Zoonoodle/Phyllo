@@ -49,6 +49,9 @@ struct ContentView: View {
     @State private var showingPaywall = false
     @State private var paywallPlacement = ""
 
+    // TEMPORARY: For taking paywall screenshots
+    @State private var showingMockPaywall = false
+
     // Refresh threshold: 20 minutes in seconds
     private let refreshThreshold: TimeInterval = 20 * 60
 
@@ -187,6 +190,30 @@ struct ContentView: View {
                 )
                 .environmentObject(subscriptionManager)
                 .environmentObject(gracePeriodManager)
+            }
+            .sheet(isPresented: $showingMockPaywall) {
+                MockPaywallView()
+            }
+            .overlay(alignment: .bottomTrailing) {
+                // TEMPORARY: Screenshot button (DELETE after taking screenshots)
+                Button {
+                    showingMockPaywall = true
+                } label: {
+                    VStack(spacing: 4) {
+                        Image(systemName: "camera.fill")
+                            .font(.system(size: 16))
+                        Text("Screenshot")
+                            .font(.system(size: 11, weight: .semibold))
+                    }
+                    .foregroundColor(.black)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                    .background(Color.nutriSyncAccent)
+                    .cornerRadius(12)
+                    .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
+                }
+                .padding(.trailing, 20)
+                .padding(.bottom, 100)
             }
             .onReceive(NotificationCenter.default.publisher(for: .showPaywall)) { notification in
                 if let placement = notification.object as? String {
