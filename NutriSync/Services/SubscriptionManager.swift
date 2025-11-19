@@ -28,7 +28,7 @@ class SubscriptionManager: NSObject, ObservableObject {
     }
 
     // MARK: - Private Properties
-    private let entitlementID = "premium"
+    private let entitlementID = "NutriSync"  // Must match RevenueCat dashboard entitlement identifier
 
     // MARK: - Initialization
     private override init() {

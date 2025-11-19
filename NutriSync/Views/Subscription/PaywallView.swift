@@ -372,7 +372,7 @@ struct PaywallView: View {
             await MainActor.run {
                 isPurchasing = false
 
-                if customerInfo.entitlements["premium"]?.isActive == true {
+                if customerInfo.entitlements["NutriSync"]?.isActive == true {
                     errorMessage = "Purchases restored successfully!"
                     showError = true
 
