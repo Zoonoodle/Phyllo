@@ -57,10 +57,19 @@ class GracePeriodManager: ObservableObject {
         // Check if device has already used grace period
         let deviceDoc = try await db.collection("gracePeriodDevices").document(deviceId).getDocument()
         if deviceDoc.exists {
+            #if DEBUG
+            // DEBUG MODE: Allow resetting grace period in development
+            print("🔧 DEBUG: Device already used grace period, but allowing reset for development")
+            // Delete the old device record to allow fresh start
+            try? await db.collection("gracePeriodDevices").document(deviceId).delete()
+            print("🔧 DEBUG: Deleted old grace period device record, proceeding with fresh start")
+            #else
+            // PRODUCTION: Block reuse of grace period
             print("⚠️ Device has already used grace period")
             // Don't start new grace period, but load existing status
             await loadGracePeriodStatus()
             return
+            #endif
         }
 
         let startDate = Date()
@@ -129,9 +138,18 @@ class GracePeriodManager: ObservableObject {
 
                 print("✅ Loaded grace period: \(remainingScans) scans, \(remainingWindowGens) gens, in grace: \(isInGracePeriod)")
             } else {
-                print("⚠️ No grace period data found - starting grace period for existing user")
+                #if DEBUG
+                print("🔧 DEBUG: No grace period data found - allowing automatic start in development")
                 // Automatically start grace period for existing users who don't have one
                 try? await startGracePeriod()
+                #else
+                // PRODUCTION: Don't auto-start if no data found (prevents abuse)
+                print("⚠️ No grace period data found and device already used - grace period not available")
+                isInGracePeriod = false
+                remainingScans = 0
+                remainingWindowGens = 0
+                gracePeriodEndDate = nil
+                #endif
             }
         } catch {
             print("❌ Failed to load grace period: \(error.localizedDescription)")
@@ -180,13 +198,14 @@ class GracePeriodManager: ObservableObject {
 
         saveToUserDefaults()
 
-        // Show the trial welcome paywall
-        NotificationCenter.default.post(
-            name: .showPaywall,
-            object: "trial_welcome"
-        )
-
-        print("🎉 Showing trial welcome paywall")
+        // Show the trial welcome paywall (MUST be on main thread for SwiftUI)
+        await MainActor.run {
+            NotificationCenter.default.post(
+                name: .showPaywall,
+                object: "trial_welcome"
+            )
+            print("🎉 Showing trial welcome paywall")
+        }
     }
 
     // MARK: - Computed Grace Period Info
@@ -318,13 +337,14 @@ class GracePeriodManager: ObservableObject {
             placement = "grace_period_expired"
         }
 
-        // Post notification to show paywall
-        NotificationCenter.default.post(
-            name: .showPaywall,
-            object: placement
-        )
-
-        print("💳 Showing paywall: \(placement)")
+        // Post notification to show paywall (MUST be on main thread for SwiftUI)
+        await MainActor.run {
+            NotificationCenter.default.post(
+                name: .showPaywall,
+                object: placement
+            )
+            print("💳 Showing paywall: \(placement)")
+        }
     }
 
     // MARK: - UserDefaults Backup (for offline scenarios)

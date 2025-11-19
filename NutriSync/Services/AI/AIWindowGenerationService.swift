@@ -478,6 +478,9 @@ class AIWindowGenerationService {
             }
         }
 
+        // NEW: Show trial welcome if this is first action
+        await gracePeriodManager.showTrialWelcomeIfNeeded()
+
         return result
     }
     

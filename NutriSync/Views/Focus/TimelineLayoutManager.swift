@@ -65,13 +65,13 @@ class TimelineLayoutManager: ObservableObject {
         var calculatedHours: [HourLayout] = []
         var currentYOffset: CGFloat = 0
         
-        // One-time debug for hour layout calculation
-        if !windows.isEmpty && !hours.isEmpty {
-            Task { @MainActor in
-                DebugLogger.shared.error("🔍 HOUR LAYOUTS DEBUG")
-                DebugLogger.shared.error("  Building layouts for hours: \(hours)")
-            }
-        }
+        // One-time debug for hour layout calculation (commented out to reduce log spam)
+        // if !windows.isEmpty && !hours.isEmpty {
+        //     Task { @MainActor in
+        //         DebugLogger.shared.info("🔍 HOUR LAYOUTS DEBUG")
+        //         DebugLogger.shared.info("  Building layouts for hours: \(hours)")
+        //     }
+        // }
         
         for hour in hours {
             let windowsInThisHour = windowsByHour[hour] ?? []
@@ -92,12 +92,12 @@ class TimelineLayoutManager: ObservableObject {
                 windowsInHour: windowsInThisHour
             )
             
-            // Debug first few hour layouts
-            if hour <= 6 && !windows.isEmpty {
-                Task { @MainActor in
-                    DebugLogger.shared.error("  Hour \(hour): yOffset=\(currentYOffset), height=\(height)")
-                }
-            }
+            // Debug first few hour layouts (commented out to reduce log spam)
+            // if hour <= 6 && !windows.isEmpty {
+            //     Task { @MainActor in
+            //         DebugLogger.shared.info("  Hour \(hour): yOffset=\(currentYOffset), height=\(height)")
+            //     }
+            // }
             
             calculatedHours.append(hourLayout)
             currentYOffset += height

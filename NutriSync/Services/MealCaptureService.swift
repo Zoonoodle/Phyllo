@@ -190,6 +190,9 @@ class MealCaptureService: ObservableObject {
             }
         }
 
+        // NEW: Show trial welcome if this is first action
+        await gracePeriodManager.showTrialWelcomeIfNeeded()
+
         // Perform analysis in background
         Task {
             do {

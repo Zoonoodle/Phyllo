@@ -153,17 +153,11 @@ struct NutriSyncOnboardingFlow {
 
             // Use ranked goals if available (after ranking screen)
             if !rankedGoals.isEmpty {
-                print("[OnboardingSectionData] 🎯 Processing ranked goals for screen generation:")
-                for (i, rg) in rankedGoals.enumerated() {
-                    print("[OnboardingSectionData]   [\(i)] \(rg.goal.rawValue) - rank: \(rg.rank)")
-                }
-
                 // Sort by rank to ensure correct order
                 let sortedGoals = rankedGoals.sorted { $0.rank < $1.rank }
 
                 // Add preference screens for top 2 ranked goals only
                 for rankedGoal in sortedGoals where rankedGoal.rank < 2 {
-                    print("[OnboardingSectionData] ✅ Adding preference screen for rank \(rankedGoal.rank): \(rankedGoal.goal.rawValue)")
                     switch rankedGoal.goal {
                     case .betterSleep:
                         screens.append("Sleep Preferences")
@@ -181,7 +175,6 @@ struct NutriSyncOnboardingFlow {
                     }
                 }
 
-                print("[OnboardingSectionData] 📋 Final screen list: \(screens)")
             }
 
             // Always end with Goal Summary
