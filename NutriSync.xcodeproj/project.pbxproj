@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		4C2891272ECD11F40052AEA6 /* NutriSync.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 4C2891262ECD11F40052AEA6 /* NutriSync.storekit */; };
 		4CE40C362E41689C0018C722 /* FirebaseAI in Frameworks */ = {isa = PBXBuildFile; productRef = 4CE40C352E41689C0018C722 /* FirebaseAI */; };
 		4CE40C3A2E41689C0018C722 /* FirebaseAppCheck in Frameworks */ = {isa = PBXBuildFile; productRef = 4CE40C392E41689C0018C722 /* FirebaseAppCheck */; };
 		4CE40C3C2E41689C0018C722 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 4CE40C3B2E41689C0018C722 /* FirebaseAuth */; };
@@ -36,6 +37,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		4C2891262ECD11F40052AEA6 /* NutriSync.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; name = NutriSync.storekit; path = NutriSync/NutriSync.storekit; sourceTree = "<group>"; };
 		4C8D97A92E36A90500B61676 /* NutriSync.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NutriSync.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4C8D97B82E36A90600B61676 /* NutriSyncTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NutriSyncTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		4C8D97C22E36A90600B61676 /* NutriSyncUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NutriSyncUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -96,6 +98,7 @@
 		4C8D97A02E36A90500B61676 = {
 			isa = PBXGroup;
 			children = (
+				4C2891262ECD11F40052AEA6 /* NutriSync.storekit */,
 				4C8D97AB2E36A90500B61676 /* NutriSync */,
 				4C8D97BB2E36A90600B61676 /* NutriSyncTests */,
 				4C8D97C52E36A90600B61676 /* NutriSyncUITests */,
@@ -248,6 +251,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4C2891272ECD11F40052AEA6 /* NutriSync.storekit in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

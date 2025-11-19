@@ -46,6 +46,15 @@ class SubscriptionManager: NSObject, ObservableObject {
     func checkSubscriptionStatus() async {
         do {
             customerInfo = try await Purchases.shared.customerInfo()
+
+            // DEBUG: Print all entitlements
+            print("📦 DEBUG checkSubscriptionStatus: All entitlements:")
+            for (key, entitlement) in customerInfo?.entitlements.all ?? [:] {
+                print("   - \(key): isActive=\(entitlement.isActive), productId=\(entitlement.productIdentifier)")
+            }
+            print("📦 DEBUG checkSubscriptionStatus: Looking for entitlement: '\(entitlementID)'")
+            print("📦 DEBUG checkSubscriptionStatus: Active subscriptions: \(customerInfo?.activeSubscriptions ?? [])")
+
             let hasActiveEntitlement = customerInfo?.entitlements[entitlementID]?.isActive == true
 
             isSubscribed = hasActiveEntitlement
@@ -172,6 +181,15 @@ extension SubscriptionManager: PurchasesDelegate {
     ) {
         Task { @MainActor in
             self.customerInfo = customerInfo
+
+            // DEBUG: Print all entitlements
+            print("📦 DEBUG: All entitlements:")
+            for (key, entitlement) in customerInfo.entitlements.all {
+                print("   - \(key): isActive=\(entitlement.isActive), productId=\(entitlement.productIdentifier)")
+            }
+            print("📦 DEBUG: Looking for entitlement: '\(self.entitlementID)'")
+            print("📦 DEBUG: Active subscriptions: \(customerInfo.activeSubscriptions)")
+
             self.isSubscribed = customerInfo.entitlements[self.entitlementID]?.isActive == true
             self.updateSubscriptionStatus()
 

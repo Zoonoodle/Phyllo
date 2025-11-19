@@ -1,0 +1,180 @@
+{
+  "appPolicies" : {
+    "eula" : "",
+    "policies" : [
+      {
+        "locale" : "en_US",
+        "policyText" : "",
+        "policyURL" : ""
+      }
+    ]
+  },
+  "identifier" : "7CB9C48F",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+
+  ],
+  "settings" : {
+    "_applicationInternalID" : "6754780683",
+    "_developerTeamID" : "PC496TXCK7",
+    "_failTransactionsEnabled" : false,
+    "_lastSynchronizedDate" : 785191416.86392796,
+    "_locale" : "en_US",
+    "_storefront" : "USA",
+    "_storeKitErrors" : [
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Load Products"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Purchase"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Verification"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "App Store Sync"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Subscription Status"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "App Transaction"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Manage Subscriptions Sheet"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Refund Request Sheet"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Offer Code Redeem Sheet"
+      }
+    ]
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "21822282",
+      "localizations" : [
+
+      ],
+      "name" : "premium_group",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "59.99",
+          "familyShareable" : false,
+          "groupNumber" : 2,
+          "internalID" : "6754825559",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Save 33% with annual billing. Same features as Monthly.",
+              "displayName" : "Annual Access - Best Value",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.nutrisync.annual",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Annual",
+          "subscriptionGroupID" : "21822282",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        },
+        {
+          "adHocOffers" : [
+            {
+              "internalID" : "5C58142E",
+              "numberOfPeriods" : 1,
+              "offerID" : "free_trial_3day",
+              "paymentMode" : "free",
+              "referenceName" : "3 Day Free Trial",
+              "subscriptionPeriod" : "P3D"
+            }
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "5.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "6754823685",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Personalized Nutrition Schedule. Cancel anytime.",
+              "displayName" : "Monthly Access",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.nutrisync.monthly.6",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Monthly $6",
+          "subscriptionGroupID" : "21822282",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "7.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "6754824974",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "AI meal analysis and personalized meal windows.",
+              "displayName" : "Monthly Access",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.nutrisync.monthly.8",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Monthly $8",
+          "subscriptionGroupID" : "21822282",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 4,
+    "minor" : 0
+  }
+}
