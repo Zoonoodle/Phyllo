@@ -232,6 +232,21 @@ class GracePeriodManager: ObservableObject {
         }
     }
 
+    /// Get remaining hours as integer (for toast display)
+    var remainingHours: Int {
+        guard let endDate = gracePeriodEndDate, isInGracePeriod else {
+            return 0
+        }
+
+        let now = Date()
+        guard now < endDate else {
+            return 0
+        }
+
+        let remaining = endDate.timeIntervalSince(now)
+        return Int(ceil(remaining / 3600))  // Round up to show at least 1 hour
+    }
+
     // MARK: - Usage Tracking
 
     /// Check if user can scan a meal

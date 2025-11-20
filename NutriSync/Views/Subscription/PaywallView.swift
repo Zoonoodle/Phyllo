@@ -270,6 +270,8 @@ struct PaywallView: View {
 
     private var headerTitle: String {
         switch placement {
+        case "trial_welcome":
+            return "Welcome to Your 24-Hour Trial! 🎉"
         case "window_gen_limit_reached":
             return "Subscribe to Continue"
         case "meal_scan_limit_reached":
@@ -283,6 +285,8 @@ struct PaywallView: View {
 
     private var headerSubtitle: String {
         switch placement {
+        case "trial_welcome":
+            return "You have 4 free meal scans to experience AI-powered nutrition tracking. Subscribe anytime for unlimited access and personalized meal windows."
         case "window_gen_limit_reached":
             return "You've reached your trial limit. Subscribe to continue with unlimited personalized meal windows."
         case "meal_scan_limit_reached":

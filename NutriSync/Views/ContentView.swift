@@ -283,8 +283,20 @@ struct ContentView: View {
                 
                 // Reset timestamp
                 lastBackgroundTimestamp = 0
+
+                // NEW: Show trial toast if in grace period
+                if gracePeriodManager.isInGracePeriod {
+                    // Small delay to let UI settle
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        // This will be handled by MainAppView
+                        NotificationCenter.default.post(
+                            name: .showTrialToast,
+                            object: nil
+                        )
+                    }
+                }
             }
-            
+
         case .inactive:
             // App is transitioning, no action needed
             break
@@ -407,6 +419,12 @@ struct ContentView_Previews: PreviewProvider {
                 _ = ClarificationManager.shared
             }
     }
+}
+
+// MARK: - Trial Toast Notification
+
+extension Notification.Name {
+    static let showTrialToast = Notification.Name("showTrialToast")
 }
 
 

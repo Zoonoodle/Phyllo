@@ -22,12 +22,12 @@ struct MainAppView: View {
     let handleScenePhaseChange: (ScenePhase, ScenePhase) -> Void
     let refreshAppData: () async -> Void
 
-    @State private var isGracePeriodBannerCollapsed = false
+    @State private var showTrialToast = false
 
     var body: some View {
         ZStack {
             mainTabView
-            gracePeriodBannerOverlay
+            trialToastOverlay
             welcomeBannerOverlay
             loadingOverlay
         }
@@ -52,29 +52,29 @@ struct MainAppView: View {
                     shouldRefreshData = false
                 }
             }
+            .onReceive(NotificationCenter.default.publisher(for: .showTrialToast)) { _ in
+                showTrialToastIfNeeded()
+            }
     }
 
     @ViewBuilder
-    private var gracePeriodBannerOverlay: some View {
-        if gracePeriodManager.isInGracePeriod {
+    private var trialToastOverlay: some View {
+        if showTrialToast && gracePeriodManager.isInGracePeriod {
             VStack(spacing: 0) {
-                GracePeriodBanner(isCollapsed: $isGracePeriodBannerCollapsed)
-                    .environmentObject(gracePeriodManager)
-                    .transition(.move(edge: .top).combined(with: .opacity))
-                    .task(id: isGracePeriodBannerCollapsed) {
-                        // Auto-collapse after 5 seconds if currently expanded
-                        if !isGracePeriodBannerCollapsed {
-                            try? await Task.sleep(nanoseconds: 5_000_000_000) // 5 seconds
-                            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                                isGracePeriodBannerCollapsed = true
-                            }
+                TrialToastView(
+                    hoursRemaining: gracePeriodManager.remainingHours,
+                    onDismiss: {
+                        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                            showTrialToast = false
                         }
                     }
+                )
+                .padding(.top, 60)  // Below status bar
+                .transition(.move(edge: .top).combined(with: .opacity))
 
                 Spacer()
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            .ignoresSafeArea(edges: .top)
         }
     }
 
@@ -113,6 +113,16 @@ struct MainAppView: View {
                 RoundedRectangle(cornerRadius: 16)
                     .fill(Color.white.opacity(0.1))
             }
+        }
+    }
+
+    // MARK: - Trial Toast Methods
+
+    func showTrialToastIfNeeded() {
+        guard gracePeriodManager.isInGracePeriod else { return }
+
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+            showTrialToast = true
         }
     }
 }
