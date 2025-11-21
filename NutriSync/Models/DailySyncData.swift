@@ -356,17 +356,22 @@ class DailySyncManager: ObservableObject {
     @Published var todaySync: DailySync?
     @Published var hasCompletedDailySync = false
     @Published var pendingQuickMeals: [QuickMeal] = []
-    
+
+    // Check-in frequency configuration
+    private let checkInFrequencyDays = 4  // Trigger once every 4 days
+    @Published var lastCheckInDate: Date?
+
     static let shared = DailySyncManager()
-    
+
     private init() {
+        loadLastCheckInDate()
         checkDailySyncStatus()
     }
-    
+
     func checkDailySyncStatus() {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
-        
+
         // Check if we have a sync for today
         if let sync = todaySync {
             hasCompletedDailySync = calendar.isDate(sync.timestamp, inSameDayAs: today)
@@ -374,18 +379,43 @@ class DailySyncManager: ObservableObject {
             hasCompletedDailySync = false
         }
     }
+
+    private func loadLastCheckInDate() {
+        // Load last check-in date from UserDefaults
+        if let timestamp = UserDefaults.standard.object(forKey: "lastCheckInDate") as? Date {
+            lastCheckInDate = timestamp
+        }
+    }
+
+    private func saveLastCheckInDate(_ date: Date) {
+        lastCheckInDate = date
+        UserDefaults.standard.set(date, forKey: "lastCheckInDate")
+    }
+
+    private func daysSinceLastCheckIn() -> Int {
+        guard let lastDate = lastCheckInDate else {
+            return checkInFrequencyDays // Return frequency days if never checked in
+        }
+
+        let calendar = Calendar.current
+        let components = calendar.dateComponents([.day], from: lastDate, to: Date())
+        return components.day ?? checkInFrequencyDays
+    }
     
     func saveDailySync(_ sync: DailySync) async {
         print("📝 DailySyncManager.saveDailySync called - timestamp: \(sync.timestamp)")
         todaySync = sync
         hasCompletedDailySync = true
-        
+
+        // Save last check-in date (for 4-day frequency tracking)
+        saveLastCheckInDate(sync.timestamp)
+
         // Save to Firebase
         do {
             print("💾 Attempting to save Daily Sync to Firebase...")
             try await FirebaseDataProvider.shared.saveDailySync(sync)
             print("✅ Daily Sync saved successfully")
-            
+
             // ALWAYS trigger window generation after Daily Sync
             // The whole point of Daily Sync is to generate personalized windows for the day
             print("🔄 Generating windows after Daily Sync completion...")
@@ -524,14 +554,21 @@ class DailySyncManager: ObservableObject {
     }
 
     func shouldPromptForSync() -> Bool {
+        // Check if 4 days have passed since last check-in
+        let daysSince = daysSinceLastCheckIn()
+        if daysSince < checkInFrequencyDays {
+            print("⏳ Only \(daysSince) days since last check-in. Waiting for \(checkInFrequencyDays) days.")
+            return false
+        }
+
         // Don't prompt if already completed today
         if hasCompletedDailySync { return false }
-        
+
         // Smart timing based on context
         let context = SyncContext.current()
         switch context {
         case .earlyMorning, .lateMorning:
-            return true // Always prompt in morning
+            return true // Always prompt in morning (if 4 days passed)
         case .midday, .afternoon:
             // Only if no meals logged today
             return pendingQuickMeals.isEmpty
