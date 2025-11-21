@@ -648,12 +648,12 @@ struct TrialSubscriptionTabView: View {
             }
             .disabled(isClearingSubscription)
             .confirmationDialog("Clear Subscription", isPresented: $showClearSubConfirmation) {
-                Button("Clear Subscription", role: .destructive) {
+                Button("Force Unsubscribed", role: .destructive) {
                     clearSubscriptionStatus()
                 }
                 Button("Cancel", role: .cancel) {}
             } message: {
-                Text("This will clear all subscription data from RevenueCat. Use to test non-subscribed state.")
+                Text("This will force the app into an unsubscribed state for testing. RevenueCat data is not modified.")
             }
 
             // Mock Subscription Button
@@ -676,14 +676,14 @@ struct TrialSubscriptionTabView: View {
                 .foregroundColor(.white)
                 .cornerRadius(12)
             }
-            .disabled(isMockingSubscription || subscriptionManager.isSubscribed)
+            .disabled(isMockingSubscription)
             .confirmationDialog("Mock Subscription", isPresented: $showMockSubConfirmation) {
-                Button("Activate Mock Subscription") {
+                Button("Force Subscribed") {
                     mockSubscription()
                 }
                 Button("Cancel", role: .cancel) {}
             } message: {
-                Text("This will simulate an active subscription. (Note: Only works if test purchases are enabled)")
+                Text("This will force the app into a subscribed state for testing. RevenueCat data is not modified.")
             }
 
             // Action Message
@@ -807,20 +807,40 @@ struct TrialSubscriptionTabView: View {
         actionMessage = ""
 
         Task {
-            // Note: This won't actually clear RevenueCat data (requires API call)
-            // But we can reset local subscription state
+            #if DEBUG
+            // Force unsubscribed state for testing
+            await MainActor.run {
+                subscriptionManager.testingOverride = .forceUnsubscribed
+            }
+
+            // Trigger status check which will apply the override
             await subscriptionManager.checkSubscriptionStatus()
 
             await MainActor.run {
                 isClearingSubscription = false
-                actionMessage = "✅ Subscription status refreshed from RevenueCat"
-                DebugLogger.shared.info("Subscription status cleared/refreshed")
+                actionMessage = "✅ Subscription forced to UNSUBSCRIBED (testing mode)"
+                DebugLogger.shared.info("Subscription status forced to unsubscribed")
 
                 Task {
                     try? await Task.sleep(nanoseconds: 3_000_000_000)
                     actionMessage = ""
                 }
             }
+            #else
+            // Production: just refresh from RevenueCat
+            await subscriptionManager.checkSubscriptionStatus()
+
+            await MainActor.run {
+                isClearingSubscription = false
+                actionMessage = "✅ Subscription status refreshed from RevenueCat"
+                DebugLogger.shared.info("Subscription status refreshed")
+
+                Task {
+                    try? await Task.sleep(nanoseconds: 3_000_000_000)
+                    actionMessage = ""
+                }
+            }
+            #endif
         }
     }
 
@@ -829,6 +849,26 @@ struct TrialSubscriptionTabView: View {
         actionMessage = ""
 
         Task {
+            #if DEBUG
+            // Force subscribed state for testing
+            await MainActor.run {
+                subscriptionManager.testingOverride = .forceSubscribed
+            }
+
+            // Trigger status check which will apply the override
+            await subscriptionManager.checkSubscriptionStatus()
+
+            await MainActor.run {
+                isMockingSubscription = false
+                actionMessage = "✅ Subscription forced to ACTIVE (testing mode)"
+                DebugLogger.shared.info("Subscription status forced to active")
+
+                Task {
+                    try? await Task.sleep(nanoseconds: 3_000_000_000)
+                    actionMessage = ""
+                }
+            }
+            #else
             await MainActor.run {
                 // Note: This is a UI-only mock
                 // Real subscription requires actual RevenueCat purchase
@@ -841,6 +881,7 @@ struct TrialSubscriptionTabView: View {
                     actionMessage = ""
                 }
             }
+            #endif
         }
     }
 }

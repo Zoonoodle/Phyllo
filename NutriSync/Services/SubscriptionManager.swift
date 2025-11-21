@@ -27,6 +27,16 @@ class SubscriptionManager: NSObject, ObservableObject {
         case gracePeriod  // Payment issue, still has access
     }
 
+    // MARK: - Testing Override (DEBUG only)
+    #if DEBUG
+    @Published var testingOverride: TestingOverride? = nil
+
+    enum TestingOverride {
+        case forceSubscribed
+        case forceUnsubscribed
+    }
+    #endif
+
     // MARK: - Private Properties
     private let entitlementID = "NutriSync"  // Must match RevenueCat dashboard entitlement identifier
 
@@ -44,6 +54,25 @@ class SubscriptionManager: NSObject, ObservableObject {
 
     /// Check current subscription status from RevenueCat
     func checkSubscriptionStatus() async {
+        #if DEBUG
+        // Check for testing override first
+        if let override = testingOverride {
+            switch override {
+            case .forceSubscribed:
+                isSubscribed = true
+                subscriptionStatus = .active
+                print("🧪 DEBUG: Testing override - FORCING SUBSCRIBED")
+                return
+            case .forceUnsubscribed:
+                isSubscribed = false
+                subscriptionStatus = .expired
+                customerInfo = nil
+                print("🧪 DEBUG: Testing override - FORCING UNSUBSCRIBED")
+                return
+            }
+        }
+        #endif
+
         do {
             customerInfo = try await Purchases.shared.customerInfo()
 
