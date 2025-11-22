@@ -215,8 +215,9 @@ class MealAnalysisAgent: ObservableObject {
         // Step 1: Always try Brand/Restaurant Search first
         // Check if brand was detected OR if we should try to detect one from the image
         let brandToSearch = initialResult.brandDetected ?? detectBrandFromImage(request)
-        
-        if let brand = brandToSearch {
+
+        // Only proceed if brand string is not empty
+        if let brand = brandToSearch, !brand.trimmingCharacters(in: .whitespaces).isEmpty {
             DebugLogger.shared.mealAnalysis("Brand detected or suspected: \(brand) - starting brand analysis")
             
             // Check cache first

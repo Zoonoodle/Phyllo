@@ -11,15 +11,27 @@ import SwiftUI
 @MainActor
 class ClarificationManager: ObservableObject {
     static let shared = ClarificationManager()
-    
+
     @Published var showClarification = false
     @Published var pendingAnalyzingMeal: AnalyzingMeal?
     @Published var pendingAnalysisResult: MealAnalysisResult?
     @Published var clarificationAnswers: [String: String] = [:]
-    
+
+    // Queue for handling multiple clarifications
+    private struct ClarificationRequest {
+        let analyzingMeal: AnalyzingMeal
+        let analysisResult: MealAnalysisResult
+    }
+    private var clarificationQueue: [ClarificationRequest] = []
+
+    // Expose queue size for UI
+    var queueSize: Int {
+        return clarificationQueue.count
+    }
+
     private let dataProvider = DataSourceProvider.shared.provider
     private let captureService = MealCaptureService.shared
-    
+
     private init() {}
     
     func presentClarification(for analyzingMeal: AnalyzingMeal, with result: MealAnalysisResult) {
@@ -36,8 +48,30 @@ class ClarificationManager: ObservableObject {
             requestedTools: result.requestedTools,
             brandDetected: result.brandDetected
         )
-        self.pendingAnalyzingMeal = analyzingMeal
-        self.pendingAnalysisResult = adjusted
+
+        // Add to queue
+        let request = ClarificationRequest(analyzingMeal: analyzingMeal, analysisResult: adjusted)
+        clarificationQueue.append(request)
+
+        DebugLogger.shared.mealAnalysis("Added clarification to queue: \(analyzingMeal.id.uuidString.prefix(8)) - Queue size: \(clarificationQueue.count)")
+
+        // If not currently showing clarification, show next one
+        if !showClarification {
+            showNextClarification()
+        }
+    }
+
+    private func showNextClarification() {
+        guard !clarificationQueue.isEmpty else {
+            DebugLogger.shared.mealAnalysis("Clarification queue empty")
+            return
+        }
+
+        let request = clarificationQueue.removeFirst()
+        DebugLogger.shared.mealAnalysis("Showing clarification for: \(request.analyzingMeal.id.uuidString.prefix(8)) - Remaining: \(clarificationQueue.count)")
+
+        self.pendingAnalyzingMeal = request.analyzingMeal
+        self.pendingAnalysisResult = request.analysisResult
         self.clarificationAnswers = [:]
         self.showClarification = true
     }
@@ -75,25 +109,39 @@ class ClarificationManager: ObservableObject {
     }
     
     func dismissClarification() {
+        DebugLogger.shared.mealAnalysis("Dismissing clarification - Queue size: \(clarificationQueue.count)")
         self.showClarification = false
         self.pendingAnalyzingMeal = nil
         self.pendingAnalysisResult = nil
         self.clarificationAnswers = [:]
+
+        // Show next clarification in queue after a short delay
+        Task {
+            try? await Task.sleep(nanoseconds: 300_000_000) // 0.3 seconds
+            await MainActor.run {
+                showNextClarification()
+            }
+        }
     }
-    
-    func completeClarification() {
+
+    func skipClarification() {
         guard let analyzingMeal = pendingAnalyzingMeal,
-              let analysisResult = pendingAnalysisResult else { return }
-        
+              let analysisResult = pendingAnalysisResult else {
+            dismissClarification()
+            return
+        }
+
+        DebugLogger.shared.mealAnalysis("Skipping clarification for: \(analyzingMeal.id.uuidString.prefix(8))")
+
         Task {
             do {
-                // Complete with clarification answers
+                // Complete with empty clarification answers (uses base values)
                 try await captureService.completeWithClarification(
                     analyzingMeal: analyzingMeal,
                     originalResult: analysisResult,
-                    clarificationAnswers: clarificationAnswers
+                    clarificationAnswers: [:]
                 )
-                
+
                 // Create final meal from result
                 var finalMeal = LoggedMeal(
                     name: analysisResult.mealName,
@@ -104,7 +152,7 @@ class ClarificationManager: ObservableObject {
                     timestamp: analyzingMeal.timestamp
                 )
                 finalMeal.windowId = analyzingMeal.windowId
-                
+
                 // Trigger meal sliding animation
                 await MainActor.run {
                     NotificationCenter.default.post(
@@ -112,12 +160,54 @@ class ClarificationManager: ObservableObject {
                         object: finalMeal
                     )
                 }
-                
+
             } catch {
-                print("❌ Failed to complete clarification: \(error)")
+                DebugLogger.shared.error("Failed to skip clarification: \(error)")
             }
         }
-        
+
+        dismissClarification()
+    }
+
+    func completeClarification() {
+        guard let analyzingMeal = pendingAnalyzingMeal,
+              let analysisResult = pendingAnalysisResult else { return }
+
+        DebugLogger.shared.mealAnalysis("Completing clarification for: \(analyzingMeal.id.uuidString.prefix(8))")
+
+        Task {
+            do {
+                // Complete with clarification answers
+                try await captureService.completeWithClarification(
+                    analyzingMeal: analyzingMeal,
+                    originalResult: analysisResult,
+                    clarificationAnswers: clarificationAnswers
+                )
+
+                // Create final meal from result
+                var finalMeal = LoggedMeal(
+                    name: analysisResult.mealName,
+                    calories: analysisResult.nutrition.calories,
+                    protein: Int(analysisResult.nutrition.protein),
+                    carbs: Int(analysisResult.nutrition.carbs),
+                    fat: Int(analysisResult.nutrition.fat),
+                    timestamp: analyzingMeal.timestamp
+                )
+                finalMeal.windowId = analyzingMeal.windowId
+
+                // Trigger meal sliding animation
+                await MainActor.run {
+                    NotificationCenter.default.post(
+                        name: .animateMealToWindow,
+                        object: finalMeal
+                    )
+                }
+
+            } catch {
+                DebugLogger.shared.error("Failed to complete clarification: \(error)")
+            }
+        }
+
         dismissClarification()
     }
     

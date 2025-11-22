@@ -94,15 +94,18 @@ struct PaywallView: View {
             .padding(.horizontal, 32)
             .padding(.top, 16)
 
-            Button(action: {
-                onDismiss?()
-                dismiss()
-            }) {
-                Text("Maybe Later")
-                    .font(.system(size: 15))
-                    .foregroundColor(.white.opacity(0.7))
+            // Only show "Maybe Later" if dismissable (onDismiss is not nil)
+            if onDismiss != nil {
+                Button(action: {
+                    onDismiss?()
+                    dismiss()
+                }) {
+                    Text("Maybe Later")
+                        .font(.system(size: 15))
+                        .foregroundColor(.white.opacity(0.7))
+                }
+                .padding(.top, 8)
             }
-            .padding(.top, 8)
         }
     }
 

@@ -324,9 +324,21 @@ struct ClarificationQuestionsView: View {
 
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Quick clarification")
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundColor(.white)
+                    HStack(spacing: 8) {
+                        Text("Quick clarification")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundColor(.white)
+
+                        // Queue indicator badge
+                        if clarificationManager.queueSize > 0 {
+                            Text("+\(clarificationManager.queueSize) more")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundColor(.nutriSyncAccent)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 3)
+                                .background(Capsule().fill(Color.nutriSyncAccent.opacity(0.15)))
+                        }
+                    }
 
                     Text("A few details for accuracy")
                         .font(.system(size: 14))
@@ -335,9 +347,13 @@ struct ClarificationQuestionsView: View {
 
                 Spacer()
 
-                // Skip all button
-                Button(action: completeClarification) {
-                    Text("Skip")
+                // Skip all button - uses base values, no adjustments
+                Button(action: {
+                    isCompleted = true
+                    clarificationManager.skipClarification()
+                    dismiss()
+                }) {
+                    Text("Skip All")
                         .font(.system(size: 16, weight: .medium))
                         .foregroundColor(.white.opacity(0.5))
                 }

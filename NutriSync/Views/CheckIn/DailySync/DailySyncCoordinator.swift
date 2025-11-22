@@ -11,43 +11,93 @@ struct DailySyncCoordinator: View {
     @StateObject private var viewModel = DailySyncViewModel()
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var dataProvider: FirebaseDataProvider
-    
+    @EnvironmentObject var subscriptionManager: SubscriptionManager
+    @EnvironmentObject var gracePeriodManager: GracePeriodManager
+
     let isMandatory: Bool
-    
+
+    // Subscription gating state
+    @State private var showSubscriptionPaywall = false
+    @State private var hasCheckedSubscription = false
+
     init(isMandatory: Bool = false) {
         self.isMandatory = isMandatory
     }
-    
+
+    // Check if user can access daily sync (subscribed or in grace period)
+    private var canAccessDailySync: Bool {
+        return subscriptionManager.isSubscribed || gracePeriodManager.isInGracePeriod
+    }
+
     var body: some View {
         ZStack {
             Color.nutriSyncBackground.ignoresSafeArea()
 
-            VStack(spacing: 0) {
-                // Progress dots at top (matching onboarding)
-                if viewModel.currentScreen != .greeting {
-                    DailySyncProgressDots(
-                        totalSteps: viewModel.screenFlow.count - 2, // Exclude greeting and complete
-                        currentStep: viewModel.currentIndex
-                    )
-                    .padding(.top, 60)
-                    .padding(.bottom, 40)
-                }
-
-                // Carousel content with onboarding-style animation
-                GeometryReader { geometry in
-                    HStack(spacing: 0) {
-                        ForEach(0..<viewModel.screenFlow.count, id: \.self) { index in
-                            getScreenContentView(at: index)
-                                .frame(width: geometry.size.width, height: geometry.size.height)
+            if !hasCheckedSubscription {
+                // Loading state while checking subscription
+                ProgressView()
+                    .tint(.nutriSyncAccent)
+            } else if !canAccessDailySync {
+                // Show paywall if trial expired and not subscribed
+                PaywallView(
+                    placement: "window_gen_limit_reached",
+                    onDismiss: {
+                        dismiss()
+                    },
+                    onSubscribe: {
+                        Task {
+                            await subscriptionManager.checkSubscriptionStatus()
+                            // Re-check access after subscription
+                            if canAccessDailySync {
+                                showSubscriptionPaywall = false
+                            }
                         }
                     }
-                    .offset(x: -CGFloat(viewModel.currentIndex) * geometry.size.width)
-                    .animation(.spring(response: 0.5, dampingFraction: 0.85, blendDuration: 0), value: viewModel.currentIndex)
-                }
+                )
+                .environmentObject(subscriptionManager)
+                .environmentObject(gracePeriodManager)
+            } else {
+                // User has access - show daily sync flow
+                dailySyncContent
             }
         }
         .onAppear {
-            viewModel.setupFlow()
+            // Check subscription status on appear
+            Task {
+                await subscriptionManager.checkSubscriptionStatus()
+                await MainActor.run {
+                    hasCheckedSubscription = true
+                    if canAccessDailySync {
+                        viewModel.setupFlow()
+                    }
+                }
+            }
+        }
+    }
+
+    private var dailySyncContent: some View {
+        VStack(spacing: 0) {
+            // Progress dots at top (matching onboarding)
+            if viewModel.currentScreen != .greeting {
+                DailySyncProgressDots(
+                    totalSteps: viewModel.screenFlow.count - 2, // Exclude greeting and complete
+                    currentStep: viewModel.currentIndex
+                )
+                .padding(.top, 60)
+                .padding(.bottom, 40)
+            }
+
+            // Carousel content with onboarding-style animation
+            GeometryReader { geometry in
+                HStack(spacing: 0) {
+                    ForEach(0..<viewModel.screenFlow.count, id: \.self) { index in
+                        getScreenContentView(at: index)
+                            .frame(width: geometry.size.width, height: geometry.size.height)
+                    }
+                }
+                .offset(x: -CGFloat(viewModel.currentIndex) * geometry.size.width)
+                .animation(.spring(response: 0.5, dampingFraction: 0.85, blendDuration: 0), value: viewModel.currentIndex)
+            }
         }
     }
 
@@ -694,4 +744,6 @@ struct TimePickerCompact: View {
     DailySyncCoordinator()
         .preferredColorScheme(.dark)
         .environmentObject(FirebaseDataProvider.shared)
+        .environmentObject(SubscriptionManager.shared)
+        .environmentObject(GracePeriodManager.shared)
 }
