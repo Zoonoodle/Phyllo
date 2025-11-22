@@ -49,6 +49,9 @@ struct ContentView: View {
     @State private var showingPaywall = false
     @State private var paywallPlacement = ""
 
+    // Trial welcome state (separate from paywall)
+    @State private var showingTrialWelcome = false
+
     // TEMPORARY: For taking paywall screenshots
     @State private var showingMockPaywall = false
 
@@ -196,9 +199,19 @@ struct ContentView: View {
             }
             .onReceive(NotificationCenter.default.publisher(for: .showPaywall)) { notification in
                 if let placement = notification.object as? String {
-                    paywallPlacement = placement
-                    showingPaywall = true
+                    // Use separate view for trial welcome
+                    if placement == "trial_welcome" {
+                        showingTrialWelcome = true
+                    } else {
+                        paywallPlacement = placement
+                        showingPaywall = true
+                    }
                 }
+            }
+            .sheet(isPresented: $showingTrialWelcome) {
+                TrialWelcomeView(onDismiss: {
+                    showingTrialWelcome = false
+                })
             }
         }
     }
