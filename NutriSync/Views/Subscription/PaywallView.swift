@@ -113,25 +113,23 @@ struct PaywallView: View {
 
     @ViewBuilder
     private func paywallContent(offering: Offering) -> some View {
-        ScrollView {
-            VStack(spacing: 0) {
-                // Header
-                paywallHeader
+        VStack(spacing: 0) {
+            // Header
+            paywallHeader
 
-                // Features
-                featuresSection
+            // Features
+            featuresSection
 
-                // Pricing packages
-                packagesSection(offering: offering)
+            // Pricing packages
+            packagesSection(offering: offering)
 
-                // Purchase button
-                purchaseButton
+            // Purchase button
+            purchaseButton
 
-                // Restore & Terms
-                bottomLinks
+            // Restore & Terms
+            bottomLinks
 
-                Spacer(minLength: 40)
-            }
+            Spacer(minLength: 20)
         }
         .overlay(alignment: .topTrailing) {
             if onDismiss != nil {
@@ -141,55 +139,50 @@ struct PaywallView: View {
     }
 
     private var paywallHeader: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 12) {
             Image(systemName: "sparkles")
-                .font(.system(size: 64, weight: .medium))
+                .font(.system(size: 56, weight: .medium))
                 .foregroundColor(.nutriSyncAccent)
-                .padding(.top, 60)
+                .padding(.top, 50)
 
             Text(headerTitle)
-                .font(.system(size: 28, weight: .bold))
+                .font(.system(size: 26, weight: .bold))
                 .foregroundColor(.white)
                 .multilineTextAlignment(.center)
+                .padding(.horizontal, 24)
 
             Text(headerSubtitle)
-                .font(.system(size: 17))
+                .font(.system(size: 15))
                 .foregroundColor(.white.opacity(0.7))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
         }
-        .padding(.bottom, 40)
+        .padding(.bottom, 24)
     }
 
     private var featuresSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 10) {
             ForEach(appFeatures, id: \.0) { feature in
-                HStack(spacing: 16) {
+                HStack(spacing: 12) {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 24))
+                        .font(.system(size: 20))
                         .foregroundColor(.nutriSyncAccent)
 
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(feature.0)
-                            .font(.system(size: 17, weight: .semibold))
-                            .foregroundColor(.white)
-
-                        Text(feature.1)
-                            .font(.system(size: 15))
-                            .foregroundColor(.white.opacity(0.7))
-                    }
+                    Text(feature.0)
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundColor(.white)
 
                     Spacer()
                 }
             }
         }
         .padding(.horizontal, 32)
-        .padding(.bottom, 40)
+        .padding(.bottom, 20)
     }
 
     private func packagesSection(offering: Offering) -> some View {
         VStack(spacing: 12) {
-            ForEach(offering.availablePackages, id: \.identifier) { package in
+            ForEach(filteredPackages(from: offering), id: \.identifier) { package in
                 PackageCard(
                     package: package,
                     isSelected: selectedPackage?.identifier == package.identifier,
@@ -200,7 +193,14 @@ struct PaywallView: View {
             }
         }
         .padding(.horizontal, 24)
-        .padding(.bottom, 24)
+        .padding(.bottom, 20)
+    }
+
+    // Filter to only show monthly and annual packages
+    private func filteredPackages(from offering: Offering) -> [Package] {
+        offering.availablePackages.filter { package in
+            package.packageType == .monthly || package.packageType == .annual
+        }
     }
 
     private var purchaseButton: some View {
@@ -230,14 +230,14 @@ struct PaywallView: View {
     }
 
     private var bottomLinks: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 12) {
             Button(action: {
                 Task {
                     await restorePurchases()
                 }
             }) {
                 Text("Restore Purchases")
-                    .font(.system(size: 15))
+                    .font(.system(size: 14))
                     .foregroundColor(.white.opacity(0.7))
             }
             .disabled(isPurchasing)
@@ -247,10 +247,10 @@ struct PaywallView: View {
                 Text("•")
                 Link("Privacy", destination: URL(string: "https://nutrisync.app/privacy")!)
             }
-            .font(.system(size: 13))
+            .font(.system(size: 12))
             .foregroundColor(.white.opacity(0.5))
         }
-        .padding(.top, 24)
+        .padding(.top, 16)
     }
 
     private var closeButton: some View {
@@ -282,6 +282,22 @@ struct PaywallView: View {
         case "grace_period_expired":
             return "Free Trial Ended"
         default:
+            // For soft paywall - show trial ending soon
+            if subscriptionManager.isInTrial, let expirationDate = subscriptionManager.expirationDate {
+                let calendar = Calendar.current
+                let now = Date()
+
+                if calendar.isDateInToday(expirationDate) {
+                    return "Free Trial Ends Today"
+                } else if calendar.isDateInTomorrow(expirationDate) {
+                    return "Free Trial Ends Tomorrow"
+                } else {
+                    let days = calendar.dateComponents([.day], from: now, to: expirationDate).day ?? 0
+                    if days > 0 {
+                        return "Free Trial Ends in \(days) Days"
+                    }
+                }
+            }
             return "Subscribe for Access"
         }
     }
@@ -297,7 +313,8 @@ struct PaywallView: View {
         case "grace_period_expired":
             return "Your 24-hour trial has ended. Subscribe to continue optimizing your nutrition."
         default:
-            return "Continue your nutrition journey with full access to all features."
+            // For soft paywall - explain trial and encourage subscription
+            return "Subscribe now to unlock unlimited access and continue your nutrition journey."
         }
     }
 
@@ -311,11 +328,11 @@ struct PaywallView: View {
 
     private var appFeatures: [(String, String)] {
         [
-            ("Unlimited AI Meal Analysis", "Scan and analyze unlimited meals with AI-powered nutrition insights"),
-            ("Personalized Meal Windows", "Get daily custom meal schedules optimized for your goals"),
-            ("Smart Window Adjustments", "Automatic redistribution when you miss a meal"),
-            ("Advanced Analytics", "Track trends, patterns, and progress over time"),
-            ("Priority Support", "Get help from our team whenever you need it")
+            ("Unlimited AI Meal Analysis", ""),
+            ("Personalized Meal Windows", ""),
+            ("Smart Window Adjustments", ""),
+            ("Advanced Analytics", ""),
+            ("Priority Support", "")
         ]
     }
 
@@ -327,9 +344,10 @@ struct PaywallView: View {
         do {
             offerings = try await subscriptionManager.fetchOfferings()
 
-            // Auto-select the first package
-            if let firstPackage = offerings?.current?.availablePackages.first {
-                selectedPackage = firstPackage
+            // Auto-select the first monthly or annual package
+            if let offering = offerings?.current {
+                let filtered = filteredPackages(from: offering)
+                selectedPackage = filtered.first
             }
 
             isLoading = false
