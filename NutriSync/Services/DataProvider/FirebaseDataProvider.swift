@@ -230,13 +230,17 @@ class FirebaseDataProvider: @preconcurrency DataProvider, ObservableObject {
             DebugLogger.shared.dataProvider("Adding micronutrients to meal: \(micronutrients)")
         }
         
-        // Add ingredients
+        // Add ingredients with their nutrition data
         meal.ingredients = result.ingredients.map { ingredient in
             MealIngredient(
                 name: ingredient.name,
                 quantity: Double(ingredient.amount) ?? 1.0,
                 unit: ingredient.unit,
-                foodGroup: FoodGroup(rawValue: ingredient.foodGroup) ?? .mixed
+                foodGroup: FoodGroup(rawValue: ingredient.foodGroup) ?? .mixed,
+                calories: ingredient.nutrition?.calories,
+                protein: ingredient.nutrition?.protein,
+                carbs: ingredient.nutrition?.carbs,
+                fat: ingredient.nutrition?.fat
             )
         }
         
@@ -371,6 +375,18 @@ class FirebaseDataProvider: @preconcurrency DataProvider, ObservableObject {
         }
         let windowRef = userRef.collection("windows").document(window.id)
         try await windowRef.updateData(window.toFirestore())
+    }
+
+    /// Delete a window by ID
+    func deleteWindow(id: String) async throws {
+        guard let userRef = userRef else {
+            throw DataProviderError.notAuthenticated
+        }
+        try await userRef.collection("windows").document(id).delete()
+
+        Task { @MainActor in
+            DebugLogger.shared.firebase("Deleted window: \(id)")
+        }
     }
     
     func generateDailyWindows(for date: Date, profile: UserProfile, checkIn: MorningCheckInData?) async throws -> [MealWindow] {
@@ -925,8 +941,12 @@ class FirebaseDataProvider: @preconcurrency DataProvider, ObservableObject {
     func getDailyAnalyticsRange(from: Date, to: Date) async throws -> [DailyAnalytics]? {
         var analyticsArray: [DailyAnalytics] = []
         let calendar = Calendar.current
-        
-        for dayOffset in 0...calendar.dateComponents([.day], from: from, to: to).day! {
+
+        guard let dayCount = calendar.dateComponents([.day], from: from, to: to).day, dayCount >= 0 else {
+            return nil
+        }
+
+        for dayOffset in 0...dayCount {
             guard let currentDate = calendar.date(byAdding: .day, value: dayOffset, to: from) else { continue }
             
             let meals = try await getMeals(for: currentDate)

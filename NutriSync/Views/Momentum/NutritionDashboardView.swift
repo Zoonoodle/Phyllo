@@ -53,31 +53,42 @@ struct NutritionDashboardView: View {
                         VStack(spacing: 0) {
                             // Header section
                             headerSection
-                            
+
                             // Main performance content
                             VStack(spacing: PerformanceDesignSystem.cardSpacing) {
-                                // Hero: Three performance pillars
+                                // Adaptive period banner
+                                AdaptivePeriodBanner(
+                                    period: viewModel.selectedPeriod,
+                                    daysActive: viewModel.daysActive,
+                                    onPeriodChange: { newPeriod in
+                                        viewModel.switchPeriod(to: newPeriod)
+                                    }
+                                )
+                                .padding(.top, 16)
+
+                                // Hero: Three performance metrics with period context
                                 heroSection
-                                    .padding(.top, 16)
-                                
-                                // Current window card (if active)
-                                if let activeWindow = viewModel.mealWindows.first(where: { window in
-                                    let now = TimeProvider.shared.currentTime
-                                    return now >= window.startTime && now <= window.endTime
-                                }) {
-                                    CurrentWindowCard(window: activeWindow, viewModel: viewModel)
-                                        .animation(PerformanceDesignSystem.springAnimation, value: activeWindow.id)
-                                        .transition(.opacity.combined(with: .move(edge: .top)))
-                                }
-                                
-                                // Next window card
-                                if let nextWindow = viewModel.mealWindows.first(where: { $0.startTime > TimeProvider.shared.currentTime }) {
-                                    NextWindowCard(window: nextWindow)
-                                        .animation(PerformanceDesignSystem.springAnimation, value: nextWindow.id)
-                                        .transition(.opacity.combined(with: .move(edge: .top)))
-                                }
-                                
-                                // Insight card
+
+                                // Consistency Streak (large editorial)
+                                StreakCard(
+                                    currentStreak: viewModel.currentStreak,
+                                    bestStreak: viewModel.bestStreak
+                                )
+                                .animation(PerformanceDesignSystem.springAnimation, value: viewModel.currentStreak)
+
+                                // Macro Balance card
+                                MacroBalanceCard(
+                                    protein: viewModel.periodProtein > 0 ? viewModel.periodProtein : viewModel.totalProtein,
+                                    proteinTarget: viewModel.dailyProteinTarget,
+                                    carbs: viewModel.periodCarbs > 0 ? viewModel.periodCarbs : viewModel.totalCarbs,
+                                    carbsTarget: viewModel.dailyCarbTarget,
+                                    fat: viewModel.periodFat > 0 ? viewModel.periodFat : viewModel.totalFat,
+                                    fatTarget: viewModel.dailyFatTarget,
+                                    periodLabel: viewModel.selectedPeriod.displayName
+                                )
+                                .animation(PerformanceDesignSystem.springAnimation, value: viewModel.periodProtein)
+
+                                // Optional insight card (if available)
                                 if let topInsight = viewModel.insights.first {
                                     PerformanceInsightCard(
                                         insight: topInsight.message,
@@ -86,17 +97,9 @@ struct NutritionDashboardView: View {
                                     .animation(PerformanceDesignSystem.springAnimation, value: topInsight.message)
                                     .transition(.opacity.combined(with: .scale(scale: 0.95)))
                                 }
-                                
-                                // Current metrics (removed Current Window and Nutrients Today cards)
-                            
-                            // Overall Performance Score
-                            overallScoreCard
-                            
-                            // Nutrient breakdown (priority 2)
-                            nutrientBreakdownSection
-                        }
-                        .padding(.horizontal, 16)
-                        .padding(.bottom, 100)
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.bottom, 100)
                     }
                     }
                 }
@@ -123,40 +126,54 @@ struct NutritionDashboardView: View {
     }
     
     // MARK: - Hero Section
-    
+
+    /// Uses period scores when available, falls back to today's scores
+    private var effectiveTimingScore: Double {
+        viewModel.periodTimingScore > 0 ? viewModel.periodTimingScore : timingPercentage
+    }
+
+    private var effectiveNutrientScore: Double {
+        viewModel.periodNutrientScore > 0 ? viewModel.periodNutrientScore : nutrientPercentage
+    }
+
+    private var effectiveAdherenceScore: Double {
+        viewModel.periodAdherenceScore > 0 ? viewModel.periodAdherenceScore : adherencePercentage
+    }
+
     private var heroSection: some View {
         CombinedPerformanceCard(
             timing: .init(
-                title: "Timing",
-                percentage: timingPercentage,
-                color: timingPercentage > 80 ? PerformanceDesignSystem.successMuted : .white.opacity(0.5),
-                detail: getTimingMessage(for: timingPercentage),
+                title: "Window Adherence",
+                percentage: effectiveTimingScore,
+                color: effectiveTimingScore > 80 ? PerformanceDesignSystem.successMuted : .white.opacity(0.5),
+                detail: getTimingMessage(for: effectiveTimingScore),
                 onTap: {
                     showTimingInfo()
                 }
             ),
             nutrients: .init(
                 title: "Nutrients",
-                percentage: nutrientPercentage,
+                percentage: effectiveNutrientScore,
                 color: nutrientColorGradient,
-                detail: getNutrientMessage(for: nutrientPercentage),
+                detail: getNutrientMessage(for: effectiveNutrientScore),
                 onTap: {
                     showNutrientsInfo()
                 }
             ),
             adherence: .init(
-                title: "Adherence",
-                percentage: adherencePercentage,
+                title: "Consistency",
+                percentage: effectiveAdherenceScore,
                 color: .blue.opacity(0.8),
-                detail: getAdherenceMessage(for: adherencePercentage),
+                detail: getAdherenceMessage(for: effectiveAdherenceScore),
                 onTap: {
                     showAdherenceInfo()
                 }
-            )
+            ),
+            subtitle: viewModel.selectedPeriod.displayName
         )
-        .animation(PerformanceDesignSystem.springAnimation, value: timingPercentage)
-        .animation(PerformanceDesignSystem.springAnimation, value: nutrientPercentage)
-        .animation(PerformanceDesignSystem.springAnimation, value: adherencePercentage)
+        .animation(PerformanceDesignSystem.springAnimation, value: effectiveTimingScore)
+        .animation(PerformanceDesignSystem.springAnimation, value: effectiveNutrientScore)
+        .animation(PerformanceDesignSystem.springAnimation, value: effectiveAdherenceScore)
     }
     
     private var nutrientColorGradient: Color {
@@ -468,9 +485,9 @@ struct NutritionDashboardView: View {
     
     private func refresh() async {
         refreshing = true
-        try? await Task.sleep(nanoseconds: 1_000_000_000)
+        try? await Task.sleep(nanoseconds: 500_000_000)
         loadData()
-        animateRings()
+        await viewModel.loadPeriodData()
         refreshing = false
     }
     

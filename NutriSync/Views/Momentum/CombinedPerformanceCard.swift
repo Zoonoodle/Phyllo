@@ -15,16 +15,36 @@ struct CombinedPerformanceCard: View {
         let detail: String
         let onTap: (() -> Void)?
     }
-    
+
     let timing: Metric
     let nutrients: Metric
     let adherence: Metric
+    var subtitle: String? = nil
     
     @State private var tappedMetric: String? = nil
     
     var body: some View {
         PerformanceCard {
             VStack(spacing: 0) {
+                // Optional subtitle header
+                if let subtitle = subtitle {
+                    HStack {
+                        Text("PERFORMANCE")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.5))
+                            .tracking(0.8)
+
+                        Spacer()
+
+                        Text(subtitle)
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundColor(.nutriSyncAccent)
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 12)
+                    .padding(.bottom, 8)
+                }
+
                 // Timing metric
                 metricRow(timing)
                     .padding(.horizontal, 20)

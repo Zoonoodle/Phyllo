@@ -489,6 +489,8 @@ struct ExpandableWindowBanner: View {
             }
         }
         .frame(maxWidth: .infinity) // Ensure VStack fills available width
+        // Apply height constraint - use minHeight instead of maxHeight to allow expansion for content
+        .frame(minHeight: bannerHeight, alignment: .top)
         .background(windowBackground)
         .clipShape(RoundedRectangle(cornerRadius: 8))
         .overlay(
@@ -501,8 +503,6 @@ struct ExpandableWindowBanner: View {
         .shadow(color: Color.black.opacity(0.15), radius: 4, x: 0, y: 2)
         .opacity(windowOpacity)
         .overlay(optimalTimeIndicators)
-        // Apply fixed height if provided so the background and content expand to match duration
-        .frame(minHeight: nil, idealHeight: bannerHeight, maxHeight: bannerHeight, alignment: .top)
         .onTapGesture {
             // Check if this is a missed window
             if isMissedOrFasted {

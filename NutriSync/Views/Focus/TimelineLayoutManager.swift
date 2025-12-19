@@ -245,17 +245,17 @@ class TimelineLayoutManager: ObservableObject {
         hourLayouts: [HourLayout],
         viewModel: ScheduleViewModel
     ) -> WindowLayout {
-        
+
         // CRITICAL: Use local calendar with proper timezone
         var calendar = Calendar.current
         calendar.timeZone = TimeZone.current // Ensure we're using local timezone
-        
+
         // Convert UTC dates to local timezone for hour extraction
         let startHour = calendar.component(.hour, from: window.startTime)
         let startMinute = calendar.component(.minute, from: window.startTime)
         let endHour = calendar.component(.hour, from: window.endTime)
         let endMinute = calendar.component(.minute, from: window.endTime)
-        
+
         // Find the hour layout for the start hour
         guard let startHourLayout = hourLayouts.first(where: { $0.hour == startHour }) else {
             // Debug missing hour layout
@@ -272,11 +272,11 @@ class TimelineLayoutManager: ObservableObject {
                 contentHeight: baseHourHeight
             )
         }
-        
+
         // Calculate Y position (hour offset + minute offset within hour)
         let minuteFraction = CGFloat(startMinute) / 60.0
         let yPosition = startHourLayout.yOffset + (minuteFraction * startHourLayout.height)
-        
+
         // One-time debug for first window position calculation
         if window.id == windowLayouts.first?.window.id {
             Task { @MainActor in
@@ -291,40 +291,41 @@ class TimelineLayoutManager: ObservableObject {
                 DebugLogger.shared.error("  Final yPosition: \(yPosition)")
             }
         }
-        
+
         // Calculate window height based on actual time span in the timeline
         var timeBasedHeight: CGFloat = 0
-        
+
         if startHour == endHour {
             // Window within single hour
             let duration = CGFloat(endMinute - startMinute) / 60.0
             timeBasedHeight = duration * startHourLayout.height
         } else {
             // Window spans multiple hours
-            
+
             // Remaining time in start hour
             timeBasedHeight += (1.0 - minuteFraction) * startHourLayout.height
-            
+
             // Full hours in between
             for hourLayout in hourLayouts {
                 if hourLayout.hour > startHour && hourLayout.hour < endHour {
                     timeBasedHeight += hourLayout.height
                 }
             }
-            
+
             // Time in end hour
             if let endHourLayout = hourLayouts.first(where: { $0.hour == endHour }) {
                 let endMinuteFraction = CGFloat(endMinute) / 60.0
                 timeBasedHeight += endMinuteFraction * endHourLayout.height
             }
         }
-        
+
         // Calculate content height needed
         let contentHeight = calculateWindowExpansion(window: window, viewModel: viewModel)
-        
-        // The final height should be the time-based height, not the content height
-        // The hour heights have already been adjusted to accommodate the content
-        let finalHeight = timeBasedHeight
+
+        // Use the MAXIMUM of time-based height and content height
+        // This ensures windows with meals/analyzing content have enough space
+        // to display all their content without clipping
+        let finalHeight = max(timeBasedHeight, contentHeight)
         return WindowLayout(
             window: window,
             yPosition: yPosition,
@@ -338,20 +339,21 @@ class TimelineLayoutManager: ObservableObject {
         guard layouts.count > 1 else {
             return layouts
         }
-        
-        var adjusted = layouts
-        
-        // Sort by Y position
-     
-        
-        // Check for overlaps and adjust
+
+        // Sort by Y position to ensure proper overlap detection
+        var adjusted = layouts.sorted { $0.yPosition < $1.yPosition }
+
+        // Check for overlaps based on TIME-BASED height only
+        // Visual overflow is handled by clipping in the banner view
+        // This ensures windows remain aligned with their actual time positions
         for i in 1..<adjusted.count {
             let previous = adjusted[i-1]
             let current = adjusted[i]
-            
+
+            // Use time-based height to maintain timeline accuracy
             let previousBottom = previous.yPosition + previous.height
             let requiredSpacing = minimumWindowSpacing
-            
+
             if current.yPosition < previousBottom + requiredSpacing {
                 // Overlap detected - adjust current window position
                 let newYPosition = previousBottom + requiredSpacing
@@ -363,7 +365,7 @@ class TimelineLayoutManager: ObservableObject {
                 )
             }
         }
-        
+
         return adjusted
     }
     

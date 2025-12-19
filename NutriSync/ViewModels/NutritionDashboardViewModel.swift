@@ -19,16 +19,31 @@ class NutritionDashboardViewModel: ObservableObject {
     @Published var userProfile: UserProfile = UserProfile.defaultProfile
     @Published var isLoading = false
     @Published var errorMessage: String?
+
+    // MARK: - Adaptive Period Properties
+    @Published var selectedPeriod: TimePeriod = .weekly
+    @Published var periodAnalytics: [DailyAnalytics] = []
+    @Published var currentStreak: Int = 0
+    @Published var bestStreak: Int = 0
+    @Published var daysActive: Int = 0
+    @Published var isLoadingPeriod = false
+
+    // Period aggregated macros
+    @Published var periodProtein: Int = 0
+    @Published var periodCarbs: Int = 0
+    @Published var periodFat: Int = 0
     
     // MARK: - Dependencies
     private let dataProvider = DataSourceProvider.shared.provider
     private var observations: [ObservationToken] = []
+    private var loadPeriodTask: Task<Void, Never>?
     
     // MARK: - Initialization
     init() {
         setupObservations()
         Task {
             await loadInitialData()
+            await loadPeriodData()
         }
     }
     
@@ -87,7 +102,118 @@ class NutritionDashboardViewModel: ObservableObject {
             print("❌ Failed to load nutrition dashboard data: \(error)")
         }
     }
-    
+
+    // MARK: - Adaptive Period Methods
+
+    /// Determines the appropriate period based on user's time in app
+    func determineAdaptivePeriod() {
+        // Calculate days since user started
+        let calendar = Calendar.current
+        let startDate = userProfile.onboardingCompletedAt ?? Date()
+        let components = calendar.dateComponents([.day], from: startDate, to: Date())
+        daysActive = max(components.day ?? 0, 0)
+
+        // Auto-select period based on usage
+        // Weekly for first 14 days, then monthly
+        if daysActive < 14 {
+            selectedPeriod = .weekly
+        } else if selectedPeriod == .weekly && daysActive >= 30 {
+            // Suggest monthly after 30 days but don't force it
+            selectedPeriod = .monthly
+        }
+    }
+
+    /// Date range for current period
+    var dateRangeForPeriod: (from: Date, to: Date) {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+
+        switch selectedPeriod {
+        case .weekly:
+            let from = calendar.date(byAdding: .day, value: -7, to: today) ?? today
+            return (from, today)
+        case .monthly:
+            let from = calendar.date(byAdding: .day, value: -30, to: today) ?? today
+            return (from, today)
+        }
+    }
+
+    /// Loads period-specific analytics data
+    func loadPeriodData() async {
+        guard !isLoadingPeriod else { return }
+        isLoadingPeriod = true
+        defer { isLoadingPeriod = false }
+
+        // First determine the appropriate period
+        determineAdaptivePeriod()
+
+        do {
+            let range = dateRangeForPeriod
+
+            // Load daily analytics for the period
+            if let analytics = try await dataProvider.getDailyAnalyticsRange(from: range.from, to: range.to) {
+                periodAnalytics = analytics
+            } else {
+                periodAnalytics = []
+            }
+
+            // Load streak data
+            let streakData = try await dataProvider.calculateStreak(until: Date())
+            currentStreak = streakData.current
+            bestStreak = streakData.best
+
+            // Calculate aggregated macros for the period
+            let mealsDict = try await dataProvider.getMealsForDateRange(from: range.from, to: range.to)
+            let allMeals = mealsDict.values.flatMap { $0 }
+
+            // Calculate daily averages
+            let daysInPeriod = max(selectedPeriod.dayCount, 1)
+            let totalProtein = allMeals.reduce(0) { $0 + $1.protein }
+            let totalCarbs = allMeals.reduce(0) { $0 + $1.carbs }
+            let totalFat = allMeals.reduce(0) { $0 + $1.fat }
+
+            periodProtein = totalProtein / daysInPeriod
+            periodCarbs = totalCarbs / daysInPeriod
+            periodFat = totalFat / daysInPeriod
+
+        } catch {
+            print("❌ Failed to load period data: \(error)")
+            // Keep existing values on error
+        }
+    }
+
+    /// Switch to a different time period
+    func switchPeriod(to period: TimePeriod) {
+        guard period != selectedPeriod else { return }
+        selectedPeriod = period
+
+        // Cancel any in-flight load and start new one
+        loadPeriodTask?.cancel()
+        loadPeriodTask = Task {
+            await loadPeriodData()
+        }
+    }
+
+    // MARK: - Period-Aware Metrics
+
+    /// Average timing score for the period
+    var periodTimingScore: Double {
+        guard !periodAnalytics.isEmpty else { return 0 }
+        return periodAnalytics.reduce(0.0) { $0 + $1.timingScore } / Double(periodAnalytics.count)
+    }
+
+    /// Average nutrient score for the period
+    var periodNutrientScore: Double {
+        guard !periodAnalytics.isEmpty else { return 0 }
+        return periodAnalytics.reduce(0.0) { $0 + $1.nutrientScore } / Double(periodAnalytics.count)
+    }
+
+    /// Average adherence score for the period
+    var periodAdherenceScore: Double {
+        guard !periodAnalytics.isEmpty else { return 0 }
+        return periodAnalytics.reduce(0.0) { $0 + $1.adherenceScore } / Double(periodAnalytics.count)
+    }
+
     // MARK: - Computed Properties
     
     var totalCalories: Int {
@@ -159,10 +285,6 @@ class NutritionDashboardViewModel: ObservableObject {
         return "No more windows today"
     }
     
-    var currentStreak: Int {
-        // TODO: Calculate actual streak from historical data
-        return 14 // Mock value for now
-    }
     
     var lastFastingDuration: TimeInterval {
         // Calculate fasting duration since last meal
