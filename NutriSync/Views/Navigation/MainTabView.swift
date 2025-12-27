@@ -172,7 +172,8 @@ struct MainTabView: View {
         case .voiceLog:
             showVoiceLogView = true
         case .logPastMeal:
-            showPastMealView = true
+            // TODO: Implement past meal logging view
+            showVoiceLogView = true // Fallback to voice log for now
         case .tweakToday:
             showTweakTodaySheet = true
         }

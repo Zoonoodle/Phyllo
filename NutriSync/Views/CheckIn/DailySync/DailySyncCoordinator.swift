@@ -11,65 +11,40 @@ struct DailySyncCoordinator: View {
     @StateObject private var viewModel = DailySyncViewModel()
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var dataProvider: FirebaseDataProvider
-    @EnvironmentObject var subscriptionManager: SubscriptionManager
-    @EnvironmentObject var gracePeriodManager: GracePeriodManager
 
     let isMandatory: Bool
 
-    // Subscription gating state
-    @State private var showSubscriptionPaywall = false
-    @State private var hasCheckedSubscription = false
+    @State private var showDailySyncSheet = true  // For WindowPreviewView binding
+    @State private var showDailySyncTour = false
+    private let tourManager = TourManager.shared
 
     init(isMandatory: Bool = false) {
         self.isMandatory = isMandatory
     }
 
-    // Check if user can access daily sync (subscribed or in grace period)
-    private var canAccessDailySync: Bool {
-        return subscriptionManager.isSubscribed || gracePeriodManager.isInGracePeriod
-    }
-
     var body: some View {
         ZStack {
             Color.nutriSyncBackground.ignoresSafeArea()
+            dailySyncContent
 
-            if !hasCheckedSubscription {
-                // Loading state while checking subscription
-                ProgressView()
-                    .tint(.nutriSyncAccent)
-            } else if !canAccessDailySync {
-                // Show paywall if trial expired and not subscribed
-                PaywallView(
-                    placement: "window_gen_limit_reached",
-                    onDismiss: {
-                        dismiss()
-                    },
-                    onSubscribe: {
-                        Task {
-                            await subscriptionManager.checkSubscriptionStatus()
-                            // Re-check access after subscription
-                            if canAccessDailySync {
-                                showSubscriptionPaywall = false
-                            }
-                        }
+            // Daily Sync Tour overlay
+            if showDailySyncTour {
+                DailySyncTour(
+                    onComplete: {
+                        tourManager.completeDailySyncTour()
+                        showDailySyncTour = false
                     }
                 )
-                .environmentObject(subscriptionManager)
-                .environmentObject(gracePeriodManager)
-            } else {
-                // User has access - show daily sync flow
-                dailySyncContent
+                .transition(.opacity)
             }
         }
         .onAppear {
-            // Check subscription status on appear
-            Task {
-                await subscriptionManager.checkSubscriptionStatus()
-                await MainActor.run {
-                    hasCheckedSubscription = true
-                    if canAccessDailySync {
-                        viewModel.setupFlow()
-                    }
+            viewModel.setupFlow()
+
+            // Show Daily Sync tour if first time
+            if tourManager.shouldShowDailySyncTour {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    showDailySyncTour = true
                 }
             }
         }
@@ -77,8 +52,8 @@ struct DailySyncCoordinator: View {
 
     private var dailySyncContent: some View {
         VStack(spacing: 0) {
-            // Progress dots at top (matching onboarding)
-            if viewModel.currentScreen != .greeting {
+            // Progress dots at top (matching onboarding) - hide on greeting and complete screens
+            if viewModel.currentScreen != .greeting && viewModel.currentScreen != .complete {
                 DailySyncProgressDots(
                     totalSteps: viewModel.screenFlow.count - 2, // Exclude greeting and complete
                     currentStep: viewModel.currentIndex
@@ -103,11 +78,17 @@ struct DailySyncCoordinator: View {
 
     @ViewBuilder
     private func getScreenContentView(at index: Int) -> some View {
-        let screen = viewModel.screenFlow[safe: index] ?? .greeting
+        let screen = index >= 0 && index < viewModel.screenFlow.count
+            ? viewModel.screenFlow[index]
+            : .greeting
 
         switch screen {
         case .greeting:
             GreetingView(viewModel: viewModel)
+        case .wakeStatusCheck:
+            WakeStatusCheckView(viewModel: viewModel)
+        case .planningModeChoice:
+            PlanningModeChoiceView(viewModel: viewModel)
         case .weightCheck:
             WeightCheckView(viewModel: viewModel)
         case .alreadyEaten:
@@ -117,8 +98,124 @@ struct DailySyncCoordinator: View {
         case .dailyContext:
             DailyContextInputView(viewModel: viewModel)
         case .complete:
-            CompleteViewStyled(viewModel: viewModel, dismiss: dismiss)
+            WindowPreviewWrapper(
+                viewModel: viewModel,
+                showDailySync: $showDailySyncSheet,
+                dismiss: dismiss
+            )
         }
+    }
+}
+
+// MARK: - Window Preview Wrapper
+/// Wrapper view that handles loading state and creates WindowPreviewView
+struct WindowPreviewWrapper: View {
+    @ObservedObject var viewModel: DailySyncViewModel
+    @Binding var showDailySync: Bool
+    let dismiss: DismissAction
+    @State private var hasTriggeredGeneration = false
+
+    var body: some View {
+        ZStack {
+            if viewModel.isGeneratingWindows {
+                // Show loading while generating
+                DailySyncProcessingView()
+                    .transition(.opacity)
+                    .onAppear {
+                        // Ensure keyboard is dismissed during loading
+                        dismissKeyboard()
+                    }
+            } else if viewModel.generationError != nil {
+                // Show generic error state for other errors
+                VStack(spacing: 20) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.system(size: 48))
+                        .foregroundColor(.orange)
+
+                    Text("Couldn't Generate Windows")
+                        .font(.title3.weight(.semibold))
+                        .foregroundColor(.white)
+
+                    Text(viewModel.generationError?.localizedDescription ?? "An error occurred")
+                        .font(.subheadline)
+                        .foregroundColor(.white.opacity(0.7))
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal)
+
+                    HStack(spacing: 16) {
+                        Button("Go Back") {
+                            dismiss()
+                        }
+                        .buttonStyle(.bordered)
+                        .tint(.white.opacity(0.5))
+
+                        Button("Retry") {
+                            viewModel.generationError = nil
+                            hasTriggeredGeneration = false
+                            Task {
+                                await viewModel.generateWindowsForPreview()
+                            }
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.nutriSyncAccent)
+                    }
+                }
+                .transition(.opacity)
+            } else if let previewVM = viewModel.windowPreviewViewModel {
+                // Show preview when ready
+                WindowPreviewView(
+                    viewModel: previewVM,
+                    showDailySync: $showDailySync,
+                    onAccept: {
+                        // Complete the sync (save data, process meals)
+                        await viewModel.completeSyncAfterPreview()
+                        // Schedule notifications for the saved windows
+                        if let windows = viewModel.generatedWindows {
+                            await NotificationManager.shared.scheduleWindowNotifications(for: windows)
+                        }
+                        // Cancel today's dailySync reminder since sync is now complete
+                        NotificationManager.shared.cancelDailySyncReminder()
+                        // Schedule tomorrow's dailySync reminder at user's wake time
+                        await NotificationManager.shared.scheduleDailySyncReminder(
+                            for: Calendar.current.date(byAdding: .day, value: 1, to: Date()) ?? Date(),
+                            wakeTime: viewModel.userProfile?.typicalWakeTime
+                        )
+                    }
+                )
+                .transition(.opacity)
+            } else if !hasTriggeredGeneration && viewModel.currentScreen == .complete {
+                // Waiting for onChange to trigger generation
+                DailySyncProcessingView()
+            } else {
+                // Already triggered but waiting - show loading as fallback
+                DailySyncProcessingView()
+            }
+        }
+        .animation(.easeInOut(duration: 0.3), value: viewModel.isGeneratingWindows)
+        .animation(.easeInOut(duration: 0.3), value: viewModel.windowPreviewViewModel != nil)
+        .animation(.easeInOut(duration: 0.3), value: viewModel.generationError != nil)
+        .onChange(of: showDailySync) { _, newValue in
+            if !newValue {
+                dismiss()
+            }
+        }
+        .onChange(of: viewModel.currentScreen) { _, newScreen in
+            // Trigger generation when user navigates to the complete screen
+            // NOTE: We only use onChange, NOT onAppear, to avoid race condition
+            if newScreen == .complete && !hasTriggeredGeneration && viewModel.windowPreviewViewModel == nil {
+                // Dismiss keyboard when entering this screen
+                dismissKeyboard()
+                hasTriggeredGeneration = true
+                Task {
+                    await viewModel.generateWindowsForPreview()
+                }
+            }
+        }
+    }
+
+    /// Dismiss any active keyboard
+    private func dismissKeyboard() {
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
 }
 
@@ -135,12 +232,28 @@ class DailySyncViewModel: ObservableObject {
     @Published var energyLevel: SimpleEnergyLevel = .good
     @Published var isGeneratingWindows = false  // Track window generation
     @Published var recordedWeight: Double? = nil  // Track if weight was recorded
+    @Published var generationError: WindowGenerationError? = nil  // Track generation errors
 
-    // NEW: Store daily context description
+    // Store daily context description
     @Published var dailyContextDescription: String?
 
-    // NEW: Store AI-generated insights for display
+    // Store AI-generated insights for display
     @Published var lastGeneratedInsights: [String]?
+
+    // Late-day planning support
+    @Published var wakeStatus: WakeStatus = .notAsked
+    @Published var planningMode: PlanningMode = .today
+    @Published var targetDate: Date = Date()
+
+    /// Whether we need to ask about wake status (afternoon or later)
+    var needsWakeStatusCheck: Bool {
+        SyncContext.current().needsWakeStatusCheck
+    }
+
+    // NEW: Window Preview - stores generated windows before user accepts
+    @Published var generatedWindows: [MealWindow]?
+    @Published var userProfile: UserProfile?
+    @Published var windowPreviewViewModel: WindowPreviewViewModel?
 
     var screenFlow: [DailySyncScreen] = []
     var currentIndex = 0
@@ -176,16 +289,22 @@ class DailySyncViewModel: ObservableObject {
     func setupFlow() {
         let context = SyncContext.current()
         var screens: [DailySyncScreen] = [.greeting]
-        
+
+        // Late-day: Add wake status check (afternoon or later)
+        if context.needsWakeStatusCheck {
+            screens.append(.wakeStatusCheck)
+            // planningModeChoice is added dynamically based on wake status answer
+        }
+
         // Check if we should prompt for weight
         Task {
             do {
                 // Load weight history first
                 try await WeightTrackingManager.shared.loadWeightHistory()
-                
+
                 // Get user profile for goal
                 let profile = try await FirebaseDataProvider.shared.getUserProfile()
-                
+
                 if let profile = profile {
                     let shouldWeigh = WeightCheckSchedule.shouldPromptForWeighIn(
                         lastWeighIn: WeightTrackingManager.shared.lastWeightEntry?.date,
@@ -195,11 +314,12 @@ class DailySyncViewModel: ObservableObject {
                     )
 
                     if shouldWeigh {
-                        // Insert weight check after greeting
+                        // Insert weight check after greeting (or after wakeStatusCheck if present)
                         await MainActor.run {
-                            if !screens.contains(.weightCheck) {
-                                screens.insert(.weightCheck, at: 1)
-                                self.screenFlow = screens
+                            if !self.screenFlow.contains(.weightCheck) {
+                                // Insert after wake status check or greeting
+                                let insertIndex = self.screenFlow.contains(.wakeStatusCheck) ? 2 : 1
+                                self.screenFlow.insert(.weightCheck, at: min(insertIndex, self.screenFlow.count))
                             }
                         }
                     }
@@ -208,17 +328,14 @@ class DailySyncViewModel: ObservableObject {
                 print("Failed to check weight schedule: \(error)")
             }
         }
-        
-        // Only ask about eaten meals after 8am
-        if context.shouldAskAboutEatenMeals {
-            screens.append(.alreadyEaten)
-        }
 
         // Daily context screen captures schedule + energy + context in natural language
+        // Note: Food already eaten is now captured via daily context description
+        // instead of a separate screen - AI will parse food mentions from the context
         screens.append(.dailyContext)
 
         screens.append(.complete)
-        
+
         self.screenFlow = screens
         self.currentScreen = screens[0]
     }
@@ -235,9 +352,256 @@ class DailySyncViewModel: ObservableObject {
         currentScreen = screenFlow[currentIndex]
     }
 
-    // NEW: Save daily context method
+    // MARK: - Wake Status & Planning Mode Handling
+
+    /// Handle wake status selection - determines planning mode flow
+    func setWakeStatus(_ status: WakeStatus) {
+        self.wakeStatus = status
+
+        switch status {
+        case .justWoke:
+            // User just woke up - treat as their "morning", plan rest of today
+            planningMode = .lateDayToday
+            targetDate = Date()
+            // Skip planning mode choice, go to next screen
+            nextScreen()
+
+        case .beenAwakeAllDay:
+            // User has been awake all day - offer tomorrow planning
+            planningMode = .tomorrow
+            targetDate = Calendar.current.date(byAdding: .day, value: 1, to: Date()) ?? Date()
+            // Insert planning mode choice screen after wake status
+            insertScreen(.planningModeChoice, after: .wakeStatusCheck)
+            nextScreen()
+
+        case .notAsked:
+            nextScreen()
+        }
+    }
+
+    /// Handle planning mode selection
+    func setPlanningMode(_ mode: PlanningMode) {
+        self.planningMode = mode
+
+        switch mode {
+        case .tomorrow:
+            targetDate = Calendar.current.date(byAdding: .day, value: 1, to: Date()) ?? Date()
+            // Remove alreadyEaten screen if present (not needed for tomorrow planning)
+            removeScreen(.alreadyEaten)
+
+        case .today:
+            targetDate = Date()
+            // Add back alreadyEaten screen if appropriate
+            let context = SyncContext.current()
+            if context.shouldAskAboutEatenMeals && !screenFlow.contains(.alreadyEaten) {
+                // Insert before dailyContext
+                insertScreen(.alreadyEaten, before: .dailyContext)
+            }
+
+        case .lateDayToday:
+            targetDate = Date()
+            // Keep or add alreadyEaten for context
+            let context = SyncContext.current()
+            if context.shouldAskAboutEatenMeals && !screenFlow.contains(.alreadyEaten) {
+                insertScreen(.alreadyEaten, before: .dailyContext)
+            }
+        }
+
+        nextScreen()
+    }
+
+    /// Insert a screen dynamically after another screen
+    func insertScreen(_ screen: DailySyncScreen, after: DailySyncScreen) {
+        guard let index = screenFlow.firstIndex(of: after) else { return }
+        if !screenFlow.contains(screen) {
+            screenFlow.insert(screen, at: index + 1)
+        }
+    }
+
+    /// Insert a screen dynamically before another screen
+    func insertScreen(_ screen: DailySyncScreen, before: DailySyncScreen) {
+        guard let index = screenFlow.firstIndex(of: before) else { return }
+        if !screenFlow.contains(screen) {
+            screenFlow.insert(screen, at: index)
+        }
+    }
+
+    /// Remove a screen from the flow
+    func removeScreen(_ screen: DailySyncScreen) {
+        screenFlow.removeAll { $0 == screen }
+    }
+
+    // Save daily context method
     func saveDailyContext(_ context: String?) {
         self.dailyContextDescription = context
+    }
+
+    /// Generate windows for preview WITHOUT saving to Firebase
+    /// Windows are stored temporarily and only saved when user accepts
+    func generateWindowsForPreview() async {
+        isGeneratingWindows = true
+
+        do {
+            // Get user profile
+            guard let profile = try await FirebaseDataProvider.shared.getUserProfile() else {
+                DebugLogger.shared.error("No user profile found for window preview")
+                isGeneratingWindows = false
+                return
+            }
+            self.userProfile = profile
+
+            // Build sync data for generation with planning mode support
+            let workSchedule = hasWorkToday ? TimeRange(start: workStart, end: workEnd) : nil
+            syncData = DailySync(
+                syncContext: SyncContext.current(),
+                alreadyConsumed: planningMode == .tomorrow ? [] : alreadyEatenMeals, // Skip meals if planning tomorrow
+                workSchedule: workSchedule,
+                workoutTime: workoutTime,
+                dailyContextDescription: dailyContextDescription,
+                planningMode: planningMode,
+                targetDate: targetDate
+            )
+
+            // Convert to MorningCheckInData for AI service compatibility
+            let checkInData = convertToCheckInData(syncData, profile: profile)
+
+            // Generate windows through AI service (without saving)
+            // Use targetDate instead of Date() to support tomorrow planning
+            let (windows, _, contextInsights) = try await AIWindowGenerationService.shared.generateWindows(
+                for: profile,
+                checkIn: checkInData,
+                dailySync: syncData,
+                date: targetDate
+            )
+
+            // Store generated data
+            self.generatedWindows = windows
+            self.lastGeneratedInsights = contextInsights
+
+            // Create WindowPreviewViewModel
+            self.windowPreviewViewModel = WindowPreviewViewModel(
+                windows: windows,
+                profile: profile,
+                contextInsights: contextInsights ?? []
+            )
+
+            DebugLogger.shared.success("Generated \(windows.count) windows for preview")
+
+        } catch let error as WindowGenerationError {
+            DebugLogger.shared.error("Failed to generate windows for preview: \(error)")
+            self.generationError = error
+        } catch {
+            DebugLogger.shared.error("Failed to generate windows for preview: \(error)")
+            // Wrap unknown errors
+            self.generationError = .noResponse
+        }
+
+        isGeneratingWindows = false
+    }
+
+    /// Convert DailySync to MorningCheckInData for AI service compatibility
+    private func convertToCheckInData(_ sync: DailySync, profile: UserProfile) -> MorningCheckInData? {
+        let calendar = Calendar.current
+        let today = Date()
+
+        // Use profile's typical wake time (crucial for night shift workers)
+        // Extract hour/minute from profile and apply to today's date
+        let wakeTime: Date
+        if let typicalWake = profile.typicalWakeTime {
+            let wakeHour = calendar.component(.hour, from: typicalWake)
+            let wakeMinute = calendar.component(.minute, from: typicalWake)
+            var wakeComponents = calendar.dateComponents([.year, .month, .day], from: today)
+            wakeComponents.hour = wakeHour
+            wakeComponents.minute = wakeMinute
+            wakeTime = calendar.date(from: wakeComponents) ?? today
+        } else {
+            // Fallback to 7 AM if not set
+            var wakeComponents = calendar.dateComponents([.year, .month, .day], from: today)
+            wakeComponents.hour = 7
+            wakeComponents.minute = 0
+            wakeTime = calendar.date(from: wakeComponents) ?? today
+        }
+
+        // Use profile's typical sleep time (important for night shift workers who sleep during the day)
+        let plannedBedtime: Date
+        if let typicalSleep = profile.typicalSleepTime {
+            let sleepHour = calendar.component(.hour, from: typicalSleep)
+            let sleepMinute = calendar.component(.minute, from: typicalSleep)
+            var bedComponents = calendar.dateComponents([.year, .month, .day], from: today)
+            bedComponents.hour = sleepHour
+            bedComponents.minute = sleepMinute
+            plannedBedtime = calendar.date(from: bedComponents) ?? today.addingTimeInterval(16 * 3600)
+        } else {
+            // Fallback to 11 PM if not set
+            var bedComponents = calendar.dateComponents([.year, .month, .day], from: today)
+            bedComponents.hour = 23
+            bedComponents.minute = 0
+            plannedBedtime = calendar.date(from: bedComponents) ?? today.addingTimeInterval(16 * 3600)
+        }
+
+        // Build planned activities from workout time if available
+        var plannedActivities: [String] = []
+        if let workoutTime = sync.workoutTime {
+            let formatter = DateFormatter()
+            formatter.timeStyle = .short
+            plannedActivities.append("Workout at \(formatter.string(from: workoutTime))")
+        }
+
+        return MorningCheckInData(
+            date: today,
+            wakeTime: wakeTime,
+            plannedBedtime: plannedBedtime,
+            sleepQuality: 3,
+            energyLevel: 3,
+            hungerLevel: 3,
+            dayFocus: [],
+            morningMood: nil,
+            plannedActivities: plannedActivities,
+            windowPreference: .auto,
+            hasRestrictions: false,
+            restrictions: []
+        )
+    }
+
+    /// Save sync data and process already eaten meals (called after user accepts windows)
+    func completeSyncAfterPreview() async {
+        // Save the sync data to Firebase
+        do {
+            try await FirebaseDataProvider.shared.saveDailySync(syncData)
+
+            // CRITICAL: Update DailySyncManager state so UI knows sync is complete
+            await MainActor.run {
+                DailySyncManager.shared.todaySync = syncData
+                DailySyncManager.shared.hasCompletedDailySync = true
+            }
+
+            // Process already consumed meals through AI analysis
+            if !syncData.alreadyConsumed.isEmpty {
+                await processAlreadyConsumedMeals(syncData.alreadyConsumed)
+            }
+
+            DebugLogger.shared.success("Daily sync completed after preview")
+        } catch {
+            DebugLogger.shared.error("Failed to save sync data: \(error)")
+        }
+    }
+
+    /// Process already consumed meals through AI analysis
+    private func processAlreadyConsumedMeals(_ meals: [QuickMeal]) async {
+        for quickMeal in meals {
+            do {
+                // Use MealCaptureService for proper AI analysis pipeline
+                _ = try await MealCaptureService.shared.startMealAnalysis(
+                    image: nil,
+                    voiceTranscript: quickMeal.name,
+                    barcode: nil,
+                    timestamp: quickMeal.time
+                )
+                DebugLogger.shared.success("Started analysis for: '\(quickMeal.name)'")
+            } catch {
+                DebugLogger.shared.error("Failed to process meal '\(quickMeal.name)': \(error)")
+            }
+        }
     }
 
     func saveSyncData() async {
@@ -267,10 +631,12 @@ class DailySyncViewModel: ObservableObject {
 // MARK: - Screen Types
 enum DailySyncScreen {
     case greeting
-    case weightCheck  // New weight tracking screen
+    case wakeStatusCheck    // Late-day: "Have you been awake a while?"
+    case planningModeChoice // Late-day: "Plan tomorrow?" with today option
+    case weightCheck        // Weight tracking screen
     case alreadyEaten
     case schedule
-    case dailyContext  // NEW: Replaces energy screen with rich context input
+    case dailyContext       // Rich voice/text context input
     case complete
 }
 
@@ -614,7 +980,7 @@ struct CompleteViewStyled: View {
             
             // Loading overlay
             if viewModel.isGeneratingWindows {
-                WindowGenerationLoadingView()
+                DailySyncProcessingView()
                     .transition(.opacity.combined(with: .scale))
             }
         }
@@ -740,10 +1106,53 @@ struct TimePickerCompact: View {
     }
 }
 
+// MARK: - Quick Meal Row
+
+private struct QuickMealRow: View {
+    let meal: QuickMeal
+    let onDelete: () -> Void
+
+    private let timeFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "h:mm a"
+        return formatter
+    }()
+
+    var body: some View {
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(meal.name)
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(.white)
+
+                Text(timeFormatter.string(from: meal.time))
+                    .font(.system(size: 13))
+                    .foregroundColor(.white.opacity(0.5))
+            }
+
+            Spacer()
+
+            if let calories = meal.estimatedCalories {
+                Text("\(calories) cal")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.white.opacity(0.6))
+            }
+
+            Button(action: onDelete) {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.system(size: 20))
+                    .foregroundColor(.white.opacity(0.3))
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(Color.white.opacity(0.05))
+        .cornerRadius(12)
+    }
+}
+
 #Preview {
     DailySyncCoordinator()
         .preferredColorScheme(.dark)
         .environmentObject(FirebaseDataProvider.shared)
-        .environmentObject(SubscriptionManager.shared)
-        .environmentObject(GracePeriodManager.shared)
 }
