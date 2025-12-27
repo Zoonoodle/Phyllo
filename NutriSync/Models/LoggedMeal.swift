@@ -9,7 +9,7 @@ import Foundation
 import SwiftUI
 
 // Food group enum for color coding - matches V2 prompt schema
-enum FoodGroup: String, CaseIterable {
+enum FoodGroup: String, CaseIterable, Codable {
     case protein = "Protein"
     case grain = "Grain"
     case vegetable = "Vegetable"

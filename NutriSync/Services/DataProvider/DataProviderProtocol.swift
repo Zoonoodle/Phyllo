@@ -20,6 +20,7 @@ protocol DataProvider {
     func saveWindow(_ window: MealWindow) async throws
     func getWindows(for date: Date) async throws -> [MealWindow]
     func updateWindow(_ window: MealWindow) async throws
+    func deleteWindow(id: String) async throws
     func generateDailyWindows(for date: Date, profile: UserProfile, checkIn: MorningCheckInData?) async throws -> [MealWindow]
     func redistributeWindows(for date: Date) async throws
     
@@ -310,11 +311,21 @@ extension MealWindow {
         data["micronutrientFocus"] = micronutrientFocus
         if let tips = tips { data["tips"] = tips }
         data["type"] = type.rawValue
-        
+
+        // Add smart suggestion fields
+        data["smartSuggestions"] = smartSuggestions.map { $0.toFirestore() }
+        if let generatedAt = suggestionsGeneratedAt {
+            data["suggestionsGeneratedAt"] = generatedAt
+        }
+        data["suggestionStatus"] = suggestionStatus.rawValue
+        if let contextNote = suggestionContextNote {
+            data["suggestionContextNote"] = contextNote
+        }
+
         if let adjustedCalories = adjustedCalories {
             data["adjustedCalories"] = adjustedCalories
         }
-        
+
         if let reason = redistributionReason {
             // Convert RedistributionReason to a dictionary for Firestore
             switch reason {
@@ -375,7 +386,22 @@ extension MealWindow {
         let micronutrientFocus = data["micronutrientFocus"] as? [String]
         let tips = data["tips"] as? [String]
         let type = data["type"] as? String
-        
+
+        // Parse smart suggestion fields
+        let smartSuggestionsData = data["smartSuggestions"] as? [[String: Any]] ?? []
+        let smartSuggestions = smartSuggestionsData.compactMap { FoodSuggestion.fromFirestore($0) }
+
+        let suggestionsGeneratedAt: Date?
+        if let timestamp = data["suggestionsGeneratedAt"] as? FirebaseFirestore.Timestamp {
+            suggestionsGeneratedAt = timestamp.dateValue()
+        } else {
+            suggestionsGeneratedAt = data["suggestionsGeneratedAt"] as? Date
+        }
+
+        let suggestionStatusString = data["suggestionStatus"] as? String ?? "pending"
+        let suggestionStatus = SuggestionStatus(rawValue: suggestionStatusString) ?? .pending
+        let suggestionContextNote = data["suggestionContextNote"] as? String
+
         // Create MealWindow with preserved ID from Firestore
         var window = MealWindow(
             id: id,  // Use the original ID from Firestore
@@ -395,7 +421,11 @@ extension MealWindow {
             foodSuggestions: foodSuggestions,
             micronutrientFocus: micronutrientFocus,
             tips: tips,
-            type: type
+            type: type,
+            smartSuggestions: smartSuggestions,
+            suggestionsGeneratedAt: suggestionsGeneratedAt,
+            suggestionStatus: suggestionStatus,
+            suggestionContextNote: suggestionContextNote
         )
         
         window.adjustedCalories = data["adjustedCalories"] as? Int

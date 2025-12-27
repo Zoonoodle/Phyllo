@@ -118,6 +118,7 @@ struct UserProfile: Codable, Identifiable {
     var fastingProtocol: FastingProtocol = .none
     var macroProfile: MacroProfile?         // User's customized macro distribution
     var lastBulkLogDate: Date?              // Track when we last prompted for missed meals
+    var foodPreferences: FoodPreferences?   // Rich food preferences for AI suggestions
 
     // Post-onboarding tracking
     var firstDayCompleted: Bool = false     // Track if first day windows have been generated
@@ -149,6 +150,7 @@ struct UserProfile: Codable, Identifiable {
         typicalSleepTime: Date? = nil,
         fastingProtocol: FastingProtocol = .none,
         lastBulkLogDate: Date? = nil,
+        foodPreferences: FoodPreferences? = nil,
         firstDayCompleted: Bool = false,
         onboardingCompletedAt: Date? = nil
     ) {
@@ -176,6 +178,7 @@ struct UserProfile: Codable, Identifiable {
         self.typicalSleepTime = typicalSleepTime
         self.fastingProtocol = fastingProtocol
         self.lastBulkLogDate = lastBulkLogDate
+        self.foodPreferences = foodPreferences
         self.firstDayCompleted = firstDayCompleted
         self.onboardingCompletedAt = onboardingCompletedAt
     }
@@ -226,6 +229,9 @@ struct UserProfile: Codable, Identifiable {
         // Only add optional values if they're not nil
         if let macroProfile = macroProfile {
             data["macroProfile"] = macroProfile.toFirestore()
+        }
+        if let foodPreferences = foodPreferences {
+            data["foodPreferences"] = foodPreferences.toFirestore()
         }
         if let earliestMealHour = earliestMealHour {
             data["earliestMealHour"] = earliestMealHour
@@ -302,6 +308,14 @@ struct UserProfile: Codable, Identifiable {
             return nil
         }()
 
+        // Parse food preferences
+        let foodPreferences: FoodPreferences? = {
+            if let prefsData = data["foodPreferences"] as? [String: Any] {
+                return FoodPreferences.fromFirestore(prefsData)
+            }
+            return nil
+        }()
+
         // Handle Date fields
         let typicalWakeTime = (data["typicalWakeTime"] as? FirebaseFirestore.Timestamp)?.dateValue() ?? (data["typicalWakeTime"] as? Date)
         let typicalSleepTime = (data["typicalSleepTime"] as? FirebaseFirestore.Timestamp)?.dateValue() ?? (data["typicalSleepTime"] as? Date)
@@ -337,6 +351,7 @@ struct UserProfile: Codable, Identifiable {
         profile.typicalSleepTime = typicalSleepTime
         profile.fastingProtocol = fastingProtocol
         profile.macroProfile = macroProfile
+        profile.foodPreferences = foodPreferences
         profile.lastBulkLogDate = lastBulkLogDate
         profile.firstDayCompleted = firstDayCompleted
         profile.onboardingCompletedAt = onboardingCompletedAt

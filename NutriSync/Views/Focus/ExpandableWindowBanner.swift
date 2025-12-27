@@ -177,6 +177,7 @@ struct ExpandableWindowBanner: View {
     @StateObject private var timeProvider = TimeProvider.shared
     @State private var isExpanded = false
     @State private var pulseAnimation = false
+    @State private var isWhatToEatExpanded = false
     
     // Use AI-generated name if available, otherwise categorize by time-of-day
     private var mealType: String {
@@ -461,8 +462,28 @@ struct ExpandableWindowBanner: View {
         }
     }
     
+    // Check if window has any meals (logged or analyzing)
+    private var hasAnyMeals: Bool {
+        !meals.isEmpty || !analyzingMealsInWindow.isEmpty
+    }
+
+    // Check if we should show the What to Eat section
+    private var shouldShowWhatToEat: Bool {
+        // Don't show for missed/fasted windows or when showing inline actions
+        guard !showInlineMissedActions else { return false }
+
+        switch windowStatus {
+        case .upcoming, .active, .lateButDoable:
+            // Show if suggestions are ready or generating
+            return window.suggestionStatus == .ready || window.suggestionStatus == .generating || !window.smartSuggestions.isEmpty
+        case .completed, .missed, .fasted:
+            return false
+        }
+    }
+
     var body: some View {
         // Container only; tap/drag handled by overlay layer wrapper
+        // Content aligned to top with consistent padding across all window sizes
         VStack(spacing: 0) {
             // Replace banner content with actions when showing missed actions
             if showInlineMissedActions && (isMissedOrFasted) {
@@ -478,19 +499,27 @@ struct ExpandableWindowBanner: View {
                         removal: .opacity
                     ))
             }
-            
-            // Removed additional content section to keep consistent height
-            
-            // Remove spacer - let content determine height naturally
-            
+
+            // What to Eat section (for active/upcoming windows with suggestions)
+            if shouldShowWhatToEat {
+                WhatToEatSection(
+                    window: window,
+                    isExpanded: $isWhatToEatExpanded,
+                    onRetry: nil
+                )
+            }
+
             // Meals section (if any meals or analyzing)
-            if !meals.isEmpty || !analyzingMealsInWindow.isEmpty {
+            if hasAnyMeals {
                 mealsSection
             }
+
+            // Push content to top
+            Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity) // Ensure VStack fills available width
-        // Apply height constraint - use minHeight instead of maxHeight to allow expansion for content
-        .frame(minHeight: bannerHeight, alignment: .top)
+        // Apply height constraint - content clips to time-based height
+        .frame(minHeight: nil, idealHeight: bannerHeight, maxHeight: bannerHeight, alignment: .top)
         .background(windowBackground)
         .clipShape(RoundedRectangle(cornerRadius: 8))
         .overlay(
@@ -503,6 +532,21 @@ struct ExpandableWindowBanner: View {
         .shadow(color: Color.black.opacity(0.15), radius: 4, x: 0, y: 2)
         .opacity(windowOpacity)
         .overlay(optimalTimeIndicators)
+        // Chevron indicator to signal expandability
+        .overlay(
+            VStack {
+                Spacer()
+                HStack {
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.25))
+                        .padding(.trailing, 14)
+                        .padding(.bottom, 12)
+                }
+            }
+            .opacity(showInlineMissedActions ? 0 : 1) // Hide when showing missed actions
+        )
         .onTapGesture {
             // Check if this is a missed window
             if isMissedOrFasted {
@@ -535,108 +579,128 @@ struct ExpandableWindowBanner: View {
     
     @ViewBuilder
     private var windowBannerContent: some View {
-        HStack(spacing: 8) {
-            windowInfoSection
-                .frame(maxWidth: .infinity, alignment: .leading)
+        VStack(alignment: .leading, spacing: 6) {
+            // Row 1: Title (full width) with status indicator on right
+            HStack(alignment: .top, spacing: 8) {
+                // Left side: Title and time info stacked
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(mealType)
+                        .font(.system(size: 17, weight: .bold))
+                        .foregroundColor(.white)
+                        .lineLimit(1)
 
-            quickStatsSection
-                .frame(minWidth: 80, alignment: .trailing)
+                    // Time range and duration directly under title
+                    Text(formatTimeRange(start: window.startTime, end: window.endTime))
+                        .font(.system(size: 13))
+                        .foregroundColor(.white.opacity(TimelineOpacity.secondary))
+                        .lineLimit(1)
 
-            statusIndicator
-                .frame(width: 44, height: 44)
+                    if window.duration > 3600 {
+                        Text("\(formatDuration(window.duration)) window")
+                            .font(.system(size: 12))
+                            .foregroundColor(.white.opacity(TimelineOpacity.tertiary))
+                    }
+                }
+                .layoutPriority(1)
+
+                Spacer(minLength: 4)
+
+                // Right side: Status indicator (progress ring for active)
+                statusIndicator
+            }
+
+            Spacer(minLength: 0)
+
+            // Bottom row: time indicator on left, calorie status on right for active windows
+            HStack(alignment: .bottom) {
+                bottomTimeIndicator
+
+                Spacer(minLength: 4)
+
+                // Show calorie status at bottom right for active windows
+                if case .active = windowStatus {
+                    activeCalorieStatus
+                } else {
+                    // For non-active windows, show the quick stats here
+                    quickStatsSection
+                }
+            }
         }
         .padding(windowBannerPadding)
     }
 
-    // Use consistent padding for cleaner look
-    private var windowBannerPadding: CGFloat {
-        return 14
-    }
-    
+    // Compact calorie status for active windows - single line at bottom right
     @ViewBuilder
-    private var windowInfoSection: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack(spacing: 6) {
-                Image(systemName: mealIcon)
-                    .font(.system(size: 16))
-                Text(mealType)
-                    .font(.system(size: 15, weight: .semibold))
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.75)
-                    .truncationMode(.tail)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .foregroundColor(.white)
-            
-            // Time range display with duration
-            VStack(alignment: .leading, spacing: 1) {
-                Text(formatTimeRange(start: window.startTime, end: window.endTime))
-                    .font(.system(size: 14))
-                    .foregroundColor(.white.opacity(TimelineOpacity.secondary))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.85)
-                
-                // Show duration for windows longer than 1 hour
-                if window.duration > 3600 {
-                    Text("\(formatDuration(window.duration)) window")
-                        .font(.system(size: 13))
-                        .foregroundColor(.white.opacity(TimelineOpacity.tertiary))
-                }
-            }
-            
-            // Status text based on window state
-            switch windowStatus {
-            case .active:
+    private var activeCalorieStatus: some View {
+        HStack(spacing: 3) {
+            Text("\(windowCaloriesRemaining)")
+                .font(.system(size: 16, weight: .bold))
+                .monospacedDigit()
+                .foregroundColor(.white)
+            Text("cal remaining")
+                .font(.system(size: 12))
+                .foregroundColor(.white.opacity(TimelineOpacity.tertiary))
+        }
+    }
+
+    // Bottom left time indicator (e.g., "in 3h 52m")
+    // Returns only the content without Spacer - parent HStack handles spacing
+    @ViewBuilder
+    private var bottomTimeIndicator: some View {
+        switch windowStatus {
+        case .active:
+            if let remaining = window.timeRemaining {
                 HStack(spacing: 4) {
-                    if let remaining = window.timeRemaining {
-                        Image(systemName: "clock")
-                            .font(.system(size: 13))
-                        Text("\(formatTime(remaining)) left")
-                            .font(.system(size: 14, weight: .medium))
+                    Image(systemName: "clock")
+                        .font(.system(size: 12))
+                    Text("\(formatTime(remaining)) left")
+                        .font(.system(size: 13, weight: .medium))
+                        .monospacedDigit()
+                }
+                .foregroundColor(remaining < 1800 ? .orange : .white.opacity(0.5))
+            }
+
+        case .lateButDoable:
+            if let hoursLate = window.hoursLate {
+                HStack(spacing: 4) {
+                    Image(systemName: "exclamationmark.circle")
+                        .font(.system(size: 12))
+                    if hoursLate < 1 {
+                        Text("\(Int(hoursLate * 60))m late")
+                            .monospacedDigit()
+                    } else {
+                        Text("\(Int(hoursLate))h late")
                             .monospacedDigit()
                     }
                 }
-                .foregroundColor(window.timeRemaining ?? 0 < 1800 ? .orange : .white.opacity(0.9))
-                
-            case .lateButDoable:
-                if let hoursLate = window.hoursLate {
-                    HStack(spacing: 4) {
-                        Image(systemName: "exclamationmark.circle")
-                            .font(.system(size: 13))
-                        if hoursLate < 1 {
-                            Text("\(Int(hoursLate * 60))m late •")
-                                .monospacedDigit()
-                            Text("still doable")
-                        } else {
-                            Text("\(Int(hoursLate))h late •")
-                                .monospacedDigit()
-                            Text("still doable")
-                        }
-                    }
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(.yellow)
-                }
-                
-            case .completed, .missed:
-                if !timeUntilWindow.isEmpty {
-                    Text(timeUntilWindow)
-                        .font(.system(size: 13))
-                        .monospacedDigit()
-                        .foregroundColor(.orange.opacity(0.8))
-                }
-                
-            case .upcoming:
+                .font(.system(size: 13, weight: .medium))
+                .foregroundColor(.yellow)
+            }
+
+        case .upcoming:
+            Text(timeUntilWindow)
+                .font(.system(size: 13))
+                .monospacedDigit()
+                .foregroundColor(.white.opacity(0.4))
+
+        case .completed, .missed:
+            if !timeUntilWindow.isEmpty {
                 Text(timeUntilWindow)
                     .font(.system(size: 13))
                     .monospacedDigit()
-                    .foregroundColor(getTimeTextColor())
-                    
-            case .fasted:
-                Text("Fasting period")
-                    .font(.system(size: 13))
-                    .foregroundColor(.white.opacity(0.6))
+                    .foregroundColor(.orange.opacity(0.6))
             }
+
+        case .fasted:
+            Text("Fasting period")
+                .font(.system(size: 13))
+                .foregroundColor(.white.opacity(0.4))
         }
+    }
+
+    // Use consistent padding for cleaner look - reduced by 2px for less chunky appearance
+    private var windowBannerPadding: CGFloat {
+        return 12
     }
     
     @ViewBuilder
@@ -788,7 +852,7 @@ struct ExpandableWindowBanner: View {
         case .lateButDoable:
             lateButDoableIndicator
         case .upcoming:
-            upcomingIndicator
+            EmptyView()
         }
     }
     
@@ -819,19 +883,6 @@ struct ExpandableWindowBanner: View {
                 .foregroundColor(.white)
                 .monospacedDigit()
         }
-    }
-    
-    @ViewBuilder
-    private var upcomingIndicator: some View {
-        Text("Soon")
-            .font(TimelineTypography.progressLabel)
-            .foregroundColor(.white.opacity(TimelineOpacity.secondary))
-            .frame(width: 40)
-            .padding(.vertical, 4)
-            .background(
-                Capsule()
-                    .fill(Color.white.opacity(0.1))
-            )
     }
     
     @ViewBuilder
@@ -1113,32 +1164,52 @@ struct ExpandableWindowBanner: View {
         }
     }
     
+    private let maxVisibleMeals = 3
+
     @ViewBuilder
     private var mealsSection: some View {
-        VStack(spacing: 8) {
+        let totalMeals = analyzingMealsInWindow.count + meals.count
+        let overflowCount = max(0, totalMeals - maxVisibleMeals)
+
+        VStack(spacing: 6) {
             Rectangle()
                 .fill(Color.white.opacity(0.1))
                 .frame(height: 1)
-                .padding(.horizontal, 14)
-            
-            // Show analyzing meals first
-            ForEach(analyzingMealsInWindow) { analyzingMeal in
+                .padding(.horizontal, 12)
+
+            // Show analyzing meals first (limited)
+            let analyzingToShow = Array(analyzingMealsInWindow.prefix(maxVisibleMeals))
+            ForEach(analyzingToShow) { analyzingMeal in
                 AnalyzingMealRowCompact(meal: analyzingMeal, windowColor: window.purpose.color)
-                    .padding(.horizontal, 14)
+                    .padding(.horizontal, 12)
                     .transition(.asymmetric(
                         insertion: .scale(scale: 0.95).combined(with: .opacity),
                         removal: .opacity
                     ))
             }
-            
-            // Then show logged meals
-            ForEach(meals) { meal in
+
+            // Then show logged meals (limited to remaining slots)
+            let remainingSlots = max(0, maxVisibleMeals - analyzingMealsInWindow.count)
+            let mealsToShow = Array(meals.prefix(remainingSlots))
+            ForEach(mealsToShow) { meal in
                 MealRowCompact(meal: meal)
-                    .padding(.horizontal, 14)
+                    .padding(.horizontal, 12)
+            }
+
+            // Show "+X more" indicator if overflow
+            if overflowCount > 0 {
+                HStack {
+                    Spacer()
+                    Text("+\(overflowCount) more")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.white.opacity(0.5))
+                        .padding(.trailing, 12)
+                        .padding(.top, 2)
+                }
             }
         }
-        .padding(.bottom, 14)
-        .background(Color(red: 0.11, green: 0.11, blue: 0.12))  // Ensure opaque background for meals section
+        .padding(.bottom, 8)
+        .background(Color(red: 0.11, green: 0.11, blue: 0.12))
     }
     
     private var windowBackground: some View {

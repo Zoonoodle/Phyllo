@@ -106,6 +106,12 @@ struct MealWindow: Identifiable, Codable {
     var micronutrientFocus: [String]
     var activityLinked: String?
     var tips: [String]?
+
+    // Smart suggestions (rich AI-generated food suggestions)
+    var smartSuggestions: [FoodSuggestion]
+    var suggestionsGeneratedAt: Date?
+    var suggestionStatus: SuggestionStatus
+    var suggestionContextNote: String?
     
     // Consumption tracking
     var consumed: ConsumedMacros
@@ -280,7 +286,12 @@ struct MealWindow: Identifiable, Codable {
         micronutrientFocus: [String] = [],
         rationale: String? = nil,
         activityLinked: String? = nil,
-        consumed: ConsumedMacros = ConsumedMacros()
+        consumed: ConsumedMacros = ConsumedMacros(),
+        dayDate: Date? = nil,
+        smartSuggestions: [FoodSuggestion] = [],
+        suggestionsGeneratedAt: Date? = nil,
+        suggestionStatus: SuggestionStatus = .pending,
+        suggestionContextNote: String? = nil
     ) {
         self.id = id.uuidString
         self.name = name
@@ -298,8 +309,10 @@ struct MealWindow: Identifiable, Codable {
         self.rationale = rationale
         self.activityLinked = activityLinked
         self.consumed = consumed
-        self.date = Calendar.current.startOfDay(for: startTime)
-        self.dayDate = Calendar.current.startOfDay(for: startTime)
+        // Use provided dayDate or calculate from startTime (respects local timezone)
+        let computedDayDate = dayDate ?? Calendar.current.startOfDay(for: startTime)
+        self.date = computedDayDate
+        self.dayDate = computedDayDate
         self.mealType = .snack // Default meal type, can be determined based on time
         self.isFirstDay = false // Default to false, caller can override
         self.tips = nil
@@ -309,6 +322,11 @@ struct MealWindow: Identifiable, Codable {
         self.adjustedFat = nil
         self.redistributionReason = nil
         self.isMarkedAsFasted = false
+        // Smart suggestions
+        self.smartSuggestions = smartSuggestions
+        self.suggestionsGeneratedAt = suggestionsGeneratedAt
+        self.suggestionStatus = suggestionStatus
+        self.suggestionContextNote = suggestionContextNote
     }
     
     // Legacy compatibility initializer
@@ -354,7 +372,11 @@ struct MealWindow: Identifiable, Codable {
         adjustedCalories: Int? = nil,
         adjustedMacros: MacroTargets? = nil,
         redistributionReason: WindowRedistributionManager.RedistributionReason? = nil,
-        isMarkedAsFasted: Bool = false
+        isMarkedAsFasted: Bool = false,
+        smartSuggestions: [FoodSuggestion] = [],
+        suggestionsGeneratedAt: Date? = nil,
+        suggestionStatus: SuggestionStatus = .pending,
+        suggestionContextNote: String? = nil
     ) {
         self.id = id.uuidString
         self.name = name ?? purpose.legacyDisplayName
@@ -366,14 +388,14 @@ struct MealWindow: Identifiable, Codable {
         self.targetFat = targetMacros.fat
         self.purpose = purpose
         self.flexibility = flexibility
-        
+
         // Handle type conversion
         if let typeString = type, let windowType = WindowType(rawValue: typeString) {
             self.type = windowType
         } else {
             self.type = .regular
         }
-        
+
         self.dayDate = dayDate
         self.foodSuggestions = foodSuggestions ?? []
         self.micronutrientFocus = micronutrientFocus ?? []
@@ -381,7 +403,7 @@ struct MealWindow: Identifiable, Codable {
         self.activityLinked = nil
         self.tips = tips
         self.consumed = ConsumedMacros()
-        
+
         // Handle adjusted values
         self.adjustedCalories = adjustedCalories
         if let adjustedMacros = adjustedMacros {
@@ -393,14 +415,20 @@ struct MealWindow: Identifiable, Codable {
             self.adjustedCarbs = nil
             self.adjustedFat = nil
         }
-        
+
         self.redistributionReason = redistributionReason
         self.isMarkedAsFasted = isMarkedAsFasted
-        
+
         // Initialize missing properties
         self.date = dayDate
         self.mealType = .snack // Default meal type
         self.isFirstDay = false // Default to false
+
+        // Smart suggestions
+        self.smartSuggestions = smartSuggestions
+        self.suggestionsGeneratedAt = suggestionsGeneratedAt
+        self.suggestionStatus = suggestionStatus
+        self.suggestionContextNote = suggestionContextNote
     }
 }
 
@@ -416,10 +444,10 @@ extension MealWindow {
     
     func splitAtMidnight() -> [MealWindow] {
         guard crossesMidnight else { return [self] }
-        
+
         let calendar = Calendar.current
         let midnight = calendar.startOfDay(for: endTime)
-        
+
         // Window before midnight
         let beforeMidnight = MealWindow(
             id: UUID(),
@@ -437,10 +465,14 @@ extension MealWindow {
             micronutrientFocus: micronutrientFocus,
             rationale: rationale,
             activityLinked: activityLinked,
-            consumed: ConsumedMacros()
+            consumed: ConsumedMacros(),
+            smartSuggestions: smartSuggestions,
+            suggestionsGeneratedAt: suggestionsGeneratedAt,
+            suggestionStatus: suggestionStatus,
+            suggestionContextNote: suggestionContextNote
         )
-        
-        // Window after midnight  
+
+        // Window after midnight
         let afterMidnight = MealWindow(
             id: UUID(),
             name: "\(name) (Continued)",
@@ -457,9 +489,13 @@ extension MealWindow {
             micronutrientFocus: micronutrientFocus,
             rationale: rationale,
             activityLinked: activityLinked,
-            consumed: ConsumedMacros()
+            consumed: ConsumedMacros(),
+            smartSuggestions: smartSuggestions,
+            suggestionsGeneratedAt: suggestionsGeneratedAt,
+            suggestionStatus: suggestionStatus,
+            suggestionContextNote: suggestionContextNote
         )
-        
+
         return [beforeMidnight, afterMidnight]
     }
 }
