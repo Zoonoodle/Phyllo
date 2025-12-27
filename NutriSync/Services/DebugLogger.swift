@@ -13,6 +13,7 @@ enum DebugCategory: String, CaseIterable {
     case navigation = "🧭 NAV"
     case dataProvider = "💾 DATA"
     case mealAnalysis = "🔬 ANALYSIS"
+    case windowGeneration = "🪟 WINDOWS"
     case firebase = "🔥 FIREBASE"
     case ui = "🎨 UI"
     case notification = "🔔 NOTIF"
@@ -21,12 +22,14 @@ enum DebugCategory: String, CaseIterable {
     case warning = "⚠️ WARN"
     case info = "ℹ️ INFO"
     case performance = "⚡ PERF"
-    
+    case aiTest = "🧪 AI-TEST"
+
     var color: String {
         switch self {
         case .navigation: return "🟦"
         case .dataProvider: return "🟩"
         case .mealAnalysis: return "🟪"
+        case .windowGeneration: return "🔵"
         case .firebase: return "🟧"
         case .ui: return "🟨"
         case .notification: return "⬜"
@@ -35,17 +38,25 @@ enum DebugCategory: String, CaseIterable {
         case .warning: return "🟡"
         case .info: return "⚪"
         case .performance: return "🟣"
+        case .aiTest: return "🧬"
         }
     }
 }
 
 // MARK: - Debug Configuration
 struct DebugConfiguration {
+    #if DEBUG
     static var verboseAILogging = true  // Log full AI prompts/responses
     static var logAITokenCounts = true  // Log token usage for cost monitoring
     static var logPerformanceMetrics = true  // Log timing for all operations
-    static var maxLogLength = 5000  // Maximum characters for a single log entry
     static var enableConsoleOutput = true  // Print to console
+    #else
+    static var verboseAILogging = false  // Disabled in production
+    static var logAITokenCounts = false  // Disabled in production
+    static var logPerformanceMetrics = false  // Disabled in production
+    static var enableConsoleOutput = false  // Disabled in production
+    #endif
+    static var maxLogLength = 5000  // Maximum characters for a single log entry
     static var enableFileLogging = false  // Save to file (future feature)
 }
 
@@ -159,7 +170,15 @@ class DebugLogger: ObservableObject {
     func performance(_ message: String, file: String = #file, function: String = #function, line: Int = #line) {
         log(message, category: .performance, file: file, function: function, line: line)
     }
-    
+
+    func windowGeneration(_ message: String, file: String = #file, function: String = #function, line: Int = #line) {
+        log(message, category: .windowGeneration, file: file, function: function, line: line)
+    }
+
+    func aiTest(_ message: String, file: String = #file, function: String = #function, line: Int = #line) {
+        log(message, category: .aiTest, file: file, function: function, line: line)
+    }
+
     // MARK: - Performance Timing
     
     func startTiming(_ label: String) -> Date {
@@ -264,6 +283,105 @@ class DebugLogger: ObservableObject {
         Target Calories: \(window.targetCalories)
         """
         dataProvider("\(action): \n\(details)")
+    }
+
+    // MARK: - AI Testing Helpers
+
+    /// Log a complete meal analysis result for testing verification
+    func logMealAnalysisResult(_ result: MealAnalysisResult, inputType: String, processingTime: TimeInterval) {
+        let ingredientList = result.ingredients.map { "\($0.name): \($0.amount) \($0.unit)" }.joined(separator: ", ")
+        let clarificationList = result.clarifications.map { $0.question }.joined(separator: " | ")
+
+        let details = """
+        ═══════════════════════════════════════════════════════
+        🍽️ MEAL ANALYSIS RESULT
+        ═══════════════════════════════════════════════════════
+        Input Type: \(inputType)
+        Processing Time: \(String(format: "%.2f", processingTime))s
+        ───────────────────────────────────────────────────────
+        Meal Name: \(result.mealName)
+        Confidence: \(String(format: "%.2f", result.confidence)) \(result.confidence >= 0.85 ? "✅" : result.confidence >= 0.70 ? "⚠️" : "❌")
+        No Food Detected: \(result.noFoodDetected ?? false)
+        Brand Detected: \(result.brandDetected ?? "None")
+        ───────────────────────────────────────────────────────
+        NUTRITION
+        Calories: \(result.nutrition.calories) kcal
+        Protein: \(result.nutrition.protein)g
+        Carbs: \(result.nutrition.carbs)g
+        Fat: \(result.nutrition.fat)g
+        Macro Check: \(validateMacros(result.nutrition) ? "✅ Valid" : "⚠️ Mismatch")
+        ───────────────────────────────────────────────────────
+        INGREDIENTS (\(result.ingredients.count))
+        \(ingredientList.isEmpty ? "None detected" : ingredientList)
+        ───────────────────────────────────────────────────────
+        CLARIFICATIONS (\(result.clarifications.count))
+        \(clarificationList.isEmpty ? "None needed" : clarificationList)
+        ───────────────────────────────────────────────────────
+        TOOLS REQUESTED: \(result.requestedTools?.joined(separator: ", ") ?? "None")
+        ═══════════════════════════════════════════════════════
+        """
+        aiTest(details)
+    }
+
+    /// Log window generation result for testing verification
+    func logWindowGenerationResult(_ windows: [MealWindow], dailyContext: String?, processingTime: TimeInterval) {
+        let windowDetails = windows.enumerated().map { index, window in
+            let timeFormatter = DateFormatter()
+            timeFormatter.dateFormat = "h:mm a"
+            return """
+              Window \(index + 1): \(window.name)
+                Time: \(timeFormatter.string(from: window.startTime)) - \(timeFormatter.string(from: window.endTime))
+                Calories: \(window.targetCalories) | P: \(window.targetProtein)g C: \(window.targetCarbs)g F: \(window.targetFat)g
+                Purpose: \(window.purpose.rawValue)
+                Type: \(window.type.rawValue)
+                Flexibility: \(window.flexibility.rawValue)
+                Crosses Midnight: \(window.crossesMidnight ? "⚠️ YES" : "No")
+            """
+        }.joined(separator: "\n")
+
+        let totalCalories = windows.reduce(0) { $0 + $1.targetCalories }
+        let totalProtein = windows.reduce(0) { $0 + $1.targetProtein }
+        let totalCarbs = windows.reduce(0) { $0 + $1.targetCarbs }
+        let totalFat = windows.reduce(0) { $0 + $1.targetFat }
+
+        let details = """
+        ═══════════════════════════════════════════════════════
+        🪟 WINDOW GENERATION RESULT
+        ═══════════════════════════════════════════════════════
+        Processing Time: \(String(format: "%.2f", processingTime))s
+        Windows Generated: \(windows.count)
+        ───────────────────────────────────────────────────────
+        DAILY CONTEXT INPUT:
+        \(dailyContext ?? "None provided")
+        ───────────────────────────────────────────────────────
+        WINDOWS:
+        \(windowDetails)
+        ───────────────────────────────────────────────────────
+        DAILY TOTALS:
+        Calories: \(totalCalories) kcal
+        Protein: \(totalProtein)g | Carbs: \(totalCarbs)g | Fat: \(totalFat)g
+        ───────────────────────────────────────────────────────
+        VALIDATION:
+        Windows count: \(windows.count >= 3 && windows.count <= 7 ? "✅" : "⚠️") (\(windows.count))
+        Midnight crossover: \(windows.contains { $0.crossesMidnight } ? "⚠️ DETECTED" : "✅ None")
+        Generic names: \(windows.filter { isGenericWindowName($0.name) }.isEmpty ? "✅ None" : "⚠️ Found")
+        ═══════════════════════════════════════════════════════
+        """
+        aiTest(details)
+    }
+
+    /// Validate that macros roughly add up to calories (within 8%)
+    private func validateMacros(_ nutrition: MealAnalysisResult.NutritionInfo) -> Bool {
+        let calculated = Int(nutrition.protein * 4) + Int(nutrition.carbs * 4) + Int(nutrition.fat * 9)
+        let tolerance = Double(nutrition.calories) * 0.08
+        return abs(Double(calculated - nutrition.calories)) <= tolerance
+    }
+
+    /// Check if window name is generic
+    private func isGenericWindowName(_ name: String) -> Bool {
+        let genericPatterns = ["Window 1", "Window 2", "Window 3", "Window 4", "Window 5", "Window 6",
+                               "Breakfast", "Lunch", "Dinner", "Snack"]
+        return genericPatterns.contains { name.lowercased() == $0.lowercased() }
     }
     
     func logAnalyzingMeal(_ meal: AnalyzingMeal, action: String) {
