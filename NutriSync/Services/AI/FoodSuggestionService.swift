@@ -134,12 +134,10 @@ class FoodSuggestionService: ObservableObject {
     }
 
     private func determineSuggestionCount(remainingCalories: Int) -> Int {
+        // Win 1: Cap at 3 suggestions max to reduce token usage
         switch remainingCalories {
-        case ..<150: return 2
-        case 150..<300: return 3
-        case 300..<500: return 4
-        case 500..<800: return 5
-        default: return 6
+        case ..<200: return 2
+        default: return 3
         }
     }
 
@@ -203,6 +201,18 @@ class FoodSuggestionService: ObservableObject {
 
         let restrictions = profile.dietaryRestrictions.joined(separator: ", ")
 
+        // Build daily context section (from Tweak Today or Daily Sync)
+        var dailyContextSection = ""
+        if let dailyContext = DailySyncManager.shared.todaySync?.dailyContextDescription,
+           !dailyContext.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            dailyContextSection = """
+
+            ## TODAY'S CONTEXT (User-provided - prioritize this!)
+            \(dailyContext)
+            """
+            DebugLogger.shared.info("[FoodSuggestionService] Including daily context in prompt: \(dailyContext)")
+        }
+
         // Build meals logged section
         var mealsSection = ""
         if !todaysMeals.isEmpty {
@@ -221,54 +231,30 @@ class FoodSuggestionService: ObservableObject {
 
         let percentComplete = Int(Double(consumed.calories) / Double(max(1, profile.dailyCalorieTarget)) * 100)
 
+        // Win 2 & 3: Compressed prompt with short keys + scoring
         return """
-        You are a nutrition expert generating personalized food suggestions for a meal timing app.
+        Generate \(suggestionCount) food suggestions with predicted health scores.
 
-        ## USER PROFILE
-        - Name: \(profile.name)
-        - Goal: \(goalDescription)
-        - Daily Targets: \(profile.dailyCalorieTarget) cal, \(profile.dailyProteinTarget)g protein, \(profile.dailyCarbTarget)g carbs, \(profile.dailyFatTarget)g fat
-        - Dietary Restrictions: \(restrictions.isEmpty ? "None" : restrictions)
+        User: \(profile.name) | Goal: \(goalDescription)
+        Targets: \(profile.dailyCalorieTarget)cal \(profile.dailyProteinTarget)P \(profile.dailyCarbTarget)C \(profile.dailyFatTarget)F
+        Restrictions: \(restrictions.isEmpty ? "None" : restrictions)
         \(preferencesSection)
 
-        ## TODAY'S NUTRITION STATUS
-        - Total consumed so far: \(consumed.calories) cal, \(Int(consumed.protein))g P, \(Int(consumed.carbs))g C, \(Int(consumed.fat))g F
-        - Remaining to hit targets: \(remaining.calories) cal, \(Int(remaining.protein))g P, \(Int(remaining.carbs))g C, \(Int(remaining.fat))g F
-        - Percentage of day complete: \(percentComplete)%
-        - Primary gap: \(remaining.primaryGap)
-        \(mealsSection)
+        Status: Consumed \(consumed.calories)cal \(Int(consumed.protein))P \(Int(consumed.carbs))C \(Int(consumed.fat))F
+        Remaining: \(remaining.calories)cal \(Int(remaining.protein))P \(Int(remaining.carbs))C \(Int(remaining.fat))F (\(percentComplete)% done)
+        Gap: \(remaining.primaryGap)
+        \(dailyContextSection)\(mealsSection)
 
-        ## CURRENT WINDOW
-        - Name: \(window.name)
-        - Purpose: \(window.purpose.rawValue)
-        - Time: \(formatTime(window.startTime)) - \(formatTime(window.endTime))
+        Window: \(window.name) (\(window.purpose.rawValue)) \(formatTime(window.startTime))-\(formatTime(window.endTime))
 
-        ## GENERATION RULES
-        1. Generate exactly \(suggestionCount) food suggestions
-        2. Each suggestion must help close the macro gap, especially \(remaining.primaryGap)
-        3. NEVER suggest anything the user is allergic to or that violates their dietary restrictions
-        4. Prioritize user's favorite cuisines and foods when possible
-        5. Ensure variety - don't suggest foods similar to what they've already eaten today
-        6. Match suggestions to window purpose (\(window.purpose.rawValue))
-        7. Each suggestion needs detailed reasoning for the detail sheet
-        8. Keep calorie estimates realistic and macro splits accurate
+        Rules: Close \(remaining.primaryGap) gap. Never: allergies/restrictions. Vary from eaten foods. Match window purpose. If today's context mentions energy, hunger, or food preferences, adapt suggestions accordingly.
 
-        ## RESPONSE FORMAT
-        Return ONLY valid JSON array:
-        [
-          {
-            "name": "Food name",
-            "calories": 000,
-            "protein": 00.0,
-            "carbs": 00.0,
-            "fat": 00.0,
-            "foodGroup": "Protein|Dairy|Grain|Vegetable|Fruit|Fat/Oil|Legume|Nut/Seed|Beverage|Condiment/Sauce|Sweet|Mixed",
-            "reasoningShort": "One-line summary for card display (max 50 chars)",
-            "reasoningDetailed": "2-3 sentences explaining why this specific suggestion based on their current nutrition status and gaps",
-            "howYoullFeel": "2-3 sentences describing the physical and mental benefits they'll experience",
-            "supportsGoal": "2-3 sentences connecting this food to their primary goal (\(goalDescription))"
-          }
-        ]
+        Score 1-10 based on: protein balance, whole foods, fiber, caloric density, micronutrients. Higher = healthier for this context.
+
+        JSON array with short keys:
+        [{"n":"Food name","c":calories,"p":protein,"cb":carbs,"f":fat,"g":"Protein|Dairy|Grain|Vegetable|Fruit|Fat/Oil|Legume|Nut/Seed|Beverage|Condiment/Sauce|Sweet|Mixed","rs":"Card text max 50ch","w":"1 sentence: why this fits your nutrition + goal","sc":8.5,"sf":[{"nm":"Factor name","ct":1.2}]}]
+
+        Key: sc=predicted score (0-10), sf=score factors array, nm=factor name, ct=contribution (+/-)
         """
     }
 
@@ -292,23 +278,34 @@ class FoodSuggestionService: ObservableObject {
         let decoder = JSONDecoder()
         let rawSuggestions = try decoder.decode([RawFoodSuggestion].self, from: data)
 
-        // Convert to FoodSuggestion models
+        // Convert to FoodSuggestion models (map short keys to full model)
         return rawSuggestions.map { raw in
-            FoodSuggestion(
+            // Convert raw score factors to model
+            let scoreFactors: [SuggestionScoreFactor]? = raw.sf?.map { factor in
+                SuggestionScoreFactor(
+                    name: factor.nm,
+                    contribution: factor.ct
+                )
+            }
+
+            var suggestion = FoodSuggestion(
                 id: UUID(),
-                name: raw.name,
-                calories: raw.calories,
-                protein: raw.protein,
-                carbs: raw.carbs,
-                fat: raw.fat,
-                foodGroup: FoodGroup.fromString(raw.foodGroup),
-                reasoningShort: raw.reasoningShort,
-                reasoningDetailed: raw.reasoningDetailed,
-                howYoullFeel: raw.howYoullFeel,
-                supportsGoal: raw.supportsGoal,
+                name: raw.n,
+                calories: raw.c,
+                protein: raw.p,
+                carbs: raw.cb,
+                fat: raw.f,
+                foodGroup: FoodGroup.fromString(raw.g),
+                reasoningShort: raw.rs,
+                reasoningDetailed: raw.w,  // Combined "why" used for detailed
+                howYoullFeel: raw.w,       // Reuse combined reasoning
+                supportsGoal: raw.w,       // Reuse combined reasoning
                 generatedAt: Date(),
                 basedOnMacroGap: macroGap
             )
+            suggestion.predictedScore = raw.sc
+            suggestion.scoreFactors = scoreFactors
+            return suggestion
         }
     }
 
@@ -408,16 +405,22 @@ struct SuggestionGenerationResult {
     let macroGap: MacroGap
 }
 
-// Raw response from AI for parsing
+// Raw response from AI for parsing (using short keys to reduce tokens)
 private struct RawFoodSuggestion: Codable {
-    let name: String
-    let calories: Int
-    let protein: Double
-    let carbs: Double
-    let fat: Double
-    let foodGroup: String
-    let reasoningShort: String
-    let reasoningDetailed: String
-    let howYoullFeel: String
-    let supportsGoal: String
+    let n: String       // name
+    let c: Int          // calories
+    let p: Double       // protein
+    let cb: Double      // carbs
+    let f: Double       // fat
+    let g: String       // foodGroup
+    let rs: String      // reasoningShort
+    let w: String       // why (combined reasoning)
+    let sc: Double?     // predicted score (0-10)
+    let sf: [RawScoreFactor]?  // score factors
+}
+
+// Raw score factor from AI response
+private struct RawScoreFactor: Codable {
+    let nm: String      // factor name
+    let ct: Double      // contribution (+/-)
 }

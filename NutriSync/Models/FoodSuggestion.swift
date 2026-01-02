@@ -19,6 +19,10 @@ struct FoodSuggestion: Codable, Identifiable, Hashable {
     let fat: Double                     // 5.0
     let foodGroup: FoodGroup            // For emoji/icon mapping
 
+    // Scoring (Phase 5)
+    var predictedScore: Double?         // 0-10 scale predicted health score
+    var scoreFactors: [SuggestionScoreFactor]?  // Factors contributing to score
+
     // Detail sheet content
     let reasoningShort: String          // One-liner for card: "High protein for recovery"
     let reasoningDetailed: String       // Full explanation of why this suggestion
@@ -35,8 +39,9 @@ struct FoodSuggestion: Codable, Identifiable, Hashable {
         "\(calories) cal \u{2022} \(Int(protein))g P \u{2022} \(Int(carbs))g C \u{2022} \(Int(fat))g F"
     }
 
+    /// Smart emoji based on food name - uses shared FoodEmojiMapper
     var emoji: String {
-        foodGroup.emoji
+        FoodEmojiMapper.emoji(for: name)
     }
 
     // MARK: - Firestore
@@ -59,6 +64,14 @@ struct FoodSuggestion: Codable, Identifiable, Hashable {
 
         if let gap = basedOnMacroGap {
             data["basedOnMacroGap"] = gap.toFirestore()
+        }
+
+        // Phase 5: Scoring
+        if let score = predictedScore {
+            data["predictedScore"] = score
+        }
+        if let factors = scoreFactors {
+            data["scoreFactors"] = factors.map { $0.toFirestore() }
         }
 
         return data
@@ -92,7 +105,13 @@ struct FoodSuggestion: Codable, Identifiable, Hashable {
 
         let macroGap = (data["basedOnMacroGap"] as? [String: Any]).flatMap { MacroGap.fromFirestore($0) }
 
-        return FoodSuggestion(
+        // Phase 5: Scoring
+        let predictedScore = data["predictedScore"] as? Double
+        let scoreFactors: [SuggestionScoreFactor]? = (data["scoreFactors"] as? [[String: Any]])?.compactMap {
+            SuggestionScoreFactor.fromFirestore($0)
+        }
+
+        var suggestion = FoodSuggestion(
             id: id,
             name: name,
             calories: calories,
@@ -107,6 +126,9 @@ struct FoodSuggestion: Codable, Identifiable, Hashable {
             generatedAt: generatedAt,
             basedOnMacroGap: macroGap
         )
+        suggestion.predictedScore = predictedScore
+        suggestion.scoreFactors = scoreFactors
+        return suggestion
     }
 }
 
@@ -183,6 +205,49 @@ struct MacroGap: Codable, Hashable {
             carbs: carbs,
             fat: fat,
             primaryGap: primaryGap
+        )
+    }
+}
+
+// MARK: - Suggestion Score Factor
+
+/// A factor contributing to the suggestion's predicted score
+struct SuggestionScoreFactor: Codable, Hashable, Identifiable {
+    let id: UUID
+    let name: String                // "Protein balance", "Fiber boost", etc.
+    let contribution: Double        // +1.2 or -0.5
+    var detail: String?             // "Adds 48g to fill your gap"
+
+    init(name: String, contribution: Double, detail: String? = nil) {
+        self.id = UUID()
+        self.name = name
+        self.contribution = contribution
+        self.detail = detail
+    }
+
+    func toFirestore() -> [String: Any] {
+        var data: [String: Any] = [
+            "id": id.uuidString,
+            "name": name,
+            "contribution": contribution
+        ]
+        if let detail = detail {
+            data["detail"] = detail
+        }
+        return data
+    }
+
+    static func fromFirestore(_ data: [String: Any]) -> SuggestionScoreFactor? {
+        guard let idString = data["id"] as? String,
+              let id = UUID(uuidString: idString),
+              let name = data["name"] as? String,
+              let contribution = data["contribution"] as? Double
+        else { return nil }
+
+        return SuggestionScoreFactor(
+            name: name,
+            contribution: contribution,
+            detail: data["detail"] as? String
         )
     }
 }

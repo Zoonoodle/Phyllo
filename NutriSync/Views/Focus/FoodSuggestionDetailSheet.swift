@@ -2,7 +2,8 @@
 //  FoodSuggestionDetailSheet.swift
 //  NutriSync
 //
-//  Detail sheet showing full information about a food suggestion
+//  Detail sheet showing full information about a food suggestion.
+//  Phase 5: Updated with scoring components.
 //
 
 import SwiftUI
@@ -25,7 +26,18 @@ struct FoodSuggestionDetailSheet: View {
 
                 // Content sections
                 VStack(spacing: 24) {
+                    // Predicted Score (if available)
+                    if let score = suggestion.predictedScore {
+                        predictedScoreSection(score: score)
+                    }
+
                     whySection
+
+                    // Score Factors (if available)
+                    if let factors = suggestion.scoreFactors, !factors.isEmpty {
+                        scoreFactorsSection(factors: factors)
+                    }
+
                     howYoullFeelSection
                     supportsGoalSection
                 }
@@ -59,6 +71,16 @@ struct FoodSuggestionDetailSheet: View {
                 .foregroundColor(.white)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 20)
+
+            // Predicted score (if available)
+            if let score = suggestion.predictedScore {
+                HStack(spacing: 8) {
+                    Text("Predicted:")
+                        .font(.system(size: 14))
+                        .foregroundColor(.white.opacity(0.6))
+                    ScoreText(score: score, size: .medium, showTotal: true)
+                }
+            }
 
             // Calories highlight
             Text("\(suggestion.calories) cal")
@@ -95,6 +117,45 @@ struct FoodSuggestionDetailSheet: View {
                         .stroke(Color.white.opacity(0.1), lineWidth: 1)
                 )
         )
+    }
+
+    // MARK: - Predicted Score Section
+
+    private func predictedScoreSection(score: Double) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            sectionHeader("PREDICTED SCORE")
+
+            VStack(alignment: .leading, spacing: 8) {
+                ScoreText(score: score, size: .large, showTotal: true)
+                ScoreProgressBar.fromScore(score)
+            }
+            .padding(16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color.white.opacity(0.03))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                    )
+            )
+        }
+    }
+
+    // MARK: - Score Factors Section
+
+    private func scoreFactorsSection(factors: [SuggestionScoreFactor]) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            sectionHeader("WHAT MAKES THIS HEALTHY")
+
+            FactorChipGrid(factors: factors.prefix(4).map { factor in
+                FactorChipData(
+                    label: factor.name,
+                    value: factor.contribution,
+                    secondaryLabel: factor.detail
+                )
+            })
+        }
     }
 
     // MARK: - Content Sections
@@ -142,28 +203,64 @@ struct FoodSuggestionDetailSheet: View {
 
 // MARK: - Preview
 
-#Preview {
+#Preview("With Score") {
     FoodSuggestionDetailSheet(
-        suggestion: FoodSuggestion(
-            id: UUID(),
-            name: "Grilled Chicken Salad",
-            calories: 450,
-            protein: 35.0,
-            carbs: 20.0,
-            fat: 22.0,
-            foodGroup: .protein,
-            reasoningShort: "Protein boost with vegetables you're missing",
-            reasoningDetailed: "You've logged 16g of protein so far today, and your target is 130g. This salad provides 35g of high-quality protein from grilled chicken, plus fiber and vitamins from mixed greens that you haven't had yet today.",
-            howYoullFeel: "The combination of lean protein and fiber-rich vegetables will keep you satisfied for 3-4 hours without feeling heavy. The balanced macros help maintain steady blood sugar, avoiding the afternoon energy crash.",
-            supportsGoal: "High-protein meals increase satiety hormones and help preserve muscle while in a calorie deficit. The fiber from vegetables adds volume with minimal calories, making it easier to stay within your targets.",
-            generatedAt: Date(),
-            basedOnMacroGap: MacroGap(
-                calories: 1695,
-                protein: 114,
-                carbs: 176,
-                fat: 54,
-                primaryGap: "protein"
-            )
+        suggestion: previewSuggestionWithScoreDetail()
+    )
+}
+
+#Preview("Without Score") {
+    FoodSuggestionDetailSheet(
+        suggestion: previewSuggestionNoScoreDetail()
+    )
+}
+
+private func previewSuggestionWithScoreDetail() -> FoodSuggestion {
+    var suggestion = FoodSuggestion(
+        id: UUID(),
+        name: "Grilled Chicken Salad",
+        calories: 450,
+        protein: 35.0,
+        carbs: 20.0,
+        fat: 22.0,
+        foodGroup: .protein,
+        reasoningShort: "Protein boost with vegetables you're missing",
+        reasoningDetailed: "You've logged 16g of protein so far today, and your target is 130g. This salad provides 35g of high-quality protein from grilled chicken, plus fiber and vitamins from mixed greens that you haven't had yet today.",
+        howYoullFeel: "The combination of lean protein and fiber-rich vegetables will keep you satisfied for 3-4 hours without feeling heavy. The balanced macros help maintain steady blood sugar, avoiding the afternoon energy crash.",
+        supportsGoal: "High-protein meals increase satiety hormones and help preserve muscle while in a calorie deficit. The fiber from vegetables adds volume with minimal calories, making it easier to stay within your targets.",
+        generatedAt: Date(),
+        basedOnMacroGap: MacroGap(
+            calories: 1695,
+            protein: 114,
+            carbs: 176,
+            fat: 54,
+            primaryGap: "protein"
         )
+    )
+    suggestion.predictedScore = 8.6
+    suggestion.scoreFactors = [
+        SuggestionScoreFactor(name: "Protein balance", contribution: 1.4, detail: "35g high-quality protein"),
+        SuggestionScoreFactor(name: "Whole foods", contribution: 1.0, detail: "Fresh vegetables & lean meat"),
+        SuggestionScoreFactor(name: "Fiber content", contribution: 0.6, detail: "6g from greens"),
+        SuggestionScoreFactor(name: "Caloric density", contribution: 0.4, detail: "Filling yet moderate")
+    ]
+    return suggestion
+}
+
+private func previewSuggestionNoScoreDetail() -> FoodSuggestion {
+    FoodSuggestion(
+        id: UUID(),
+        name: "Grilled Chicken Salad",
+        calories: 450,
+        protein: 35.0,
+        carbs: 20.0,
+        fat: 22.0,
+        foodGroup: .protein,
+        reasoningShort: "Protein boost with vegetables you're missing",
+        reasoningDetailed: "You've logged 16g of protein so far today, and your target is 130g. This salad provides 35g of high-quality protein from grilled chicken.",
+        howYoullFeel: "The combination of lean protein and fiber-rich vegetables will keep you satisfied for 3-4 hours.",
+        supportsGoal: "High-protein meals increase satiety hormones and help preserve muscle.",
+        generatedAt: Date(),
+        basedOnMacroGap: nil
     )
 }
