@@ -12,8 +12,10 @@ struct DayNavigationHeader: View {
     @Binding var selectedDate: Date
     @Binding var showingSettingsMenu: Bool
     @Binding var showDayDetail: Bool
+    @Binding var showingDailyScoreDetail: Bool  // NEW: Navigate to DailyScoreDetailView
     let meals: [LoggedMeal]
     let userProfile: UserProfile
+    var dailyScore: DailyScore?  // Optional daily adherence score
     
     private var dateFormatter: DateFormatter {
         let formatter = DateFormatter()
@@ -32,23 +34,33 @@ struct DayNavigationHeader: View {
                             showingSettingsMenu = true
                         }) {
                             Image(systemName: "gearshape.fill")
-                                .font(.system(size: 20, weight: .medium))
-                                .foregroundColor(.white.opacity(0.6))
+                                .font(.system(size: 18, weight: .regular))
+                                .foregroundColor(.white.opacity(0.35))
                                 .frame(width: 44, height: 44)
                         }
-                        
+
                         Spacer()
-                        
-                        // Balance right side
-                        Color.clear.frame(width: 44, height: 44)
+
+                        // Daily Score (1-10 format) - tappable to show detail
+                        Button {
+                            showingDailyScoreDetail = true
+                        } label: {
+                            if let score = dailyScore, score.completedWindows > 0 {
+                                DailyScoreMini(score: score)
+                            } else {
+                                // Analyzing state - show when no score yet
+                                AnalyzingRing(size: 40)
+                            }
+                        }
+                        .frame(width: 48, height: 48)
                     }
-                    
+
                     // Title with date centered
                     VStack(spacing: 2) {
                         Text("Today's Schedule")
                             .font(.system(size: 24, weight: .bold))
                             .foregroundColor(.white)
-                        
+
                         Text(dateFormatter.string(from: selectedDate))
                             .font(.system(size: 16, weight: .medium))
                             .foregroundColor(.white.opacity(0.6))
@@ -57,25 +69,27 @@ struct DayNavigationHeader: View {
                 .padding(.horizontal, 16)
                 
                 // Macro bars (MacroFactors style) - now tappable
-                MacroSummaryBar(meals: meals, userProfile: userProfile)
-                    .padding(.horizontal, 16)
-                    .contentShape(Rectangle())  // Make entire area tappable
-                    .onTapGesture {
-                        let impact = UIImpactFeedbackGenerator(style: .light)
-                        impact.prepare()
-                        impact.impactOccurred()
-                        showDayDetail = true
+                VStack(spacing: 6) {
+                    MacroSummaryBar(meals: meals, userProfile: userProfile)
+                }
+                .padding(.horizontal, 16)
+                .contentShape(Rectangle())  // Make entire area tappable
+                .onTapGesture {
+                    let impact = UIImpactFeedbackGenerator(style: .light)
+                    impact.prepare()
+                    impact.impactOccurred()
+                    showDayDetail = true
+                }
+                .overlay(
+                    // Add subtle chevron to indicate tappability
+                    HStack {
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(.white.opacity(0.4))
+                            .padding(.trailing, 4)
                     }
-                    .overlay(
-                        // Add subtle chevron to indicate tappability
-                        HStack {
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 12, weight: .medium))
-                                .foregroundColor(.white.opacity(0.4))
-                                .padding(.trailing, 4)
-                        }
-                    )
+                )
             }
             .padding(.vertical, 6)
             
@@ -157,38 +171,41 @@ struct MacroSummaryBar: View {
         HStack(spacing: 8) {  // Further reduced spacing
             // Calories
             MacroProgressItem(
-                sfSymbol: "flame.fill",
+                label: "Cal",
                 value: totalCalories,
                 target: userProfile.dailyCalorieTarget,
                 progress: calorieProgress,
                 color: .nutriSyncAccent
             )
-            
+
             // Protein
             MacroProgressItem(
                 label: "P",
                 value: totalProtein,
                 target: userProfile.dailyProteinTarget,
                 progress: proteinProgress,
-                color: .orange
+                color: .orange,
+                unit: "g"
             )
-            
+
             // Fat
             MacroProgressItem(
                 label: "F",
                 value: totalFat,
                 target: userProfile.dailyFatTarget,
                 progress: fatProgress,
-                color: .yellow
+                color: .yellow,
+                unit: "g"
             )
-            
+
             // Carbs
             MacroProgressItem(
                 label: "C",
                 value: totalCarbs,
                 target: userProfile.dailyCarbTarget,
                 progress: carbProgress,
-                color: .blue
+                color: .blue,
+                unit: "g"
             )
         }
         .padding(.vertical, 6)
@@ -205,6 +222,7 @@ struct MacroProgressItem: View {
     let target: Int
     let progress: Double
     let color: Color
+    var unit: String = ""
     
     var body: some View {
         VStack(spacing: 4) {
@@ -221,7 +239,7 @@ struct MacroProgressItem: View {
                     .foregroundColor(color)
             }
             
-            Text("\(value) / \(target)")
+            Text("\(value) / \(target)\(unit)")
                 .font(.system(size: 12, weight: .medium))
                 .foregroundColor(.white.opacity(0.8))
                 .lineLimit(1)
@@ -249,22 +267,103 @@ struct MacroProgressItem: View {
     }
 }
 
+// MARK: - Daily Score Mini (1-10 format, compact)
+
+struct DailyScoreMini: View {
+    let score: DailyScore
+
+    private var displayScore: Double {
+        score.displayScore
+    }
+
+    private var scoreColor: Color {
+        switch displayScore {
+        case 8.5...10.0: return .nutriSyncAccent
+        case 7.0..<8.5: return Color(hex: "A8E063")
+        case 5.0..<7.0: return Color(hex: "FFD93D")
+        case 3.0..<5.0: return Color(hex: "FFA500")
+        default: return Color(hex: "FF6B6B")
+        }
+    }
+
+    var body: some View {
+        ZStack {
+            // Background circle with progress
+            Circle()
+                .stroke(Color.white.opacity(0.1), lineWidth: 3)
+                .frame(width: 40, height: 40)
+
+            Circle()
+                .trim(from: 0, to: CGFloat(displayScore) / 10.0)
+                .stroke(scoreColor, style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                .frame(width: 40, height: 40)
+                .rotationEffect(.degrees(-90))
+
+            // Score text
+            Text(String(format: "%.1f", displayScore))
+                .font(.system(size: 12, weight: .bold, design: .rounded))
+                .foregroundColor(.white)
+        }
+    }
+}
+
+// MARK: - Daily Score Badge (Legacy - keeping for compatibility)
+
+struct DailyScoreBadge: View {
+    let score: Int
+
+    // Score color based on value
+    private var scoreColor: Color {
+        switch score {
+        case 85...100: return .nutriSyncAccent
+        case 70..<85: return Color(hex: "A8E063") // Soft green
+        case 50..<70: return Color(hex: "FFD93D") // Yellow
+        case 25..<50: return Color(hex: "FFA500") // Orange
+        default: return Color(hex: "FF6B6B") // Soft red
+        }
+    }
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "chart.line.uptrend.xyaxis")
+                .font(.system(size: 10, weight: .medium))
+                .foregroundColor(scoreColor)
+
+            Text("\(score)")
+                .font(.system(size: 14, weight: .bold, design: .rounded))
+                .foregroundColor(scoreColor)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(
+            Capsule()
+                .fill(scoreColor.opacity(0.15))
+                .overlay(
+                    Capsule()
+                        .strokeBorder(scoreColor.opacity(0.3), lineWidth: 1)
+                )
+        )
+    }
+}
+
 #Preview {
     @Previewable @State var showingSettingsMenu = false
-    
+    @Previewable @State var showingDailyScoreDetail = false
+
     ZStack {
         Color.nutriSyncBackground.ignoresSafeArea()
-        
+
         VStack {
             DayNavigationHeader(
                 selectedDate: .constant(Date()),
                 showingSettingsMenu: $showingSettingsMenu,
                 showDayDetail: .constant(false),
+                showingDailyScoreDetail: $showingDailyScoreDetail,
                 meals: [],
                 userProfile: UserProfile.defaultProfile
             )
             .background(Color.nutriSyncElevated)
-            
+
             Spacer()
         }
     }
