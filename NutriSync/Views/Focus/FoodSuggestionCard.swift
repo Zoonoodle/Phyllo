@@ -121,6 +121,16 @@ struct FoodSuggestionCard: View {
                 // Nutrition Section
                 nutritionSection
 
+                // Portions (if available)
+                if let portions = suggestion.portions, !portions.isEmpty {
+                    portionsSection(portions: portions)
+                }
+
+                // Recipe (if available)
+                if let recipe = suggestion.recipe {
+                    recipeSection(recipe: recipe)
+                }
+
                 // Score Factors (if available)
                 if let factors = suggestion.scoreFactors, !factors.isEmpty {
                     scoreFactorsSection(factors: factors)
@@ -206,6 +216,92 @@ struct FoodSuggestionCard: View {
             Text(label)
                 .font(.system(size: 12))
                 .foregroundColor(.white.opacity(0.5))
+        }
+    }
+
+    // MARK: - Portions Section
+
+    private func portionsSection(portions: [IngredientPortion]) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("PORTIONS")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(Color.white.opacity(0.5))
+                .tracking(0.5)
+
+            VStack(alignment: .leading, spacing: 6) {
+                ForEach(portions.prefix(6)) { portion in
+                    HStack {
+                        Text(portion.name)
+                            .font(.system(size: 14))
+                            .foregroundStyle(Color.white.opacity(0.8))
+                        Spacer()
+                        Text(portion.displayString)
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(Color.white.opacity(0.6))
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: - Recipe Section
+
+    private func recipeSection(recipe: RecipeInfo) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("RECIPE")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(Color.white.opacity(0.5))
+                .tracking(0.5)
+
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Source: \(recipe.source.name)")
+                        .font(.system(size: 14))
+                        .foregroundStyle(Color.white.opacity(0.8))
+
+                    HStack(spacing: 12) {
+                        if let timeString = recipe.timeString {
+                            Label(timeString, systemImage: "clock")
+                                .font(.system(size: 12))
+                                .foregroundStyle(Color.white.opacity(0.6))
+                        }
+
+                        if let difficulty = recipe.difficulty {
+                            Label(difficulty.rawValue, systemImage: "chart.bar")
+                                .font(.system(size: 12))
+                                .foregroundStyle(Color.white.opacity(0.6))
+                        }
+
+                        if recipe.nutritionVerified {
+                            Label("Verified", systemImage: "checkmark.seal.fill")
+                                .font(.system(size: 12))
+                                .foregroundStyle(Color.nutriSyncAccent.opacity(0.8))
+                        }
+                    }
+                }
+
+                Spacer()
+
+                // View Recipe Button
+                Link(destination: recipe.url) {
+                    Text("View")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(.black)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(Color.nutriSyncAccent)
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                }
+            }
+            .padding(12)
+            .background(
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(Color.white.opacity(0.03))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                    )
+            )
         }
     }
 
@@ -305,6 +401,24 @@ private func previewSuggestionWithScore() -> FoodSuggestion {
         SuggestionScoreFactor(name: "Fiber content", contribution: 0.8),
         SuggestionScoreFactor(name: "Low sodium", contribution: 0.5)
     ]
+    // Phase 6: Recipe and portions
+    suggestion.portions = [
+        IngredientPortion(name: "Chicken breast", amount: 6, unit: "oz"),
+        IngredientPortion(name: "Broccoli", amount: 1, unit: "cup"),
+        IngredientPortion(name: "Olive oil", amount: 1, unit: "tbsp"),
+        IngredientPortion(name: "Italian herbs", amount: 1, unit: "tsp"),
+        IngredientPortion(name: "Garlic", amount: 2, unit: "cloves")
+    ]
+    suggestion.recipe = RecipeInfo(
+        source: RecipeSource(name: "Serious Eats", domain: "seriouseats.com", trustLevel: 5),
+        url: URL(string: "https://www.seriouseats.com/herb-crusted-chicken")!,
+        imageUrl: nil,
+        prepTime: 10,
+        cookTime: 25,
+        difficulty: .easy,
+        instructions: nil,
+        nutritionVerified: true
+    )
     return suggestion
 }
 

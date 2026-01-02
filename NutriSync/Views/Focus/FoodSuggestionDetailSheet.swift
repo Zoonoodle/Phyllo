@@ -33,6 +33,16 @@ struct FoodSuggestionDetailSheet: View {
 
                     whySection
 
+                    // Portions (if available)
+                    if let portions = suggestion.portions, !portions.isEmpty {
+                        portionsSection(portions: portions)
+                    }
+
+                    // Recipe (if available)
+                    if let recipe = suggestion.recipe {
+                        recipeSection(recipe: recipe)
+                    }
+
                     // Score Factors (if available)
                     if let factors = suggestion.scoreFactors, !factors.isEmpty {
                         scoreFactorsSection(factors: factors)
@@ -190,6 +200,88 @@ struct FoodSuggestionDetailSheet: View {
                 .font(.system(size: 15))
                 .foregroundColor(.white.opacity(0.8))
                 .lineSpacing(4)
+        }
+    }
+
+    // MARK: - Portions Section
+
+    private func portionsSection(portions: [IngredientPortion]) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            sectionHeader("PORTIONS")
+
+            VStack(alignment: .leading, spacing: 8) {
+                ForEach(portions) { portion in
+                    HStack {
+                        Text(portion.name)
+                            .font(.system(size: 15))
+                            .foregroundColor(.white.opacity(0.8))
+                        Spacer()
+                        Text(portion.displayString)
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundColor(.white.opacity(0.6))
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: - Recipe Section
+
+    private func recipeSection(recipe: RecipeInfo) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            sectionHeader("RECIPE")
+
+            VStack(alignment: .leading, spacing: 12) {
+                // Source and metadata
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(recipe.source.name)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.white)
+
+                    HStack(spacing: 16) {
+                        if let timeString = recipe.timeString {
+                            Label(timeString, systemImage: "clock")
+                                .font(.system(size: 13))
+                                .foregroundColor(.white.opacity(0.6))
+                        }
+
+                        if let difficulty = recipe.difficulty {
+                            Label(difficulty.rawValue, systemImage: "chart.bar")
+                                .font(.system(size: 13))
+                                .foregroundColor(.white.opacity(0.6))
+                        }
+
+                        if recipe.nutritionVerified {
+                            Label("Verified", systemImage: "checkmark.seal.fill")
+                                .font(.system(size: 13))
+                                .foregroundColor(.nutriSyncAccent)
+                        }
+                    }
+                }
+
+                // View Recipe Button
+                Link(destination: recipe.url) {
+                    HStack {
+                        Image(systemName: "arrow.up.right.square")
+                        Text("View Full Recipe")
+                    }
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundColor(.black)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(Color.nutriSyncAccent)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                }
+            }
+            .padding(16)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color.white.opacity(0.03))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                    )
+            )
         }
     }
 
