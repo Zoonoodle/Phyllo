@@ -71,16 +71,65 @@ class FirebaseDataProvider: @preconcurrency DataProvider, ObservableObject {
         }
         
         try await mealRef.setData(meal.toFirestore())
-        
+
         Task { @MainActor in
             DebugLogger.shared.success("Meal saved to Firebase: \(meal.name)")
         }
-        
+
         // Update daily analytics
         await updateDailyAnalyticsForMeal(meal)
-        
+
         // Check for redistribution triggers after meal save
         await checkRedistributionTrigger(for: meal)
+
+        // Calculate and update window score
+        await updateWindowScore(for: meal)
+
+        // Notification triggers
+        await handleMealSavedNotifications(meal)
+    }
+
+    /// Handle notifications when a meal is saved
+    private func handleMealSavedNotifications(_ meal: LoggedMeal) async {
+        let notificationManager = NotificationManager.shared
+
+        // Cancel closing warning for this window since a meal was logged
+        if let windowId = meal.windowId {
+            notificationManager.cancelWindowClosingWarning(for: windowId.uuidString)
+        }
+
+        // Phase 7: Notify suggestion scheduler that a meal was logged
+        // This triggers refresh of suggestions for future windows
+        await MainActor.run {
+            NotificationCenter.default.post(
+                name: .mealLogged,
+                object: nil,
+                userInfo: [
+                    "mealId": meal.id.uuidString,
+                    "windowId": meal.windowId?.uuidString ?? "",
+                    "calories": meal.calories,
+                    "protein": meal.protein
+                ]
+            )
+        }
+
+        // Send meal score notification if meal has a health score
+        if let healthScore = meal.healthScore {
+            // Get window name if available
+            var windowName: String? = nil
+            if let windowId = meal.windowId {
+                let today = TimeProvider.shared.currentTime
+                if let windows = try? await getWindows(for: today) {
+                    windowName = windows.first { $0.id == windowId.uuidString }?.name
+                }
+            }
+
+            await notificationManager.notifyMealScore(
+                mealName: meal.name,
+                score: healthScore.score,
+                windowName: windowName
+            )
+        }
     }
     
     func getMeals(for date: Date) async throws -> [LoggedMeal] {
@@ -128,20 +177,67 @@ class FirebaseDataProvider: @preconcurrency DataProvider, ObservableObject {
         }
         let mealRef = userRef.collection("meals").document(meal.id.uuidString)
         try await mealRef.updateData(meal.toFirestore())
-        
+
         // Update analytics
         await updateDailyAnalyticsForMeal(meal)
+
+        // Recalculate window score after meal update
+        await updateWindowScore(for: meal)
     }
-    
+
     func deleteMeal(id: String) async throws {
         guard let userRef = userRef else {
             throw DataProviderError.notAuthenticated
         }
-        try await userRef.collection("meals").document(id).delete()
-        
-        // TODO: Update analytics to reflect deletion
+
+        // Get the meal before deletion to find its window
+        let mealRef = userRef.collection("meals").document(id)
+        let snapshot = try await mealRef.getDocument()
+        let mealData = snapshot.data()
+        let mealDate = (mealData?["timestamp"] as? Timestamp)?.dateValue() ?? Date()
+        let windowIdString = mealData?["windowId"] as? String
+
+        // Delete the meal
+        try await mealRef.delete()
+
+        // Recalculate window score after meal deletion
+        if let windowId = windowIdString, let uuid = UUID(uuidString: windowId) {
+            await recalculateWindowScoreById(windowId: uuid.uuidString, date: mealDate)
+        }
     }
-    
+
+    /// Recalculate window score by window ID (used after meal deletion)
+    private func recalculateWindowScoreById(windowId: String, date: Date) async {
+        do {
+            let windows = try await getWindows(for: date)
+            let meals = try await getMeals(for: date)
+
+            guard var window = windows.first(where: { $0.id == windowId }) else {
+                Task { @MainActor in
+                    DebugLogger.shared.info("Window not found for score recalculation: \(windowId)")
+                }
+                return
+            }
+
+            // Calculate window score
+            let score = ScoringService.shared.calculateWindowScore(window: window, meals: meals)
+
+            // Update window with score
+            window.windowScore = score
+
+            // Save updated window
+            try await updateWindow(window)
+
+            Task { @MainActor in
+                DebugLogger.shared.success("Window score recalculated after deletion: \(score.score) for '\(window.name)'")
+            }
+        } catch {
+            Task { @MainActor in
+                DebugLogger.shared.error("Failed to recalculate window score after deletion: \(error)")
+            }
+        }
+    }
+
     func getAnalyzingMeals() async throws -> [AnalyzingMeal] {
         // Fetch active analyzing meals (do not auto-delete; we want the banner to show)
         guard let userRef = userRef else {
@@ -1447,7 +1543,50 @@ class FirebaseDataProvider: @preconcurrency DataProvider, ObservableObject {
             }
         }
     }
-    
+
+    /// Calculate and update window score when a meal is logged
+    private func updateWindowScore(for meal: LoggedMeal) async {
+        do {
+            // Get current windows and meals for the day
+            let windows = try await getWindows(for: meal.timestamp)
+            let meals = try await getMeals(for: meal.timestamp)
+
+            // Find the window this meal belongs to
+            let mealWindow: MealWindow?
+            if let windowId = meal.windowId {
+                mealWindow = windows.first { $0.id == windowId.uuidString }
+            } else {
+                mealWindow = windows.first { window in
+                    meal.timestamp >= window.startTime && meal.timestamp <= window.endTime
+                }
+            }
+
+            guard var window = mealWindow else {
+                Task { @MainActor in
+                    DebugLogger.shared.info("No matching window found for meal, skipping score calculation")
+                }
+                return
+            }
+
+            // Calculate window score
+            let score = ScoringService.shared.calculateWindowScore(window: window, meals: meals)
+
+            // Update window with score
+            window.windowScore = score
+
+            // Save updated window
+            try await updateWindow(window)
+
+            Task { @MainActor in
+                DebugLogger.shared.success("Window score updated: \(score.score) for '\(window.name)'")
+            }
+        } catch {
+            Task { @MainActor in
+                DebugLogger.shared.error("Failed to update window score: \(error)")
+            }
+        }
+    }
+
     // Apply redistribution after user accepts
     func applyRedistribution(_ result: RedistributionResult) async throws {
         guard !result.adjustedWindows.isEmpty else { return }
@@ -1708,49 +1847,86 @@ private extension FirebaseDataProvider {
     func generateSimpleFallbackWindows(for profile: UserProfile, date: Date) -> [MealWindow] {
         var windows: [MealWindow] = []
         let calendar = Calendar.current
-        
-        // Default meal times based on typical patterns
-        let mealTimes: [(hour: Int, minute: Int, title: String, purpose: MealWindow.WindowPurpose)] = [
-            (8, 0, "Breakfast", .metabolicBoost),
-            (12, 30, "Lunch", .sustainedEnergy),
-            (16, 0, "Afternoon Snack", .sustainedEnergy),
-            (19, 0, "Dinner", .recovery)
-        ]
-        
+
+        // Use profile's mealsPerDay preference (default to 3)
+        let mealCount = profile.mealsPerDay ?? 3
+
+        // Define meal configurations based on meal count
+        let mealConfigs: [(hour: Int, minute: Int, title: String, purpose: MealWindow.WindowPurpose, distribution: Double)]
+
+        switch mealCount {
+        case 2:
+            // 2 meals: Brunch + Dinner
+            mealConfigs = [
+                (11, 0, "Brunch", .metabolicBoost, 0.5),
+                (18, 30, "Dinner", .recovery, 0.5)
+            ]
+        case 3:
+            // 3 meals: Breakfast, Lunch, Dinner
+            mealConfigs = [
+                (8, 0, "Breakfast", .metabolicBoost, 0.30),
+                (12, 30, "Lunch", .sustainedEnergy, 0.40),
+                (19, 0, "Dinner", .recovery, 0.30)
+            ]
+        case 4:
+            // 4 meals: Breakfast, Lunch, Afternoon Snack, Dinner
+            mealConfigs = [
+                (8, 0, "Breakfast", .metabolicBoost, 0.30),
+                (12, 30, "Lunch", .sustainedEnergy, 0.30),
+                (16, 0, "Afternoon Snack", .sustainedEnergy, 0.15),
+                (19, 0, "Dinner", .recovery, 0.25)
+            ]
+        case 5:
+            // 5 meals: Breakfast, Mid-Morning, Lunch, Afternoon, Dinner
+            mealConfigs = [
+                (7, 30, "Breakfast", .metabolicBoost, 0.25),
+                (10, 30, "Mid-Morning Snack", .sustainedEnergy, 0.10),
+                (13, 0, "Lunch", .sustainedEnergy, 0.30),
+                (16, 0, "Afternoon Snack", .sustainedEnergy, 0.10),
+                (19, 0, "Dinner", .recovery, 0.25)
+            ]
+        default:
+            // Default to 3 meals
+            mealConfigs = [
+                (8, 0, "Breakfast", .metabolicBoost, 0.30),
+                (12, 30, "Lunch", .sustainedEnergy, 0.40),
+                (19, 0, "Dinner", .recovery, 0.30)
+            ]
+        }
+
         // Use profile's daily targets or defaults
         let totalCalories = profile.dailyCalorieTarget
         let totalProtein = profile.dailyProteinTarget
         let totalCarbs = profile.dailyCarbTarget
         let totalFat = profile.dailyFatTarget
-        
-        // Distribute macros across meals (40%, 30%, 10%, 20%)
-        let distributions = [0.4, 0.3, 0.1, 0.2]
-        
-        for (index, (hour, minute, title, purpose)) in mealTimes.enumerated() {
+
+        for (index, config) in mealConfigs.enumerated() {
             var components = calendar.dateComponents([.year, .month, .day], from: date)
-            components.hour = hour
-            components.minute = minute
-            
+            components.hour = config.hour
+            components.minute = config.minute
+
             if let startTime = calendar.date(from: components),
                let endTime = calendar.date(byAdding: .hour, value: 2, to: startTime) {
-                
-                let distribution = distributions[index]
+
                 let macros = MacroTargets(
-                    protein: Int(Double(totalProtein) * distribution),
-                    carbs: Int(Double(totalCarbs) * distribution),
-                    fat: Int(Double(totalFat) * distribution)
+                    protein: Int(Double(totalProtein) * config.distribution),
+                    carbs: Int(Double(totalCarbs) * config.distribution),
+                    fat: Int(Double(totalFat) * config.distribution)
                 )
-                
+
+                // Snacks are flexible, main meals are moderate
+                let isSnack = config.title.lowercased().contains("snack")
+
                 let window = MealWindow(
                     id: UUID(),
                     startTime: startTime,
                     endTime: endTime,
-                    targetCalories: Int(Double(totalCalories) * distribution),
+                    targetCalories: Int(Double(totalCalories) * config.distribution),
                     targetMacros: macros,
-                    purpose: purpose,
-                    flexibility: index == 2 ? .flexible : .moderate,
+                    purpose: config.purpose,
+                    flexibility: isSnack ? .flexible : .moderate,
                     dayDate: date,
-                    name: title,
+                    name: config.title,
                     rationale: nil,
                     foodSuggestions: nil,
                     micronutrientFocus: nil,
@@ -1760,7 +1936,8 @@ private extension FirebaseDataProvider {
                 windows.append(window)
             }
         }
-        
+
+        print("[WindowGeneration] Generated \(windows.count) windows for mealsPerDay: \(mealCount)")
         return windows
     }
     
