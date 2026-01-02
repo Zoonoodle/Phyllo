@@ -675,6 +675,14 @@ struct ExpandableWindowBanner: View {
                             .font(.system(size: 12))
                             .foregroundColor(.white.opacity(TimelineOpacity.tertiary))
                     }
+
+                    // Window score insight (for completed windows)
+                    if let windowScore = window.windowScore, case .completed = windowStatus {
+                        Text(windowScore.generatedInsight)
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(windowScoreInsightColor(windowScore))
+                            .lineLimit(1)
+                    }
                 }
                 .layoutPriority(1)
 
@@ -682,9 +690,9 @@ struct ExpandableWindowBanner: View {
 
                 // Right side: Window score and status indicator
                 HStack(spacing: 8) {
-                    // Window score badge (for completed windows with score)
+                    // Window score (1-10 format for completed windows)
                     if let score = window.windowScore, case .completed = windowStatus {
-                        CompactWindowScore(score: score.score)
+                        ScoreText(score: score.displayScore, size: .small)
                             .transition(.scale.combined(with: .opacity))
                     }
 
@@ -1574,6 +1582,18 @@ struct ExpandableWindowBanner: View {
             return .blue.opacity(0.7)
         case .lateConsumption:
             return .yellow.opacity(0.7)
+        }
+    }
+
+    // Helper function to get window score insight color
+    private func windowScoreInsightColor(_ windowScore: WindowScore) -> Color {
+        let displayScore = windowScore.displayScore
+        switch displayScore {
+        case 8.5...10.0: return .nutriSyncAccent.opacity(0.8)
+        case 7.0..<8.5: return Color(hex: "A8E063").opacity(0.8)
+        case 5.0..<7.0: return Color(hex: "FFD93D").opacity(0.8)
+        case 3.0..<5.0: return Color(hex: "FFA500").opacity(0.8)
+        default: return Color(hex: "FF6B6B").opacity(0.8)
         }
     }
 }
