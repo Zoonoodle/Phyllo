@@ -118,7 +118,7 @@ struct AnimatedInfoSwitcher: View {
             .scaleEffect(showMacros ? 1 : 0.9)
             .offset(y: showMacros ? 0 : 3)
             
-            // Window purpose display
+            // Window purpose display with gradient
             HStack(spacing: 3) {
                 Image(systemName: window.purpose.icon)
                     .font(TimelineTypography.macroLabel)
@@ -127,7 +127,13 @@ struct AnimatedInfoSwitcher: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
             }
-            .foregroundColor(window.purpose.color)
+            .foregroundStyle(
+                LinearGradient(
+                    colors: [window.purpose.gradientColors.primary, window.purpose.gradientColors.secondary],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            )
             .opacity(showMacros ? 0 : 1)
             .scaleEffect(showMacros ? 0.9 : 1)
             .offset(y: showMacros ? -3 : 0)
@@ -154,7 +160,11 @@ struct ExpandableWindowBanner: View {
     @ObservedObject var viewModel: ScheduleViewModel
     // Optional fixed banner height so the card can exactly represent the time span on the timeline
     let bannerHeight: CGFloat?
-    
+    // Optional callback for retrying failed suggestion generation
+    var onRetrySuggestions: ((MealWindow) -> Void)?
+    // Optional binding for setting initial nutrition page (0 = Macros, 1 = Micros)
+    var initialNutritionPage: Binding<Int>? = nil
+
     // State for missed window actions
     @State private var showMissedWindowActions = false
     @State private var showInlineMissedActions = false
@@ -177,7 +187,6 @@ struct ExpandableWindowBanner: View {
     @StateObject private var timeProvider = TimeProvider.shared
     @State private var isExpanded = false
     @State private var pulseAnimation = false
-    @State private var isWhatToEatExpanded = false
     
     // Use AI-generated name if available, otherwise categorize by time-of-day
     private var mealType: String {
@@ -408,11 +417,11 @@ struct ExpandableWindowBanner: View {
         case .active:
             return window.purpose.color.opacity(0.4)
         case .lateButDoable:
-            return Color.yellow.opacity(0.3)
+            return Color.lateWindowPrimary.opacity(0.4)
         case .completed:
             return Color.white.opacity(0.08)
         case .missed:
-            return Color.orange.opacity(0.2)
+            return Color.white.opacity(0.08)  // Dimmed like completed, no orange
         case .fasted:
             return Color.phylloFasted.opacity(0.3)
         case .upcoming:
@@ -431,6 +440,38 @@ struct ExpandableWindowBanner: View {
             return Color(red: 0.09, green: 0.09, blue: 0.10)  // Slightly darker for active
         case .upcoming:
             return Color(red: 0.10, green: 0.10, blue: 0.11)  // Normal dark gray
+        }
+    }
+
+    // Window border style - returns gradient for active/late, solid color for others
+    private var windowBorderStyle: AnyShapeStyle {
+        switch windowStatus {
+        case .active:
+            let colors = window.purpose.gradientColors
+            return AnyShapeStyle(
+                LinearGradient(
+                    colors: [colors.primary.opacity(0.6), colors.secondary.opacity(0.4)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+        case .lateButDoable:
+            // Late windows get a warm amber gradient
+            return AnyShapeStyle(
+                LinearGradient(
+                    colors: [Color.lateWindowPrimary.opacity(0.5), Color.lateWindowSecondary.opacity(0.35)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+        case .completed:
+            return AnyShapeStyle(Color.white.opacity(0.08))
+        case .missed:
+            return AnyShapeStyle(Color.white.opacity(0.08))  // Dimmed like completed
+        case .fasted:
+            return AnyShapeStyle(Color.phylloFasted.opacity(0.3))
+        case .upcoming:
+            return AnyShapeStyle(Color.white.opacity(0.08))
         }
     }
     
@@ -467,19 +508,57 @@ struct ExpandableWindowBanner: View {
         !meals.isEmpty || !analyzingMealsInWindow.isEmpty
     }
 
-    // Check if we should show the What to Eat section
+    // Check if we should show the What to Eat section in the BANNER
+    // Only show when suggestions are ready/generating AND no meals logged/analyzing yet
     private var shouldShowWhatToEat: Bool {
         // Don't show for missed/fasted windows or when showing inline actions
         guard !showInlineMissedActions else { return false }
 
+        // Don't show if user has logged any meals - they don't need suggestions anymore
+        guard meals.isEmpty else { return false }
+
+        // Don't show if there's an analysis in progress - meal is being scanned
+        guard analyzingMealsInWindow.isEmpty else { return false }
+
         switch windowStatus {
         case .upcoming, .active, .lateButDoable:
-            // Show if suggestions are ready or generating
-            return window.suggestionStatus == .ready || window.suggestionStatus == .generating || !window.smartSuggestions.isEmpty
+            // Only show when suggestions are ready or generating (happens ~15 min before window)
+            return window.suggestionStatus == .ready ||
+                   window.suggestionStatus == .generating ||
+                   !window.smartSuggestions.isEmpty
         case .completed, .missed, .fasted:
             return false
         }
     }
+
+    // Check if we should show the suggestion badge in the header
+    // Now disabled since the compact indicator shows the count
+    private var shouldShowSuggestionBadge: Bool {
+        // Badge is now shown in the compact indicator row, not the header
+        return false
+    }
+
+    // Suggestion ready badge view
+    @ViewBuilder
+    private var suggestionReadyBadge: some View {
+        HStack(spacing: 3) {
+            Circle()
+                .fill(Color.nutriSyncAccent)
+                .frame(width: 6, height: 6)
+
+            Text("\(window.smartSuggestions.count)")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundColor(.nutriSyncAccent)
+        }
+        .padding(.horizontal, 6)
+        .padding(.vertical, 3)
+        .background(
+            Capsule()
+                .fill(Color.nutriSyncAccent.opacity(0.15))
+        )
+        .transition(.scale.combined(with: .opacity))
+    }
+
 
     var body: some View {
         // Container only; tap/drag handled by overlay layer wrapper
@@ -500,12 +579,16 @@ struct ExpandableWindowBanner: View {
                     ))
             }
 
-            // What to Eat section (for active/upcoming windows with suggestions)
+            // Compact What to Eat indicator (for active/upcoming windows with suggestions)
             if shouldShowWhatToEat {
-                WhatToEatSection(
+                WhatToEatCompactIndicator(
                     window: window,
-                    isExpanded: $isWhatToEatExpanded,
-                    onRetry: nil
+                    onTap: {
+                        withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+                            selectedWindow = window
+                            showWindowDetail = true
+                        }
+                    }
                 )
             }
 
@@ -525,28 +608,13 @@ struct ExpandableWindowBanner: View {
         .overlay(
             RoundedRectangle(cornerRadius: 8)
                 .strokeBorder(
-                    windowBorderColor,
-                    lineWidth: 1
+                    windowBorderStyle,
+                    lineWidth: windowStatus == .active ? 1.5 : 1
                 )
         )
         .shadow(color: Color.black.opacity(0.15), radius: 4, x: 0, y: 2)
         .opacity(windowOpacity)
         .overlay(optimalTimeIndicators)
-        // Chevron indicator to signal expandability
-        .overlay(
-            VStack {
-                Spacer()
-                HStack {
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.25))
-                        .padding(.trailing, 14)
-                        .padding(.bottom, 12)
-                }
-            }
-            .opacity(showInlineMissedActions ? 0 : 1) // Hide when showing missed actions
-        )
         .onTapGesture {
             // Check if this is a missed window
             if isMissedOrFasted {
@@ -579,15 +647,22 @@ struct ExpandableWindowBanner: View {
     
     @ViewBuilder
     private var windowBannerContent: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 8) {
             // Row 1: Title (full width) with status indicator on right
             HStack(alignment: .top, spacing: 8) {
                 // Left side: Title and time info stacked
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(mealType)
-                        .font(.system(size: 17, weight: .bold))
-                        .foregroundColor(.white)
-                        .lineLimit(1)
+                    HStack(spacing: 6) {
+                        Text(mealType)
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(.white)
+                            .lineLimit(1)
+
+                        // Suggestion ready badge
+                        if shouldShowSuggestionBadge {
+                            suggestionReadyBadge
+                        }
+                    }
 
                     // Time range and duration directly under title
                     Text(formatTimeRange(start: window.startTime, end: window.endTime))
@@ -605,13 +680,21 @@ struct ExpandableWindowBanner: View {
 
                 Spacer(minLength: 4)
 
-                // Right side: Status indicator (progress ring for active)
-                statusIndicator
+                // Right side: Window score and status indicator
+                HStack(spacing: 8) {
+                    // Window score badge (for completed windows with score)
+                    if let score = window.windowScore, case .completed = windowStatus {
+                        CompactWindowScore(score: score.score)
+                            .transition(.scale.combined(with: .opacity))
+                    }
+
+                    // Status indicator (progress ring for active)
+                    statusIndicator
+                }
             }
 
-            Spacer(minLength: 0)
-
             // Bottom row: time indicator on left, calorie status on right for active windows
+            // Removed Spacer to prevent empty space when no meals logged
             HStack(alignment: .bottom) {
                 bottomTimeIndicator
 
@@ -629,17 +712,33 @@ struct ExpandableWindowBanner: View {
         .padding(windowBannerPadding)
     }
 
-    // Compact calorie status for active windows - single line at bottom right
+    // Compact calorie status for active windows - stacked layout with chevron on bottom row
+    // Apple HIG: 17pt+ for primary numeric data
     @ViewBuilder
     private var activeCalorieStatus: some View {
-        HStack(spacing: 3) {
-            Text("\(windowCaloriesRemaining)")
-                .font(.system(size: 16, weight: .bold))
-                .monospacedDigit()
-                .foregroundColor(.white)
-            Text("cal remaining")
-                .font(.system(size: 12))
-                .foregroundColor(.white.opacity(TimelineOpacity.tertiary))
+        VStack(alignment: .trailing, spacing: 3) {
+            HStack(spacing: 2) {
+                Text("\(windowCaloriesRemaining)")
+                    .font(.system(size: 18, weight: .bold))
+                    .monospacedDigit()
+                    .foregroundColor(.white)
+                Text("cal")
+                    .font(.system(size: 14))
+                    .foregroundColor(.white.opacity(TimelineOpacity.secondary))
+            }
+
+            HStack(spacing: 6) {
+                Text("remaining")
+                    .font(.system(size: 13))
+                    .foregroundColor(.white.opacity(TimelineOpacity.tertiary))
+
+                // Chevron aligned with "remaining" text
+                if !showInlineMissedActions {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.3))
+                }
+            }
         }
     }
 
@@ -674,7 +773,13 @@ struct ExpandableWindowBanner: View {
                     }
                 }
                 .font(.system(size: 13, weight: .medium))
-                .foregroundColor(.yellow)
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [Color.lateWindowPrimary, Color.lateWindowSecondary],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
             }
 
         case .upcoming:
@@ -683,13 +788,11 @@ struct ExpandableWindowBanner: View {
                 .monospacedDigit()
                 .foregroundColor(.white.opacity(0.4))
 
-        case .completed, .missed:
-            if !timeUntilWindow.isEmpty {
-                Text(timeUntilWindow)
-                    .font(.system(size: 13))
-                    .monospacedDigit()
-                    .foregroundColor(.orange.opacity(0.6))
-            }
+        case .completed:
+            EmptyView()  // Completed windows don't show time indicator
+
+        case .missed:
+            EmptyView()  // Missed windows don't need time indicator, they show "skipped"
 
         case .fasted:
             Text("Fasting period")
@@ -708,132 +811,181 @@ struct ExpandableWindowBanner: View {
         VStack(alignment: .trailing, spacing: 3) {
             switch windowStatus {
             case .completed(let consumed, let target, let redistribution):
-                // Show consumed vs target
+                // Show consumed vs target - Apple HIG: 17pt+ for primary data
                 HStack(spacing: 2) {
                     Text("\(consumed)")
-                        .font(.system(size: consumed >= 1000 ? 15 : 16, weight: .semibold))
+                        .font(.system(size: consumed >= 1000 ? 16 : 17, weight: .semibold))
                         .monospacedDigit()
                         .foregroundColor(consumptionColor(consumed: consumed, target: target))
-                        .minimumScaleFactor(0.7)
+                        .minimumScaleFactor(0.8)
                         .lineLimit(1)
                     Text("/")
-                        .font(.system(size: 13))
+                        .font(.system(size: 14))
                         .foregroundColor(.white.opacity(TimelineOpacity.tertiary))
                     Text("\(target)")
-                        .font(.system(size: 13))
+                        .font(.system(size: 14))
                         .monospacedDigit()
                         .foregroundColor(.white.opacity(TimelineOpacity.secondary))
-                        .minimumScaleFactor(0.7)
+                        .minimumScaleFactor(0.8)
                     Text("cal")
-                        .font(.system(size: 12))
+                        .font(.system(size: 13))
                         .foregroundColor(.white.opacity(TimelineOpacity.secondary))
                 }
-                
-                // Show redistribution info if available
-                if let reason = redistribution {
-                    redistributionText(for: reason)
-                        .font(TimelineTypography.duration)
-                        .foregroundColor(redistributionColor(for: reason))
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.8)
-                } else {
-                    Text("completed")
-                        .font(TimelineTypography.statusLabel)
-                        .foregroundColor(.white.opacity(TimelineOpacity.tertiary))
+
+                // Show redistribution info with chevron aligned
+                HStack(spacing: 6) {
+                    if let reason = redistribution {
+                        redistributionText(for: reason)
+                            .font(TimelineTypography.duration)
+                            .foregroundColor(redistributionColor(for: reason))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                    } else {
+                        Text("completed")
+                            .font(TimelineTypography.statusLabel)
+                            .foregroundColor(.white.opacity(TimelineOpacity.tertiary))
+                    }
+
+                    if !showInlineMissedActions {
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.3))
+                    }
                 }
-                
+
             case .missed(let redistribution):
+                // Dimmed styling like completed, no orange
                 HStack(spacing: 2) {
                     Text("\(window.effectiveCalories)")
-                        .font(.system(size: window.effectiveCalories >= 1000 ? 15 : 16, weight: .semibold))
+                        .font(.system(size: window.effectiveCalories >= 1000 ? 16 : 17, weight: .semibold))
                         .monospacedDigit()
-                        .foregroundColor(.orange.opacity(0.8))
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.7)
-                    Text("cal")
-                        .font(.system(size: 12))
-                        .foregroundColor(.orange.opacity(0.7))
-                }
-                
-                if let reason = redistribution {
-                    redistributionText(for: reason)
-                        .font(TimelineTypography.duration)
-                        .foregroundColor(.orange.opacity(0.7))
+                        .foregroundColor(.white.opacity(0.4))
                         .lineLimit(1)
                         .minimumScaleFactor(0.8)
-                } else {
-                    Text("missed")
-                        .font(TimelineTypography.statusLabel)
-                        .foregroundColor(.orange.opacity(0.7))
+                    Text("cal")
+                        .font(.system(size: 13))
+                        .foregroundColor(.white.opacity(0.35))
                 }
-                
+
+                HStack(spacing: 6) {
+                    if let reason = redistribution {
+                        redistributionText(for: reason)
+                            .font(TimelineTypography.duration)
+                            .foregroundColor(.white.opacity(0.4))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                    } else {
+                        Text("skipped")
+                            .font(TimelineTypography.statusLabel)
+                            .foregroundColor(.white.opacity(0.35))
+                    }
+
+                    if !showInlineMissedActions {
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.3))
+                    }
+                }
+
             case .fasted:
                 HStack(spacing: 2) {
                     Text("\(window.effectiveCalories)")
-                        .font(.system(size: window.effectiveCalories >= 1000 ? 15 : 16, weight: .semibold))
+                        .font(.system(size: window.effectiveCalories >= 1000 ? 16 : 17, weight: .semibold))
                         .monospacedDigit()
                         .foregroundColor(.phylloFasted)
                         .lineLimit(1)
-                        .minimumScaleFactor(0.7)
+                        .minimumScaleFactor(0.8)
                     Text("cal")
-                        .font(.system(size: 12))
+                        .font(.system(size: 13))
                         .foregroundColor(.phylloFasted.opacity(0.8))
                 }
-                
-                Text("fasted")
-                    .font(TimelineTypography.statusLabel)
-                    .foregroundColor(.phylloFasted)
-                
+
+                HStack(spacing: 6) {
+                    Text("fasted")
+                        .font(TimelineTypography.statusLabel)
+                        .foregroundColor(.phylloFasted)
+
+                    if !showInlineMissedActions {
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.3))
+                    }
+                }
+
             case .lateButDoable:
                 HStack(spacing: 2) {
                     Text("\(window.effectiveCalories)")
-                        .font(.system(size: window.effectiveCalories >= 1000 ? 15 : 16, weight: .semibold))
+                        .font(.system(size: window.effectiveCalories >= 1000 ? 16 : 17, weight: .semibold))
                         .monospacedDigit()
                         .foregroundColor(.white.opacity(TimelineOpacity.secondary))
                         .lineLimit(1)
-                        .minimumScaleFactor(0.7)
+                        .minimumScaleFactor(0.8)
                     Text("cal")
-                        .font(.system(size: 12))
+                        .font(.system(size: 13))
                         .foregroundColor(.white.opacity(TimelineOpacity.secondary))
                 }
-                
-                AnimatedInfoSwitcher(window: window, isActive: false)
-                    .frame(maxWidth: 140)
-                
+
+                HStack(spacing: 6) {
+                    AnimatedInfoSwitcher(window: window, isActive: false)
+                        .frame(maxWidth: 130)
+
+                    if !showInlineMissedActions {
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.3))
+                    }
+                }
+
             case .active:
                 HStack(spacing: 2) {
                     Text("\(windowCaloriesRemaining)")
-                        .font(.system(size: windowCaloriesRemaining >= 1000 ? 17 : 18, weight: .bold))
+                        .font(.system(size: windowCaloriesRemaining >= 1000 ? 18 : 19, weight: .bold))
                         .monospacedDigit()
                         .foregroundColor(.white)
                         .lineLimit(1)
-                        .minimumScaleFactor(0.7)
+                        .minimumScaleFactor(0.8)
+                        .layoutPriority(1)
+                    Text("cal")
+                        .font(.system(size: 14))
+                        .foregroundColor(.white.opacity(TimelineOpacity.secondary))
+                }
+
+                HStack(spacing: 6) {
+                    Text("remaining")
+                        .font(.system(size: 13))
+                        .foregroundColor(.white.opacity(TimelineOpacity.tertiary))
+
+                    if !showInlineMissedActions {
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.3))
+                    }
+                }
+
+            case .upcoming:
+                HStack(spacing: 2) {
+                    Text("\(window.effectiveCalories)")
+                        .font(.system(size: window.effectiveCalories >= 1000 ? 16 : 17, weight: .semibold))
+                        .monospacedDigit()
+                        .foregroundColor(.white.opacity(TimelineOpacity.secondary))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
                         .layoutPriority(1)
                     Text("cal")
                         .font(.system(size: 13))
                         .foregroundColor(.white.opacity(TimelineOpacity.secondary))
                 }
-                
-                Text("remaining")
-                    .font(.system(size: 12))
-                    .foregroundColor(.white.opacity(TimelineOpacity.tertiary))
-                
-            case .upcoming:
-                HStack(spacing: 2) {
-                    Text("\(window.effectiveCalories)")
-                        .font(.system(size: window.effectiveCalories >= 1000 ? 15 : 16, weight: .semibold))
-                        .monospacedDigit()
-                        .foregroundColor(.white.opacity(TimelineOpacity.secondary))
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.7)
-                        .layoutPriority(1)
-                    Text("cal")
-                        .font(.system(size: 12))
-                        .foregroundColor(.white.opacity(TimelineOpacity.secondary))
+
+                HStack(spacing: 6) {
+                    AnimatedInfoSwitcher(window: window, isActive: false)
+                        .frame(maxWidth: 130)
+
+                    if !showInlineMissedActions {
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.3))
+                    }
                 }
-                
-                AnimatedInfoSwitcher(window: window, isActive: false)
-                    .frame(maxWidth: 140)
             }
         }
     }
@@ -860,24 +1012,30 @@ struct ExpandableWindowBanner: View {
     private var progressRing: some View {
         let consumed = viewModel.caloriesConsumedInWindow(window)
         let progressValue = window.effectiveCalories > 0 ? min(Double(consumed) / Double(window.effectiveCalories), 1.0) : 0
-        
+        let colors = window.purpose.gradientColors
+
         ZStack {
             Circle()
                 .trim(from: 0.12, to: 0.88)
                 .stroke(Color.white.opacity(0.1), lineWidth: 2)
                 .frame(width: 50, height: 50)
                 .rotationEffect(.degrees(90))
-            
+
             Circle()
                 .trim(from: 0, to: progressValue * 0.76)
                 .stroke(
-                    window.purpose.color,
-                    style: StrokeStyle(lineWidth: 2, lineCap: .round)
+                    AngularGradient(
+                        colors: [colors.primary, colors.secondary, colors.primary],
+                        center: .center,
+                        startAngle: .degrees(0),
+                        endAngle: .degrees(360)
+                    ),
+                    style: StrokeStyle(lineWidth: 2.5, lineCap: .round)
                 )
                 .frame(width: 50, height: 50)
                 .rotationEffect(.degrees(126))
                 .animation(.linear(duration: 1), value: progressValue)
-            
+
             Text("\(Int(progressValue * 100))%")
                 .font(TimelineTypography.progressPercentage)
                 .foregroundColor(.white)
@@ -895,15 +1053,11 @@ struct ExpandableWindowBanner: View {
     
     @ViewBuilder
     private var missedIndicator: some View {
-        ZStack {
-            Circle()
-                .fill(Color.orange.opacity(0.15))
-                .frame(width: 50, height: 50)
-            
-            Text("Missed")
-                .font(.system(size: 10, weight: .semibold))
-                .foregroundColor(.orange)
-        }
+        // Dimmed indicator with dash/skip icon - no orange, matches completed styling
+        Image(systemName: "minus")
+            .font(.system(size: 16, weight: .semibold))
+            .foregroundColor(.white.opacity(0.35))
+            .frame(width: 50, height: 50)
     }
     
     @ViewBuilder
@@ -922,14 +1076,22 @@ struct ExpandableWindowBanner: View {
     @ViewBuilder
     private var lateButDoableIndicator: some View {
         ZStack {
+            // Gradient ring background
             Circle()
-                .fill(Color.yellow.opacity(0.15))
+                .strokeBorder(
+                    LinearGradient(
+                        colors: [Color.lateWindowPrimary.opacity(0.4), Color.lateWindowSecondary.opacity(0.25)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 2
+                )
                 .frame(width: 50, height: 50)
-            
+
             VStack(spacing: 0) {
                 Text("Late")
                     .font(.system(size: 10, weight: .semibold))
-                
+
                 if let hoursLate = window.hoursLate {
                     if hoursLate < 1 {
                         Text("\(Int(hoursLate * 60))m")
@@ -940,7 +1102,13 @@ struct ExpandableWindowBanner: View {
                     }
                 }
             }
-            .foregroundColor(.yellow)
+            .foregroundStyle(
+                LinearGradient(
+                    colors: [Color.lateWindowPrimary, Color.lateWindowSecondary],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            )
         }
     }
     
@@ -1192,7 +1360,7 @@ struct ExpandableWindowBanner: View {
             let remainingSlots = max(0, maxVisibleMeals - analyzingMealsInWindow.count)
             let mealsToShow = Array(meals.prefix(remainingSlots))
             ForEach(mealsToShow) { meal in
-                MealRowCompact(meal: meal)
+                MealRowCompact(meal: meal, windowPurposeColor: window.purpose.color)
                     .padding(.horizontal, 12)
             }
 
@@ -1209,7 +1377,6 @@ struct ExpandableWindowBanner: View {
             }
         }
         .padding(.bottom, 8)
-        .background(Color(red: 0.11, green: 0.11, blue: 0.12))
     }
     
     private var windowBackground: some View {
@@ -1291,22 +1458,24 @@ struct ExpandableWindowBanner: View {
     
     @ViewBuilder
     private var optimalTimeIndicators: some View {
+        let colors = window.purpose.gradientColors
+
         ZStack {
-            // Glowing border for active windows
+            // Glowing gradient border for active windows
             if case .active = windowStatus {
                 RoundedRectangle(cornerRadius: 8)
                     .strokeBorder(
                         LinearGradient(
                             colors: [
-                                window.purpose.color.opacity(0.5),
-                                window.purpose.color.opacity(0.25)
+                                colors.primary.opacity(0.6),
+                                colors.secondary.opacity(0.35)
                             ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         ),
                         lineWidth: 1.5
                     )
-                    .shadow(color: window.purpose.color.opacity(0.25), radius: pulseAnimation ? 6 : 3)
+                    .shadow(color: colors.primary.opacity(0.3), radius: pulseAnimation ? 8 : 4)
                     .animation(.easeInOut(duration: 2).repeatForever(autoreverses: true), value: pulseAnimation)
             }
             
@@ -1412,7 +1581,8 @@ struct ExpandableWindowBanner: View {
 // Compact meal row for inside window banner
 struct MealRowCompact: View {
     let meal: LoggedMeal
-    
+    var windowPurposeColor: Color = .nutriSyncAccent  // For health score coloring
+
     var body: some View {
         HStack(spacing: 6) {
             // Time
@@ -1421,12 +1591,12 @@ struct MealRowCompact: View {
                 .monospacedDigit()
                 .foregroundColor(.white.opacity(0.5))
                 .frame(width: 35)
-            
+
             // Food emoji
             Text(meal.emoji)
                 .font(.system(size: 16))
                 .frame(width: 20)
-            
+
             // Meal info
             VStack(alignment: .leading, spacing: 2) {
                 Text(meal.name)
@@ -1435,7 +1605,7 @@ struct MealRowCompact: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                
+
                 HStack(spacing: 3) {
                     // Calories
                     HStack(spacing: 2) {
@@ -1448,11 +1618,11 @@ struct MealRowCompact: View {
                             .font(.system(size: 9))
                             .foregroundColor(.white.opacity(0.5))
                     }
-                    
+
                     Text("·")
                         .font(.system(size: 9))
                         .foregroundColor(.white.opacity(0.3))
-                    
+
                     // Macros with better spacing
                     HStack(spacing: 4) {
                         Text("\(meal.protein)g")
@@ -1460,13 +1630,13 @@ struct MealRowCompact: View {
                             .monospacedDigit()
                             .foregroundColor(.orange.opacity(0.7))
                             .minimumScaleFactor(0.8)
-                        
+
                         Text("\(meal.fat)g")
                             .font(.system(size: 10))
                             .monospacedDigit()
                             .foregroundColor(.yellow.opacity(0.7))
                             .minimumScaleFactor(0.8)
-                        
+
                         Text("\(meal.carbs)g")
                             .font(.system(size: 10))
                             .monospacedDigit()
@@ -1477,9 +1647,14 @@ struct MealRowCompact: View {
                 .lineLimit(1)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+
+            // Health score (1-10 format)
+            if let healthScore = meal.healthScore {
+                ScoreText(score: healthScore.displayScore, size: .small)
+            }
         }
     }
-    
+
     private var timeFormatter: DateFormatter {
         let formatter = DateFormatter()
         formatter.dateFormat = "h:mm"
@@ -1561,6 +1736,99 @@ struct AnalyzingMealRowCompact: View {
             withAnimation(.easeInOut(duration: 0.3)) {
                 currentMessageIndex = (currentMessageIndex + 1) % defaultMessages.count
             }
+        }
+    }
+}
+
+// MARK: - Compact What to Eat Indicator
+
+/// Compact single-line indicator for What to Eat in the timeline banner
+/// Taps through to window detail view instead of expanding inline
+struct WhatToEatCompactIndicator: View {
+    let window: MealWindow
+    let onTap: () -> Void
+
+    @State private var animatingDot = 0
+    private let dotCount = 3
+    private let timer = Timer.publish(every: 0.3, on: .main, in: .common).autoconnect()
+
+    var body: some View {
+        Button(action: onTap) {
+            VStack(spacing: 0) {
+                // Divider
+                Rectangle()
+                    .fill(Color.white.opacity(0.1))
+                    .frame(height: 1)
+
+                // Content row - matches MealRowCompact height
+                HStack(spacing: 8) {
+                    // Icon
+                    Text("🍽️")
+                        .font(.system(size: 16))
+                        .frame(width: 24)
+
+                    // Label
+                    Text("What to Eat")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.white)
+
+                    Spacer()
+
+                    // Status indicator
+                    statusView
+
+                    // No chevron here - the banner's bottom-right chevron handles navigation
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+            }
+        }
+        .buttonStyle(PlainButtonStyle())
+        .onReceive(timer) { _ in
+            if window.suggestionStatus == .generating {
+                animatingDot = (animatingDot + 1) % dotCount
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var statusView: some View {
+        switch window.suggestionStatus {
+        case .generating:
+            // Compact animated dots
+            HStack(spacing: 4) {
+                ForEach(0..<dotCount, id: \.self) { index in
+                    Circle()
+                        .fill(Color.nutriSyncAccent)
+                        .frame(width: 6, height: 6)
+                        .scaleEffect(animatingDot == index ? 1.2 : 0.8)
+                        .opacity(animatingDot == index ? 1.0 : 0.4)
+                        .animation(.spring(response: 0.3, dampingFraction: 0.6), value: animatingDot)
+                }
+            }
+
+        case .ready:
+            if !window.smartSuggestions.isEmpty {
+                Text("\(window.smartSuggestions.count) ready")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(.nutriSyncAccent)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(
+                        Capsule()
+                            .fill(Color.nutriSyncAccent.opacity(0.2))
+                    )
+            }
+
+        case .pending:
+            Text("soon")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundColor(.white.opacity(0.4))
+
+        case .failed:
+            Image(systemName: "exclamationmark.circle")
+                .font(.system(size: 14))
+                .foregroundColor(.orange.opacity(0.7))
         }
     }
 }

@@ -11,7 +11,76 @@ import UIKit
 enum FoodAnalysisTab: String, CaseIterable {
     case nutrition = "Nutrition"
     case ingredients = "Ingredients"
-    case insights = "Insights"
+}
+
+enum NutrientCategory: String, CaseIterable {
+    case carbBreakdown = "Carb Breakdown"
+    case fatBreakdown = "Fat Breakdown"
+    case vitamins = "Vitamins"
+    case minerals = "Minerals"
+    case other = "Other"
+
+    static func category(for nutrientName: String) -> NutrientCategory {
+        let name = nutrientName.lowercased()
+
+        // Carb Breakdown
+        if name.contains("carb") || name.contains("fiber") || name.contains("starch") ||
+           name.contains("sugar") || name == "net carbs" {
+            return .carbBreakdown
+        }
+
+        // Fat Breakdown
+        if name.contains("fat") || name.contains("saturated") || name.contains("trans") ||
+           name.contains("monounsaturated") || name.contains("polyunsaturated") ||
+           name.contains("cholesterol") {
+            return .fatBreakdown
+        }
+
+        // Vitamins
+        if name.contains("vitamin") || name.contains("thiamin") || name.contains("riboflavin") ||
+           name.contains("niacin") || name.contains("folate") || name.contains("b1") ||
+           name.contains("b2") || name.contains("b3") || name.contains("b6") || name.contains("b12") {
+            return .vitamins
+        }
+
+        // Minerals
+        if name.contains("calcium") || name.contains("iron") || name.contains("magnesium") ||
+           name.contains("phosphorus") || name.contains("potassium") || name.contains("sodium") ||
+           name.contains("zinc") || name.contains("copper") || name.contains("manganese") ||
+           name.contains("selenium") {
+            return .minerals
+        }
+
+        return .other
+    }
+}
+
+enum NutrientStatus {
+    case low       // < 50%
+    case adequate  // 50-100%
+    case high      // > 100%
+
+    var color: Color {
+        switch self {
+        case .low: return .orange
+        case .adequate: return .green
+        case .high: return .red
+        }
+    }
+
+    static func status(percentage: Double, isAntiNutrient: Bool = false) -> NutrientStatus {
+        if isAntiNutrient {
+            // For anti-nutrients, high is bad
+            if percentage > 1.0 { return .high }
+            if percentage > 0.7 { return .adequate }
+            return .low
+        } else {
+            // For good nutrients, higher is better until 100%
+            if percentage < 0.5 { return .low }
+            if percentage <= 1.0 { return .adequate }
+            return .high
+        }
+    }
 }
 
 struct FoodAnalysisView: View {
@@ -32,7 +101,9 @@ struct FoodAnalysisView: View {
                 VStack(spacing: 0) {
                     // Food header section (always visible)
                     VStack(spacing: 16) {
-                        foodImageSection
+                        if meal.imageData != nil {
+                            foodImageSection
+                        }
                         foodInfoSection
                     }
                     .padding(.horizontal, 20)
@@ -51,8 +122,6 @@ struct FoodAnalysisView: View {
                                 nutritionTabContent
                             case .ingredients:
                                 ingredientsTabContent
-                            case .insights:
-                                insightsTabContent
                             }
                             
                             // Action buttons (always at bottom)
@@ -122,11 +191,15 @@ struct FoodAnalysisView: View {
     private var nutritionTabContent: some View {
         VStack(spacing: 24) {
             nutritionOverviewSection
-            
+
+            mealScoreSection
+
+            dailyImpactSection
+
             if isFromScan {
                 dailySummarySection
             }
-            
+
             detailedNutritionSection
         }
     }
@@ -138,57 +211,33 @@ struct FoodAnalysisView: View {
         }
     }
     
-    private var insightsTabContent: some View {
-        VStack(spacing: 24) {
-            if let window = mealWindow {
-                windowMicronutrientSection(for: window)
-            }
-            
-            mealInsightsSection
-        }
-    }
     
     // MARK: - Sections
     
+    @ViewBuilder
     private var foodImageSection: some View {
-        RoundedRectangle(cornerRadius: 20)
-            .fill(Color.nutriSyncElevated)
-            .frame(height: 200)
-            .overlay(
-                Group {
-                    if let imageData = meal.imageData,
-                       let uiImage = UIImage(data: imageData) {
-                        Image(uiImage: uiImage)
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(height: 200)
-                            .clipped()
-                            .cornerRadius(20)
-                    } else {
-                        VStack {
-                            Image(systemName: "photo.fill")
-                                .font(.system(size: 60))
-                                .foregroundColor(.white.opacity(0.2))
-                            Text("Food image preview")
-                                .font(.caption)
-                                .foregroundColor(.white.opacity(0.3))
+        if let imageData = meal.imageData,
+           let uiImage = UIImage(data: imageData) {
+            Image(uiImage: uiImage)
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .frame(height: 200)
+                .clipped()
+                .cornerRadius(20)
+                .overlay(
+                    // Confidence badge
+                    VStack {
+                        HStack {
+                            Spacer()
+                            if isFromScan {
+                                confidenceBadge
+                            }
                         }
-                    }
-                }
-            )
-            .overlay(
-                // Confidence badge
-                VStack {
-                    HStack {
                         Spacer()
-                        if isFromScan {
-                            confidenceBadge
-                        }
                     }
-                    Spacer()
-                }
-                .padding(16)
-            )
+                    .padding(16)
+                )
+        }
     }
     
     private var confidenceBadge: some View {
@@ -224,7 +273,9 @@ struct FoodAnalysisView: View {
             Text(meal.name)
                 .font(.system(size: 28, weight: .bold))
                 .foregroundColor(.white)
-            
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+
             if let window = mealWindow {
                 Text("\(windowName(for: window)) • \(timeString(from: meal.timestamp))")
                     .font(.system(size: 16))
@@ -244,13 +295,13 @@ struct FoodAnalysisView: View {
                 Text("\(meal.calories)")
                     .font(.system(size: 48, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
-                
+
                 Text("calories")
                     .font(.system(size: 18))
                     .foregroundColor(.white.opacity(0.5))
                     .offset(y: 8)
             }
-            
+
             // Macros
             HStack(spacing: 24) {
                 MacroView(value: meal.protein, label: "Protein", color: .blue)
@@ -269,65 +320,328 @@ struct FoodAnalysisView: View {
                 )
         )
     }
-    
-    private var detailedNutritionSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Detailed Nutrition")
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundColor(.white)
-            
-            if meal.micronutrients.isEmpty {
-                // Show default micronutrients when none are available
-                VStack(spacing: 12) {
-                    NutritionRow(label: "Dietary Fiber", value: "8g", color: .green)
-                    NutritionRow(label: "Sugars", value: "3g", color: .pink)
-                    NutritionRow(label: "Sodium", value: "320mg", color: .cyan)
-                    NutritionRow(label: "Cholesterol", value: "85mg", color: .orange)
+
+    // MARK: - Meal Score Section
+
+    @State private var showScoreBreakdown = false
+
+    private var mealScoreSection: some View {
+        Group {
+            if let healthScore = meal.healthScore {
+                VStack(alignment: .leading, spacing: 16) {
+                    // Header
+                    Text("MEAL SCORE")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(Color.white.opacity(0.5))
+                        .tracking(0.5)
+
+                    // Score display
+                    VStack(alignment: .leading, spacing: 8) {
+                        ScoreText(score: healthScore.displayScore, size: .medium, showTotal: true)
+                        ScoreProgressBar.fromInternal(healthScore.score)
+                    }
+
+                    // Contributing factors
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("CONTRIBUTING FACTORS")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(Color.white.opacity(0.5))
+                            .tracking(0.5)
+
+                        FactorChipGrid(factors: healthScoreFactors)
+                    }
+
+                    // Expandable breakdown
+                    Button(action: {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                            showScoreBreakdown.toggle()
+                        }
+                    }) {
+                        HStack {
+                            Text("See full breakdown")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(.white.opacity(0.7))
+
+                            Spacer()
+
+                            Image(systemName: showScoreBreakdown ? "chevron.up" : "chevron.down")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundColor(.white.opacity(0.5))
+                        }
+                        .padding(.top, 8)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+
+                    // Expanded breakdown
+                    if showScoreBreakdown {
+                        scoreBreakdownView(healthScore: healthScore)
+                            .transition(.opacity.combined(with: .move(edge: .top)))
+                    }
                 }
                 .padding(16)
                 .background(
                     RoundedRectangle(cornerRadius: 16)
                         .fill(Color.nutriSyncElevated)
-                )
-            } else {
-                // Separate good nutrients and anti-nutrients
-                let goodNutrients = meal.micronutrients.compactMap { (name, amount) -> (name: String, consumed: Double, info: MicronutrientInfo)? in
-                    guard let info = MicronutrientData.getNutrient(byName: name),
-                          !info.isAntiNutrient else { return nil }
-                    return (name: name, consumed: amount, info: info)
-                }
-                
-                let antiNutrients = meal.micronutrients.compactMap { (name, amount) -> (name: String, consumed: Double, info: MicronutrientInfo)? in
-                    guard let info = MicronutrientData.getNutrient(byName: name),
-                          info.isAntiNutrient else { return nil }
-                    return (name: name, consumed: amount, info: info)
-                }
-                
-                VStack(spacing: 16) {
-                    // Show warnings first if any
-                    AntiNutrientWarningCard(antiNutrients: antiNutrients)
-                    
-                    // Show good nutrients with guidance
-                    ScrollView {
-                        VStack(spacing: 8) {
-                            ForEach(goodNutrients.sorted(by: { $0.consumed > $1.consumed }).prefix(8), id: \.name) { nutrient in
-                                MicronutrientGuidanceView(
-                                    name: nutrient.name,
-                                    consumed: nutrient.consumed,
-                                    nutrientInfo: nutrient.info
-                                )
-                            }
-                        }
-                        .padding(16)
-                        .background(
+                        .overlay(
                             RoundedRectangle(cornerRadius: 16)
-                                .fill(Color.nutriSyncElevated)
+                                .stroke(Color.nutriSyncBorder, lineWidth: 1)
                         )
-                    }
-                    .frame(maxHeight: 400)
+                )
+            }
+        }
+    }
+
+    // Generate factor chips from health score
+    private var healthScoreFactors: [FactorChipData] {
+        guard let healthScore = meal.healthScore else { return [] }
+
+        // If we have detailed breakdown, use it
+        if let breakdown = healthScore.breakdown {
+            return [
+                FactorChipData(label: "Macro balance", value: breakdown.macroBalance.subtotal),
+                FactorChipData(label: "Food quality", value: breakdown.foodQuality.subtotal),
+                FactorChipData(label: "Protein efficiency", value: breakdown.proteinEfficiency.subtotal),
+                FactorChipData(label: "Micronutrients", value: breakdown.micronutrients.subtotal)
+            ]
+        }
+
+        // Fallback: Generate factors from existing data
+        var factors: [FactorChipData] = []
+
+        // Protein factor - based on protein per 100 cal
+        let proteinPer100Cal = meal.calories > 0 ? Double(meal.protein) / Double(meal.calories) * 100 : 0
+        let proteinScore = min(proteinPer100Cal / 7.0, 2.0) - 1.0  // Target: 7g protein per 100 cal
+        factors.append(FactorChipData(label: "Protein balance", value: proteinScore))
+
+        // Macro balance - based on P/C/F ratio
+        let totalMacroGrams = Double(meal.protein + meal.carbs + meal.fat)
+        if totalMacroGrams > 0 {
+            let proteinRatio = Double(meal.protein) / totalMacroGrams
+            let carbRatio = Double(meal.carbs) / totalMacroGrams
+            let fatRatio = Double(meal.fat) / totalMacroGrams
+
+            // Ideal: ~30% protein, 40% carbs, 30% fat (by grams, not calories)
+            let proteinDev = abs(proteinRatio - 0.30)
+            let carbDev = abs(carbRatio - 0.40)
+            let fatDev = abs(fatRatio - 0.30)
+            let avgDev = (proteinDev + carbDev + fatDev) / 3.0
+            let balanceScore = (0.15 - avgDev) / 0.15 * 1.5  // Max +1.5 if perfectly balanced
+            factors.append(FactorChipData(label: "Macro balance", value: balanceScore))
+        }
+
+        // Fiber factor (if available)
+        if let fiber = meal.micronutrients["Dietary Fiber"] ?? meal.micronutrients["Fiber"] {
+            let fiberScore = min(fiber / 5.0, 1.5) - 0.5  // Target: 5g fiber per meal
+            factors.append(FactorChipData(label: "Fiber content", value: fiberScore))
+        }
+
+        // Caloric density - reasonable portion size
+        let portionScore: Double
+        if meal.calories < 200 {
+            portionScore = 0.3  // Light meal
+        } else if meal.calories <= 600 {
+            portionScore = 0.5  // Good portion
+        } else if meal.calories <= 900 {
+            portionScore = 0.2  // Moderate
+        } else {
+            portionScore = -0.3  // Heavy meal
+        }
+        factors.append(FactorChipData(label: "Portion size", value: portionScore))
+
+        return factors
+    }
+
+    // Detailed score breakdown view
+    @ViewBuilder
+    private func scoreBreakdownView(healthScore: HealthScore) -> some View {
+        VStack(alignment: .leading, spacing: 16) {
+            // Divider
+            Rectangle()
+                .fill(Color.white.opacity(0.1))
+                .frame(height: 1)
+
+            // Base score
+            HStack {
+                Text("Base Score")
+                    .font(.system(size: 14))
+                    .foregroundColor(.white.opacity(0.7))
+                Spacer()
+                Text("5.0")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.white)
+            }
+
+            // Factor breakdown
+            ForEach(healthScoreFactors) { factor in
+                HStack {
+                    Text(factor.label)
+                        .font(.system(size: 14))
+                        .foregroundColor(.white.opacity(0.7))
+                    Spacer()
+                    Text(factor.value >= 0 ? "+\(String(format: "%.1f", factor.value))" : String(format: "%.1f", factor.value))
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(factor.value >= 0 ? .factorPositive : .factorNegative)
+                }
+            }
+
+            // Divider
+            Rectangle()
+                .fill(Color.white.opacity(0.1))
+                .frame(height: 1)
+
+            // Final score
+            HStack {
+                Text("Final Score")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.white)
+                Spacer()
+                ScoreText(score: healthScore.displayScore, size: .small)
+            }
+
+            // Insight if available
+            if let insightText = healthScore.insight, !insightText.isEmpty {
+                InsightBox(title: "Insight", text: insightText, icon: "lightbulb")
+            } else if let reasoning = healthScore.reasoning, !reasoning.isEmpty {
+                InsightBox(title: "Insight", text: reasoning, icon: "lightbulb")
+            }
+        }
+        .padding(.top, 8)
+    }
+
+    private var dailyImpactSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Impact on Targets")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundColor(.white)
+
+            HStack(spacing: 16) {
+                ImpactCircle(
+                    label: "Calories",
+                    percentage: Double(meal.calories) / Double(userDailyCalories),
+                    color: .blue
+                )
+                ImpactCircle(
+                    label: "Protein",
+                    percentage: Double(meal.protein) / Double(userDailyProtein),
+                    color: .blue
+                )
+                ImpactCircle(
+                    label: "Fat",
+                    percentage: Double(meal.fat) / Double(userDailyFat),
+                    color: .yellow
+                )
+                ImpactCircle(
+                    label: "Carbs",
+                    percentage: Double(meal.carbs) / Double(userDailyCarbs),
+                    color: .orange
+                )
+            }
+            .padding(.vertical, 8)
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color.nutriSyncElevated)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(Color.nutriSyncBorder, lineWidth: 1)
+                )
+        )
+    }
+
+    private var detailedNutritionSection: some View {
+        VStack(spacing: 24) {
+            // Group nutrients by category
+            ForEach(NutrientCategory.allCases, id: \.self) { category in
+                let nutrients = nutrientsForCategory(category)
+                if !nutrients.isEmpty {
+                    NutrientCategorySection(
+                        title: category.rawValue,
+                        nutrients: nutrients
+                    )
                 }
             }
         }
+    }
+
+    private func nutrientsForCategory(_ category: NutrientCategory) -> [(name: String, value: Double, unit: String, target: Double?, isAntiNutrient: Bool)] {
+        var result: [(name: String, value: Double, unit: String, target: Double?, isAntiNutrient: Bool)] = []
+
+        switch category {
+        case .carbBreakdown:
+            // Add main carbs from meal
+            result.append((name: "Carbs", value: Double(meal.carbs), unit: "g", target: Double(userDailyCarbs), isAntiNutrient: false))
+            // Add fiber if available
+            if let fiber = meal.micronutrients["Dietary Fiber"] ?? meal.micronutrients["Fiber"] {
+                result.append((name: "Fiber", value: fiber, unit: "g", target: 28, isAntiNutrient: false))
+            }
+            // Net carbs (carbs - fiber)
+            let fiber = meal.micronutrients["Dietary Fiber"] ?? meal.micronutrients["Fiber"] ?? 0
+            result.append((name: "Net Carbs", value: Double(meal.carbs) - fiber, unit: "g", target: nil, isAntiNutrient: false))
+            // Sugars
+            if let sugars = meal.micronutrients["Sugars"] ?? meal.micronutrients["Sugar"] {
+                result.append((name: "Sugars", value: sugars, unit: "g", target: 50, isAntiNutrient: true))
+            }
+
+        case .fatBreakdown:
+            // Add main fat from meal
+            result.append((name: "Fat", value: Double(meal.fat), unit: "g", target: Double(userDailyFat), isAntiNutrient: false))
+            // Saturated fat
+            if let satFat = meal.micronutrients["Saturated Fat"] {
+                result.append((name: "Saturated Fat", value: satFat, unit: "g", target: 20, isAntiNutrient: true))
+            }
+            // Trans fat
+            if let transFat = meal.micronutrients["Trans Fat"] {
+                result.append((name: "Trans Fat", value: transFat, unit: "g", target: 2, isAntiNutrient: true))
+            }
+            // Cholesterol
+            if let chol = meal.micronutrients["Cholesterol"] {
+                result.append((name: "Cholesterol", value: chol, unit: "mg", target: 300, isAntiNutrient: true))
+            }
+
+        case .vitamins:
+            // Filter and add vitamins from micronutrients
+            for (name, value) in meal.micronutrients {
+                if NutrientCategory.category(for: name) == .vitamins {
+                    let info = MicronutrientData.getNutrient(byName: name)
+                    let unit = info?.unit ?? "mg"
+                    let isAnti = info?.isAntiNutrient ?? false
+                    let target: Double? = isAnti ? info?.dailyLimit : info?.averageRDA
+                    result.append((name: name, value: value, unit: unit, target: target, isAntiNutrient: isAnti))
+                }
+            }
+
+        case .minerals:
+            // Filter and add minerals from micronutrients
+            for (name, value) in meal.micronutrients {
+                if NutrientCategory.category(for: name) == .minerals {
+                    let info = MicronutrientData.getNutrient(byName: name)
+                    let unit = info?.unit ?? "mg"
+                    let isAnti = info?.isAntiNutrient ?? false
+                    let target: Double? = isAnti ? info?.dailyLimit : info?.averageRDA
+                    result.append((name: name, value: value, unit: unit, target: target, isAntiNutrient: isAnti))
+                }
+            }
+
+        case .other:
+            // Add protein (not shown in other categories)
+            result.append((name: "Protein", value: Double(meal.protein), unit: "g", target: Double(userDailyProtein), isAntiNutrient: false))
+            // Calories
+            result.append((name: "Calories", value: Double(meal.calories), unit: "kcal", target: Double(userDailyCalories), isAntiNutrient: false))
+            // Add any other micronutrients not in above categories
+            for (name, value) in meal.micronutrients {
+                let cat = NutrientCategory.category(for: name)
+                if cat == .other && name != "Calories" {
+                    let info = MicronutrientData.getNutrient(byName: name)
+                    let unit = info?.unit ?? "mg"
+                    let isAnti = info?.isAntiNutrient ?? false
+                    let target: Double? = isAnti ? info?.dailyLimit : info?.averageRDA
+                    result.append((name: name, value: value, unit: unit, target: target, isAntiNutrient: isAnti))
+                }
+            }
+        }
+
+        return result.sorted { $0.value > $1.value }
     }
     
     private var actionButtonsSection: some View {
@@ -361,7 +675,7 @@ struct FoodAnalysisView: View {
                 dismiss()
             }) {
                 HStack {
-                    Image(systemName: isFromScan ? "checkmark.circle.fill" : "timeline")
+                    Image(systemName: isFromScan ? "checkmark.circle.fill" : "calendar.day.timeline.left")
                         .font(.system(size: 18, weight: .semibold))
                     Text(isFromScan ? "Confirm & Log" : "View in Timeline")
                         .font(.system(size: 18, weight: .semibold))
@@ -458,46 +772,6 @@ struct FoodAnalysisView: View {
         )
     }
     
-    // Window-specific micronutrient section
-    private func windowMicronutrientSection(for window: MealWindow) -> some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack {
-                Text("Window Micronutrients")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundColor(.white)
-                
-                Spacer()
-                
-                // Window purpose badge
-                Text(windowPurposeDisplayName(window.purpose))
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(Color.nutriSyncAccent)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 4)
-                    .background(
-                        Capsule()
-                            .fill(Color.nutriSyncAccent.opacity(0.15))
-                    )
-            }
-            
-            // Get micronutrients for this window purpose
-            let windowMicronutrients = getWindowMicronutrients(for: window.purpose)
-            
-            VStack(spacing: 16) {
-                ForEach(windowMicronutrients, id: \.info.name) { nutrient in
-                    WindowMicronutrientRow(
-                        micronutrient: nutrient,
-                        mealContribution: getMealContribution(for: nutrient.info.name)
-                    )
-                }
-            }
-            .padding(16)
-            .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(Color.nutriSyncElevated)
-            )
-        }
-    }
     
     // MARK: - Helper Properties
     
@@ -547,27 +821,6 @@ struct FoodAnalysisView: View {
         return formatter.string(from: date)
     }
     
-    private func getWindowMicronutrients(for purpose: WindowPurpose) -> [MicronutrientConsumption] {
-        // TODO: Get micronutrients from real data source for this window purpose
-        return []
-    }
-    
-    private func getMealContribution(for nutrientName: String) -> Double {
-        // Get the meal's contribution to this micronutrient
-        return meal.micronutrients[nutrientName] ?? 0.0
-    }
-    
-    private func windowPurposeDisplayName(_ purpose: WindowPurpose) -> String {
-        switch purpose {
-        case .sustainedEnergy: return "Sustained Energy"
-        case .focusBoost: return "Focus Boost"
-        case .recovery: return "Recovery"
-        case .preWorkout: return "Pre-Workout"
-        case .postWorkout: return "Post-Workout"
-        case .metabolicBoost: return "Metabolic Boost"
-        case .sleepOptimization: return "Sleep Optimization"
-        }
-    }
     
     private func getMicronutrientUnit(for nutrient: String) -> String {
         // Common micronutrient units
@@ -712,102 +965,167 @@ struct MacroView: View {
     }
 }
 
-struct NutritionRow: View {
+struct ImpactCircle: View {
     let label: String
-    let value: String
+    let percentage: Double
     let color: Color
-    
+
+    private var displayPercentage: Int {
+        Int(percentage * 100)
+    }
+
     var body: some View {
-        HStack {
-            Circle()
-                .fill(color.opacity(0.3))
-                .frame(width: 8, height: 8)
-            
+        VStack(spacing: 6) {
+            ZStack {
+                Circle()
+                    .stroke(Color.white.opacity(0.1), lineWidth: 4)
+                    .frame(width: 52, height: 52)
+
+                Circle()
+                    .trim(from: 0, to: min(percentage, 1.0))
+                    .stroke(
+                        color,
+                        style: StrokeStyle(lineWidth: 4, lineCap: .round)
+                    )
+                    .frame(width: 52, height: 52)
+                    .rotationEffect(.degrees(-90))
+
+                Text("\(displayPercentage)%")
+                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                    .foregroundColor(.white)
+            }
+
             Text(label)
-                .font(.system(size: 15))
-                .foregroundColor(.white.opacity(0.7))
-            
-            Spacer()
-            
-            Text(value)
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundColor(.white)
+                .font(.system(size: 11))
+                .foregroundColor(.white.opacity(0.6))
+        }
+        .frame(maxWidth: .infinity)
+    }
+}
+
+struct NutrientProgressRow: View {
+    let name: String
+    let value: Double
+    let unit: String
+    let target: Double?
+    let isAntiNutrient: Bool
+
+    init(name: String, value: Double, unit: String, target: Double? = nil, isAntiNutrient: Bool = false) {
+        self.name = name
+        self.value = value
+        self.unit = unit
+        self.target = target
+        self.isAntiNutrient = isAntiNutrient
+    }
+
+    private var percentage: Double? {
+        guard let target = target, target > 0 else { return nil }
+        return value / target
+    }
+
+    private var status: NutrientStatus {
+        guard let pct = percentage else { return .adequate }
+        return NutrientStatus.status(percentage: pct, isAntiNutrient: isAntiNutrient)
+    }
+
+    private var valueString: String {
+        if value >= 1000 {
+            return String(format: "%.0f%@", value, unit)
+        } else if value >= 100 {
+            return String(format: "%.0f%@", value, unit)
+        } else if value >= 10 {
+            return String(format: "%.1f%@", value, unit)
+        } else {
+            return String(format: "%.1f%@", value, unit)
+        }
+    }
+
+    private var targetString: String {
+        guard let target = target else { return "" }
+        return String(format: "/ %.0f%@", target, unit)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text(name)
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundColor(.white)
+
+                Spacer()
+
+                if let target = target {
+                    HStack(spacing: 4) {
+                        Text(valueString)
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(.white)
+                        Text("/ \(Int(target))\(unit)")
+                            .font(.system(size: 13))
+                            .foregroundColor(.white.opacity(0.5))
+                    }
+                } else {
+                    Text(valueString)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.white)
+                }
+
+                if let pct = percentage {
+                    Text("\(Int(pct * 100))%")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(status.color)
+                        .frame(width: 40, alignment: .trailing)
+                } else {
+                    Text("No Target")
+                        .font(.system(size: 12))
+                        .foregroundColor(.white.opacity(0.4))
+                        .frame(width: 60, alignment: .trailing)
+                }
+            }
+
+            if let pct = percentage {
+                GeometryReader { geometry in
+                    ZStack(alignment: .leading) {
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(Color.white.opacity(0.1))
+                            .frame(height: 4)
+
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(status.color)
+                            .frame(width: geometry.size.width * min(CGFloat(pct), 1.0), height: 4)
+                    }
+                }
+                .frame(height: 4)
+            }
         }
     }
 }
 
-struct WindowMicronutrientRow: View {
-    let micronutrient: MicronutrientConsumption
-    let mealContribution: Double
-    
-    private var mealPercentage: Double {
-        mealContribution / micronutrient.info.dailyTarget
-    }
-    
-    private var progressColor: Color {
-        switch micronutrient.percentage {
-        case 0..<0.5: return .red
-        case 0.5..<0.7: return .orange
-        case 0.7..<0.9: return .yellow
-        default: return Color.nutriSyncAccent
-        }
-    }
-    
+struct NutrientCategorySection: View {
+    let title: String
+    let nutrients: [(name: String, value: Double, unit: String, target: Double?, isAntiNutrient: Bool)]
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            // Name and icon
-            HStack {
-                Text("\(micronutrient.info.icon) \(micronutrient.info.name)")
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(.white)
-                
-                Spacer()
-                
-                // Meal contribution
-                Text("+\(String(format: "%.1f", mealContribution))\(micronutrient.info.unit)")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(Color.nutriSyncAccent)
-            }
-            
-            // Progress bar
-            GeometryReader { geometry in
-                ZStack(alignment: .leading) {
-                    // Background
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(Color.white.opacity(0.1))
-                        .frame(height: 6)
-                    
-                    // Total progress
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(progressColor.opacity(0.5))
-                        .frame(width: geometry.size.width * CGFloat(min(micronutrient.percentage, 1)), height: 6)
-                    
-                    // Meal contribution overlay
-                    if mealContribution > 0 {
-                        RoundedRectangle(cornerRadius: 3)
-                            .fill(Color.nutriSyncAccent)
-                            .frame(
-                                width: geometry.size.width * CGFloat(min(mealPercentage, 1)),
-                                height: 6
-                            )
-                            .offset(x: geometry.size.width * CGFloat(min(micronutrient.percentage - mealPercentage, 1)))
-                    }
+        VStack(alignment: .leading, spacing: 16) {
+            Text(title)
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundColor(.white)
+
+            VStack(spacing: 16) {
+                ForEach(nutrients, id: \.name) { nutrient in
+                    NutrientProgressRow(
+                        name: nutrient.name,
+                        value: nutrient.value,
+                        unit: nutrient.unit,
+                        target: nutrient.target,
+                        isAntiNutrient: nutrient.isAntiNutrient
+                    )
                 }
             }
-            .frame(height: 6)
-            
-            // Values and percentage
-            HStack {
-                Text(micronutrient.displayString)
-                    .font(.system(size: 13))
-                    .foregroundColor(.white.opacity(0.5))
-                
-                Spacer()
-                
-                Text("\(Int(micronutrient.percentage * 100))% of daily target")
-                    .font(.system(size: 13))
-                    .foregroundColor(.white.opacity(0.5))
-            }
+            .padding(16)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color.nutriSyncElevated)
+            )
         }
     }
 }
@@ -820,7 +1138,7 @@ extension FoodAnalysisView {
             Text("Ingredients")
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundColor(.white)
-            
+
             if meal.ingredients.isEmpty {
                 Text("No ingredient details available")
                     .font(.system(size: 15))
@@ -832,188 +1150,133 @@ extension FoodAnalysisView {
                             .fill(Color.nutriSyncElevated)
                     )
             } else {
-                VStack(spacing: 12) {
+                VStack(spacing: 8) {
                     ForEach(meal.ingredients) { ingredient in
-                        FoodIngredientRow(ingredient: ingredient)
+                        IngredientMacroRow(
+                            ingredient: ingredient,
+                            mealTotals: (
+                                calories: meal.calories,
+                                protein: meal.protein,
+                                carbs: meal.carbs,
+                                fat: meal.fat
+                            )
+                        )
                     }
                 }
             }
         }
     }
-    
+
     private var ingredientNutritionBreakdown: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            if !meal.ingredients.filter({ $0.calories != nil }).isEmpty {
-                Text("Nutrition by Ingredient")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundColor(.white)
-                
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 12) {
-                        ForEach(meal.ingredients.filter { $0.calories != nil }) { ingredient in
-                            IngredientNutritionCard(ingredient: ingredient)
-                        }
-                    }
-                }
-            }
-        }
+        EmptyView()
     }
-    
-    private var mealInsightsSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Meal Insights")
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundColor(.white)
-            
-            VStack(spacing: 12) {
-                InsightRow(icon: "lightbulb.fill", text: "This meal provides \(Int(Double(meal.protein) / Double(userDailyProtein) * 100))% of your daily protein needs", color: .blue)
-                
-                if meal.calories < 400 {
-                    InsightRow(icon: "leaf.fill", text: "Light meal - perfect for maintaining energy without feeling heavy", color: .green)
-                }
-                
-                if let window = mealWindow {
-                    InsightRow(icon: "clock.fill", text: "Optimally timed for \(windowPurposeInsight(window.purpose))", color: .orange)
-                }
-                
-                if meal.ingredients.filter({ $0.foodGroup == .vegetable }).count >= 3 {
-                    InsightRow(icon: "star.fill", text: "Excellent vegetable variety for micronutrient diversity", color: .yellow)
-                }
-            }
-        }
-    }
-    
-    private func windowPurposeInsight(_ purpose: WindowPurpose) -> String {
-        switch purpose {
-        case .sustainedEnergy: return "sustained energy throughout your day"
-        case .focusBoost: return "enhanced mental clarity and focus"
-        case .recovery: return "optimal muscle recovery and repair"
-        case .preWorkout: return "fueling your upcoming workout"
-        case .postWorkout: return "maximizing post-workout recovery"
-        case .metabolicBoost: return "supporting your metabolic rate"
-        case .sleepOptimization: return "promoting restful sleep"
-        }
-    }
+
 }
 
 // MARK: - Supporting Views
 
-struct FoodIngredientRow: View {
-    let ingredient: MealIngredient
-    
-    var body: some View {
-        HStack(spacing: 12) {
-            // Color-coded circle
-            Circle()
-                .fill(ingredient.foodGroup.color.opacity(0.3))
-                .frame(width: 8, height: 8)
-            
-            // Ingredient chip
-            HStack(spacing: 6) {
-                Text(ingredient.name)
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundColor(.white)
-                
-                Text(ingredient.displayString.replacingOccurrences(of: ingredient.name + " ", with: ""))
-                    .font(.system(size: 13))
-                    .foregroundColor(.white.opacity(0.6))
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 8)
-            .background(
-                Capsule()
-                    .fill(ingredient.foodGroup.color.opacity(0.15))
-                    .overlay(
-                        Capsule()
-                            .stroke(ingredient.foodGroup.color.opacity(0.3), lineWidth: 1)
-                    )
-            )
-            
-            Spacer()
-        }
-    }
-}
-
-struct IngredientNutritionCard: View {
-    let ingredient: MealIngredient
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(ingredient.name)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(.white)
-                .lineLimit(1)
-            
-            if let calories = ingredient.calories {
-                Text("\(calories) cal")
-                    .font(.system(size: 20, weight: .bold))
-                    .foregroundColor(ingredient.foodGroup.color)
-            }
-            
-            VStack(alignment: .leading, spacing: 4) {
-                if let protein = ingredient.protein {
-                    MacroMiniRow(label: "P", value: protein, color: .blue)
-                }
-                if let carbs = ingredient.carbs {
-                    MacroMiniRow(label: "C", value: carbs, color: .orange)
-                }
-                if let fat = ingredient.fat {
-                    MacroMiniRow(label: "F", value: fat, color: .yellow)
-                }
-            }
-        }
-        .padding(12)
-        .frame(width: 120)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color.nutriSyncElevated)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color.nutriSyncBorder, lineWidth: 1)
-                )
-        )
-    }
-}
-
-struct MacroMiniRow: View {
+struct MiniMacroBar: View {
     let label: String
-    let value: Double
+    let percentage: Double
     let color: Color
-    
+
     var body: some View {
         HStack(spacing: 4) {
             Text(label)
-                .font(.system(size: 11))
-                .foregroundColor(color.opacity(0.8))
-                .frame(width: 12)
-            
-            Text(String(format: "%.1fg", value))
-                .font(.system(size: 11, weight: .medium))
+                .font(.system(size: 10, weight: .medium))
+                .foregroundColor(.white.opacity(0.6))
+                .frame(width: 20, alignment: .leading)
+
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(Color.white.opacity(0.1))
+
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(color)
+                        .frame(width: geo.size.width * min(CGFloat(percentage), 1.0))
+                }
+            }
+            .frame(height: 4)
+
+            Text("\(Int(percentage * 100))%")
+                .font(.system(size: 10, weight: .semibold))
                 .foregroundColor(.white.opacity(0.7))
+                .frame(width: 28, alignment: .trailing)
         }
     }
 }
 
-struct InsightRow: View {
-    let icon: String
-    let text: String
-    let color: Color
-    
-    var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Image(systemName: icon)
-                .font(.system(size: 16))
-                .foregroundColor(color)
-                .frame(width: 24)
-            
-            Text(text)
-                .font(.system(size: 14))
-                .foregroundColor(.white.opacity(0.8))
-                .fixedSize(horizontal: false, vertical: true)
-            
-            Spacer()
+struct IngredientMacroRow: View {
+    let ingredient: MealIngredient
+    let mealTotals: (calories: Int, protein: Int, carbs: Int, fat: Int)
+
+    private var quantityString: String {
+        if ingredient.quantity == floor(ingredient.quantity) {
+            return "\(Int(ingredient.quantity)) \(ingredient.unit)"
+        } else {
+            return String(format: "%.1f %@", ingredient.quantity, ingredient.unit)
         }
-        .padding(16)
+    }
+
+    private var hasNutritionData: Bool {
+        ingredient.calories != nil
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            // Top row: food group dot, name, and quantity
+            HStack {
+                Circle()
+                    .fill(ingredient.foodGroup.color)
+                    .frame(width: 8, height: 8)
+
+                Text(ingredient.name)
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundColor(.white)
+
+                Spacer()
+
+                Text(quantityString)
+                    .font(.system(size: 13))
+                    .foregroundColor(.white.opacity(0.6))
+            }
+
+            // Nutrition data row
+            if hasNutritionData {
+                HStack(spacing: 0) {
+                    // Calories
+                    if let cal = ingredient.calories {
+                        HStack(spacing: 3) {
+                            Text("\(cal)")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundColor(.white)
+                            Text("cal")
+                                .font(.system(size: 12))
+                                .foregroundColor(.white.opacity(0.5))
+                        }
+                        .frame(width: 60, alignment: .leading)
+                    }
+
+                    Spacer()
+
+                    // Macros in compact pill format
+                    HStack(spacing: 8) {
+                        if let protein = ingredient.protein {
+                            MacroPill(value: protein, label: "P", color: .blue)
+                        }
+                        if let carbs = ingredient.carbs {
+                            MacroPill(value: carbs, label: "C", color: .orange)
+                        }
+                        if let fat = ingredient.fat {
+                            MacroPill(value: fat, label: "F", color: .yellow)
+                        }
+                    }
+                }
+                .padding(.leading, 16) // Align with text after the dot
+            }
+        }
+        .padding(12)
         .background(
             RoundedRectangle(cornerRadius: 12)
                 .fill(Color.nutriSyncElevated)
@@ -1021,65 +1284,35 @@ struct InsightRow: View {
     }
 }
 
-struct MicronutrientDetailRow: View {
-    let name: String
-    let amount: Double
-    let unit: String
-    let dailyTarget: Double
+// Compact macro display pill
+struct MacroPill: View {
+    let value: Double
+    let label: String
     let color: Color
-    
-    private var percentage: Double {
-        amount / dailyTarget
-    }
-    
-    private var percentageText: String {
-        "\(Int(percentage * 100))%"
-    }
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Circle()
-                    .fill(color.opacity(0.3))
-                    .frame(width: 8, height: 8)
-                
-                Text(name)
-                    .font(.system(size: 15))
-                    .foregroundColor(.white.opacity(0.7))
-                
-                Spacer()
-                
-                Text(String(format: "%.1f%@", amount, unit))
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundColor(.white)
-            }
-            
-            // Progress bar
-            GeometryReader { geometry in
-                ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 2)
-                        .fill(Color.white.opacity(0.1))
-                        .frame(height: 4)
-                    
-                    RoundedRectangle(cornerRadius: 2)
-                        .fill(color)
-                        .frame(width: geometry.size.width * min(percentage, 1), height: 4)
-                }
-            }
-            .frame(height: 4)
-            
-            HStack {
-                Text(percentageText)
-                    .font(.system(size: 12))
-                    .foregroundColor(color)
-                
-                Spacer()
-                
-                Text("of \(Int(dailyTarget))\(unit) daily")
-                    .font(.system(size: 12))
-                    .foregroundColor(.white.opacity(0.5))
-            }
+
+    private var valueString: String {
+        if value >= 10 {
+            return String(format: "%.0f", value)
+        } else {
+            return String(format: "%.1f", value)
         }
+    }
+
+    var body: some View {
+        HStack(spacing: 2) {
+            Text(valueString)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(color)
+            Text(label)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundColor(color.opacity(0.7))
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(
+            RoundedRectangle(cornerRadius: 6)
+                .fill(color.opacity(0.15))
+        )
     }
 }
 

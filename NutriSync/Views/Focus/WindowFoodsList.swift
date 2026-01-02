@@ -107,7 +107,7 @@ struct FoodItemCard: View {
                         Text(meal.name)
                             .font(TimelineTypography.foodName)
                             .foregroundColor(.white)
-                        
+
                         HStack(spacing: 8) {
                             Text("\(meal.calories) cal")
                                 .font(TimelineTypography.foodCalories)
@@ -115,23 +115,28 @@ struct FoodItemCard: View {
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.8)
                                 .layoutPriority(1)
-                            
+
                             Text("•")
                                 .foregroundColor(.white.opacity(TimelineOpacity.quaternary))
-                            
+
                             Text(timeString(from: meal.timestamp))
                                 .font(TimelineTypography.timestamp)
                                 .foregroundColor(.white.opacity(TimelineOpacity.secondary))
                                 .lineLimit(1)
                         }
-                        
+
                         Text(meal.macroSummary)
                             .font(TimelineTypography.macroLabel)
                             .foregroundColor(.white.opacity(TimelineOpacity.tertiary))
                     }
-                    
+
                     Spacer()
-                    
+
+                    // Health score (1-10 format)
+                    if let healthScore = meal.healthScore {
+                        ScoreText(score: healthScore.displayScore, size: .small)
+                    }
+
                     // Chevron
                     Image(systemName: "chevron.right")
                         .font(.system(size: 14))
